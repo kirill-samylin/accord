@@ -348,3 +348,13 @@ restore; клиенты поддерживают lease во время длит�
 - Профили ролевых агентов подключаются путями; закрепление Claude-моделей
   в этой среде недоступно. Автор и независимый проверяющий — разные агенты
   с унаследованной моделью, без самостоятельного понижения модели ревью.
+
+- WORK076 APPROVE frozen072 f94c95d: independent3process PASS
+  (D3→4/DDLrollback/currentSQLafterexpiry),12delivery hashes и source182
+  неизменны, fullchecklogSHA подтверждён; полныйgate не повторялся.
+  Это закрывает review тестов072, но не annual/VPS/deploy/physical2PC.
+- WORK075 docs/handoff.md и receiver-agent.md frozen; WORK077 выполняет
+  независимую проверку инструкции/метода упаковки. Пакет включает bundle
+  всех13 committedbranches, clients5, справочные роли и evidence072.
+  Единственный старый untracked source fixture proxy_process_test.go сохраняется
+  отдельно в unreviewed-work с явным NOT-ACCEPTED; автоматически не применять.

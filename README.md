@@ -23,6 +23,13 @@ The shared-service delivery is tracked in [TASK-003](docs/TASK-003-working-servi
 Its [service contract](docs/service-contract.md) separates the working bearer
 release from the remaining V1 features and external acceptance checks.
 
+## Передача проекта и второй ПК
+
+Полная [инструкция передачи](docs/handoff.md) описывает готовые клиенты,
+подключение к существующему серверу и восстановление всех веток из Git bundle.
+[Задание принимающему агенту](docs/receiver-agent.md) отделяет Accord от Tandem
+и содержит проверку доступа без раскрытия токена.
+
 ## Build and run
 
 Use Go 1.26.1 or newer. The isolated development runtime and reproducible checks
