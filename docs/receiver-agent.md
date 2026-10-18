@@ -48,7 +48,8 @@ client ZIP, отдельного `connection.json` и защищённого `pc
    долгоживущий worker нескольким независимым агентам.
 6. Создай собственный synthetic epic `TEST pc-2 connection` с описанием
    проверки. Прочитай его get/events, сохрани выданный ключ и next_cursor.
-   Отмени только этот эпик через transition(state=cancelled,
+   Передавай все required-поля tools/list (create: role="", priority=2).
+   Отмени только этот свежий эпик через transition(generation=0,state=cancelled,
    reason="synthetic cleanup", новый request_id). Чужие задачи не брать
    и не менять. Затем заверши отдельный worker: heartbeat прекратится,
    board-сессия истечёт по TTL; публичного session close здесь нет.

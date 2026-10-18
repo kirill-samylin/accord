@@ -358,3 +358,17 @@ restore; клиенты поддерживают lease во время длит�
   всех13 committedbranches, clients5, справочные роли и evidence072.
   Единственный старый untracked source fixture proxy_process_test.go сохраняется
   отдельно в unreviewed-work с явным NOT-ACCEPTED; автоматически не применять.
+- WORK077 APPROVE инструкции075 после R077-01: required MCP create fields
+  и generation=0 свежего epic добавлены coordinator; исходники не менялись.
+  Независимо проверен промежуточный архив (CRC/152SHA/5nestedclients), не
+  финальный ZIP. Последний пакет после включения review пересобирается root
+  тем же методом и повторно проверяется bundleverify/freshclone/all13refs/
+  cleanstatus/ZIPCRC/nestedclientSHA. Финальные SHA лежат рядом с артефактами,
+  а не внутри собственного bundle (чтобы не создавать self-reference).
+- Передаваемый результат: Desktop/Project/Accord-handoff-2026-10-18,
+  Accord-project.zip + checksum; docs/handoff.md и receiver-agent.md;
+  connection.json отдельно, pc-2.token только отдельным защищённым каналом
+  из .local/accord/second-pc. В Git и ZIP токена/SSH/рабочихБД нет.
+  Пакет сохраняет13committedbranches и isolated unreviewed старый testfixture.
+  Физический второйПК по-прежнему требует подключения к tailnet и smoke.
+  Live1e9025c/Tandem443/backup policy не переключались этим этапом.

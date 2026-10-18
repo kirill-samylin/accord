@@ -180,17 +180,19 @@ GUI и Claude Code требуют отдельной настройки/факт
    release, transition, update`.
 2. Вызвать `describe` с `role=coordinator`, `machine=pc-2`, новыми уникальными
    `run_id` и `request_id`. Сохранить `session_id` без токена.
-3. Через `create` создать **собственный** epic с title `TEST pc-2 connection`
-   и description о проверке подключения; сохранить выданный `E-N`.
+3. Через `create` создать **собственный** epic и сохранить выданный `E-N`:
+   `{request_id:"NEW_UNIQUE_ID",type:"epic",title:"TEST pc-2 connection",description:"Проверка подключения",role:"",priority:2}`.
 4. Прочитать его через `get {task_key:"E-N"}` и
    `events {task_key:"E-N",since_cursor:0,limit:100}`. Записать next_cursor.
 5. Отменить **только созданный здесь** epic через `transition`:
-   `{request_id:"NEW_UNIQUE_ID",task_key:"E-N",state:"cancelled",reason:"synthetic cleanup"}`.
+   `{request_id:"NEW_UNIQUE_ID",task_key:"E-N",generation:0,state:"cancelled",reason:"synthetic cleanup"}`.
 6. Завершить отдельный worker/исполнителя. Публичной команды мгновенного
    закрытия board-сессии здесь нет; после остановки heartbeat она истечёт по TTL.
    Если случайно взята своя synthetic task, сначала `release` с её точными
    `task_key`, `generation`, новым `request_id` и причиной. Чужие аренды не снимать.
 
+Передавайте все required-поля схемы tools/list. У свежего собственного epic
+нет task lease: для его отмены `generation=0`, а не generation чужой задачи.
 Через stdio worker `session_id` можно опускать: он подставляет свою сессию.
 Прямой HTTP требует session_id явно. Повтор того же request_id допустим только
 для точного replay прежнего запроса; новый шаг получает новый идентификатор.
