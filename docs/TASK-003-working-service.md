@@ -1,6 +1,6 @@
 # TASK-003 — рабочий общий Accord
 
-- Статус: в работе; этап: C live/performance FAIL, D fixes, E foundations.
+- Статус: в работе; этап: performance implementation057, D processQA056, E foundations.
 - Источник: пользователь18.10.2026 поручил доделать оставшееся до рабочего проекта.
 - База:966dda6, рабочая ветка codex/pilot, репозиторий Accord.
 - Координатор: основной агент. Общую карточку редактирует только координатор.
@@ -19,12 +19,15 @@
   C checkpoint опубликован в origin/codex/pilot; nativefix также origin/codex/native-proxy.
 - Main checkpoint2dfd86b: C source/Host APPROVE041, полный C check PASS042,
   новые process tests/README APPROVE045. Method delta047 APPROVE048; C QA checkpoint1e9025c committed.
-- D: config-runtime-003/codex/config-runtime, HEAD932aa2a; source freeze043,
-  main1e9025c объединён; независимые code050/security051 выполняются.
+- D: codex/config-fixes d5a3a12, все050/051 defects CLOSED/APPROVE054;
+  отдельная codex/config-qa WORK056 пишет process tests, source неизменна.
+- Performance: codex/performance отd5a3a12 + rootdocs bee0bea, WORK057;
+  schema4 owner один, production ещё не менялась. Метод055 на review058.
 - E pure libraries: integration-libs-003/codex/integration-libs,59ae1a1,
   автор044, APPROVE046; SQL/runtime/schema4 и включение доставок отсутствуют.
-- Непосредственно далее: WORK049 private deploy1e9025c/schema2 и isolatedVPS
-  load; D независимые reviews после sourcefreeze, E runtime после D.
+- Непосредственно далее: принять056/tests review и058; завершить057,
+  независимые source/security review и combined QA/annual load; E runtime/schema5
+  после этих контрактов. Live1e9025c остаётся текущим, нагрузка049 latencyFAIL.
 
 ## Цель и критерии
 
@@ -80,6 +83,8 @@ restore; клиенты поддерживают lease во время длит�
 | 055 | Developer load method | Только Python acceptance harness/helpers/unit/doc; main | Явный offered-rate режим без ослабления native admission |
 | 056 | Отдельный tester D | Изолированная codex/config-qa отd5a3a12, только tests/docs | Process приёмка D после APPROVE054, TTL/bootstrap/schema3 fixtures |
 | 057 | Developer performance | Изолированная codex/performance отd5a3a12 | Единственный schema4 owner: cache/COW/dirty/events/stats, полный053 contract |
+| 058 | Независимый reviewer load method | Frozen055 main Python/docs, свой report/WORK | REQUEST CHANGES: achieved concurrency/partial-failure latency evidence |
+| 059 | Новый developer load fixes | Только Python harness/helpers/tests/docs main | Исправляет REV058-01/02 без изменения production admission |
 
 Независимые review/security выполняются до live deploy. Unit/integration пишет
 разработчик; новые process/E2E — отдельный tester после approve и review тестов.
@@ -201,3 +206,21 @@ restore; клиенты поддерживают lease во время длит�
   получает schema4 (владелец057), E перенесена наschema5 до начала её runtime.
   Config/integration contracts синхронизированы. Все прежние latency FAIL/
   NOT-RUN сохраняются до реальной повторной приёмки; цели не ослаблены.
+
+- WORK055 frozen760f3d3c…dac16: opt-in offeredrate и persisteddefaults,
+  legacy сохранён,31 Pythonunit и tinyC39/39HTTP200 PASS. WORK058 проверяет
+  метод независимо; VPS/annual/D performance не запускались этим срезом.
+
+- Дополнительная сверка исходника §11.3/11.6: после основных D/performance/E
+  остаются полные MCP resources (rules/epic/report templates и board:// aliases),
+  prompts start-as-role/coordinate и CLI aliases/events follow. C сейчас
+  реализует только accord://notes resource; это не полный §11.3 PASS.
+  Проверить также delivery artifacts/документы по V1-08 при финальном gap audit.
+
+- WORK058 REQUEST CHANGES по методу055: нет actual HTTP concurrency;
+  при FAIL теряются partial latency/duration/pacing. 31unit/probes/tinyC PASS
+  не закрывают метод. WORK059 исправляет ровно два замечания до нового review.
+
+- Перед checkpoint055/058 coordinator убрал лишнюю пустую строку EOF в
+  catalog_runtime.py по git diff --check; semantic code не менялся.
+  Исторический freeze055/058 остаётся до этой whitespace-дельты.
