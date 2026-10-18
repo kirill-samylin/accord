@@ -16,6 +16,9 @@ func validateData(r Record) error {
 		if v.Title == "" || v.Role == "" || v.Type != "task" {
 			return invalid
 		}
+		if (v.Epic != nil && !validRef(*v.Epic, "epic")) || (v.Target != nil && !validRef(*v.Target, "task")) {
+			return invalid
+		}
 		switch v.State {
 		case "created", "ready", "in_progress", "done", "cancelled":
 		default:
@@ -33,7 +36,7 @@ func validateData(r Record) error {
 		}
 	case "link":
 		var v Link
-		if strict(r.Data, &v) != nil {
+		if strict(r.Data, &v) != nil || !validRef(v.From, "epic", "task") || !validRef(v.To, "epic", "task") {
 			return invalid
 		}
 		switch v.Type {
@@ -48,12 +51,15 @@ func validateData(r Record) error {
 		}
 	case "note":
 		var v Note
-		if strict(r.Data, &v) != nil || v.Text == "" || v.Kind == "" {
+		if strict(r.Data, &v) != nil || v.Text == "" || v.Kind == "" || (v.Epic != nil && !validRef(*v.Epic, "epic")) {
 			return invalid
 		}
 	case "history":
 		var v History
 		if strict(r.Data, &v) != nil || v.Type == "" || v.At.IsZero() || v.ConfigVersion < 0 || (v.TokensSpent != nil && *v.TokensSpent < 0) {
+			return invalid
+		}
+		if !validRef(v.OriginRef, "epic", "task", "note", "link") {
 			return invalid
 		}
 		if v.OriginSessionLabel != "" && !strings.Contains(v.OriginSessionLabel, ":") {
@@ -80,13 +86,7 @@ func ValidateReferences(records []Record, exists func(Ref) bool) []Diagnostic {
 		}
 	}
 	check := func(r Record, p string, ref Ref, allowed ...string) {
-		valid := false
-		for _, kind := range allowed {
-			if ref.Kind == kind {
-				valid = true
-			}
-		}
-		if !valid || ref.ExternalID == "" || len(ref.ExternalID) > 256 || (!known[identity(ref.Kind, ref.ExternalID)] && (exists == nil || !exists(ref))) {
+		if !validRef(ref, allowed...) || (!known[identity(ref.Kind, ref.ExternalID)] && (exists == nil || !exists(ref))) {
 			add(r, p, "REFERENCE")
 		}
 	}

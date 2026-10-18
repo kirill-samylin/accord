@@ -109,7 +109,7 @@ func TestAreasAndCapabilities(t *testing.T) {
 		t.Fatal("alias collision accepted")
 	}
 	m = configMap(t)
-	m["github"] = map[string]any{"webhook_secret_env": "WEBHOOK_SECRET", "task_key_pattern": "T-[0-9]+", "require_approval_for_merge": true, "events": []any{"pull_request"}}
+	m["github"] = map[string]any{"repository_allowlist": []any{"github.com/owner/repo"}, "webhook_secret_env": "WEBHOOK_SECRET", "task_key_pattern": "T-[0-9]+", "require_approval_for_merge": true, "events": []any{"pull_request"}}
 	if _, r := parseMap(t, m, Options{}); r.Valid {
 		t.Fatal("ignored integration")
 	}

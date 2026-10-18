@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"net/url"
 	"regexp"
 	"slices"
 	"strings"
@@ -34,25 +33,7 @@ func validateConfig(c *Config, o Options, r *Result) {
 	if c.Auth.GitHub != nil && !o.GitHubAuth {
 		add(r, "auth.github", "CONFIG_UNSUPPORTED", "GitHub authentication settings are not implemented")
 	}
-	if c.GitHub != nil {
-		if !o.GitHubEvents && len(c.GitHub.Events) > 0 {
-			add(r, "github.events", "CONFIG_UNSUPPORTED", "GitHub events are not implemented")
-		}
-		if _, err := regexp.Compile(c.GitHub.TaskKeyPattern); err != nil {
-			add(r, "github.task_key_pattern", "CONFIG_INVALID", "invalid Go regular expression")
-		}
-	}
-	if c.Notifications != nil {
-		if !o.Notifications && len(c.Notifications.Webhooks) > 0 {
-			add(r, "notifications.webhooks", "CONFIG_UNSUPPORTED", "notifications are not implemented")
-		}
-		for _, w := range c.Notifications.Webhooks {
-			u, err := url.Parse(w.URL)
-			if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.Fragment != "" {
-				add(r, "notifications.webhooks.url", "CONFIG_INVALID", "webhook URL must be absolute HTTPS without credentials or fragment")
-			}
-		}
-	}
+	validateIntegrations(c, o, r)
 	validateDurations(c, r)
 	for _, key := range []string{"one_task_per_agent", "cycle_check"} {
 		mode := c.Rules.OneTaskPerAgent.Mode

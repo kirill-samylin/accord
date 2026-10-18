@@ -344,6 +344,16 @@
               "pull_request_review"
             ]
           }
+        },
+        "repository_allowlist": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "maxLength": 256,
+            "pattern": "^github\\.com/[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9_.-]+$"
+          }
         }
       }
     },
@@ -375,7 +385,17 @@
                 "$ref": "#/$defs/env"
               },
               "events": {
-                "$ref": "#/$defs/names"
+                "type": "array",
+                "maxItems": 4,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "task_created_for_human",
+                    "escalated",
+                    "lease_expired",
+                    "epic_done"
+                  ]
+                }
               }
             }
           }

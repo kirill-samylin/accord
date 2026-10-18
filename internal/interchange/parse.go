@@ -66,7 +66,7 @@ func ParseWithReferences(r io.Reader, source string, validator Validator, exists
 			continue
 		}
 		var rec Record
-		if err := strict(raw, &rec); err != nil || rec.Kind == "" || rec.ExternalID == "" || len(rec.ExternalID) > 256 || bytes.IndexByte([]byte(rec.ExternalID), 0) >= 0 {
+		if err := strict(raw, &rec); err != nil || !validIdentity(rec.Kind, rec.ExternalID) {
 			add(line, "record", "RECORD")
 			continue
 		}

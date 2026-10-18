@@ -136,6 +136,7 @@ type MCP struct {
 	ToolsByRole      map[string][]string `json:"tools_by_role"`
 }
 type GitHub struct {
+	RepositoryAllowlist     []string `json:"repository_allowlist,omitempty"`
 	WebhookSecretEnv        string   `json:"webhook_secret_env"`
 	TaskKeyPattern          string   `json:"task_key_pattern"`
 	RequireApprovalForMerge bool     `json:"require_approval_for_merge"`

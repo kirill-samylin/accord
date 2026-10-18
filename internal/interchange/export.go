@@ -29,7 +29,7 @@ func Encode(w io.Writer, manifest Manifest, next NextRecord) error {
 		if err != nil {
 			return err
 		}
-		if r.ExternalID == "" || len(r.ExternalID) > 256 || CheckJSON(r.Data, 32) != nil || validateData(r) != nil {
+		if !validIdentity(r.Kind, r.ExternalID) || CheckJSON(r.Data, 32) != nil || validateData(r) != nil {
 			return errors.New("invalid export record")
 		}
 		// Re-marshal the strict DTO to ensure only the explicit portability schema is
