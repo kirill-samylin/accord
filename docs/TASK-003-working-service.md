@@ -97,6 +97,8 @@ restore; клиенты поддерживают lease во время длит�
 | 064 | Независимый security performance | Frozen b9fdc155; свой report/WORK | Authority/replay/cache/COW/migration4, известные063 blockers |
 | 065 | Независимый review backup budget | Frozen aeb085c0; свой report/WORK | Policy/source/new tests062, без live deletion |
 | 066 | Новый developer performance fixes | Изолированная codex/performance-fixes отb9fdc155 | R063-01/02, unit regression и аудит аналогичных outward wrappers |
+| 067 | Developer pure integration config | Изолированная codex/integration-config от approved D+E libs | Explicit repository allowlist, endpoint validation/dedupe, Encode NUL; без SQL/runtime |
+| 068 | Независимый backup process tester | Изолированная codex/backup-qa отd433718 | Real CLI/wrapper standalone harness после APPROVE065; Linux позже |
 
 Независимые review/security выполняются до live deploy. Unit/integration пишет
 разработчик; новые process/E2E — отдельный tester после approve и review тестов.
@@ -273,3 +275,11 @@ restore; клиенты поддерживают lease во время длит�
   old tasks.go negative control2 PASS. Отчёт committed cb5388b8 в performance.
   WORK066 исправляет этот пакет в отдельной копии; security064 проверяет
   исходный frozen b9 независимо. Backup062 committed aeb085c0, review065 идёт.
+- WORK064 final REQUEST CHANGES: те же R063-01/02 независимо FAIL3, новых
+  security blockers нет; targeted23/race5/readiness5 PASS, source48 unchanged.
+- WORK065 APPROVE aeb085c0: независимые32unit+7focused probes PASS.
+  Review committed d433718, дальнейшая process проверка068 использует real Go CLI;
+  Linux/VPS/лимиты/retention actual deletion plan остаются NOT-RUN.
+- WORK067 — независимая pure подготовка E до SQL/schema5: optional allowlist
+  при disabled events может быть[], при enabled обязательно1..16; metadata
+  project.repository не даёт доверия. Runtime integration пока отсутствует.

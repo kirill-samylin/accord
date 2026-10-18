@@ -43,10 +43,12 @@ keys, outbox jobs, секреты или действующие leases. Restore 
 
 Сейчас `internal/config/types.go` и embedded schema не содержат repository
 allowlist. В E добавить optional `github.repository_allowlist`: unique array
-1..16 строк `github.com/<owner>/<repo>`, ASCII owner/repo, ≤256bytes на строку,
+до16 строк `github.com/<owner>/<repo>`, ASCII owner/repo, ≤256bytes на строку,
 без scheme/.git/query/fragment/port; lower-case canonical comparison. При
-непустом github.events allowlist обязателен; пустое значение → CONFIG_INVALID,
-никакого неявного wildcard. Это additive язык config version1; старые binary
+непустом github.events allowlist обязателен и содержит1..16 элементов;
+отсутствие/пустой массив → CONFIG_INVALID. При disabled events отсутствие/[]
+допустимы и означают отсутствие доверенных репозиториев, никогда wildcard.
+Это additive язык config version1; старые binary
 не понимают новое поле, поэтому config применяют только после upgrade.
 `project.repository` уже существует в D как необязательная строка метаданных
 (`internal/config/types.go`, обе JSON Schema). Это не allowlist и не полномочие:
