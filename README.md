@@ -102,7 +102,8 @@ JSON
 ```
 
 Supported operations: `describe`, `create`, `get`, `next`, `update`,
-`transition`, `release`, `link`, `comment`, `heartbeat`, `events`. The CLI
+`transition`, `release`, `link`, `comment`, `heartbeat`, `events`, `note`,
+`tasks`, `epics`, `sessions`, `notes` and `stats`. The CLI
 accepts the DTOs in [api.md](docs/api.md), including `task_key` for path routes.
 `--server` defaults to `http://127.0.0.1:8080`; plain HTTP is allowed only with a
 literal loopback address. Remote client URLs must use HTTPS. Redirects are
