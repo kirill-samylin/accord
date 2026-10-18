@@ -52,9 +52,11 @@ func sqlString(t *testing.T, db *sql.DB, query string) string {
 	return value
 }
 
-func migrationSnapshot(t *testing.T, b *board) string {
+func migrationSnapshot(t *testing.T, b *board) string { return migrationSnapshotVersion(t, b, 1) }
+
+func migrationSnapshotVersion(t *testing.T, b *board, version int) string {
 	t.Helper()
-	paths, err := filepath.Glob(b.db + ".migrations/schema1-*.db")
+	paths, err := filepath.Glob(fmt.Sprintf("%s.migrations/schema%d-*.db", b.db, version))
 	if err != nil || len(paths) != 1 {
 		t.Fatal("migration did not publish exactly one backup")
 	}
@@ -76,8 +78,8 @@ func migrationSnapshot(t *testing.T, b *board) string {
 		}
 	}
 	db := inspectDatabase(t, paths[0])
-	if sqlString(t, db, "PRAGMA user_version") != "1" || sqlString(t, db, "PRAGMA integrity_check") != "ok" {
-		t.Fatal("backup does not retain valid pre-migration schema1")
+	if sqlString(t, db, "PRAGMA user_version") != fmt.Sprint(version) || sqlString(t, db, "PRAGMA integrity_check") != "ok" {
+		t.Fatal("backup does not retain valid pre-migration schema")
 	}
 	return paths[0]
 }
@@ -90,10 +92,23 @@ func TestCatalogLegacySchemaProcessMigrationBackupRestart(t *testing.T) {
 	eventRow := sqlString(t, before, "SELECT data FROM events WHERE cursor=1")
 	replayRow := sqlString(t, before, "SELECT response FROM idempotency WHERE key='synthetic-legacy-replay'")
 	before.Close()
-	b.start() // This actual server process performs schema migration.
+	// Migrate offline before the server's immediate Sweep normalizes entity
+	// JSON. The stale expected0 is checked after compatibility migration v1;
+	// rejection must leave the historical task/event/replay bytes untouched.
+	template := command(nil, "config", "init", "--profile", "davinci")
+	if template.err != nil {
+		t.Fatal("migration input init failed")
+	}
+	candidate := filepath.Join(filepath.Dir(b.db), "migration.yaml")
+	if err := os.WriteFile(candidate, bytes.ReplaceAll(template.data, []byte("OWNER"), []byte("acceptance")), 0600); err != nil {
+		t.Fatal(err)
+	}
+	migrated := command(nil, "config", "apply", "--db", b.db, "--file", candidate, "--expected-version", "0", "--actor", "qa056", "--bootstrap-owner", "acceptance", "--project", "agent-board", "--task-ttl", "30s", "--session-ttl", "1m")
+	localFails(t, migrated, "CONFIG_CONFLICT")
 	snapshot := migrationSnapshot(t, b)
 	db := inspectDatabase(t, b.db)
-	if sqlString(t, db, "PRAGMA user_version") != "2" || sqlString(t, db, "SELECT data FROM tasks WHERE key='T-2'") != taskRow || sqlString(t, db, "SELECT data FROM events WHERE cursor=1") != eventRow || sqlString(t, db, "SELECT response FROM idempotency WHERE key='synthetic-legacy-replay'") != replayRow {
+	if sqlString(t, db, "PRAGMA user_version") != "3" || sqlString(t, db, "SELECT data FROM tasks WHERE key='T-2'") != taskRow || sqlString(t, db, "SELECT data FROM events WHERE cursor=1") != eventRow || sqlString(t, db, "SELECT response FROM idempotency WHERE key='synthetic-legacy-replay'") != replayRow {
+
 		t.Fatal("migration rewrote historical rows or exact replay payload")
 	}
 	backupDB := inspectDatabase(t, snapshot)
@@ -103,6 +118,7 @@ func TestCatalogLegacySchemaProcessMigrationBackupRestart(t *testing.T) {
 	if sqlString(t, backupDB, "SELECT data FROM tasks WHERE key='T-2'") != taskRow || sqlString(t, backupDB, "SELECT data FROM events WHERE cursor=1") != eventRow || sqlString(t, backupDB, "SELECT response FROM idempotency WHERE key='synthetic-legacy-replay'") != replayRow {
 		t.Fatal("pre-migration backup omitted historical state")
 	}
+	b.start() // Runtime Sweep may serialize additive default fields after migration.
 	c := newClient(t, b, "legacy-reader")
 	c.open(t, "coordinator", "legacy-reader")
 	legacy := decode[core.Task](t, c.ok(t, "get", payload{"task_key": "T-2"}))
@@ -114,7 +130,7 @@ func TestCatalogLegacySchemaProcessMigrationBackupRestart(t *testing.T) {
 	if !stat.IncompleteData || stat.IncompleteEvents != 1 || stat.Totals.FirstCompletions != 0 {
 		t.Fatal("legacy event provenance was inferred instead of marked incomplete")
 	}
-	note := decode[core.Note](t, c.ok(t, "note", payload{"action": "create", "scope_type": "epic", "scope_id": "E-1", "source_task_key": "T-2", "text": "Schema2 accepts notes after migration"}))
+	note := decode[core.Note](t, c.ok(t, "note", payload{"action": "create", "scope_type": "epic", "scope_id": "E-1", "source_task_key": "T-2", "text": "Schema3 accepts notes after migration"}))
 	stat = decode[core.Stats](t, c.ok(t, "stats", statInput))
 	incompleteBeforeRestart := stat.IncompleteEvents
 	b.stop()
@@ -122,13 +138,13 @@ func TestCatalogLegacySchemaProcessMigrationBackupRestart(t *testing.T) {
 	migrationSnapshot(t, b) // Restart must not migrate or create another backup.
 	notes := decode[core.NotesPage](t, c.ok(t, "notes", payload{"scope_type": "epic", "scope_id": "E-1"}))
 	if len(notes.Notes) != 1 || notes.Notes[0].Key != note.Key {
-		t.Fatal("schema2 notes lost on post-migration restart")
+		t.Fatal("schema3 notes lost on post-migration restart")
 	}
 	stat = decode[core.Stats](t, c.ok(t, "stats", statInput))
 	if !stat.IncompleteData || stat.IncompleteEvents != incompleteBeforeRestart || sqlString(t, db, "SELECT data FROM events WHERE cursor=1") != eventRow {
 		t.Fatal("restart erased legacy incomplete proof")
 	}
-	t.Log("C-04 canonical synthetic schema1 migrated in actual server; backup/hash and historical bytes retained; schema2 restart passed")
+	t.Log("C-04 canonical synthetic schema1 migrated by real offline CLI; backup/hash and historical bytes retained; schema3 restart passed")
 }
 
 func TestCatalogMigrationProcessFailuresAtomic(t *testing.T) {

@@ -250,7 +250,7 @@ func proxyEnvironment(external string) []string {
 func startProxyBoard(t *testing.T, external string, extra ...string) *board {
 	t.Helper()
 	b := newBoard(t, "1m")
-	args := append([]string{"serve", "--db", b.db, "--listen", "127.0.0.1:0"}, extra...)
+	args := append([]string{"serve", "--db", b.db, "--listen", "127.0.0.1:0", "--bootstrap-owner", "acceptance"}, extra...)
 	b.cmd = exec.Command(binary, args...)
 	b.cmd.Env = proxyEnvironment(external)
 	out, err := b.cmd.StdoutPipe()

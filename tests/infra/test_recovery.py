@@ -142,6 +142,36 @@ class ActivationTests(unittest.TestCase):
         self.assertEqual(os.readlink(self.current), self.previous)
         self.assert_preserved()
 
+    def test_schema2_to3_change_blocks_previous_executable_recovery(self):
+        with sqlite3.connect(self.database) as database:
+            database.execute('PRAGMA user_version=2')
+        def migrate():
+            with sqlite3.connect(self.database) as database:
+                database.execute('PRAGMA user_version=3')
+                database.execute("UPDATE data SET value='schema3-preserved'")
+        self.on_start = migrate
+        self.ready = [False]
+        with self.assertRaisesRegex(RuntimeError, 'compatibility unproven'):
+            self.activate()
+        self.assertEqual(self.starts, 1)
+        self.assertEqual(os.readlink(self.current), 'releases/' + self.new)
+        self.assert_inspection()
+        with sqlite3.connect(self.database) as database:
+            self.assertEqual(database.execute('PRAGMA user_version').fetchone()[0], 3)
+            self.assertEqual(database.execute('SELECT value FROM data').fetchone()[0],
+                             'schema3-preserved')
+
+    def test_unchanged_schema3_allows_previous_executable_recovery(self):
+        with sqlite3.connect(self.database) as database:
+            database.execute('PRAGMA user_version=3')
+        self.original = self.database.read_bytes()
+        self.fail_starts = {1}
+        with self.assertRaisesRegex(RuntimeError, 'previous executable restored and ready'):
+            self.activate()
+        self.assertEqual(self.starts, 2)
+        self.assertEqual(os.readlink(self.current), self.previous)
+        self.assert_preserved()
+
     def test_unversioned_ddl_change_also_blocks_recovery(self):
         def migrate():
             with sqlite3.connect(self.database) as database:
