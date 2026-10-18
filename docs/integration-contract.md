@@ -9,8 +9,10 @@
 
 ## 1. Владение и миграция
 
-E начинается после интеграции D/schema3. Один назначенный store-исполнитель
-владеет schema4, core DTO и gate evaluator; другой не создаёт migration4.
+E начинается после интеграции D/schema3 и performance/schema4 по
+[контракту053](performance-contract-053.md). Performance schema4 принадлежит
+WORK057; E store-исполнитель будет владеть schema5, core DTO и gate evaluator.
+Другой исполнитель не создаёт параллельную migration5.
 Общий механизм D: private pre-migration backup, write-lock, повторная проверка
 версии, все DDL/backfill/user_version в одной транзакции. Более новая схема
 отвергается до DDL; binary rollback не откатывает данные. Backup/restore,
@@ -328,6 +330,6 @@ JSONL malformed last line/duplicates/cycles/active lease/new config -> zero
 import writes; same-file replay after restart; changed-file upsert; foreign
 session/approve/attempt injection не открывает даже completed gate; history
 не улучшает stats как новое выполнение. Export+import stable mappings/history.
-Migration3→4 crash/backup/reset/oldbinary rejection, race current config apply.
+Migration4→5 crash/backup/reset/oldbinary rejection, race current config apply.
 После code+security approve отдельный tester пишет process/E2E и проходит review.
 Реальный GitHub/outgoing provider/browser/второйПК — NOT-RUN до условий выше.

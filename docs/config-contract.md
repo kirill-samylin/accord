@@ -11,7 +11,9 @@
 Разные счётчики: YAML `version: 1` — язык конфигурации;
 `config_version` — монотонная применённая редакция; `PRAGMA user_version` — БД.
 C получает schema2: notes и additive данные/события. D получает schema3:
-config_history/config_active/token scopes. Последовательные миграции принадлежат
+config_history/config_active/token scopes. Performance получает schema4 по
+[контракту053](performance-contract-053.md), последующий E — schema5.
+Последовательные миграции принадлежат
 одному исполнителю store/integration; не создавать параллельные migration2.
 DDL, backfill и user_version фиксируются одной SQLite write-транзакцией.
 До миграции — проверенный backup; crash до commit оставляет прежнюю схему.

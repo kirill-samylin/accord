@@ -76,6 +76,10 @@ restore; клиенты поддерживают lease во время длит�
 | 051 | Независимый security D | Тот же frozen D; только свой report/WORK в main | REQUEST CHANGES: single_editor + общие050 findings |
 | 052 | Новый developer D fixes | Изолированная codex/config-fixes от932aa2a | Единый пакет050/051, узкие source/unit fixes |
 | 053 | Архитектор performance | Read-only C1e9025c + private profiling; свой contract/WORK | Причина load FAIL и исполнимый безопасный fix contract |
+| 054 | Независимый code/security recheck D | Frozen052 codex/config-fixes; свой report/WORK в main | Проверка всех050/051 findings и delta-regressions |
+| 055 | Developer load method | Только Python acceptance harness/helpers/unit/doc; main | Явный offered-rate режим без ослабления native admission |
+| 056 | Отдельный tester D | Изолированная codex/config-qa отd5a3a12, только tests/docs | Process приёмка D после APPROVE054, TTL/bootstrap/schema3 fixtures |
+| 057 | Developer performance | Изолированная codex/performance отd5a3a12 | Единственный schema4 owner: cache/COW/dirty/events/stats, полный053 contract |
 
 Независимые review/security выполняются до live deploy. Unit/integration пишет
 разработчик; новые process/E2E — отдельный tester после approve и review тестов.
@@ -183,3 +187,17 @@ restore; клиенты поддерживают lease во время длит�
   sampled serverRSS35.72MiB и populatedstartup28.27ms PASS. Нужен отдельный
   performance analysis/fix/review/retest; успешный deploy не означает готовность.
   Leaf CPU100%/512MiB подтверждены, effective ancestors unavailable, sharedVPS.
+
+- WORK052 frozen source13899d45…2732,25 filehash,8 regressions/50 targeted/
+  11race/vet PASS; автор воспроизвёл6 исходныхdefects старым productionoverlay.
+  WORK054 выполняет независимый code/security recheck; processDQA ещёNOT-RUN.
+
+- WORK054 APPROVE code/security d5a3a12: все6 original probes PASS и EXPECTED
+  FAIL наoldGit baseline,142 unit/integration/16race/vet PASS.
+  WORK056 начинает D processQA; performance053 остаётся обязательнымblocker.
+
+- WORK053 завершена: local profiles подтверждают full-board persistence и annual
+  event scan bottlenecks. Root принял технический contract053: performance
+  получает schema4 (владелец057), E перенесена наschema5 до начала её runtime.
+  Config/integration contracts синхронизированы. Все прежние latency FAIL/
+  NOT-RUN сохраняются до реальной повторной приёмки; цели не ослаблены.
