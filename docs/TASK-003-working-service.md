@@ -1,7 +1,7 @@
 # TASK-003 — рабочий общий Accord
 
-- Статус: в работе; этап: performance source review063, D processQA056 FAIL,
-  ограничение backup062 и E foundations.
+- Статус: в работе; этап: performance fixes review069, D processQA056 FAIL,
+  backup process068/method review070 и E pure config067.
 - Источник: пользователь18.10.2026 поручил доделать оставшееся до рабочего проекта.
 - База:966dda6, рабочая ветка codex/pilot, репозиторий Accord.
 - Координатор: основной агент. Общую карточку редактирует только координатор.
@@ -28,6 +28,8 @@
   42d32f78…c2d6; schema4 owner один, live production ещё не менялась.
   Метод059 APPROVE061; два source blocker063 открыты.
   Авторские unit/race и local annual diagnostic не заменяют target acceptance.
+- Performance fixes: codex/performance-fixes96f3bfd, sourcef3037b91…1370;
+  автор066 закрыл R063-01/02, независимый re-review069 выполняется.
 - E pure libraries: integration-libs-003/codex/integration-libs,59ae1a1,
   автор044, APPROVE046; SQL/runtime/schema5 и включение доставок отсутствуют.
 - Непосредственно далее: завершить057 и062,
@@ -99,6 +101,9 @@ restore; клиенты поддерживают lease во время длит�
 | 066 | Новый developer performance fixes | Изолированная codex/performance-fixes отb9fdc155 | R063-01/02, unit regression и аудит аналогичных outward wrappers |
 | 067 | Developer pure integration config | Изолированная codex/integration-config от approved D+E libs | Explicit repository allowlist, endpoint validation/dedupe, Encode NUL; без SQL/runtime |
 | 068 | Независимый backup process tester | Изолированная codex/backup-qa отd433718 | Real CLI/wrapper standalone harness после APPROVE065; Linux позже |
+| 069 | Независимый code/security recheck | Frozen performance-fixes96f3bfd; свои report/WORK | Closure R063-01/02 и новые unit066 |
+| 070 | Независимый pure/test reviewer | Frozen config067d1d3fb87 и backup method0687200cc9; свои docs в main | Два отдельных verdict, без source/runtime claims |
+| 071 | Архитектор native completion | Read-only source/контракты; свои docs в main | MCP resources/prompts, CLI, packaging/observability gap audit |
 
 Независимые review/security выполняются до live deploy. Unit/integration пишет
 разработчик; новые process/E2E — отдельный tester после approve и review тестов.
@@ -283,3 +288,12 @@ restore; клиенты поддерживают lease во время длит�
 - WORK067 — независимая pure подготовка E до SQL/schema5: optional allowlist
   при disabled events может быть[], при enabled обязательно1..16; metadata
   project.repository не даёт доверия. Runtime integration пока отсутствует.
+- WORK066 frozen96f3bfd: affected43unit/race PASS, final5регрессий+3reviewer
+  probes PASS8, b9 negative control EXPECTED FAIL8. Независимый069 ещё нужен.
+- WORK067 frozen14files committed d1d3fb87; parser/interchange/github/notifications
+  unit/race/vet PASS, source approval070 не выдан.
+- WORK068 frozen7200cc9: Mac actual C binary/schema2, process6/support4 PASS;
+  bootstrap/readonly plan/retention/unsafe-source/isolated revoke/reset проверены.
+  Это маленькая БД, tasks/notes/sessions пусты; Linux/annual/liveWAL NOT-RUN.
+  Метод review070; delivery5/evidence9 hashes сверены root. После frozen передачи
+  idle author остановлен coordinator, дополнительных прогонов не выполнялось.
