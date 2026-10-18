@@ -131,6 +131,8 @@ func configCommand(args []string, out io.Writer) error {
 					return errors.New("migration requires explicit bootstrap-owner, project, task-ttl and session-ttl")
 				}
 				s, err = store.Open(*db, core.Config{BootstrapUsers: []string{*owner}, Project: *project, LeaseTTL: *taskTTL, SessionTTL: *sessionTTL}, nil)
+			} else if schema < store.SchemaVersion {
+				s, err = store.Open(*db, core.Config{}, nil)
 			} else {
 				if *expected == 0 {
 					if *owner == "" || *project == "" || *taskTTL < time.Second || *sessionTTL < time.Second {

@@ -21,18 +21,36 @@ def switch(base, revision):
             temporary.unlink()
 
 
-def healthy():
-    # Local readiness never inherits an HTTP proxy from the operator shell.
+def healthy(timeout=15):
+    # A schema4 migration measured 29.1s locally on the annual fixture. Install
+    # uses a separate 300s cap only for older schemas; normal restart keeps15s.
+    # A dead/restarting service fails immediately instead of consuming the cap.
     client = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-    for _ in range(30):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return False
         try:
-            with client.open('http://127.0.0.1:7892/readyz', timeout=1) as response:
+            with client.open('http://127.0.0.1:7892/readyz', timeout=min(1, remaining)) as response:
                 if response.status == 200:
                     return True
         except OSError:
             pass
-        time.sleep(0.5)
+        if not service_active():
+            return False
+        time.sleep(min(0.5, max(0, deadline - time.monotonic())))
     return False
+
+
+def service_active():
+    try:
+        result = subprocess.run(['systemctl', 'is-active', '--quiet', 'accord.service'],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                timeout=1, check=False)
+        return result.returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
 
 
 def check_guard(state):
@@ -93,7 +111,7 @@ def schema_snapshot(state):
         database.close()
 
 
-def activate(previous, revision, state, command, switch, healthy):
+def activate(previous, revision, state, command, switch, healthy, migration_healthy=None):
     """Activate once, restoring a previous executable only on known compatible schema."""
     check_guard(state)
     # If stop itself fails the executable and database have not been changed.
@@ -109,7 +127,10 @@ def activate(previous, revision, state, command, switch, healthy):
         switch(revision)
         check_guard(state)
         command('systemctl', 'start', 'accord.service')
-        if not healthy():
+        checker = healthy
+        if before is not None and before[0] in (1, 2, 3) and migration_healthy is not None:
+            checker = migration_healthy
+        if not checker():
             raise RuntimeError('new executable failed readiness')
     except FAILURES as failure:
         recover(previous, before, state, command, switch, healthy, failure)
@@ -127,7 +148,7 @@ def recover(previous, before, state, command, switch, healthy, failure):
     try:
         check_guard(state)
         after = schema_snapshot(state)
-        if before is None or before[0] not in (1, 2, 3) or before != after:
+        if before is None or before[0] not in (1, 2, 3, 4) or before != after:
             raise RuntimeError('database schema changed or compatibility is unknown')
     except FAILURES as error:
         inspection_required(state, 'activation failed; service stopped; database compatibility unproven; '

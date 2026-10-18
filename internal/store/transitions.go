@@ -113,6 +113,7 @@ func (s *Store) Transition(ctx context.Context, a core.Actor, in core.Transition
 }
 func reopenEpic(b *board, key string, now time.Time, session string) {
 	if epic := b.Tasks[key]; epic != nil && epic.State == "done" {
+		epic = b.editTask(epic.Key)
 		epic.State = "open"
 		epic.Version++
 		emit(b, now, "epic_reopened", key, session)

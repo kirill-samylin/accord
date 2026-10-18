@@ -35,7 +35,7 @@ func (s *Store) Create(ctx context.Context, a core.Actor, in core.CreateInput) (
 			if err := requireCreate(b, sess, "task"); err != nil {
 				return zero, err
 			}
-			epic, err := taskFor(b, in.EpicKey)
+			epic, err := readTaskFor(b, in.EpicKey)
 			if err != nil {
 				return zero, err
 			}
@@ -55,7 +55,7 @@ func (s *Store) Create(ctx context.Context, a core.Actor, in core.CreateInput) (
 				t.State = "created"
 			}
 			if verifier(b, in.Role) {
-				target, err := taskFor(b, in.TargetKey)
+				target, err := readTaskFor(b, in.TargetKey)
 				if err != nil {
 					return zero, err
 				}
@@ -84,7 +84,7 @@ func (s *Store) Create(ctx context.Context, a core.Actor, in core.CreateInput) (
 		if err := validateMetadata(b, t); err != nil {
 			return zero, err
 		}
-		b.Tasks[t.Key] = t
+		b.putTask(t)
 		emitWarnings(b, t, now, a.SessionID)
 		emit(b, now, "task_created", t.Key, a.SessionID)
 		return viewTask(b, t), nil
@@ -102,7 +102,7 @@ func (s *Store) Get(ctx context.Context, a core.Actor, in core.GetInput) (core.T
 		if err := toolAllowed(b, sess.Role, "get"); err != nil {
 			return core.Task{}, err
 		}
-		t, err := taskFor(b, in.TaskKey)
+		t, err := readTaskFor(b, in.TaskKey)
 		if err != nil {
 			return core.Task{}, err
 		}
@@ -111,13 +111,13 @@ func (s *Store) Get(ctx context.Context, a core.Actor, in core.GetInput) (core.T
 }
 func (s *Store) Next(ctx context.Context, a core.Actor, in core.NextInput) (core.Claim, error) {
 	return mutate(s, ctx, a, in.RequestID, "next", in, func(b *board, sess *core.Session, now time.Time) (core.Claim, error) {
-		for _, t := range b.Tasks {
+		for _, t := range b.ownedTasks(a.SessionID) {
 			if t.Lease != nil && t.Lease.SessionID == a.SessionID {
 				return core.Claim{}, core.Fail("lease_held", "session already owns a task")
 			}
 		}
 		candidates := make([]*core.Task, 0)
-		for _, t := range b.Tasks {
+		for _, t := range b.roleTasks(sess.Role) {
 			epic := b.Tasks[t.EpicKey]
 			if epic == nil || epic.Type != "epic" || epic.State != "open" {
 				continue
@@ -157,7 +157,7 @@ func (s *Store) Next(ctx context.Context, a core.Actor, in core.NextInput) (core
 			}
 			return core.Claim{ConfigVersion: b.Config.ConfigVersion, Queue: sessionQueueSummary(b, sess, now)}, nil
 		}
-		t := candidates[0]
+		t := b.editTask(candidates[0].Key)
 		t.Warnings = nil
 		if err := claimRules(b, t, sess, now); err != nil {
 			return core.Claim{}, err

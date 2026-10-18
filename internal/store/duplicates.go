@@ -35,7 +35,11 @@ func checkDuplicate(b *board, t *core.Task, sess *core.Session, force bool, reas
 	if mode == "off" || t.Type != "task" || terminalState(t.State) {
 		return nil
 	}
-	for _, other := range b.Tasks {
+	candidates := b.titleCandidates(t)
+	if b.Config.Workflow.Rules.DuplicateCheck.Threshold == 0 {
+		candidates = b.roleIndependentTasks()
+	}
+	for _, other := range candidates {
 		if other.Key == t.Key || other.Type != "task" || other.EpicKey != t.EpicKey || terminalState(other.State) {
 			continue
 		}

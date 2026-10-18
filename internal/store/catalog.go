@@ -40,11 +40,10 @@ func (s *Store) listTasks(ctx context.Context, a core.Actor, in core.ListInput, 
 		if err != nil {
 			return page, err
 		}
-		keys := make([]string, 0, len(b.Tasks))
-		for key := range b.Tasks {
-			keys = append(keys, key)
+		if b.index == nil {
+			b.index = buildIndexes(b)
 		}
-		sort.Slice(keys, func(i, j int) bool { return numericKey(keys[i]) < numericKey(keys[j]) })
+		keys := b.index.Order
 		last := c.After
 		more := false
 		for _, key := range keys {

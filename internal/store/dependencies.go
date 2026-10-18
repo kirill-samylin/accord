@@ -33,7 +33,7 @@ func cycle(b *board, from, to string) bool {
 }
 func (s *Store) Link(ctx context.Context, a core.Actor, in core.LinkInput) (core.Task, error) {
 	return mutate(s, ctx, a, in.RequestID, "link", in, func(b *board, sess *core.Session, now time.Time) (core.Task, error) {
-		source, err := taskFor(b, in.From)
+		source, err := readTaskFor(b, in.From)
 		if err != nil {
 			return core.Task{}, err
 		}
@@ -42,7 +42,7 @@ func (s *Store) Link(ctx context.Context, a core.Actor, in core.LinkInput) (core
 			return core.Task{}, err
 		}
 		if in.Type == "duplicate_of" {
-			return duplicateLink(b, source, target, sess, in, now)
+			return duplicateLink(b, b.editTask(source.Key), target, sess, in, now)
 		}
 
 		if target.Lease != nil || in.Generation != 0 {

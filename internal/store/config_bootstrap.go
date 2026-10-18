@@ -98,17 +98,3 @@ func runtimeConfig(snapshot *config.Snapshot, version int64) core.Config {
 	task, role, session, _ := snapshot.TTLs()
 	return core.Config{SessionTTL: session, RoleTTL: role, LeaseTTL: task, Project: c.Project.Name, ConfigVersion: version, Snapshot: snapshot, Workflow: c, Notes: core.NoteLimits{MaxPerRole: c.Notes.MaxPerRole, MaxBytesPerRole: c.Notes.MaxBytesPerRole, MaxPerEpic: c.Notes.MaxPerEpic, MaxBytesPerEpic: c.Notes.MaxBytesPerEpic}}
 }
-
-func loadActiveConfig(ctx context.Context, tx *sql.Tx) (core.Config, error) {
-	var version int64
-	var raw []byte
-	err := tx.QueryRowContext(ctx, `SELECT h.version,h.canonical_json FROM config_history h JOIN config_active a ON a.version=h.version WHERE a.id=1`).Scan(&version, &raw)
-	if err != nil {
-		return core.Config{}, err
-	}
-	snapshot, result := config.Parse(raw, config.Options{})
-	if !result.Valid {
-		return core.Config{}, core.Fail("CONFIG_INTERNAL", "persisted configuration is invalid")
-	}
-	return runtimeConfig(snapshot, version), nil
-}

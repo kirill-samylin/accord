@@ -40,7 +40,15 @@ func gateSuccessful(b *board, t *core.Task, condition string, visiting map[strin
 }
 
 func blocked(b *board, t *core.Task) bool {
-	return gateBlocked(b, t, map[string]bool{})
+	if value, ok := b.gateMemo[t.Key]; ok {
+		return value
+	}
+	value := gateBlocked(b, t, map[string]bool{})
+	if b.gateMemo == nil {
+		b.gateMemo = map[string]bool{}
+	}
+	b.gateMemo[t.Key] = value
+	return value
 }
 
 // The newest applicable assignment supersedes older results of the same role.
@@ -63,7 +71,7 @@ func latestVerification(b *board, targetKey, role string) *core.Task {
 	}
 	var latest *core.Task
 	var latestOrder int64
-	for _, candidate := range b.Tasks {
+	for _, candidate := range b.reviews(targetKey) {
 		r := candidate.Review
 		if candidate.Role != role || r == nil || r.TargetKey != targetKey || r.TargetCommit != target.Evidence.Text("commit") || r.TargetGeneration != 0 && r.TargetGeneration != target.Generation {
 			continue
@@ -83,12 +91,21 @@ func latestVerification(b *board, targetKey, role string) *core.Task {
 // Follow dependencies even through completed tasks: keeping a child's done
 // history must not make its invalidated result satisfy downstream gates.
 // Implicit review-target edges can form cycles; they fail closed as well.
-func gateBlocked(b *board, t *core.Task, visiting map[string]bool) bool {
+func gateBlocked(b *board, t *core.Task, visiting map[string]bool) (value bool) {
 	if visiting[t.Key] {
 		return true
 	}
+	if cached, ok := b.gateMemo[t.Key]; ok {
+		return cached
+	}
 	visiting[t.Key] = true
-	defer delete(visiting, t.Key)
+	defer func() {
+		delete(visiting, t.Key)
+		if b.gateMemo == nil {
+			b.gateMemo = map[string]bool{}
+		}
+		b.gateMemo[t.Key] = value
+	}()
 	if t.Review != nil {
 		target := b.Tasks[t.Review.TargetKey]
 		if target == nil || target.State != "done" || target.Evidence.Text("commit") != t.Review.TargetCommit || (t.Review.TargetGeneration != 0 && target.Generation != t.Review.TargetGeneration) || gateBlocked(b, target, visiting) {
@@ -96,7 +113,7 @@ func gateBlocked(b *board, t *core.Task, visiting map[string]bool) bool {
 		}
 	}
 	if t.Type == "epic" {
-		for _, child := range b.Tasks {
+		for _, child := range b.children(t.Key) {
 			if child.EpicKey == t.Key && child.State != "cancelled" && !(child.State == "done" && child.Review != nil && (!verificationCurrent(b, child) || !activeVerification(b, child))) && !gateSuccessful(b, child, "", visiting) {
 				return true
 			}
@@ -121,7 +138,7 @@ func epicClosable(b *board, key string) error {
 		}
 	}
 	targets := map[string]bool{}
-	for _, child := range b.Tasks {
+	for _, child := range b.children(key) {
 		if child.EpicKey != key {
 			continue
 		}
@@ -138,9 +155,11 @@ func epicClosable(b *board, key string) error {
 			return core.Fail("rule_violation", "epic contains unsatisfied gates")
 		}
 	}
-	for _, check := range b.Tasks {
-		if check.Review != nil && targets[check.Review.TargetKey] && !hasCurrentVerification(b, check.Review.TargetKey, check.Role) {
-			return core.Fail("rule_violation", "epic requires current positive verification for each required role")
+	for targetKey := range targets {
+		for _, check := range b.reviews(targetKey) {
+			if check.Review != nil && targets[check.Review.TargetKey] && !hasCurrentVerification(b, check.Review.TargetKey, check.Role) {
+				return core.Fail("rule_violation", "epic requires current positive verification for each required role")
+			}
 		}
 	}
 	return nil
@@ -151,8 +170,9 @@ func epicClosable(b *board, key string) error {
 // without rewriting completed child attempts or their evidence.
 func reconcileEpics(b *board, now time.Time, session string) {
 	keys := make([]string, 0)
-	for key, task := range b.Tasks {
-		if task.Type == "epic" && task.State == "done" {
+	for key := range b.affected() {
+		task := b.Tasks[key]
+		if task != nil && task.Type == "epic" && task.State == "done" {
 			keys = append(keys, key)
 		}
 	}

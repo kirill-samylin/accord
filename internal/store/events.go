@@ -30,50 +30,47 @@ func (s *Store) Events(ctx context.Context, a core.Actor, in core.EventsInput) (
 		if err := persistNewEvents(ctx, b); err != nil {
 			return page, err
 		}
-		rows, err := b.tx.QueryContext(ctx, `SELECT cursor,data FROM events WHERE cursor>? AND cursor<=? ORDER BY cursor`, in.SinceCursor, page.HighWater)
-		if err != nil {
-			return page, err
-		}
-		defer rows.Close()
-		for rows.Next() {
-			var cursor int64
-			var raw []byte
-			if err = rows.Scan(&cursor, &raw); err != nil {
-				return page, err
-			}
-			var e core.Event
-			if err = json.Unmarshal(raw, &e); err != nil {
-				return page, err
-			}
-			matches := in.TaskKey == "" || in.TaskKey == e.TaskKey
-			if len(in.Types) > 0 {
-				found := false
-				for _, kind := range in.Types {
-					if e.Type == kind {
-						found = true
-					}
-				}
-				matches = matches && found
-			}
-			if matches && len(page.Events) == in.Limit {
-				page.HasMore = true
-				break
-			}
-			page.NextCursor = cursor
-			if matches {
-				page.Events = append(page.Events, e)
-			}
-		}
-		return page, rows.Err()
+		return indexedEvents(ctx, b, in, page)
+
 	})
 }
 func persistNewEvents(ctx context.Context, b *board) error {
+	if len(b.Events) == 0 {
+		return nil
+	}
+	var schema int
+	if err := b.tx.QueryRowContext(ctx, `PRAGMA user_version`).Scan(&schema); err != nil {
+		return err
+	}
+	var control projectionControl
+	var err error
+	if schema >= 4 {
+		control, err = ensureProjection(ctx, b.tx)
+		if err != nil {
+			return err
+		}
+	}
+	stmt, err := b.tx.PrepareContext(ctx, `INSERT INTO events(cursor,data) VALUES(?,?)`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
 	for _, e := range b.Events {
 		raw, err := json.Marshal(e)
 		if err != nil {
 			return err
 		}
-		if _, err = b.tx.ExecContext(ctx, `INSERT INTO events(cursor,data) VALUES(?,?)`, e.Cursor, string(raw)); err != nil {
+		if _, err = stmt.ExecContext(ctx, e.Cursor, string(raw)); err != nil {
+			return err
+		}
+		if schema >= 4 {
+			if err = projectEvent(ctx, b.tx, &control, e); err != nil {
+				return err
+			}
+		}
+	}
+	if schema >= 4 {
+		if err = publishProjection(ctx, b.tx, control); err != nil {
 			return err
 		}
 	}

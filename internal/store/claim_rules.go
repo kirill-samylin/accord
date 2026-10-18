@@ -55,6 +55,7 @@ func claimRules(b *board, t *core.Task, sess *core.Session, now time.Time) error
 		return err
 	}
 	if epic := b.Tasks[t.EpicKey]; epic != nil && epic.Owner == "" {
+		epic = b.editTask(epic.Key)
 		epic.Owner = sess.Owner
 		epic.Version++
 		emit(b, now, "epic_owner_assigned", epic.Key, sess.SessionID)
@@ -103,7 +104,7 @@ func areaOverlaps(b *board, t *core.Task, now time.Time) []core.RuleWarning {
 		return nil
 	}
 	warnings := []core.RuleWarning{}
-	for _, other := range b.Tasks {
+	for _, other := range b.areaCandidates(t) {
 		if other.Key == t.Key || other.Lease == nil || !other.Lease.ExpiresAt.After(now) {
 			continue
 		}

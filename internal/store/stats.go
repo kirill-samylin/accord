@@ -24,108 +24,118 @@ func (s *Store) Stats(ctx context.Context, a core.Actor, in core.StatsInput) (co
 		if err := persistNewEvents(ctx, b); err != nil {
 			return result, err
 		}
-		rows, err := b.tx.QueryContext(ctx, `SELECT data FROM events ORDER BY cursor`)
-		if err != nil {
+		return projectedStats(ctx, b, now, in, result)
+	})
+}
+
+// statsOracle is the pre-projection streaming reducer, retained for chronology
+// compatibility and independent differential tests. It never caches raw events.
+func statsOracle(ctx context.Context, b *board, now time.Time, in core.StatsInput, result core.Stats) (core.Stats, error) {
+	rows, err := b.tx.QueryContext(ctx, `SELECT data FROM events ORDER BY cursor`)
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+	groups := map[string]*core.StatsMetrics{}
+	blockedStarts := map[string]core.Event{}
+	for rows.Next() {
+		var raw []byte
+		var e core.Event
+		if err = rows.Scan(&raw); err != nil {
 			return result, err
 		}
-		defer rows.Close()
-		groups := map[string]*core.StatsMetrics{}
-		blockedStarts := map[string]core.Event{}
-		for rows.Next() {
-			var raw []byte
-			var e core.Event
-			if err = rows.Scan(&raw); err != nil {
-				return result, err
-			}
-			if err = json.Unmarshal(raw, &e); err != nil {
-				return result, err
-			}
-			if !e.At.Before(in.To) {
-				continue
-			}
-			terminal := e.Data != nil && e.Data.Kind == "task" && terminalState(e.Data.NewState)
-			if e.Type == "task_created" && e.Data != nil && e.Data.Blocked && !terminal {
+		if err = json.Unmarshal(raw, &e); err != nil {
+			return result, err
+		}
+		if !e.At.Before(in.To) {
+			continue
+		}
+		terminal := e.Data != nil && e.Data.Kind == "task" && terminalState(e.Data.NewState)
+		if e.Type == "task_created" && e.Data != nil && e.Data.Blocked && !terminal {
+			blockedStarts[e.TaskKey] = e
+		}
+		if terminal || e.Type == "blocked_changed" && e.Data != nil {
+			if !terminal && e.Data.Blocked {
 				blockedStarts[e.TaskKey] = e
-			}
-			if terminal || e.Type == "blocked_changed" && e.Data != nil {
-				if !terminal && e.Data.Blocked {
-					blockedStarts[e.TaskKey] = e
-				} else if start, ok := blockedStarts[e.TaskKey]; ok {
-					end := e.At
-					begin := start.At
-					if begin.Before(in.From) {
-						begin = in.From
-					}
-					if end.After(begin) {
-						seconds := end.Sub(begin).Seconds()
-						result.Totals.BlockedDurationSeconds += seconds
-						metricGroup(groups, statsKey(start.Data, in.GroupBy)).BlockedDurationSeconds += seconds
-					}
-					delete(blockedStarts, e.TaskKey)
+			} else if start, ok := blockedStarts[e.TaskKey]; ok {
+				end := e.At
+				begin := start.At
+				if begin.Before(in.From) {
+					begin = in.From
 				}
-			}
-			if e.At.Before(in.From) {
-				continue
-			}
-			if e.Data == nil {
-				if e.TaskKey != "" {
-					result.IncompleteData = true
-					result.IncompleteEvents++
+				if end.After(begin) {
+					seconds := end.Sub(begin).Seconds()
+					result.Totals.BlockedDurationSeconds += seconds
+					metricGroup(groups, statsKey(start.Data, in.GroupBy)).BlockedDurationSeconds += seconds
 				}
-				continue
+				delete(blockedStarts, e.TaskKey)
 			}
-			if e.Data.Incomplete {
+		}
+		if e.At.Before(in.From) {
+			continue
+		}
+		if e.Data == nil {
+			if e.TaskKey != "" {
 				result.IncompleteData = true
 				result.IncompleteEvents++
 			}
-			key := statsKey(e.Data, in.GroupBy)
-			group := metricGroup(groups, key)
-			for _, m := range []*core.StatsMetrics{&result.Totals, group} {
-				if err = aggregateEvent(m, e); err != nil {
-					return result, err
-				}
-			}
+			continue
 		}
-		if err = rows.Err(); err != nil {
-			return result, err
-		}
-		end := minTime(in.To, now)
-		for _, start := range blockedStarts {
-			begin := start.At
-			if begin.Before(in.From) {
-				begin = in.From
-			}
-			if end.After(begin) {
-				seconds := end.Sub(begin).Seconds()
-				result.Totals.BlockedDurationSeconds += seconds
-				metricGroup(groups, statsKey(start.Data, in.GroupBy)).BlockedDurationSeconds += seconds
-			}
-		}
-		result.Totals.CurrentQueue = queueSummary(b, "", nil, now)
-		for _, t := range b.Tasks {
-			if t.Type != "task" {
-				continue
-			}
-			d := &core.EventData{Role: t.Role, Owner: leaseOwner(b, t), EpicKey: t.EpicKey}
-			q := &metricGroup(groups, statsKey(d, in.GroupBy)).CurrentQueue
-			addToQueue(q, b, t, nil, now)
-		}
-		missingShare(&result.Totals)
-		if result.Totals.MissingTokens > 0 {
+		if e.Data.Incomplete {
 			result.IncompleteData = true
+			result.IncompleteEvents++
 		}
-		keys := make([]string, 0, len(groups))
-		for k := range groups {
-			keys = append(keys, k)
+		key := statsKey(e.Data, in.GroupBy)
+		group := metricGroup(groups, key)
+		for _, m := range []*core.StatsMetrics{&result.Totals, group} {
+			if err = aggregateEvent(m, e); err != nil {
+				return result, err
+			}
 		}
-		sort.Strings(keys)
-		for _, k := range keys {
-			missingShare(groups[k])
-			result.Groups = append(result.Groups, core.StatsGroup{Key: k, Metrics: *groups[k]})
+	}
+	if err = rows.Err(); err != nil {
+		return result, err
+	}
+	end := minTime(in.To, now)
+	for _, start := range blockedStarts {
+		begin := start.At
+		if begin.Before(in.From) {
+			begin = in.From
 		}
-		return result, nil
-	})
+		if end.After(begin) {
+			seconds := end.Sub(begin).Seconds()
+			result.Totals.BlockedDurationSeconds += seconds
+			metricGroup(groups, statsKey(start.Data, in.GroupBy)).BlockedDurationSeconds += seconds
+		}
+	}
+	return finishStats(b, now, in, result, groups), nil
 }
+func finishStats(b *board, now time.Time, in core.StatsInput, result core.Stats, groups map[string]*core.StatsMetrics) core.Stats {
+	result.Totals.CurrentQueue = queueSummary(b, "", nil, now)
+	for _, t := range b.Tasks {
+		if t.Type != "task" {
+			continue
+		}
+		d := &core.EventData{Role: t.Role, Owner: leaseOwner(b, t), EpicKey: t.EpicKey}
+		q := &metricGroup(groups, statsKey(d, in.GroupBy)).CurrentQueue
+		addToQueue(q, b, t, nil, now)
+	}
+	missingShare(&result.Totals)
+	if result.Totals.MissingTokens > 0 {
+		result.IncompleteData = true
+	}
+	keys := make([]string, 0, len(groups))
+	for k := range groups {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		missingShare(groups[k])
+		result.Groups = append(result.Groups, core.StatsGroup{Key: k, Metrics: *groups[k]})
+	}
+	return result
+}
+
 func statsKey(d *core.EventData, group string) string {
 	switch group {
 	case "role":

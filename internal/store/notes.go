@@ -33,7 +33,7 @@ func (s *Store) Note(ctx context.Context, a core.Actor, in core.NoteInput) (core
 			if in.Text != "" || in.ScopeType != "" || in.ScopeID != "" || in.SourceTaskKey != "" {
 				return core.Note{}, core.Fail("invalid_input", "delete accepts only key and reason")
 			}
-			n := b.Notes[in.Key]
+			n := b.editNote(in.Key)
 			if n == nil {
 				return core.Note{}, core.Fail("not_found", "note does not exist")
 			}
@@ -62,7 +62,7 @@ func (s *Store) Note(ctx context.Context, a core.Actor, in core.NoteInput) (core
 		if !bounded(in.Text, 2048) || !utf8.ValidString(in.Text) {
 			return core.Note{}, core.Fail("invalid_input", "note text must be UTF8 and contain 1..2048 bytes")
 		}
-		source, err := taskFor(b, in.SourceTaskKey)
+		source, err := readTaskFor(b, in.SourceTaskKey)
 		if err != nil {
 			return core.Note{}, err
 		}
@@ -104,6 +104,7 @@ func (s *Store) Note(ctx context.Context, a core.Actor, in core.NoteInput) (core
 		b.NoteSequence++
 		n := &core.Note{Key: fmt.Sprintf("N-%d", b.NoteSequence), ScopeType: in.ScopeType, ScopeID: in.ScopeID, Text: in.Text, SourceTaskKey: source.Key, AuthorPrincipal: a.Principal.ID, AuthorSession: a.SessionID, CreatedAt: now}
 		b.Notes[n.Key] = n
+		b.dirtyNotes[n.Key] = true
 		emit(b, now, "note_created", source.Key, a.SessionID)
 		b.Events[len(b.Events)-1].Data = &core.EventData{NoteKey: n.Key, ScopeType: n.ScopeType, ScopeID: n.ScopeID}
 		return *n, nil
@@ -124,7 +125,11 @@ func sessionQueueSummary(b *board, sess *core.Session, now time.Time) core.Queue
 }
 func queueSummary(b *board, role string, sess *core.Session, now time.Time) core.QueueSummary {
 	var q core.QueueSummary
-	for _, t := range b.Tasks {
+	tasks := b.roleIndependentTasks()
+	if role != "" {
+		tasks = b.roleTasks(role)
+	}
+	for _, t := range tasks {
 		if t.Type != "task" || role != "" && role != t.Role {
 			continue
 		}

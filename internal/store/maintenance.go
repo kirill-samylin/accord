@@ -29,59 +29,28 @@ func OpenExisting(path string, cfg core.Config, clock core.Clock) (*Store, error
 		clock = time.Now
 	}
 	u := url.URL{Scheme: "file", Path: filepath.ToSlash(absolute), RawQuery: "mode=rw"}
-	db, err := sql.Open("sqlite", u.String())
+	db, err := sql.Open("sqlite", connectionDSN(u.String()))
 	if err != nil {
 		return nil, err
 	}
-	db.SetMaxOpenConns(1)
+	db.SetMaxOpenConns(4)
+	db.SetMaxIdleConns(4)
 	ctx := context.Background()
-	if _, err = db.ExecContext(ctx, `PRAGMA busy_timeout=5000`); err == nil {
-		err = verifySchema(ctx, db)
-	}
+	err = startupRetry(ctx, func(attempt context.Context) error { return verifySchema(attempt, db) })
 	if err != nil {
 		db.Close()
 		return nil, err
 	}
-	return &Store{db: db, cfg: cfg, clock: clock}, nil
+	return newStore(db, cfg, clock), nil
 }
 
 // adminTransaction does not materialize TTL expiry: recovery must close all
 // restored attempts with its explicit reason, even when their clocks expired.
 func (s *Store) adminTransaction(ctx context.Context, fn func(*board, time.Time) error) error {
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-	if _, err = tx.ExecContext(ctx, `UPDATE metadata SET sequence=sequence WHERE id=1`); err != nil {
-		return err
-	}
-	b, err := loadBoard(ctx, tx)
-	if err != nil {
-		return err
-	}
-	var schema int
-	if err = tx.QueryRowContext(ctx, `PRAGMA user_version`).Scan(&schema); err != nil {
-		return err
-	}
-	if schema >= 3 {
-		b.Config, err = loadActiveConfig(ctx, tx)
-	}
-	if schema < 3 || err == sql.ErrNoRows && s.cfg.SkipBootstrap {
-		b.Config = s.cfg
-	} else if err != nil {
-		return err
-	}
-	before := metricFacts(b)
-	now := s.clock().UTC()
-	if err = fn(b, now); err != nil {
-		return err
-	}
-	enrichEvents(b, before, now)
-	if err = saveBoard(ctx, tx, b); err != nil {
-		return err
-	}
-	return tx.Commit()
+	_, err := transaction(s, ctx, false, func(b *board, now time.Time) (struct{}, error) {
+		return struct{}{}, fn(b, now)
+	})
+	return err
 }
 
 // RevokeAllTokens is a local administrator operation, unavailable to bearer API.
@@ -129,12 +98,14 @@ func (s *Store) RecoverState(ctx context.Context, reason string) (core.RecoveryR
 		}
 		b.Events[len(b.Events)-1].Reason = reason
 		for _, sess := range b.Sessions {
+			sess = b.editSession(sess.SessionID)
 			if sess.ExpiresAt.After(now) {
 				sess.ExpiresAt = now
 			}
 			result.Sessions++
 		}
 		for _, task := range b.Tasks {
+			task = b.editTask(task.Key)
 			closedAttempt := false
 			for i := range task.Attempts {
 				attempt := &task.Attempts[i]

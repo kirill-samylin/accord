@@ -70,12 +70,21 @@ def install_file(source, target, mode=0o644):
     os.replace(temporary, target)
 
 
+def migration_timeout(value):
+    seconds = int(value)
+    if not 1 <= seconds <= 900:
+        raise argparse.ArgumentTypeError('migration-ready-timeout must be between1 and900 seconds')
+    return seconds
+
+
 def run():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--binary', type=pathlib.Path, required=True)
     parser.add_argument('--sha256', required=True)
     parser.add_argument('--revision', required=True)
     parser.add_argument('--assets', type=pathlib.Path, required=True)
+    parser.add_argument('--migration-ready-timeout', type=migration_timeout, default=300,
+                        help='schema1/2/3 migration readiness cap,1..900 seconds (default300)')
     parser.add_argument('--external-host', help='exact advertised lower-case DNS:port; omission preserves private config')
     args = parser.parse_args()
     if os.geteuid() != 0 or sys.platform != 'linux':
@@ -149,7 +158,8 @@ def run():
             install_file(args.assets / name, pathlib.Path('/etc/systemd/system') / name)
         command('systemctl', 'daemon-reload')
         activate(previous, args.revision, STATE, command,
-                 lambda revision: switch(BASE, revision), healthy)
+                 lambda revision: switch(BASE, revision), healthy,
+                 migration_healthy=lambda: healthy(timeout=args.migration_ready_timeout))
         command('systemctl', 'enable', 'accord.service')
         command('systemctl', 'enable', '--now', 'accord-backup.timer')
         command('systemctl', 'start', 'accord-backup.service')

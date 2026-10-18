@@ -40,6 +40,7 @@ func (s *Store) Describe(ctx context.Context, p core.Principal, in core.OpenSess
 			v.RoleExpiresAt = &expiry
 		}
 		sessionTiming(b, &v)
+		b.dirtySessions[id] = true
 		b.Sessions[id] = &core.Session{SessionView: v, PrincipalID: p.ID, RunID: in.RunID, Machine: in.Machine, Owner: p.Owner}
 		emit(b, now, "session_opened", "", id)
 		sess := b.Sessions[id]
@@ -57,7 +58,7 @@ func (s *Store) Heartbeat(ctx context.Context, a core.Actor, in core.HeartbeatIn
 			return core.SessionView{}, core.Fail("lease_lost", "singleton generation does not match")
 		}
 		var active *core.Task
-		for _, t := range b.Tasks {
+		for _, t := range b.ownedTasks(a.SessionID) {
 			if t.Lease != nil && t.Lease.SessionID == a.SessionID {
 				active = t
 			}

@@ -39,7 +39,9 @@ func DatabaseSchema(ctx context.Context, path string) (int, error) {
 	}
 	defer db.Close()
 	var n int
-	err = db.QueryRowContext(ctx, `PRAGMA user_version`).Scan(&n)
+	err = startupRetry(ctx, func(attempt context.Context) error {
+		return db.QueryRowContext(attempt, `PRAGMA user_version`).Scan(&n)
+	})
 	if err == nil && (n < 0 || n > SchemaVersion) {
 		return 0, core.Fail("CONFIG_UNSUPPORTED", "database schema is newer than this binary")
 	}

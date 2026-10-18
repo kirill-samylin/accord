@@ -5,6 +5,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"net/url"
+	"strings"
+	"sync"
 	"time"
 
 	"agent-board/internal/core"
@@ -12,25 +15,39 @@ import (
 )
 
 type Store struct {
-	db    *sql.DB
-	cfg   core.Config
-	clock core.Clock
+	db          *sql.DB
+	cfg         core.Config
+	clock       core.Clock
+	writer      *sql.Conn
+	gate        chan struct{}
+	life        sync.Mutex
+	closed      bool
+	cache       *board
+	dataVersion int64
 }
 type replay struct {
 	Hash     string          `json:"hash"`
 	Response json.RawMessage `json:"response"`
 }
 type board struct {
-	Notes        map[string]*core.Note    `json:"notes"`
-	NoteSequence int64                    `json:"note_sequence"`
-	Config       core.Config              `json:"config"`
-	Tasks        map[string]*core.Task    `json:"tasks"`
-	Sessions     map[string]*core.Session `json:"sessions"`
-	Roles        map[string]int64         `json:"roles"`
-	Events       []core.Event             `json:"events"`
-	Sequence     int64                    `json:"sequence"`
-	EventBase    int64                    `json:"-"`
-	tx           *sql.Tx
+	Notes         map[string]*core.Note    `json:"notes"`
+	NoteSequence  int64                    `json:"note_sequence"`
+	Config        core.Config              `json:"config"`
+	Tasks         map[string]*core.Task    `json:"tasks"`
+	Sessions      map[string]*core.Session `json:"sessions"`
+	Roles         map[string]int64         `json:"roles"`
+	Events        []core.Event             `json:"events"`
+	Sequence      int64                    `json:"sequence"`
+	EventBase     int64                    `json:"-"`
+	base          *board
+	dirtyTasks    map[string]bool
+	dirtySessions map[string]bool
+	dirtyNotes    map[string]bool
+	copyErr       error
+	gateMemo      map[string]bool
+	index         *snapshotIndexes
+	facts         map[string]taskFact
+	tx            *sql.Tx
 }
 
 // Open serializes transactions in process and obtains a SQLite write lock before
@@ -55,17 +72,26 @@ func Open(path string, cfg core.Config, clock core.Clock) (*Store, error) {
 	if err != nil {
 		return nil, err
 	}
-	db, err := sql.Open("sqlite", dsn)
+	if dsn == ":memory:" {
+		id, err := identifier()
+		if err != nil {
+			return nil, err
+		}
+		dsn = "file:accord-memory-" + id + "?mode=memory&cache=shared"
+	}
+	db, err := sql.Open("sqlite", connectionDSN(dsn))
 	if err != nil {
 		return nil, err
 	}
-	db.SetMaxOpenConns(1)
-	s := &Store{db: db, cfg: cfg, clock: clock}
-	if _, err = db.Exec(`PRAGMA busy_timeout=5000`); err == nil {
-		err = migrate(context.Background(), db, path, cfg)
-	}
+	db.SetMaxOpenConns(4)
+	db.SetMaxIdleConns(4)
+	s := newStore(db, cfg, clock)
+	err = migrate(context.Background(), db, path, cfg)
 	if err == nil {
-		_, err = db.Exec(`PRAGMA journal_mode=WAL`)
+		err = startupRetry(context.Background(), func(ctx context.Context) error {
+			_, err := db.ExecContext(ctx, `PRAGMA journal_mode=WAL`)
+			return err
+		})
 	}
 	if err == nil && !cfg.SkipBootstrap {
 		err = s.checkStartup(context.Background(), cfg)
@@ -76,46 +102,42 @@ func Open(path string, cfg core.Config, clock core.Clock) (*Store, error) {
 	}
 	return s, nil
 }
-func (s *Store) Close() error { return s.db.Close() }
+func connectionDSN(dsn string) string {
+	separator := "?"
+	if strings.Contains(dsn, "?") {
+		separator = "&"
+	}
+	return dsn + separator + "_txlock=immediate&_pragma=" + url.QueryEscape("busy_timeout(5000)") + "&_pragma=" + url.QueryEscape("cache_size(-8192)")
+}
+func newStore(db *sql.DB, cfg core.Config, clock core.Clock) *Store {
+	return &Store{db: db, cfg: cfg, clock: clock, gate: make(chan struct{}, 1)}
+}
+
+// Close stops admitting transactions, waits for the current owner, then releases
+// the retained connection before closing its pool. Waiting callers fail closed.
+func (s *Store) Close() error {
+	s.life.Lock()
+	s.closed = true
+	s.life.Unlock()
+	s.gate <- struct{}{}
+	defer func() { <-s.gate }()
+	if s.writer != nil {
+		s.writer.Close()
+		s.writer = nil
+	}
+	s.cache = nil
+	return s.db.Close()
+}
 
 func transact[T any](s *Store, ctx context.Context, fn func(*board, time.Time) (T, error)) (T, error) {
-	var zero T
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return zero, err
-	}
-	defer tx.Rollback()
-	if _, err = tx.ExecContext(ctx, `UPDATE metadata SET sequence=sequence WHERE id=1`); err != nil {
-		return zero, err
-	}
-	b, err := loadBoard(ctx, tx)
-	if err != nil {
-		return zero, err
-	}
-	b.Config, err = loadActiveConfig(ctx, tx)
-	if err != nil {
-		return zero, err
-	}
-	now := s.clock().UTC()
-	before := metricFacts(b)
-	s.expire(b, now)
-	enrichEvents(b, before, now)
-	before = metricFacts(b)
-	result, domainErr := fn(b, now)
-	enrichEvents(b, before, now)
-	if err = saveBoard(ctx, tx, b); err != nil {
-		return zero, err
-	}
-	if err = tx.Commit(); err != nil {
-		return zero, err
-	}
-	return result, domainErr
+	return transaction(s, ctx, true, fn)
 }
 func (s *Store) expire(b *board, now time.Time) {
-	for _, t := range b.Tasks {
+	for _, t := range b.leasedTasks() {
 		if t.Lease != nil {
 			session := b.Sessions[t.Lease.SessionID]
 			if !t.Lease.ExpiresAt.After(now) || !sessionLive(b, session, now) {
+				t = b.editTask(t.Key)
 				old := t.Lease.SessionID
 				finishAttempt(t, now, "lease_expired", "")
 				t.Lease = nil
@@ -128,6 +150,7 @@ func (s *Store) expire(b *board, now time.Time) {
 	}
 }
 func emit(b *board, now time.Time, kind, key, session string) {
+	b.gateMemo = map[string]bool{}
 	b.Events = append(b.Events, core.Event{Cursor: b.EventBase + int64(len(b.Events)+1), Type: kind, TaskKey: key, SessionID: session, At: now})
 }
 func sessionFor(b *board, a core.Actor, now time.Time) (*core.Session, error) {

@@ -11,13 +11,15 @@ import (
 	"time"
 )
 
-const SchemaVersion = 3
+const SchemaVersion = 4
 
 // migrate is the sole DDL owner. A schema1 snapshot is published before any
 // schema2 transaction; unsupported future versions are rejected before DDL.
 func migrate(ctx context.Context, db *sql.DB, path string, cfg core.Config) error {
 	var version int
-	if err := db.QueryRowContext(ctx, `PRAGMA user_version`).Scan(&version); err != nil {
+	if err := startupRetry(ctx, func(attempt context.Context) error {
+		return db.QueryRowContext(attempt, `PRAGMA user_version`).Scan(&version)
+	}); err != nil {
 		return err
 	}
 	if version > SchemaVersion {
@@ -26,7 +28,7 @@ func migrate(ctx context.Context, db *sql.DB, path string, cfg core.Config) erro
 	if version == SchemaVersion {
 		return nil
 	}
-	if version == 1 || version == 2 {
+	if version >= 1 && version <= 3 {
 		dir := path + ".migrations"
 		if err := os.Mkdir(dir, 0700); err != nil && !os.IsExist(err) {
 			return err
@@ -49,7 +51,12 @@ func migrate(ctx context.Context, db *sql.DB, path string, cfg core.Config) erro
 			return fmt.Errorf("pre-migration backup: %w", err)
 		}
 	}
-	tx, err := db.BeginTx(ctx, nil)
+	conn, err := db.Conn(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	tx, err := beginImmediate(ctx, conn)
 	if err != nil {
 		return err
 	}
@@ -61,14 +68,18 @@ func migrate(ctx context.Context, db *sql.DB, path string, cfg core.Config) erro
 	if _, err = tx.ExecContext(ctx, `INSERT OR IGNORE INTO metadata VALUES(1,0)`); err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, `UPDATE metadata SET sequence=sequence WHERE id=1`); err != nil {
-		return err
-	}
+
 	if err = tx.QueryRowContext(ctx, `PRAGMA user_version`).Scan(&version); err != nil {
 		return err
 	}
 	if version == SchemaVersion {
 		return nil
+	}
+	if version == 3 {
+		if err = migratePerformance(ctx, tx); err != nil {
+			return err
+		}
+		return tx.Commit()
 	}
 	if version != 0 && version != 1 && version != 2 {
 		return fmt.Errorf("unsupported migration source")
@@ -103,7 +114,7 @@ func migrate(ctx context.Context, db *sql.DB, path string, cfg core.Config) erro
 		}
 	}
 	if version == 0 && cfg.SkipBootstrap {
-		if _, err = tx.ExecContext(ctx, `PRAGMA user_version=3`); err != nil {
+		if err = migratePerformance(ctx, tx); err != nil {
 			return err
 		}
 		return tx.Commit()
@@ -138,7 +149,7 @@ func migrate(ctx context.Context, db *sql.DB, path string, cfg core.Config) erro
 	if _, err = tx.ExecContext(ctx, `INSERT INTO events(cursor,data) VALUES(?,?)`, event.Cursor, string(eventRaw)); err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, `PRAGMA user_version=3`); err != nil {
+	if err = migratePerformance(ctx, tx); err != nil {
 		return err
 	}
 	return tx.Commit()

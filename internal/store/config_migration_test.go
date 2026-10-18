@@ -10,6 +10,7 @@ import (
 
 func TestSchema2To3BacksUpAndGrandfathersExactScopes(t *testing.T) {
 	f := newFixture(t)
+	dropPerformanceFixture(t, f.s)
 	for _, query := range []string{`DROP TABLE config_active`, `DROP TABLE config_history`, `ALTER TABLE tokens DROP COLUMN roles`, `ALTER TABLE tokens DROP COLUMN scopes_version`, `PRAGMA user_version=2`} {
 		if _, err := f.s.db.Exec(query); err != nil {
 			t.Fatal(err)
@@ -27,7 +28,7 @@ func TestSchema2To3BacksUpAndGrandfathersExactScopes(t *testing.T) {
 	}
 	var version int
 	s.db.QueryRow(`PRAGMA user_version`).Scan(&version)
-	if version != 3 {
+	if version != SchemaVersion {
 		t.Fatal(version)
 	}
 	tokens, err := s.ListTokens(testContext)

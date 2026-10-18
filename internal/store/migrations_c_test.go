@@ -12,6 +12,7 @@ import (
 func schema1Fixture(t *testing.T) *fixture {
 	t.Helper()
 	f := newFixture(t)
+	dropPerformanceFixture(t, f.s)
 	for _, q := range []string{`DROP TABLE notes`, `DROP TABLE note_metadata`, `DROP TABLE config_active`, `DROP TABLE config_history`, `ALTER TABLE tokens DROP COLUMN roles`, `ALTER TABLE tokens DROP COLUMN scopes_version`, `PRAGMA user_version=1`} {
 		if _, err := f.s.db.Exec(q); err != nil {
 			t.Fatal(err)
@@ -31,6 +32,7 @@ func TestMigrationSchema1BackupAndNoInventedHistoricalTimes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	dropPerformanceFixture(t, f.s)
 	for _, q := range []string{`DROP TABLE notes`, `DROP TABLE note_metadata`, `DROP TABLE config_active`, `DROP TABLE config_history`, `ALTER TABLE tokens DROP COLUMN roles`, `ALTER TABLE tokens DROP COLUMN scopes_version`, `PRAGMA user_version=1`} {
 		if _, err = f.s.db.Exec(q); err != nil {
 			t.Fatal(err)
@@ -43,7 +45,7 @@ func TestMigrationSchema1BackupAndNoInventedHistoricalTimes(t *testing.T) {
 	}
 	defer s.Close()
 	var version int
-	if err = s.db.QueryRow(`PRAGMA user_version`).Scan(&version); err != nil || version != 3 {
+	if err = s.db.QueryRow(`PRAGMA user_version`).Scan(&version); err != nil || version != SchemaVersion {
 		t.Fatalf("version %d %v", version, err)
 	}
 	var created sql.NullString

@@ -1,6 +1,7 @@
 package store
 
 import (
+	"maps"
 	"time"
 
 	"agent-board/internal/core"
@@ -14,11 +15,18 @@ type taskFact struct {
 }
 
 func metricFacts(b *board) map[string]taskFact {
+	if b.facts != nil {
+		return b.facts
+	}
 	result := map[string]taskFact{}
 	for key, t := range b.Tasks {
-		result[key] = taskFact{State: t.State, Blocked: metricBlocked(b, t), FirstDone: t.FirstDoneAt != nil, Returns: t.ReturnsCount}
+		result[key] = fact(b, t)
 	}
+	b.facts = result
 	return result
+}
+func fact(b *board, t *core.Task) taskFact {
+	return taskFact{State: t.State, Blocked: metricBlocked(b, t), FirstDone: t.FirstDoneAt != nil, Returns: t.ReturnsCount}
 }
 
 // enrichEvents captures event-time facts before commit. Stats never joins old
@@ -59,13 +67,28 @@ func enrichEvents(b *board, before map[string]taskFact, now time.Time) {
 	}
 	// Dependency operations may change another task's queue state without a
 	// state transition. Store this boundary explicitly for blocked wall duration.
-	for key, t := range b.Tasks {
+	for key := range b.affected() {
+		t := b.Tasks[key]
+		if t == nil {
+			continue
+		}
 		old, exists := before[key]
 		current := metricBlocked(b, t)
 		if exists && old.Blocked != current {
 			emit(b, now, "blocked_changed", key, "")
 			e := &b.Events[len(b.Events)-1]
 			e.Data = &core.EventData{Role: t.Role, Owner: leaseOwner(b, t), EpicKey: t.EpicKey, Kind: t.Type, OldState: old.State, NewState: t.State, Blocked: current, Incomplete: t.CreatedAt == nil}
+		}
+	}
+	affected := b.affected()
+	if len(affected) == 0 {
+		b.facts = before
+		return
+	}
+	b.facts = maps.Clone(before)
+	for key := range affected {
+		if t := b.Tasks[key]; t != nil {
+			b.facts[key] = fact(b, t)
 		}
 	}
 }

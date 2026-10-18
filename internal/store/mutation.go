@@ -46,6 +46,21 @@ func mutate[T any](s *Store, ctx context.Context, a core.Actor, request, method 
 			if previous.Hash != hash {
 				return zero, core.Fail("idempotency_conflict", "request_id already used with a different payload")
 			}
+			role := ""
+			if method == "describe" {
+				var opening core.OpenSession
+				if err := json.Unmarshal(raw, &opening); err != nil {
+					return zero, err
+				}
+				role = opening.Role
+			} else if session := b.Sessions[a.SessionID]; session != nil {
+				role = session.Role
+			}
+			// Replay does not require a live lease, but its role scope must
+			// still be currently authorized in this same SQL transaction.
+			if err := roleAuthorized(ctx, b, a.Principal, role); err != nil {
+				return zero, err
+			}
 			var result T
 			if err := json.Unmarshal(previous.Response, &result); err != nil {
 				return zero, err
@@ -73,25 +88,15 @@ func mutate[T any](s *Store, ctx context.Context, a core.Actor, request, method 
 		}
 		// Domain mutations operate on an isolated copy: a rejected operation cannot
 		// persist partial task changes, events, or lease renewals.
-		snapshot, err := json.Marshal(b)
-		if err != nil {
-			return zero, err
-		}
-		var candidate board
-		if err = json.Unmarshal(snapshot, &candidate); err != nil {
-			return zero, err
-		}
-		candidate.Config = b.Config
-		candidate.tx = b.tx
-		candidate.EventBase = b.EventBase
+		candidate := b.fork()
 		if sess != nil {
-			sess = candidate.Sessions[sess.SessionID]
+			sess = candidate.editSession(sess.SessionID)
 		}
-		result, err := fn(&candidate, sess, now)
+		result, err := fn(candidate, sess, now)
 		if err != nil {
 			return zero, err
 		}
-		reconcileEpics(&candidate, now, a.SessionID)
+		reconcileEpics(candidate, now, a.SessionID)
 		if sess != nil {
 			sess.ExpiresAt = now.Add(candidate.Config.SessionTTL)
 			if hasRoleLease(sess) {
@@ -107,12 +112,22 @@ func mutate[T any](s *Store, ctx context.Context, a core.Actor, request, method 
 			return zero, err
 		}
 		candidate.EventBase = b.EventBase
-		*b = candidate
+		for key := range b.dirtyTasks {
+			candidate.dirtyTasks[key] = true
+		}
+		for key := range b.dirtySessions {
+			candidate.dirtySessions[key] = true
+		}
+		for key := range b.dirtyNotes {
+			candidate.dirtyNotes[key] = true
+		}
+		candidate.base = b.base
+		*b = *candidate
 		return result, nil
 	})
 }
 func taskFor(b *board, key string) (*core.Task, error) {
-	t := b.Tasks[key]
+	t := b.editTask(key)
 	if t == nil {
 		return nil, core.Fail("not_found", "task does not exist")
 	}
