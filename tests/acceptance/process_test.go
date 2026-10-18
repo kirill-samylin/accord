@@ -84,7 +84,13 @@ func newBoard(t *testing.T, ttl string) *board {
 
 func (b *board) start() {
 	b.t.Helper()
-	b.cmd = exec.Command(binary, "serve", "--db", b.db, "--listen", "127.0.0.1:0", "--task-ttl", b.ttl, "--session-ttl", "1m")
+	b.startOptions("--task-ttl", b.ttl, "--session-ttl", "1m", "--bootstrap-owner", "acceptance")
+}
+
+func (b *board) startOptions(options ...string) {
+	b.t.Helper()
+	args := append([]string{"serve", "--db", b.db, "--listen", "127.0.0.1:0"}, options...)
+	b.cmd = exec.Command(binary, args...)
 	stdout, err := b.cmd.StdoutPipe()
 	if err != nil {
 		b.t.Fatal(err)
@@ -110,6 +116,9 @@ func (b *board) start() {
 	go func() { b.exited <- b.cmd.Wait() }()
 	select {
 	case b.url = <-address:
+	case err := <-b.exited:
+		b.cmd = nil
+		b.t.Fatalf("server exited before listening: %v", err)
 	case <-time.After(10 * time.Second):
 		b.t.Fatal("no server address within startup deadline")
 	}

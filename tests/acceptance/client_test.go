@@ -26,14 +26,17 @@ type client struct {
 }
 
 type result struct {
-	data []byte
-	err  error
+	data   []byte
+	err    error
+	stderr []byte
 }
 
-func command(input []byte, args ...string) result {
+func command(input []byte, args ...string) result { return commandPath(binary, input, args...) }
+
+func commandPath(executable string, input []byte, args ...string) result {
 	ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, binary, args...)
+	cmd := exec.CommandContext(ctx, executable, args...)
 	cmd.Stdin = bytes.NewReader(input)
 	// A token from the invoking shell must not affect these synthetic clients.
 	for _, entry := range os.Environ() {
@@ -41,12 +44,20 @@ func command(input []byte, args ...string) result {
 			cmd.Env = append(cmd.Env, entry)
 		}
 	}
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 	data, err := cmd.Output()
-	return result{data: data, err: err}
+	return result{data: data, err: err, stderr: stderr.Bytes()}
 }
 
 func newClient(t *testing.T, b *board, name string) *client {
 	t.Helper()
+	// Persist the intended short-TTL compatibility input before minting. A token
+	// command alone would bootstrap 15m defaults and must not override them later.
+	if _, err := os.Stat(b.db); os.IsNotExist(err) {
+		b.start()
+		b.stop()
+	}
 	c := &client{b: b, token: filepath.Join(filepath.Dir(b.db), name+".token")}
 	r := command(nil, "token", "create", "--db", b.db, "--owner", name, "--machine", name, "--output", c.token)
 	if r.err != nil {

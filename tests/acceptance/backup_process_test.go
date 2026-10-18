@@ -28,8 +28,13 @@ func TestCLIOnlineSnapshotAndOfflineRecovery(t *testing.T) {
 	task := decode[core.Task](t, created.data)
 	claim := worker.claim(t, task.Key)
 	worker.ok(t, "comment", payload{"task_key": task.Key, "generation": claim.Lease.Generation, "text": "Synthetic persisted comment"})
-	worker.ok(t, "note", payload{"action": "create", "scope_type": "role", "scope_id": "developer", "source_task_key": task.Key, "text": "Synthetic schema2 backup note"})
+	worker.ok(t, "note", payload{"action": "create", "scope_type": "role", "scope_id": "developer", "source_task_key": task.Key, "text": "Synthetic schema3 backup note"})
 	beforeNotes := decode[core.NotesPage](t, worker.ok(t, "notes", payload{"scope_type": "role", "scope_id": "developer"}))
+	beforeConfig := configView(t, b)
+	beforeHistory := command(nil, "config", "history", "--db", b.db)
+	if beforeHistory.err != nil {
+		t.Fatal("config history before backup failed")
+	}
 	before := decode[core.Task](t, coordinator.ok(t, "get", payload{"task_key": task.Key}))
 	events := decode[core.EventsPage](t, coordinator.ok(t, "events", payload{"since_cursor": 0, "limit": 200}))
 	if wal, err := os.Stat(b.db + "-wal"); err != nil || wal.Size() == 0 {
@@ -49,7 +54,7 @@ func TestCLIOnlineSnapshotAndOfflineRecovery(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if metadata.SchemaVersion != 2 || metadata.CreatedAt.IsZero() || metadata.SHA256 != fmt.Sprintf("%x", sha256.Sum256(data)) {
+	if metadata.SchemaVersion != 3 || metadata.CreatedAt.IsZero() || metadata.SHA256 != fmt.Sprintf("%x", sha256.Sum256(data)) {
 		t.Fatal("snapshot checksum/schema metadata does not describe published file")
 	}
 	if info, err := os.Stat(snapshot); err != nil || info.Mode().Perm() != 0600 {
@@ -75,11 +80,16 @@ func TestCLIOnlineSnapshotAndOfflineRecovery(t *testing.T) {
 	// This private loopback fixture first proves exact snapshot contents; it is
 	// not the deployment procedure, which must reset before exposing the copy.
 	restored.start()
+	restoredConfig := configView(t, restored)
+	restoredHistory := command(nil, "config", "history", "--db", restored.db)
+	if restoredConfig.SHA256 != beforeConfig.SHA256 || restoredConfig.ConfigVersion != beforeConfig.ConfigVersion || restoredHistory.err != nil || !bytes.Equal(beforeHistory.data, restoredHistory.data) {
+		t.Fatal("snapshot omitted config/history")
+	}
 	copyTask := decode[core.Task](t, oldCoordinator.ok(t, "get", payload{"task_key": task.Key}))
 	copyEvents := decode[core.EventsPage](t, oldCoordinator.ok(t, "events", payload{"since_cursor": 0, "limit": 200}))
 	copyNotes := decode[core.NotesPage](t, oldCoordinator.ok(t, "notes", payload{"scope_type": "role", "scope_id": "developer"}))
 	if !reflect.DeepEqual(before, copyTask) || !reflect.DeepEqual(events, copyEvents) || !reflect.DeepEqual(beforeNotes, copyNotes) {
-		t.Fatal("WAL snapshot omitted task/lease/history/comment/events/schema2 notes")
+		t.Fatal("WAL snapshot omitted task/lease/history/comment/events/schema3 notes")
 	}
 	replay := oldCoordinator.raw("create", input)
 	if replay.err != nil || !bytes.Equal(created.data, replay.data) {
@@ -94,6 +104,11 @@ func TestCLIOnlineSnapshotAndOfflineRecovery(t *testing.T) {
 	if counts.RevokedTokens != 2 || counts.Sessions != 2 || counts.Leases != 1 {
 		t.Fatal("offline reset did not invalidate all snapshot credentials/sessions/leases")
 	}
+	resetConfig := configView(t, restored)
+	resetHistory := command(nil, "config", "history", "--db", restored.db)
+	if resetConfig.SHA256 != beforeConfig.SHA256 || resetConfig.ConfigVersion != beforeConfig.ConfigVersion || resetHistory.err != nil || !bytes.Equal(beforeHistory.data, resetHistory.data) {
+		t.Fatal("reset changed config/history")
+	}
 	freshCoordinator := newClient(t, restored, "new-coordinator")
 	freshWorker := newClient(t, restored, "new-worker")
 	restored.start()
@@ -106,7 +121,7 @@ func TestCLIOnlineSnapshotAndOfflineRecovery(t *testing.T) {
 	freshWorker.open(t, "developer", "new-worker")
 	resetNotes := decode[core.NotesPage](t, freshWorker.ok(t, "notes", payload{"scope_type": "role", "scope_id": "developer"}))
 	if len(resetNotes.Notes) != 1 || !reflect.DeepEqual(resetNotes.Notes, beforeNotes.Notes) {
-		t.Fatal("schema2 recovery reset discarded note/provenance")
+		t.Fatal("schema3 recovery reset discarded note/provenance")
 	}
 	recovered := decode[core.Task](t, freshCoordinator.ok(t, "get", payload{"task_key": task.Key}))
 	if recovered.Lease != nil || recovered.Generation != claim.Lease.Generation || len(recovered.Comments) != 1 || len(recovered.Attempts) != 1 || recovered.Attempts[0].Reason != "restore" || recovered.Attempts[0].EndedAt == nil {
