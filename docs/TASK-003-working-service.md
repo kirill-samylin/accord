@@ -1,6 +1,6 @@
 # TASK-003 — рабочий общий Accord
 
-- Статус: в работе; этап: C приёмка/публикация, D runtime, E foundations.
+- Статус: в работе; этап: C live/performance FAIL, D fixes, E foundations.
 - Источник: пользователь18.10.2026 поручил доделать оставшееся до рабочего проекта.
 - База:966dda6, рабочая ветка codex/pilot, репозиторий Accord.
 - Координатор: основной агент. Общую карточку редактирует только координатор.
@@ -14,15 +14,17 @@
 
 ## Текущее состояние
 
-- VPS: dc9c74c/schema1, native HTTP+MCP, отдельные токены и настоящий Codex PASS;
-  Tandem/443 сохранены. Nativefix опубликован в origin/codex/native-proxy.
+- VPS:1e9025c/schema2, C HTTP+MCP12/note/catalog/stats smoke PASS049;
+  native настоящий Codex ранее PASS, Tandem/443 сохранены.
+  C checkpoint опубликован в origin/codex/pilot; nativefix также origin/codex/native-proxy.
 - Main checkpoint2dfd86b: C source/Host APPROVE041, полный C check PASS042,
-  новые process tests/README APPROVE045. Отдельная method delta047 ожидает048.
-- D: config-runtime-003/codex/config-runtime от2dfd86b, автор043; main не меняет.
+  новые process tests/README APPROVE045. Method delta047 APPROVE048; C QA checkpoint1e9025c committed.
+- D: config-runtime-003/codex/config-runtime, HEAD932aa2a; source freeze043,
+  main1e9025c объединён; независимые code050/security051 выполняются.
 - E pure libraries: integration-libs-003/codex/integration-libs,59ae1a1,
   автор044, APPROVE046; SQL/runtime/schema4 и включение доставок отсутствуют.
-- Непосредственно далее:048 → commit C QA → build/private deploy schema2 →
-  isolatedVPS load; D/E независимые reviews после sourcefreeze.
+- Непосредственно далее: WORK049 private deploy1e9025c/schema2 и isolatedVPS
+  load; D независимые reviews после sourcefreeze, E runtime после D.
 
 ## Цель и критерии
 
@@ -68,7 +70,12 @@ restore; клиенты поддерживают lease во время длит�
 | 045 | Независимый test reviewer C | Tests042/README/load method | C tests APPROVE, harness REQUEST CHANGES |
 | 046 | Независимый reviewer/security E libraries | Frozen044 | APPROVE foundation; runtime obligations сохранены |
 | 047 | Новый developer/tester load | Только cgroup helper/harness tests/docs | Исправил REV045-01, targeted14 PASS |
-| 048 | Независимый reviewer load delta | Frozen047 | Проверка метода до isolatedVPS load |
+| 048 | Независимый reviewer load delta | Frozen047 | APPROVE метода до isolatedVPS load |
+| 049 | DevOps C live/load | Только private runtime/evidence и свой report/WORK | Deploy1e9025c/schema2, изолированный20/2000/20 load, сохранность Tandem |
+| 050 | Независимый code reviewer D | Frozen codex/config-runtime; только свой report/WORK в main | Полный D source/контракты/миграции/новые unit tests |
+| 051 | Независимый security D | Тот же frozen D; только свой report/WORK в main | REQUEST CHANGES: single_editor + общие050 findings |
+| 052 | Новый developer D fixes | Изолированная codex/config-fixes от932aa2a | Единый пакет050/051, узкие source/unit fixes |
+| 053 | Архитектор performance | Read-only C1e9025c + private profiling; свой contract/WORK | Причина load FAIL и исполнимый безопасный fix contract |
 
 Независимые review/security выполняются до live deploy. Unit/integration пишет
 разработчик; новые process/E2E — отдельный tester после approve и review тестов.
@@ -146,3 +153,33 @@ restore; клиенты поддерживают lease во время длит�
   независимые code/security и затем отдельная D process приёмка.
 - WORK040 E-контракт сохранён; root уточнил local-admin import requeue для
   imported_unknown. E ещё не реализована, UI/public ingress/recipients открыты.
+
+- WORK048 APPROVE cgroup-method047,14 tests и3 synthetic probes PASS.
+  C QA checkpoint1e9025cd6e3122f0adf6165e09845202736d004a committed;
+  Linux/amd64 immutable release собрана из чистого дерева pinnedGo1.27.2.
+  WORK049 получает только этот артефакт; D не включена в live-сборку.
+
+- WORK043 source freeze414a24ff…481, commitdad4c5f; main1e9025c объединён
+  в codex/config-runtime без конфликтов. Назначены независимые050/051.
+  Существующие process fixtures требуют schema3/persistedTTL adaptation после
+  approve: это ожидаемый test-input drift, не повод ослаблять startup guards.
+
+- WORK049 live C upgrade/schema2 и authenticated HTTPS12/note/catalog/stats
+  smoke PASS; отдельный synthetic token отозван/401, Mac token сохранён.
+  Target load20/2000/20 выполняется в отдельном transient unit сCPU100%/512MiB.
+  Git push origin/codex/pilot1e9025c PASS; main GitHub не менялась.
+
+- Root independent dependency scan D HEAD932aa2a: govulncheck ./... PASS,
+  `No vulnerabilities found` (Go1.27.2; новая x/text0.42.0 включена).
+  Это dependency scan, не замена code/security review050/051.
+
+- WORK050/051 нашли обязательные D исправления: singleton lease resurrection
+  после смены config; single_editor bypass через update; human can_cancel
+  epic bypass; incomplete child epic closure; area-block queue starvation;
+  idempotency omitted/empty areas. D не deployed и не опубликована.
+  WORK052 исправляет пакет в отдельной копии, исходный freeze932aa2a сохранён.
+
+- WORK049 target20/2000/20 завершён: latency p95=10025.11ms FAIL при50ms;
+  sampled serverRSS35.72MiB и populatedstartup28.27ms PASS. Нужен отдельный
+  performance analysis/fix/review/retest; успешный deploy не означает готовность.
+  Leaf CPU100%/512MiB подтверждены, effective ancestors unavailable, sharedVPS.
