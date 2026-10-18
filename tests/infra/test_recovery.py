@@ -123,13 +123,24 @@ class ActivationTests(unittest.TestCase):
 
     def test_unknown_preexisting_schema_does_not_infer_compatibility(self):
         with sqlite3.connect(self.database) as database:
-            database.execute('PRAGMA user_version=2')
+            database.execute('PRAGMA user_version=99')
         self.fail_starts = {1}
         with self.assertRaisesRegex(RuntimeError, 'compatibility unproven'):
             self.activate()
         self.assertEqual(self.starts, 1)
         self.assertEqual(os.readlink(self.current), 'releases/' + self.new)
         self.assert_inspection()
+
+    def test_unchanged_schema2_allows_previous_executable_recovery(self):
+        with sqlite3.connect(self.database) as database:
+            database.execute('PRAGMA user_version=2')
+        self.original = self.database.read_bytes()
+        self.fail_starts = {1}
+        with self.assertRaisesRegex(RuntimeError, 'previous executable restored and ready'):
+            self.activate()
+        self.assertEqual(self.starts, 2)
+        self.assertEqual(os.readlink(self.current), self.previous)
+        self.assert_preserved()
 
     def test_unversioned_ddl_change_also_blocks_recovery(self):
         def migrate():

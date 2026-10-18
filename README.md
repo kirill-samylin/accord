@@ -1,18 +1,21 @@
-# Accord — agent-board pilot
+# Accord — shared agent board
 
 A project coordination service for human participants and AI agents. The working
 binary and Go module are named `agent-board`; the repository is
 [Accord](https://github.com/kirill-samylin/accord).
 
-The pilot implements server-owned sessions, an epic/task queue, dependencies,
+The service implements server-owned sessions, an epic/task queue, dependencies,
 lease generations, idempotent mutations, evidence gates and a durable event log.
+It also provides paginated catalogs, bounded role/epic notes and historical
+statistics with explicit incomplete-data indicators.
 REST, Streamable HTTP MCP and the JSON CLI share the same Go/SQLite service.
 It coordinates work; clients remain responsible for stopping local edits when
 connectivity or ownership becomes uncertain.
 
-This is an initial local pilot, **not a production release or completed V1**.
+The native bearer service runs behind a private HTTPS proxy. It is **not a
+completed V1**; source, deployed revision and external checks are tracked separately.
 See [requirements 1.1](docs/requirements.md), [architecture](docs/architecture.md),
-[wire API](docs/api.md), [task status](docs/TASK-001-pilot.md) and
+[wire API](docs/api.md), [current task](docs/TASK-003-working-service.md) and
 [remaining V1 scope](docs/roadmap.md). The original specification is preserved in
 [docs/source](docs/source/TZ-agent-board-service-v1.0.md).
 
@@ -177,7 +180,7 @@ not distributed file locks.
 MCP endpoint: `http://127.0.0.1:8080/mcp`, Streamable HTTP, stateless transport,
 protocol **2026-07-28** with **2025-11-25** compatibility through official
 Go SDK **v1.8.0**. Board sessions persist in
-SQLite independently of transport connections. The 11 tools stay fixed after
+SQLite independently of transport connections. The 12 tools stay fixed after
 `describe`; each later call includes `session_id`. Authentication is required
 for initialization, listing and calls. REST uses the same DTOs and rules.
 
@@ -194,16 +197,19 @@ participant/session labels. Runtime memory series are not presented as measured 
 `serve` accepts only a literal loopback IP. It has no built-in TLS. Remote use
 requires a separately configured and reviewed TLS reverse proxy on the host,
 with bearer headers preserved, bounded requests and appropriate network access.
-The pilot does not ship a public proxy deployment or claim that it was tested.
+The tested deployment uses private Tailscale HTTPS on8443; see
+[deployment](docs/deployment.md) and [actual runtime evidence](docs/runtime-server-003.md).
+An explicit advertised Host policy preserves DNS rebinding checks behind the proxy.
 Do not expose unencrypted HTTP using forwarding or a public interface.
 
 Actual client checks and a second-PC setup are tracked in
-[TASK-002](docs/TASK-002-publication-readiness.md) and
-[second-pc.md](docs/second-pc.md). Two physical machines, Linux/Windows runtime,
-production security and load remain separate acceptance checks. SDK integration
+[TASK-003](docs/TASK-003-working-service.md) and
+[second-pc.md](docs/second-pc.md). Two physical machines, Windows/other-platform
+runtime and target load remain separate acceptance checks. Ubuntu runtime and
+real Codex on Mac are documented separately. SDK integration
 tests do not prove compatibility with those applications. OAuth discovery and
-GitHub sign-in/webhooks, configurable process rules, full statistics,
-import/export, UI, release packages and production hardening remain in the
+GitHub sign-in/webhooks, runtime-configurable process rules,
+import/export, UI and the complete platform release matrix remain in the
 [roadmap](docs/roadmap.md). There is no placeholder web application.
 
 ## Checks and license

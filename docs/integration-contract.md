@@ -124,6 +124,13 @@ PR state/head/binding отсортированы по payload pull_request.updat
 Меньшее время
 не заменяет current pointer; равное время+различное содержимое → order_conflict,
 current unknown, оба факта сохранены. Arrival time и GUID не являются порядком.
+Hash immutable Fact не включает task binding. Для PR current pointer обязателен
+отдельный normalized hash: Fact.Hash + Match(task_key,reason) + Binding.
+Сравнивать только Fact.Hash нельзя: одинаковый SHA/state/source_time при смене
+T-1→T-2 либо matched→missing/unknown/ambiguous должен дать order_conflict,
+а не Same. Persistence хранит эти pointer версии и выполняет отдельный compare;
+это обязательная integration regression WORK046, не реализованная библиотекой
+SQL-операция. Export encoder также обязан отвергать NUL identifiers до записи.
 Review хранится по review.id+commit_id, выводится submitted_at/state/user;
 CI по suite.id+head_sha+app.id, status/conclusion и source timestamp если он
 есть. Если payload не даёт сравнимого времени, несколько конфликтующих facts

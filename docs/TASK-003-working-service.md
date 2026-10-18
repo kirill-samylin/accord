@@ -1,6 +1,6 @@
 # TASK-003 — рабочий общий Accord
 
-- Статус: в работе; этап: контракты оставшегося объёма и эксплуатационная поставка.
+- Статус: в работе; этап: C приёмка/публикация, D runtime, E foundations.
 - Источник: пользователь18.10.2026 поручил доделать оставшееся до рабочего проекта.
 - База:966dda6, рабочая ветка codex/pilot, репозиторий Accord.
 - Координатор: основной агент. Общую карточку редактирует только координатор.
@@ -11,6 +11,18 @@
   по отдельным токенам. GitHub OAuth/browser identity не подменяется bearer.
 - Второй физический ПК пользователь сможет проверить позже, ОС пока не указана.
   Это внешняя зависимость; подготовить воспроизводимую инструкцию и не заявлять PASS.
+
+## Текущее состояние
+
+- VPS: dc9c74c/schema1, native HTTP+MCP, отдельные токены и настоящий Codex PASS;
+  Tandem/443 сохранены. Nativefix опубликован в origin/codex/native-proxy.
+- Main checkpoint2dfd86b: C source/Host APPROVE041, полный C check PASS042,
+  новые process tests/README APPROVE045. Отдельная method delta047 ожидает048.
+- D: config-runtime-003/codex/config-runtime от2dfd86b, автор043; main не меняет.
+- E pure libraries: integration-libs-003/codex/integration-libs,59ae1a1,
+  автор044, APPROVE046; SQL/runtime/schema4 и включение доставок отсутствуют.
+- Непосредственно далее:048 → commit C QA → build/private deploy schema2 →
+  isolatedVPS load; D/E независимые reviews после sourcefreeze.
 
 ## Цель и критерии
 
@@ -49,6 +61,14 @@ restore; клиенты поддерживают lease во время длит�
 | 038 | Новый разработчик C fixes | Store metric attribution/blocked + bridge JSON precision | Исправляет пакет037 |
 | 039 | Тестировщик native proxy | Process regression в native worktree; свой отчёт | После036 approve |
 | 040 | Архитектор E | docs/integration-contract.md; своя WORK | Конкретный контракт webhooks/import/export |
+| 041 | Независимый повторный reviewer/test review | C038+Host combination, native039 tests, инструкции | APPROVE всех трёх областей |
+| 042 | Отдельный тестировщик C | main tests/acceptance/infra; своя WORK | Schema2/process приёмка после041 |
+| 043 | Разработчик runtime D | Изолированная codex/config-runtime от2dfd86b | Config schema3, роли/scopes и workflow rules |
+| 044 | Разработчик E libraries | Изолированная codex/integration-libs | GitHub/notification/interchange foundations |
+| 045 | Независимый test reviewer C | Tests042/README/load method | C tests APPROVE, harness REQUEST CHANGES |
+| 046 | Независимый reviewer/security E libraries | Frozen044 | APPROVE foundation; runtime obligations сохранены |
+| 047 | Новый developer/tester load | Только cgroup helper/harness tests/docs | Исправил REV045-01, targeted14 PASS |
+| 048 | Независимый reviewer load delta | Frozen047 | Проверка метода до isolatedVPS load |
 
 Независимые review/security выполняются до live deploy. Unit/integration пишет
 разработчик; новые process/E2E — отдельный tester после approve и review тестов.
@@ -117,3 +137,12 @@ restore; клиенты поддерживают lease во время длит�
 - Config parser033 отдельно APPROVE036. C store/transport037 REQUEST CHANGES:
   participant attribution, точный int64 через SDK bridge и закрытие blocked
   интервала при отмене. Свежий038 исправляет единый пакет; C пока не deployed.
+- WORK038 исправлена и041 APPROVE: все3 независимых repro PASS, C+Host
+  combination и новые native039 process tests также APPROVE. Source checkpoint
+  2dfd86bf1627775a8fdd87c650d9a3ada4cae17f;042 обновляет schema/tool fixtures и
+  выполняет один полный make check. До этой приёмки source checkpoint не release.
+- WORK043 выполняет D только в отдельной codex/config-runtime, не меняет main
+  во время042. Перед объединением требуется merge свежих C test-fixtures,
+  независимые code/security и затем отдельная D process приёмка.
+- WORK040 E-контракт сохранён; root уточнил local-admin import requeue для
+  imported_unknown. E ещё не реализована, UI/public ingress/recipients открыты.
