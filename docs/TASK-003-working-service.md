@@ -24,8 +24,9 @@
   codex/config-qa WORK056:33 targeted process suites PASS, fullcheck FAIL
   QA056-01 (concurrent CLI startup sqlite locked261). Источник d5 неизменён;
   исправление и обязательный повтор включены в057, не сняты flaky green retry.
-- Performance: codex/performance отd5a3a12 + rootdocs bee0bea, WORK057;
-  schema4 owner один, live production ещё не менялась. Метод059 APPROVE061.
+- Performance: codex/performance b9fdc155, WORK057, source freeze
+  42d32f78…c2d6; schema4 owner один, live production ещё не менялась.
+  Метод059 APPROVE061; два source blocker063 открыты.
   Авторские unit/race и local annual diagnostic не заменяют target acceptance.
 - E pure libraries: integration-libs-003/codex/integration-libs,59ae1a1,
   автор044, APPROVE046; SQL/runtime/schema5 и включение доставок отсутствуют.
@@ -93,6 +94,9 @@ restore; клиенты поддерживают lease во время длит�
 | 061 | Независимый test/method reviewer | Frozen056 codex/config-qa и059 main; свои report/WORK | APPROVE обеих test deltas; QA056-01 не снят |
 | 062 | DevOps backup budget | Изолированная codex/backup-budget, только backup helper/tests/docs | Annual backup capacity/byte budget/retention, без live deletion |
 | 063 | Независимый code reviewer performance | Read-only codex/performance; свой report/WORK | Полный contract053, cache/COW/stats/schema4 и corrections QA056-01/scopes |
+| 064 | Независимый security performance | Frozen b9fdc155; свой report/WORK | Authority/replay/cache/COW/migration4, известные063 blockers |
+| 065 | Независимый review backup budget | Frozen aeb085c0; свой report/WORK | Policy/source/new tests062, без live deletion |
+| 066 | Новый developer performance fixes | Изолированная codex/performance-fixes отb9fdc155 | R063-01/02, unit regression и аудит аналогичных outward wrappers |
 
 Независимые review/security выполняются до live deploy. Unit/integration пишет
 разработчик; новые process/E2E — отдельный tester после approve и review тестов.
@@ -264,3 +268,8 @@ restore; клиенты поддерживают lease во время длит�
   наружу shared timestamp pointer. Три private unit probes FAIL, release закрыт.
   Review продолжается до final freeze057; затем единый пакет исправляет
   новый исполнитель и проходит повторное независимое ревью.
+- WORK063 final REQUEST CHANGES относится к b9fdc155/source42d32f…c2d6;
+  финальные 21unit/events race1/strict existing CAS2 PASS, собственные3probes FAIL,
+  old tasks.go negative control2 PASS. Отчёт committed cb5388b8 в performance.
+  WORK066 исправляет этот пакет в отдельной копии; security064 проверяет
+  исходный frozen b9 независимо. Backup062 committed aeb085c0, review065 идёт.
