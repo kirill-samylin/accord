@@ -21,6 +21,9 @@ import (
 
 func TestTokenFileAndRevoke(t *testing.T) {
 	dir := t.TempDir()
+	if err := os.Chmod(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
 	db := filepath.Join(dir, "board.db")
 	path := filepath.Join(dir, "owner.token")
 	var output bytes.Buffer

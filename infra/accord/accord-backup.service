@@ -1,0 +1,26 @@
+[Unit]
+Description=Consistent private Accord SQLite backup
+After=accord.service
+ConditionPathExists=/var/lib/accord/board.db
+
+[Service]
+Type=oneshot
+User=accord
+Group=accord
+ExecStart=/usr/bin/python3 /opt/accord/admin/backup.py
+UMask=0077
+TimeoutStartSec=5min
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/accord /var/backups/accord
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX
+MemoryMax=256M
+CPUQuota=50%

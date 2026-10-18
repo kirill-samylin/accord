@@ -29,11 +29,14 @@ type OpenSession struct {
 	Machine   string `json:"machine"`
 }
 type SessionView struct {
-	SessionID      string    `json:"session_id"`
-	Role           string    `json:"role"`
-	RoleGeneration int64     `json:"role_generation"`
-	ExpiresAt      time.Time `json:"expires_at"`
-	Project        string    `json:"project"`
+	SessionID             string    `json:"session_id"`
+	Role                  string    `json:"role"`
+	RoleGeneration        int64     `json:"role_generation"`
+	ExpiresAt             time.Time `json:"expires_at"`
+	Project               string    `json:"project"`
+	SessionTTLSeconds     float64   `json:"session_ttl_seconds"`
+	TaskTTLSeconds        float64   `json:"task_ttl_seconds"`
+	HeartbeatEverySeconds float64   `json:"heartbeat_every_seconds"`
 }
 type Session struct {
 	SessionView
@@ -177,6 +180,8 @@ type Event struct {
 	Type      string    `json:"type"`
 	TaskKey   string    `json:"task_key,omitempty"`
 	SessionID string    `json:"session_id,omitempty"`
+	TokenID   string    `json:"token_id,omitempty"`
+	Reason    string    `json:"reason,omitempty"`
 	At        time.Time `json:"at"`
 }
 type EventsInput struct {

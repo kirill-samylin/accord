@@ -1,0 +1,11 @@
+[Unit]
+Description=Hourly Accord backup with seven day retention
+
+[Timer]
+OnCalendar=hourly
+Persistent=yes
+RandomizedDelaySec=120
+Unit=accord-backup.service
+
+[Install]
+WantedBy=timers.target

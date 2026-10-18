@@ -37,6 +37,13 @@ var routes = []route{
 // NewHandler authenticates every API request before dispatch, including MCP list
 // and replay. Optional ready checks storage without opening a board session.
 func NewHandler(s Service, ready func(context.Context) error) http.Handler {
+	return NewHandlerWithOptions(s, ready, HandlerOptions{})
+}
+
+// NewHandlerWithOptions retains the native HTTP/MCP contract while allowing
+// operators and isolated tests to lower the bounded admission limits.
+func NewHandlerWithOptions(s Service, ready func(context.Context) error, options HandlerOptions) http.Handler {
+	admission := newAdmission(options)
 	ops := operations(s)
 	byName := make(map[string]operation, len(ops))
 	for _, op := range ops {
@@ -44,6 +51,7 @@ func NewHandler(s Service, ready func(context.Context) error) http.Handler {
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/mcp", mcpHandler(ops))
+	mux.HandleFunc("GET /metrics", admission.metrics)
 	for _, r := range routes {
 		op := byName[r.name]
 		mux.HandleFunc(r.method+" "+r.path, func(w http.ResponseWriter, req *http.Request) {
@@ -83,6 +91,19 @@ func NewHandler(s Service, ready func(context.Context) error) http.Handler {
 			}
 		}()
 		w.Header().Set("Cache-Control", "no-store")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		if nativePath(r.URL.Path) {
+			w.Header().Set("Referrer-Policy", "no-referrer")
+			w.Header().Set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
+		}
+		if !admission.enter(w) {
+			return
+		}
+		defer admission.leave()
+		if nativePath(r.URL.Path) && hasOrigin(r.Header) {
+			writeError(w, core.Fail("FORBIDDEN", "browser Origin is not allowed on native endpoints"))
+			return
+		}
 		if r.URL.Path == "/healthz" || r.URL.Path == "/readyz" {
 			if r.Method != "GET" {
 				w.Header().Set("Allow", "GET")
@@ -220,6 +241,9 @@ func ValidateListen(address string) error {
 }
 
 func methodsForPath(path string) []string {
+	if path == "/metrics" {
+		return []string{"GET"}
+	}
 	var methods []string
 	actual := strings.Split(path, "/")
 	for _, route := range routes {

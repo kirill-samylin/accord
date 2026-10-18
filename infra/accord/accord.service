@@ -1,0 +1,47 @@
+[Unit]
+Description=Accord shared agent coordination service
+After=network.target
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+[Service]
+Type=exec
+User=accord
+Group=accord
+WorkingDirectory=/var/lib/accord
+ExecStartPre=/usr/bin/test ! -e /var/lib/accord/RESTORE_REQUIRES_RESET
+ExecStartPre=/usr/bin/test ! -e /var/lib/accord/START_REQUIRES_INSPECTION
+ExecStart=/opt/accord/current/agent-board serve --db /var/lib/accord/board.db --listen 127.0.0.1:7892
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+UMask=0077
+StateDirectory=accord
+StateDirectoryMode=0700
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+LockPersonality=yes
+RestrictNamespaces=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+IPAddressDeny=any
+IPAddressAllow=localhost
+TasksMax=64
+MemoryHigh=192M
+MemoryMax=256M
+CPUQuota=50%
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target

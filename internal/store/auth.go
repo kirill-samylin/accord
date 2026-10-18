@@ -29,7 +29,14 @@ func (s *Store) CreateToken(ctx context.Context, in core.TokenInput) (core.Token
 		return result, err
 	}
 	result = core.TokenView{ID: id, Secret: "ab_" + secret, ExpiresAt: s.clock().UTC().Add(in.TTL)}
-	_, err = s.db.ExecContext(ctx, `INSERT INTO tokens(id,hash,owner,machine,expires) VALUES(?,?,?,?,?)`, id, tokenHash(result.Secret), in.Owner, in.Machine, result.ExpiresAt.UnixNano())
+	err = s.adminTransaction(ctx, func(b *board, now time.Time) error {
+		if _, err := b.tx.ExecContext(ctx, `INSERT INTO tokens(id,hash,owner,machine,expires) VALUES(?,?,?,?,?)`, id, tokenHash(result.Secret), in.Owner, in.Machine, result.ExpiresAt.UnixNano()); err != nil {
+			return err
+		}
+		emit(b, now, "token_created", "", "")
+		b.Events[len(b.Events)-1].TokenID = id
+		return nil
+	})
 	return result, err
 }
 func (s *Store) Authenticate(ctx context.Context, secret string) (core.Principal, error) {
@@ -50,18 +57,42 @@ func (s *Store) Authenticate(ctx context.Context, secret string) (core.Principal
 
 // RevokeToken invalidates future authentication, including idempotent replay.
 func (s *Store) RevokeToken(ctx context.Context, id string) error {
-	result, err := s.db.ExecContext(ctx, `UPDATE tokens SET revoked=1 WHERE id=?`, id)
+	return s.adminTransaction(ctx, func(b *board, now time.Time) error {
+		var revoked bool
+		err := b.tx.QueryRowContext(ctx, `SELECT revoked FROM tokens WHERE id=?`, id).Scan(&revoked)
+		if err == sql.ErrNoRows {
+			return core.Fail("not_found", "token does not exist")
+		}
+		if err != nil || revoked {
+			return err
+		}
+		if _, err = b.tx.ExecContext(ctx, `UPDATE tokens SET revoked=1 WHERE id=?`, id); err != nil {
+			return err
+		}
+		emit(b, now, "token_revoked", "", "")
+		b.Events[len(b.Events)-1].TokenID = id
+		return nil
+	})
+}
+
+// ListTokens exposes identity and validity only; neither secrets nor hashes.
+func (s *Store) ListTokens(ctx context.Context) ([]core.TokenInfo, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT id,owner,machine,expires,revoked FROM tokens ORDER BY id`)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	count, err := result.RowsAffected()
-	if err != nil {
-		return err
+	defer rows.Close()
+	result := []core.TokenInfo{}
+	for rows.Next() {
+		var token core.TokenInfo
+		var expires int64
+		if err = rows.Scan(&token.ID, &token.Owner, &token.Machine, &expires, &token.Revoked); err != nil {
+			return nil, err
+		}
+		token.ExpiresAt = time.Unix(0, expires).UTC()
+		result = append(result, token)
 	}
-	if count == 0 {
-		return core.Fail("not_found", "token does not exist")
-	}
-	return nil
+	return result, rows.Err()
 }
 
 func authenticatePrincipal(ctx context.Context, b *board, p core.Principal, now time.Time) error {

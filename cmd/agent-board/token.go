@@ -26,8 +26,8 @@ func createToken(args []string, out io.Writer) error {
 		return errors.New("owner, machine, output and days 1..365 are required")
 	}
 	parent, err := os.Stat(filepath.Dir(*output))
-	if err != nil || !parent.IsDir() {
-		return errors.New("token output parent directory must already exist")
+	if err != nil || !parent.IsDir() || parent.Mode().Perm() != 0700 {
+		return errors.New("token output parent directory must exist with mode 0700")
 	}
 	file, err := os.OpenFile(*output, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 	if err != nil {
@@ -76,7 +76,7 @@ func revokeToken(args []string, out io.Writer) error {
 	if *id == "" {
 		return errors.New("token ID is required")
 	}
-	s, err := openDB(*db, 15*time.Minute, 15*time.Minute)
+	s, err := existingDB(*db)
 	if err != nil {
 		return err
 	}

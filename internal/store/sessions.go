@@ -29,6 +29,7 @@ func (s *Store) Describe(ctx context.Context, p core.Principal, in core.OpenSess
 			generation = b.Roles[in.Role]
 		}
 		v := core.SessionView{SessionID: id, Role: in.Role, RoleGeneration: generation, ExpiresAt: now.Add(s.cfg.SessionTTL), Project: s.cfg.Project}
+		s.sessionTiming(&v)
 		b.Sessions[id] = &core.Session{SessionView: v, PrincipalID: p.ID, RunID: in.RunID, Machine: in.Machine}
 		emit(b, now, "session_opened", "", id)
 		return v, nil
@@ -56,6 +57,13 @@ func (s *Store) Heartbeat(ctx context.Context, a core.Actor, in core.HeartbeatIn
 			s.renew(t, now)
 		}
 		sess.ExpiresAt = now.Add(s.cfg.SessionTTL)
+		s.sessionTiming(&sess.SessionView)
 		return sess.SessionView, nil
 	})
+}
+
+func (s *Store) sessionTiming(v *core.SessionView) {
+	v.SessionTTLSeconds = s.cfg.SessionTTL.Seconds()
+	v.TaskTTLSeconds = s.cfg.LeaseTTL.Seconds()
+	v.HeartbeatEverySeconds = min(s.cfg.SessionTTL, s.cfg.LeaseTTL).Seconds() / 3
 }

@@ -16,6 +16,10 @@ See [requirements 1.1](docs/requirements.md), [architecture](docs/architecture.m
 [remaining V1 scope](docs/roadmap.md). The original specification is preserved in
 [docs/source](docs/source/TZ-agent-board-service-v1.0.md).
 
+The shared-service delivery is tracked in [TASK-003](docs/TASK-003-working-service.md).
+Its [service contract](docs/service-contract.md) separates the working bearer
+release from the remaining V1 features and external acceptance checks.
+
 ## Build and run
 
 Use Go 1.26.1 or newer. The isolated development runtime and reproducible checks
@@ -114,6 +118,43 @@ The CLI makes one operation per invocation. It does not spawn agents, run a
 background heartbeat or maintain a coordinator checkpoint. Save decisions,
 unresolved checks and the next action in the client's repository.
 
+## Native MCP client with automatic heartbeat
+
+For long agent runs, use the stdio bridge instead of connecting a native client
+directly over HTTP. It forwards the server's MCP tools and maintains the current
+session/task lease independently of model output:
+
+```sh
+bin/agent-board mcp --server http://127.0.0.1:8080 --token-file .local/alice.token
+```
+
+Configure the MCP client to launch that executable with those arguments. Its
+standard output is exclusively MCP; diagnostics go to standard error. One bridge
+serves one board session. It injects the opened session ID when omitted and rejects
+a different one. The server supplies TTL and heartbeat hints; `--heartbeat-interval`
+can shorten the interval. Expired ownership, failed heartbeat or an uncertain
+network result quarantines mutations until the process is restarted. The bridge
+cannot stop an IDE or model from editing local files; respect its stop message.
+EOF/SIGTERM stops renewal and lets server leases expire naturally.
+
+## Local administration and snapshots
+
+These are local administrator commands, not operations available to remote agents:
+
+```sh
+bin/agent-board token list --db .local/board.db
+bin/agent-board sessions list --db .local/board.db
+bin/agent-board backup --db .local/board.db --output .local/board-snapshot.db
+```
+
+Backup uses a consistent online SQLite snapshot, full integrity checking and
+atomic no-overwrite publication from private staging. The output directory must
+be mode0700. A snapshot contains confidential project data and credential hashes;
+protect it like the database. Existing output files and unsafe paths are rejected.
+Token issuance/revocation is audited transactionally. For restore, follow the
+offline credential/session reset and guarded start in [deployment.md](docs/deployment.md).
+Do not replace a live database with a snapshot or start it with restored credentials.
+
 ## Lease safety
 
 Default task and session/singleton TTL: 15 minutes. `serve --task-ttl 15m
@@ -144,6 +185,11 @@ Both transports enforce body limits and reject unexpected business fields.
 Cross-origin unsafe requests and SDK localhost DNS rebinding requests are
 rejected. No tokens or incoming request bodies are logged. Token creation and
 revocation are local administration commands, not anonymous HTTP endpoints.
+Native API/MCP/metrics requests with any Origin header are rejected, including
+GET; native clients without Origin continue to work. A bounded global request
+and concurrency limiter protects authentication and processing. `/metrics`
+requires bearer authentication and exposes fixed aggregate series, without
+participant/session labels. Runtime memory series are not presented as measured RSS.
 
 `serve` accepts only a literal loopback IP. It has no built-in TLS. Remote use
 requires a separately configured and reviewed TLS reverse proxy on the host,
@@ -166,8 +212,11 @@ import/export, UI, release packages and production hardening remain in the
 make check
 ```
 
-This runs formatting validation, vet, unit/integration tests, race detection
-and a binary build. Process/E2E acceptance is maintained separately after an
+This requires Go and Python3 with standard-library `unittest`/`sqlite3`.
+It runs formatting validation, vet, unit/integration/process tests, the Python
+deployment regression suite, race detection and a binary build. Infra tests
+mock systemd operations and do not modify a server. Process/E2E acceptance
+is maintained separately after an
 independent review; see [task status](docs/TASK-001-pilot.md) for evidence and
 remaining checks. SQLite and the MCP SDK are pinned in `go.mod`/`go.sum`.
 

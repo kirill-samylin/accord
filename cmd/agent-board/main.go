@@ -26,30 +26,87 @@ func main() {
 	}
 }
 func run(args []string, in io.Reader, out io.Writer) error {
+	if helpRequested(args) {
+		_, err := io.WriteString(out, commandHelp)
+		return err
+	}
 	if len(args) == 0 {
-		return errors.New("usage: agent-board serve | token create | call <operation>")
+		return errors.New("usage: agent-board serve | token | sessions list | backup | maintenance reset | mcp | call <operation>")
 	}
 	switch args[0] {
 	case "serve":
 		return serve(args[1:], out)
+	case "mcp":
+		return runMCP(args[1:], in, out)
+	case "backup":
+		return backup(args[1:], out)
+	case "sessions":
+		if len(args) < 2 || args[1] != "list" {
+			return errors.New("usage: agent-board sessions list")
+		}
+		return listSessions(args[2:], out)
+	case "maintenance":
+		if len(args) < 2 || args[1] != "reset" {
+			return errors.New("usage: agent-board maintenance reset")
+		}
+		return recoverState(args[2:], out)
 	case "token":
 		if len(args) < 2 {
-			return errors.New("usage: agent-board token create | revoke")
+			return errors.New("usage: agent-board token create | list | revoke | revoke-all")
 		}
 		switch args[1] {
 		case "create":
 			return createToken(args[2:], out)
 		case "revoke":
 			return revokeToken(args[2:], out)
+		case "list":
+			return listTokens(args[2:], out)
+		case "revoke-all":
+			return revokeAllTokens(args[2:], out)
 		default:
-			return errors.New("usage: agent-board token create | revoke")
+			return errors.New("usage: agent-board token create | list | revoke | revoke-all")
 		}
 	case "call":
 		return call(args[1:], in, out)
 	default:
-		return errors.New("unknown command; use serve, token create, or call")
+		return errors.New("unknown command; use --help")
 	}
 }
+
+func helpRequested(args []string) bool {
+	if len(args) == 1 && (args[0] == "help" || args[0] == "-h" || args[0] == "--help") {
+		return true
+	}
+	if len(args) == 2 && (args[1] == "-h" || args[1] == "--help") {
+		switch args[0] {
+		case "serve", "mcp", "call", "backup", "token", "sessions", "maintenance":
+			return true
+		}
+	}
+	return len(args) == 3 && (args[0] == "token" || args[0] == "sessions" || args[0] == "maintenance") && (args[2] == "-h" || args[2] == "--help")
+}
+
+const commandHelp = `Accord — authenticated coordination server and native client
+
+agent-board serve --db PATH --listen 127.0.0.1:8080 [--task-ttl 15m --session-ttl 15m]
+agent-board mcp --server ORIGIN --token-file PRIVATE [--heartbeat-interval 1m]
+agent-board call OPERATION --server ORIGIN --token-file PRIVATE < request.json
+agent-board token create --db PATH --owner NAME --machine NAME --output NEW_PRIVATE [--days 30]
+agent-board token list --db PATH
+agent-board token revoke --db PATH --id TOKEN_ID
+agent-board token revoke-all --db PATH --reason REASON
+agent-board sessions list --db PATH
+agent-board backup --db PATH --output NEW_PRIVATE
+agent-board maintenance reset --db PATH --reason REASON
+
+Remote origins require HTTPS; HTTP accepts literal loopback only. No redirects.
+Tokens are read from a private file or AGENT_BOARD_TOKEN, never a secret argument.
+The mcp command writes protocol only to stdout and renews the current lease.
+On LEASE_UNCERTAIN/LEASE_LOST stop local edits; restart with a fresh describe.
+EOF stops heartbeat without releasing work. Administrative commands run locally.
+Recovery commands require the old server to be stopped; see docs/deployment.md.
+`
+
 func flags(name string) *flag.FlagSet {
 	f := flag.NewFlagSet(name, flag.ContinueOnError)
 	f.SetOutput(io.Discard)
