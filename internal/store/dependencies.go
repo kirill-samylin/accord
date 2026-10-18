@@ -42,7 +42,7 @@ func (s *Store) Link(ctx context.Context, a core.Actor, in core.LinkInput) (core
 			return core.Task{}, core.Fail("invalid_input", "pilot links require tasks")
 		}
 
-		if target.Lease != nil {
+		if target.Lease != nil || in.Generation != 0 {
 			if _, err = owned(b, a, target.Key, in.Generation); err != nil {
 				return core.Task{}, err
 			}

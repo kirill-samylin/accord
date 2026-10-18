@@ -112,6 +112,9 @@ Update: `{request_id,generation,title?,description?}`; только разреш
 метаданные. Evidence/role/state/lease/attempts нельзя свободно подменять patch.
 Активную задачу изменяет её держатель с generation; незахваченную — requester/
 coordinator. Ограничения по авторизации применяет core, не только HTTP handler.
+Ненулевое generation требует действующую аренду и после expiry/release даёт
+LEASE_LOST; административный запрос к незахваченной задаче опускает generation
+либо передаёт0. Такое же правило применяется к link/unlink.
 
 ```json
 {"request_id":"done-1","generation":1,"state":"done",

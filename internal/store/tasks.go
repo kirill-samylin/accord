@@ -94,6 +94,10 @@ func (s *Store) Next(ctx context.Context, a core.Actor, in core.NextInput) (core
 		}
 		candidates := make([]*core.Task, 0)
 		for _, t := range b.Tasks {
+			epic := b.Tasks[t.EpicKey]
+			if epic == nil || epic.Type != "epic" || epic.State != "open" {
+				continue
+			}
 			if t.Type == "task" && t.Role == sess.Role && t.State == "ready" && t.Lease == nil && !blocked(b, t) && (in.TaskKey == "" || in.TaskKey == t.Key) && (in.EpicKey == "" || in.EpicKey == t.EpicKey) {
 				candidates = append(candidates, t)
 			}
@@ -131,7 +135,7 @@ func (s *Store) Update(ctx context.Context, a core.Actor, in core.UpdateInput) (
 		if err != nil {
 			return core.Task{}, err
 		}
-		if t.Lease != nil {
+		if t.Lease != nil || in.Generation != 0 {
 			if _, err = owned(b, a, t.Key, in.Generation); err != nil {
 				return core.Task{}, err
 			}

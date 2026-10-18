@@ -16,6 +16,8 @@ import (
 	"agent-board/internal/transport"
 )
 
+const maxResponseBytes = 1 << 20
+
 func call(args []string, in io.Reader, out io.Writer) error {
 	if len(args) == 0 {
 		return errors.New("usage: agent-board call <operation> [--server URL] [--token-file FILE] < request.json")
@@ -80,9 +82,9 @@ func call(args []string, in io.Reader, out io.Writer) error {
 		return errors.New("request failed; ownership may be uncertain: stop local edits, reconnect and verify your lease")
 	}
 	defer response.Body.Close()
-	result, err := io.ReadAll(io.LimitReader(response.Body, 1<<20))
-	if err != nil {
-		return errors.New("cannot read response; reconnect and verify ownership")
+	result, err := io.ReadAll(io.LimitReader(response.Body, maxResponseBytes+1))
+	if err != nil || len(result) > maxResponseBytes {
+		return errors.New("response exceeds limit or cannot be read; ownership may be uncertain: stop local edits, reconnect and verify your lease")
 	}
 	if _, err = out.Write(result); err != nil {
 		return err

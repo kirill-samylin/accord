@@ -70,6 +70,11 @@ func TestDatabaseRejectsUnsafeExistingFilesWithoutChangingTargets(t *testing.T) 
 						t.Fatal(err)
 					}
 				}
+				if kind != "dangling" {
+					if err := os.Chmod(foreign, 0644); err != nil {
+						t.Fatal(err)
+					}
+				}
 				if kind == "public" {
 					if err := os.WriteFile(path+suffix, payload, 0644); err != nil {
 						t.Fatal(err)

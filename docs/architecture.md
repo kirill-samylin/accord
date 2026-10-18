@@ -20,7 +20,8 @@ Pure-Go `modernc.org/sqlite` v1.60.1 и official MCP Go SDK v1.8.0 фиксир�
 `https://github.com/kirill-samylin/accord.git` (origin/main `9537cb7`, LICENSE
 ©2026 Кирилл Самылин), принятом после передачи ссылки пользователем.
 Предварительный Apache-2.0 из исходника заменён этим фактическим решением.
-Remote подключён; push и выпуск не входят в поручение. Working service остаётся
+Remote подключён; TASK-002 разрешает push проверенной рабочей ветки.
+Merge/main и выпуск не поручены. Working service остаётся
 agent-board; переименование во время параллельной реализации не выполняется.
 
 ```text
@@ -155,8 +156,10 @@ Events page фиксирует high_water на начало чтения и пр
 ## ADR-006. MCP и авторизация
 
 Official Go SDK v1.8.0, Streamable HTTP stateless handler; board-session в
-tool input. Явно рекламируемая версия: 2026-07-28; поддержка 2025-11-25
-допускается для compatibility только после SDK-теста. Версии перечисляются
+tool input. Основная версия: 2026-07-28; compatibility 2025-11-25 добавлена
+в TASK-002 после выявленного сбоя реального Codex. Отдельная регрессия проверяет
+legacy initialize/initialized/list/call, существующий SDK-тест — основной протокол.
+Фактический результат повторной приёмки фиксируется в TASK-002. Версии перечисляются
 через ServerOptions.SupportedProtocolVersions, не самописный JSON-RPC handshake.
 SDK 1.8.0 поддерживает 2026-07-28 через stateless HTTP; stateful handler на
 новой версии имеет иной контракт, поэтому его не включаем случайно.

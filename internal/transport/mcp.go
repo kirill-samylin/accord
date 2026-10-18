@@ -15,7 +15,7 @@ const ProtocolVersion = "2026-07-28"
 type principalKey struct{}
 
 func mcpHandler(ops []operation) http.Handler {
-	server := mcp.NewServer(&mcp.Implementation{Name: "agent-board", Version: "0.1.0-pilot"}, &mcp.ServerOptions{SupportedProtocolVersions: []string{ProtocolVersion}})
+	server := mcp.NewServer(&mcp.Implementation{Name: "agent-board", Version: "0.1.0-pilot"}, &mcp.ServerOptions{SupportedProtocolVersions: []string{ProtocolVersion, "2025-11-25"}})
 	for _, op := range ops {
 		schema := *op.schema
 		schema.Properties = make(map[string]*jsonschema.Schema, len(op.schema.Properties)+1)

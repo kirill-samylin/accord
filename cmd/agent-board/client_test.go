@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -115,7 +118,34 @@ func TestTokenFilePrivacy(t *testing.T) {
 	if err := os.WriteFile(path, []byte("synthetic-test"), 0644); err != nil {
 		t.Fatal(err)
 	}
+	if err := os.Chmod(path, 0644); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := readToken(path); err == nil {
 		t.Fatal("accepted public token file")
+	}
+}
+
+func TestCallResponseLimit(t *testing.T) {
+	t.Setenv("AGENT_BOARD_TOKEN", "synthetic-response-limit")
+	for _, size := range []int{maxResponseBytes - 1, maxResponseBytes, maxResponseBytes + 1} {
+		t.Run(fmt.Sprint(size), func(t *testing.T) {
+			// Valid JSON at the boundary catches silent successful truncation.
+			payload := `"` + strings.Repeat("x", size-2) + `"`
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				io.WriteString(w, payload)
+			}))
+			defer server.Close()
+			var output bytes.Buffer
+			err := call([]string{"describe", "--server", server.URL}, strings.NewReader(`{}`), &output)
+			if size > maxResponseBytes {
+				if err == nil || !strings.Contains(err.Error(), "ownership may be uncertain") || output.Len() != 0 {
+					t.Fatal("oversized response was not rejected before output with ownership guidance")
+				}
+			} else if err != nil || output.String() != payload || !json.Valid(output.Bytes()) {
+				t.Fatalf("response within limit rejected or changed: %v", err)
+			}
+		})
 	}
 }

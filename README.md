@@ -26,7 +26,6 @@ checkout, Make uses `.local/toolchains/go/bin/go` automatically:
 make build
 mkdir -p .local
 chmod 700 .local
-chmod 700 .local
 bin/agent-board token create \
   --db .local/board.db --owner alice --machine laptop-a \
   --days 30 --output .local/alice.token
@@ -135,7 +134,8 @@ not distributed file locks.
 ## MCP and HTTP boundaries
 
 MCP endpoint: `http://127.0.0.1:8080/mcp`, Streamable HTTP, stateless transport,
-protocol **2026-07-28**, official Go SDK **v1.8.0**. Board sessions persist in
+protocol **2026-07-28** with **2025-11-25** compatibility through official
+Go SDK **v1.8.0**. Board sessions persist in
 SQLite independently of transport connections. The 11 tools stay fixed after
 `describe`; each later call includes `session_id`. Authentication is required
 for initialization, listing and calls. REST uses the same DTOs and rules.
@@ -151,7 +151,9 @@ with bearer headers preserved, bounded requests and appropriate network access.
 The pilot does not ship a public proxy deployment or claim that it was tested.
 Do not expose unencrypted HTTP using forwarding or a public interface.
 
-Actual Claude Code/Codex setup, two physical machines, Linux/Windows,
+Actual client checks and a second-PC setup are tracked in
+[TASK-002](docs/TASK-002-publication-readiness.md) and
+[second-pc.md](docs/second-pc.md). Two physical machines, Linux/Windows runtime,
 production security and load remain separate acceptance checks. SDK integration
 tests do not prove compatibility with those applications. OAuth discovery and
 GitHub sign-in/webhooks, configurable process rules, full statistics,
@@ -177,5 +179,6 @@ Accord (`agent-board`) — отдельный сервис общей очере
 Для локального старта: `make build`, создание токена в приватный файл,
 `bin/agent-board serve`. Примеры выше не содержат секретов. Переработанное ТЗ
 и ограничения пилота находятся в [требованиях](docs/requirements.md).
-Tandem временно не используется по указанию пользователя. Реальная проверка
-двух машин и клиентов Claude Code/Codex ещё не заменяется локальными тестами.
+Tandem временно не используется по указанию пользователя. Актуальные проверки
+и [инструкция второго ПК](docs/second-pc.md) — в [TASK-002](docs/TASK-002-publication-readiness.md).
+Проверка двух физических машин остаётся отдельным этапом.
