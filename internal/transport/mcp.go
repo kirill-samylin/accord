@@ -14,7 +14,7 @@ const ProtocolVersion = "2026-07-28"
 
 type principalKey struct{}
 
-func mcpHandler(ops []operation) http.Handler {
+func mcpHandler(ops []operation, externalHostPolicy bool) http.Handler {
 	server := mcp.NewServer(&mcp.Implementation{Name: "agent-board", Version: "0.1.0-pilot"}, &mcp.ServerOptions{SupportedProtocolVersions: []string{ProtocolVersion, "2025-11-25"}})
 	for _, op := range ops {
 		schema := *op.schema
@@ -50,7 +50,9 @@ func mcpHandler(ops []operation) http.Handler {
 				return toolResult(value, err)
 			})
 	}
-	handler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return server }, &mcp.StreamableHTTPOptions{Stateless: true, JSONResponse: true, MaxRequestBodyBytes: MaxBodyBytes})
+	// The SDK's localhost guard rejects a TLS proxy's advertised Host. Disable
+	// it only behind NewHandlerWithOptions' validated exact authority policy.
+	handler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return server }, &mcp.StreamableHTTPOptions{Stateless: true, JSONResponse: true, MaxRequestBodyBytes: MaxBodyBytes, DisableLocalhostProtection: externalHostPolicy})
 	return http.NewCrossOriginProtection().Handler(handler)
 }
 

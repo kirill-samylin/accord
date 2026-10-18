@@ -24,7 +24,7 @@ func (p authProbe) Authenticate(ctx context.Context, token string) (core.Princip
 }
 
 func nativeRequest(handler http.Handler, method, path, token string, headers http.Header) *httptest.ResponseRecorder {
-	req := httptest.NewRequest(method, path, nil)
+	req := httptest.NewRequest(method, "http://127.0.0.1"+path, nil)
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}

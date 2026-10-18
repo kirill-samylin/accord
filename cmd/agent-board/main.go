@@ -88,7 +88,7 @@ func helpRequested(args []string) bool {
 
 const commandHelp = `Accord — authenticated coordination server and native client
 
-agent-board serve --db PATH --listen 127.0.0.1:8080 [--task-ttl 15m --session-ttl 15m]
+agent-board serve --db PATH --listen 127.0.0.1:8080 [--external-host DNS:PORT] [--task-ttl 15m --session-ttl 15m]
 agent-board mcp --server ORIGIN --token-file PRIVATE [--heartbeat-interval 1m]
 agent-board call OPERATION --server ORIGIN --token-file PRIVATE < request.json
 agent-board token create --db PATH --owner NAME --machine NAME --output NEW_PRIVATE [--days 30]
@@ -132,6 +132,7 @@ func serve(args []string, out io.Writer) error {
 	f := flags("serve")
 	db := f.String("db", ".local/board.db", "database path")
 	address := f.String("listen", "127.0.0.1:8080", "loopback IP:port")
+	externalHost := f.String("external-host", os.Getenv("ACCORD_EXTERNAL_HOST"), "exact advertised DNS:port; defaults to ACCORD_EXTERNAL_HOST")
 	taskTTL := f.Duration("task-ttl", 15*time.Minute, "task lease TTL")
 	sessionTTL := f.Duration("session-ttl", 15*time.Minute, "session and singleton role TTL")
 	if err := parse(f, args); err != nil {
@@ -141,6 +142,9 @@ func serve(args []string, out io.Writer) error {
 		return errors.New("TTLs must be between 1s and 24h")
 	}
 	if err := transport.ValidateListen(*address); err != nil {
+		return err
+	}
+	if err := transport.ValidateExternalHost(*externalHost); err != nil {
 		return err
 	}
 	listener, err := net.Listen("tcp", *address)
@@ -153,7 +157,7 @@ func serve(args []string, out io.Writer) error {
 		return err
 	}
 	defer s.Close()
-	server := &http.Server{Handler: transport.NewHandler(s, s.Ready), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: time.Minute, MaxHeaderBytes: 16 << 10}
+	server := &http.Server{Handler: transport.NewHandlerWithOptions(s, s.Ready, transport.HandlerOptions{ExternalHost: *externalHost}), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: time.Minute, MaxHeaderBytes: 16 << 10}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	done := make(chan struct{})

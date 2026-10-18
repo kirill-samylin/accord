@@ -20,7 +20,7 @@ func TestHeartbeatAfterRateLimitRecovery(t *testing.T) {
 	}
 	deadline := time.Now().Add(2 * time.Second)
 	for {
-		req := httptest.NewRequest("POST", "/api/v1/heartbeat", strings.NewReader(`{"request_id":"after-rate-limit"}`))
+		req := httptest.NewRequest("POST", "http://127.0.0.1/api/v1/heartbeat", strings.NewReader(`{"request_id":"after-rate-limit"}`))
 		req.Header.Set("Authorization", "Bearer "+f.token)
 		req.Header.Set("X-Session", session.SessionID)
 		req.Header.Set("Content-Type", "application/json")

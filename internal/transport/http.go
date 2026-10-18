@@ -43,6 +43,11 @@ func NewHandler(s Service, ready func(context.Context) error) http.Handler {
 // NewHandlerWithOptions retains the native HTTP/MCP contract while allowing
 // operators and isolated tests to lower the bounded admission limits.
 func NewHandlerWithOptions(s Service, ready func(context.Context) error, options HandlerOptions) http.Handler {
+	if ValidateExternalHost(options.ExternalHost) != nil {
+		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			writeError(w, core.Fail("INTERNAL", "invalid HTTP host policy"))
+		})
+	}
 	admission := newAdmission(options)
 	ops := operations(s)
 	byName := make(map[string]operation, len(ops))
@@ -50,7 +55,7 @@ func NewHandlerWithOptions(s Service, ready func(context.Context) error, options
 		byName[op.name] = op
 	}
 	mux := http.NewServeMux()
-	mux.Handle("/mcp", mcpHandler(ops))
+	mux.Handle("/mcp", mcpHandler(ops, options.ExternalHost != ""))
 	mux.HandleFunc("GET /metrics", admission.metrics)
 	for _, r := range routes {
 		op := byName[r.name]
@@ -100,6 +105,10 @@ func NewHandlerWithOptions(s Service, ready func(context.Context) error, options
 			return
 		}
 		defer admission.leave()
+		if !allowedHost(r, options.ExternalHost) {
+			writeError(w, core.Fail("FORBIDDEN", "Host is not allowed"))
+			return
+		}
 		if nativePath(r.URL.Path) && hasOrigin(r.Header) {
 			writeError(w, core.Fail("FORBIDDEN", "browser Origin is not allowed on native endpoints"))
 			return
