@@ -3,6 +3,7 @@ package bridge
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"log/slog"
@@ -73,6 +74,9 @@ func Serve(ctx context.Context, options Options, transport mcp.Transport) error 
 		Instructions: "Use describe once with a fresh request_id per process, role, run_id and token machine. Session IDs are injected. This bridge renews ownership while alive. LEASE_UNCERTAIN or LEASE_LOST means stop local edits immediately and restart with a fresh describe; the bridge cannot stop your shell/file tools. Closing stdin stops heartbeat without releasing work."})
 	listing, stopListing := context.WithTimeout(ctx, 10*time.Second)
 	err = b.mirror(listing)
+	if err == nil {
+		err = b.mirrorResources(listing)
+	}
 	stopListing()
 	if err != nil {
 		return errors.New("cannot read Accord MCP tool catalogue")
@@ -132,7 +136,8 @@ func (b *bridge) quarantine() {
 
 func failure(code, message string) *mcp.CallToolResult {
 	value := map[string]string{"code": code, "message": message}
-	return &mcp.CallToolResult{IsError: true, StructuredContent: value, Content: []mcp.Content{&mcp.TextContent{Text: code + ": " + message}}}
+	encoded, _ := json.Marshal(value)
+	return &mcp.CallToolResult{IsError: true, StructuredContent: value, Content: []mcp.Content{&mcp.TextContent{Text: string(encoded)}}}
 }
 
 func (b *bridge) uncertain() *mcp.CallToolResult {

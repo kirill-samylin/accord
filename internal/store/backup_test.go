@@ -56,7 +56,7 @@ func TestBackupOnlineWALAndRecovery(t *testing.T) {
 	if backupErr != nil {
 		t.Fatal(backupErr)
 	}
-	if metadata.SchemaVersion != 1 || metadata.CreatedAt.IsZero() {
+	if metadata.SchemaVersion != SchemaVersion || metadata.CreatedAt.IsZero() {
 		t.Fatalf("backup metadata: %+v", metadata)
 	}
 	raw, err := os.ReadFile(target)

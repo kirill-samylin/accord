@@ -69,8 +69,8 @@ func verifySchema(ctx context.Context, db *sql.DB) error {
 	if err := db.QueryRowContext(ctx, `PRAGMA user_version`).Scan(&version); err != nil {
 		return err
 	}
-	if version != 1 {
-		return fmt.Errorf("backup requires supported schema version 1")
+	if version < 1 || version > SchemaVersion {
+		return fmt.Errorf("backup requires a supported schema version")
 	}
 	return nil
 }
@@ -138,6 +138,19 @@ func Backup(ctx context.Context, source, output string) (core.BackupResult, erro
 	if err = checkSnapshot(ctx, stage); err != nil {
 		return result, err
 	}
+	snapshot, err := openReadOnly(ctx, stage)
+	if err != nil {
+		return result, err
+	}
+	var snapshotVersion int
+	err = snapshot.QueryRowContext(ctx, `PRAGMA user_version`).Scan(&snapshotVersion)
+	closeErr := snapshot.Close()
+	if err != nil {
+		return result, err
+	}
+	if closeErr != nil {
+		return result, closeErr
+	}
 	if err = file.Sync(); err != nil {
 		return result, err
 	}
@@ -164,7 +177,7 @@ func Backup(ctx context.Context, source, output string) (core.BackupResult, erro
 	if err = syncDirectory(filepath.Dir(target)); err != nil {
 		return result, err
 	}
-	result = core.BackupResult{SHA256: hex.EncodeToString(digest.Sum(nil)), CreatedAt: time.Now().UTC(), SchemaVersion: 1}
+	result = core.BackupResult{SHA256: hex.EncodeToString(digest.Sum(nil)), CreatedAt: time.Now().UTC(), SchemaVersion: snapshotVersion}
 	completed = true
 	return result, nil
 }

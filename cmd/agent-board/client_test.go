@@ -114,6 +114,28 @@ func TestCallDescribeCreateGetAndEvents(t *testing.T) {
 	if len(page.Events) != 1 || !page.HasMore {
 		t.Fatal("events did not preserve pagination")
 	}
+	var epics core.TasksPage
+	invoke("epics", map[string]any{"session_id": session.SessionID, "limit": 1}, &epics)
+	if len(epics.Tasks) != 1 || epics.Tasks[0].Key != epic.Key {
+		t.Fatal("CLI epic page differs from created state")
+	}
+	var task core.Task
+	invoke("create", map[string]string{"session_id": session.SessionID, "request_id": "cli-task", "type": "task",
+		"epic_key": epic.Key, "role": "coordinator", "title": "CLI task", "description": "Synthetic"}, &task)
+	var note core.Note
+	invoke("note", map[string]string{"session_id": session.SessionID, "request_id": "cli-note", "action": "create",
+		"scope_type": "role", "scope_id": "coordinator", "source_task_key": task.Key, "text": "Synthetic CLI note"}, &note)
+	var notes core.NotesPage
+	invoke("notes", map[string]string{"session_id": session.SessionID, "scope_type": "role", "scope_id": "coordinator"}, &notes)
+	if len(notes.Notes) != 1 || notes.Notes[0].Key != note.Key {
+		t.Fatal("CLI note page differs from mutation")
+	}
+	var stats core.Stats
+	invoke("stats", map[string]string{"session_id": session.SessionID, "from": time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano),
+		"to": time.Now().Add(time.Hour).UTC().Format(time.RFC3339Nano), "group_by": "role"}, &stats)
+	if stats.Totals.CurrentQueue.Ready != 1 {
+		t.Fatal("CLI stats did not read the current queue")
+	}
 }
 
 func TestTokenFilePrivacy(t *testing.T) {

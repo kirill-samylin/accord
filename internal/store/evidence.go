@@ -20,7 +20,9 @@ func finishAttempt(t *core.Task, now time.Time, reason, branch string) {
 		if v.EndedAt == nil {
 			v.EndedAt = &now
 			v.Reason = reason
-			v.Branch = branch
+			if branch != "" {
+				v.Branch = branch
+			}
 			v.Commit = t.Evidence.Commit
 		}
 	}

@@ -9,6 +9,7 @@ Type=exec
 User=accord
 Group=accord
 WorkingDirectory=/var/lib/accord
+EnvironmentFile=-/etc/accord/server.env
 ExecStartPre=/usr/bin/test ! -e /var/lib/accord/RESTORE_REQUIRES_RESET
 ExecStartPre=/usr/bin/test ! -e /var/lib/accord/START_REQUIRES_INSPECTION
 ExecStart=/opt/accord/current/agent-board serve --db /var/lib/accord/board.db --listen 127.0.0.1:7892

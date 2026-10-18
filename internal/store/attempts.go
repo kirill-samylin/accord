@@ -33,10 +33,17 @@ func (s *Store) Comment(ctx context.Context, a core.Actor, in core.CommentInput)
 		if !bounded(in.Text, 4096) {
 			return core.Task{}, core.Fail("invalid_input", "comment must contain 1..4096 bytes")
 		}
+		if err = addTokens(t, in.TokensSpentDelta, in.Branch); err != nil {
+			return core.Task{}, err
+		}
 		t.Comments = append(t.Comments, core.Comment{Text: in.Text, SessionID: a.SessionID, At: now})
 		t.Version++
 		s.renew(t, now)
 		emit(b, now, "commented", t.Key, a.SessionID)
+		if in.TokensSpentDelta != nil {
+			delta := *in.TokensSpentDelta
+			b.Events[len(b.Events)-1].Data = &core.EventData{TokensSpentDelta: &delta}
+		}
 		return viewTask(b, t), nil
 	})
 }

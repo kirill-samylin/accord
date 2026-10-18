@@ -13,11 +13,12 @@ import stat
 import subprocess
 import sys
 from recovery import activate, check_guard, healthy, switch
+from host_config import configure, validate
 
 BASE = pathlib.Path('/opt/accord')
 STATE = pathlib.Path('/var/lib/accord')
 BACKUPS = pathlib.Path('/var/backups/accord')
-ADMIN_FILES = ('backup.py', 'restore.py', 'token.py', 'publish.py', 'rollback.py', 'recovery.py')
+ADMIN_FILES = ('backup.py', 'restore.py', 'token.py', 'publish.py', 'rollback.py', 'recovery.py', 'host_config.py')
 UNIT_FILES = ('accord.service', 'accord-backup.service', 'accord-backup.timer')
 
 
@@ -75,9 +76,12 @@ def run():
     parser.add_argument('--sha256', required=True)
     parser.add_argument('--revision', required=True)
     parser.add_argument('--assets', type=pathlib.Path, required=True)
+    parser.add_argument('--external-host', help='exact advertised lower-case DNS:port; omission preserves private config')
     args = parser.parse_args()
     if os.geteuid() != 0 or sys.platform != 'linux':
         raise RuntimeError('run as root on Linux with systemd')
+    if args.external_host is not None:
+        validate(args.external_host)
     if not re.fullmatch(r'[0-9a-f]{40}', args.revision):
         raise RuntimeError('revision must be a full Git commit SHA')
     if not re.fullmatch(r'[0-9a-f]{64}', args.sha256):
@@ -107,6 +111,7 @@ def run():
         directory(STATE, 0o700, account.pw_uid, account.pw_gid)
         directory(BACKUPS, 0o700, account.pw_uid, account.pw_gid)
         check_guard(STATE)
+        configure(args.external_host, directory)
         release = BASE / 'releases' / args.revision
         directory(release, 0o755)
         binary = release / 'agent-board'

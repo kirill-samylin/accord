@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"agent-board/internal/core"
@@ -22,13 +21,16 @@ type replay struct {
 	Response json.RawMessage `json:"response"`
 }
 type board struct {
-	Tasks     map[string]*core.Task    `json:"tasks"`
-	Sessions  map[string]*core.Session `json:"sessions"`
-	Roles     map[string]int64         `json:"roles"`
-	Events    []core.Event             `json:"events"`
-	Sequence  int64                    `json:"sequence"`
-	EventBase int64                    `json:"-"`
-	tx        *sql.Tx
+	Notes        map[string]*core.Note    `json:"notes"`
+	NoteSequence int64                    `json:"note_sequence"`
+	Config       core.Config              `json:"config"`
+	Tasks        map[string]*core.Task    `json:"tasks"`
+	Sessions     map[string]*core.Session `json:"sessions"`
+	Roles        map[string]int64         `json:"roles"`
+	Events       []core.Event             `json:"events"`
+	Sequence     int64                    `json:"sequence"`
+	EventBase    int64                    `json:"-"`
+	tx           *sql.Tx
 }
 
 // Open serializes transactions in process and obtains a SQLite write lock before
@@ -59,31 +61,15 @@ func Open(path string, cfg core.Config, clock core.Clock) (*Store, error) {
 	}
 	db.SetMaxOpenConns(1)
 	s := &Store{db: db, cfg: cfg, clock: clock}
-	var schemaVersion int
-	if err = db.QueryRow(`PRAGMA user_version`).Scan(&schemaVersion); err != nil {
+	if _, err = db.Exec(`PRAGMA busy_timeout=5000`); err == nil {
+		err = migrate(context.Background(), db, path)
+	}
+	if err == nil {
+		_, err = db.Exec(`PRAGMA journal_mode=WAL`)
+	}
+	if err != nil {
 		db.Close()
 		return nil, err
-	}
-	if schemaVersion > 1 {
-		db.Close()
-		return nil, core.Fail("rule_violation", "database schema is newer than this server")
-	}
-	for _, q := range []string{
-		`PRAGMA busy_timeout=5000`, `PRAGMA journal_mode=WAL`,
-		`CREATE TABLE IF NOT EXISTS metadata (id INTEGER PRIMARY KEY CHECK(id=1),sequence INTEGER NOT NULL)`,
-		`INSERT OR IGNORE INTO metadata VALUES(1,0)`,
-		`CREATE TABLE IF NOT EXISTS tasks (key TEXT PRIMARY KEY,data TEXT NOT NULL)`,
-		`CREATE TABLE IF NOT EXISTS sessions (key TEXT PRIMARY KEY,data TEXT NOT NULL)`,
-		`CREATE TABLE IF NOT EXISTS role_generations (role TEXT PRIMARY KEY,generation INTEGER NOT NULL)`,
-		`CREATE TABLE IF NOT EXISTS events (cursor INTEGER PRIMARY KEY AUTOINCREMENT,data TEXT NOT NULL)`,
-		`CREATE TABLE IF NOT EXISTS idempotency (key TEXT PRIMARY KEY,hash TEXT NOT NULL,response TEXT NOT NULL)`,
-		`PRAGMA user_version=1`,
-		`CREATE TABLE IF NOT EXISTS tokens (id TEXT PRIMARY KEY,hash TEXT UNIQUE NOT NULL,owner TEXT NOT NULL,machine TEXT NOT NULL,expires INTEGER NOT NULL,revoked INTEGER NOT NULL DEFAULT 0)`,
-	} {
-		if _, err = db.Exec(q); err != nil {
-			db.Close()
-			return nil, fmt.Errorf("initialize database: %w", err)
-		}
 	}
 	return s, nil
 }
@@ -103,9 +89,15 @@ func transact[T any](s *Store, ctx context.Context, fn func(*board, time.Time) (
 	if err != nil {
 		return zero, err
 	}
+	b.Config = s.cfg
+	defaultNoteLimits(&b.Config.Notes)
 	now := s.clock().UTC()
+	before := metricFacts(b)
 	s.expire(b, now)
+	enrichEvents(b, before, now)
+	before = metricFacts(b)
 	result, domainErr := fn(b, now)
+	enrichEvents(b, before, now)
 	if err = saveBoard(ctx, tx, b); err != nil {
 		return zero, err
 	}

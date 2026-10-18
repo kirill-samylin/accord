@@ -54,7 +54,7 @@ func TestSDKStatelessToolsShareRESTState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(before.Tools) != 11 {
+	if len(before.Tools) != 12 {
 		t.Fatalf("tool count %d", len(before.Tools))
 	}
 	for _, tool := range before.Tools {

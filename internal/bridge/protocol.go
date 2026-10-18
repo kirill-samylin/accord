@@ -1,6 +1,7 @@
 package bridge
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 
@@ -50,9 +51,6 @@ func resultJSON(result *mcp.CallToolResult) (json.RawMessage, error) {
 	if result == nil {
 		return nil, errors.New("missing tool result")
 	}
-	if result.StructuredContent != nil {
-		return json.Marshal(result.StructuredContent)
-	}
 	if len(result.Content) != 1 {
 		return nil, errors.New("missing JSON result")
 	}
@@ -60,6 +58,16 @@ func resultJSON(result *mcp.CallToolResult) (json.RawMessage, error) {
 	if !ok || !json.Valid([]byte(text.Text)) {
 		return nil, errors.New("invalid JSON result")
 	}
+	// The SDK decodes structuredContent into float64. The service's JSON text
+	// preserves all int64 digits; decode it again with UseNumber both for local
+	// ownership validation and for exact structuredContent on downstream wire.
+	var exact map[string]any
+	decoder := json.NewDecoder(bytes.NewBufferString(text.Text))
+	decoder.UseNumber()
+	if err := decoder.Decode(&exact); err != nil || exact == nil {
+		return nil, errors.New("JSON object result required")
+	}
+	result.StructuredContent = exact
 	return json.RawMessage(text.Text), nil
 }
 

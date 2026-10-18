@@ -67,7 +67,7 @@ func TestMCP20251125InitializeListAndCall(t *testing.T) {
 	var listed struct {
 		Tools []struct{ Name string } `json:"tools"`
 	}
-	if err := json.Unmarshal(result, &listed); err != nil || len(listed.Tools) != 11 {
+	if err := json.Unmarshal(result, &listed); err != nil || len(listed.Tools) != 12 {
 		t.Fatalf("legacy tools/list: %s", result)
 	}
 	result = call(`{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"describe","arguments":{"request_id":"legacy-open","role":"coordinator","run_id":"legacy-run","machine":"test-machine"}}}`, true)
@@ -102,7 +102,7 @@ func TestSDKLegacyProtocolTools(t *testing.T) {
 		t.Fatal("SDK did not negotiate legacy protocol")
 	}
 	listed, err := session.ListTools(ctx, nil)
-	if err != nil || len(listed.Tools) != 11 {
+	if err != nil || len(listed.Tools) != 12 {
 		t.Fatalf("legacy SDK list: %v", err)
 	}
 	result, err := session.CallTool(ctx, &mcp.CallToolParams{Name: "describe", Arguments: core.OpenSession{RequestID: "legacy-sdk-open", Role: "coordinator", RunID: "legacy-sdk", Machine: "test-machine"}})

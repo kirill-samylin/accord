@@ -12,6 +12,7 @@
 | `/opt/accord/releases/<full Git SHA>/agent-board` | Root-owned неизменяемый исполняемый файл и SHA256 |
 | `/opt/accord/current` | Атомарно переключаемая ссылка на установленную версию |
 | `/opt/accord/admin` | Проверенные root-owned эксплуатационные скрипты |
+| `/etc/accord/server.env` | Root:root, 0600 в каталоге 0700; единственная разрешённая внешняя DNS:port authority |
 | `/var/lib/accord` | БД, журналы, private-файлы; пользователь accord, 0700 |
 | `/var/backups/accord` | Согласованные SQLite snapshots и SHA256, каталог 0700, файлы 0600 |
 | `127.0.0.1:7892` | HTTP только внутри VPS |
@@ -56,7 +57,8 @@ python3 infra/install.py \
   --binary ./agent-board \
   --sha256 <SHA256_БИНАРНИКА_ИЗ_ПРОВЕРЕННОГО_SHA256SUMS> \
   --revision <ПОЛНЫЙ_GIT_SHA> \
-  --assets ./infra
+  --assets ./infra \
+  --external-host <ЧАСТНОЕ_DNS_ИМЯ_VPS>:8443
 systemctl status accord.service --no-pager
 systemctl list-timers accord-backup.timer --no-pager
 curl --fail --max-time 5 http://127.0.0.1:7892/readyz
@@ -68,6 +70,26 @@ Installer проверяет hash до изменения, приватные к
 Установка включает автозапуск Accord и hourly backup timer, делает первый
 snapshot. До этого шага проверяются свободные порты7892/8443 и состояние
 Tandem; его команды запуска/остановки installer не вызывает.
+
+`--external-host` задаётся явно: полное ASCII DNS-имя в нижнем регистре,
+без завершающей точки, и порт без ведущих нулей (1–65535). URL, IP, wildcard,
+userinfo, путь и списки запрещены. Имя берётся из проверенной конфигурации
+Tailscale, а не из входящих forwarded headers. Installer атомарно сохраняет
+`ACCORD_EXTERNAL_HOST=<DNS>:<PORT>` в приватный root-owned env-файл,
+синхронизирует файл и каталог; systemd читает его до запуска. При следующей
+установке отсутствие флага сохраняет настройку. Чужие строки, symlink или
+небезопасные права существующего файла вызывают отказ без перезаписи.
+
+Все HTTP-пути принимают только canonical loopback/localhost либо точное
+настроенное DNS:port. MCP SDK localhost protection отключается только внутри
+этого строгого внешнего Host-фильтра: иначе SDK отвергает forwarded Host от
+Tailscale Serve. Origin и bearer-проверки сохраняются. Без external-host
+внешнее имя отвергается; SDK guard остаётся включённым. Прямой запуск
+поддерживает тот же `serve --external-host DNS:PORT` либо переменную
+`ACCORD_EXTERNAL_HOST`; ошибочная настройка прекращает запуск до открытия БД.
+Отдельные тесты HandlerOptions при неверном имени получают fail-closed HTTP500.
+Старые исполняемые версии до этого исправления env-переменную игнорируют:
+их readiness при binary rollback не доказывает работоспособность удалённого MCP.
 
 Отдельно после локальной readiness под root:
 

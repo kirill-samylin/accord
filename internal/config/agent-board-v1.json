@@ -1,0 +1,512 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "project",
+    "auth",
+    "leases",
+    "roles",
+    "states",
+    "reopen",
+    "rules",
+    "areas",
+    "questions",
+    "notes",
+    "mcp"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "ids"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/name"
+        },
+        "repository": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "ids": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "epic_prefix",
+            "task_prefix",
+            "note_prefix"
+          ],
+          "properties": {
+            "epic_prefix": {
+              "const": "E"
+            },
+            "task_prefix": {
+              "const": "T"
+            },
+            "note_prefix": {
+              "const": "N"
+            }
+          }
+        }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "local",
+        "agent_token_ttl_days"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "local",
+            "github"
+          ]
+        },
+        "agent_token_ttl_days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 365
+        },
+        "local": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "users"
+          ],
+          "properties": {
+            "users": {
+              "$ref": "#/$defs/names"
+            }
+          }
+        },
+        "github": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "allowed_logins": {
+              "$ref": "#/$defs/names"
+            },
+            "allowed_org": {
+              "$ref": "#/$defs/name"
+            },
+            "allowed_team": {
+              "$ref": "#/$defs/name"
+            }
+          }
+        }
+      }
+    },
+    "leases": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task_ttl",
+        "role_ttl",
+        "max_silent",
+        "sweep_interval"
+      ],
+      "properties": {
+        "task_ttl": {
+          "$ref": "#/$defs/duration"
+        },
+        "role_ttl": {
+          "$ref": "#/$defs/duration"
+        },
+        "session_ttl": {
+          "$ref": "#/$defs/duration"
+        },
+        "max_silent": {
+          "$ref": "#/$defs/duration"
+        },
+        "sweep_interval": {
+          "$ref": "#/$defs/duration"
+        }
+      }
+    },
+    "roles": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 64,
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]{0,47}$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/role"
+      }
+    },
+    "states": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_delivered_at"
+      ],
+      "properties": {
+        "contract_delivered_at": {
+          "const": "done"
+        }
+      }
+    },
+    "reopen": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/names"
+      }
+    },
+    "rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_required",
+        "independent_review",
+        "singleton_role",
+        "one_task_per_agent",
+        "epic_owner",
+        "area_overlap",
+        "duplicate_check",
+        "cycle_check"
+      ],
+      "properties": {
+        "evidence_required": {
+          "$ref": "#/$defs/rule"
+        },
+        "independent_review": {
+          "$ref": "#/$defs/rule"
+        },
+        "singleton_role": {
+          "$ref": "#/$defs/rule"
+        },
+        "one_task_per_agent": {
+          "$ref": "#/$defs/rule"
+        },
+        "epic_owner": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "shared_roles"
+          ],
+          "properties": {
+            "mode": {
+              "$ref": "#/$defs/mode"
+            },
+            "shared_roles": {
+              "$ref": "#/$defs/names"
+            }
+          }
+        },
+        "area_overlap": {
+          "$ref": "#/$defs/rule"
+        },
+        "duplicate_check": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "threshold"
+          ],
+          "properties": {
+            "mode": {
+              "$ref": "#/$defs/mode"
+            },
+            "threshold": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        "cycle_check": {
+          "$ref": "#/$defs/rule"
+        }
+      }
+    },
+    "areas": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "aliases": {
+            "$ref": "#/$defs/names"
+          },
+          "single_editor_role": {
+            "$ref": "#/$defs/name"
+          }
+        }
+      }
+    },
+    "questions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "escalate_after",
+        "default_option_note"
+      ],
+      "properties": {
+        "escalate_after": {
+          "$ref": "#/$defs/duration"
+        },
+        "default_option_note": {
+          "type": "string",
+          "maxLength": 2048
+        }
+      }
+    },
+    "notes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_per_role",
+        "max_bytes_per_role",
+        "max_per_epic",
+        "max_bytes_per_epic"
+      ],
+      "properties": {
+        "max_per_role": {
+          "$ref": "#/$defs/limit"
+        },
+        "max_bytes_per_role": {
+          "$ref": "#/$defs/limit"
+        },
+        "max_per_epic": {
+          "$ref": "#/$defs/limit"
+        },
+        "max_bytes_per_epic": {
+          "$ref": "#/$defs/limit"
+        }
+      }
+    },
+    "mcp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tool_budget_tokens",
+        "tools_by_role"
+      ],
+      "properties": {
+        "tool_budget_tokens": {
+          "$ref": "#/$defs/limit"
+        },
+        "tools_by_role": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/names"
+          }
+        }
+      }
+    },
+    "github": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "webhook_secret_env",
+        "task_key_pattern",
+        "require_approval_for_merge",
+        "events"
+      ],
+      "properties": {
+        "webhook_secret_env": {
+          "$ref": "#/$defs/env"
+        },
+        "task_key_pattern": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "require_approval_for_merge": {
+          "type": "boolean"
+        },
+        "events": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "pull_request",
+              "check_suite",
+              "pull_request_review"
+            ]
+          }
+        }
+      }
+    },
+    "notifications": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "webhooks"
+      ],
+      "properties": {
+        "webhooks": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "url",
+              "secret_env",
+              "events"
+            ],
+            "properties": {
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "maxLength": 2048
+              },
+              "secret_env": {
+                "$ref": "#/$defs/env"
+              },
+              "events": {
+                "$ref": "#/$defs/names"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "names": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/name"
+      }
+    },
+    "duration": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 32
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1048576
+    },
+    "env": {
+      "type": "string",
+      "pattern": "^[A-Z_][A-Z0-9_]{0,127}$"
+    },
+    "mode": {
+      "enum": [
+        "block",
+        "warn",
+        "off"
+      ]
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/mode"
+        }
+      }
+    },
+    "category": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "answer_by": {
+          "oneOf": [
+            {
+              "const": "any"
+            },
+            {
+              "$ref": "#/$defs/names"
+            }
+          ]
+        },
+        "complexity_max": {
+          "enum": [
+            "low",
+            "normal",
+            "high"
+          ]
+        }
+      }
+    },
+    "role": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "agent",
+            "human"
+          ]
+        },
+        "singleton": {
+          "type": "boolean"
+        },
+        "can_create": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "task",
+              "epic"
+            ]
+          }
+        },
+        "can_cancel": {
+          "type": "boolean"
+        },
+        "can_curate_notes": {
+          "type": "boolean"
+        },
+        "evidence_on_done": {
+          "$ref": "#/$defs/names"
+        },
+        "recommended_on_done": {
+          "$ref": "#/$defs/names"
+        },
+        "independent_from": {
+          "$ref": "#/$defs/names"
+        },
+        "members": {
+          "$ref": "#/$defs/names"
+        },
+        "categories": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/category"
+          }
+        },
+        "evidence_schema": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

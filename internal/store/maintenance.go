@@ -60,9 +60,12 @@ func (s *Store) adminTransaction(ctx context.Context, fn func(*board, time.Time)
 	if err != nil {
 		return err
 	}
-	if err = fn(b, s.clock().UTC()); err != nil {
+	before := metricFacts(b)
+	now := s.clock().UTC()
+	if err = fn(b, now); err != nil {
 		return err
 	}
+	enrichEvents(b, before, now)
 	if err = saveBoard(ctx, tx, b); err != nil {
 		return err
 	}

@@ -28,6 +28,12 @@ type Service interface {
 	Link(context.Context, core.Actor, core.LinkInput) (core.Task, error)
 	Heartbeat(context.Context, core.Actor, core.HeartbeatInput) (core.SessionView, error)
 	Events(context.Context, core.Actor, core.EventsInput) (core.EventsPage, error)
+	Note(context.Context, core.Actor, core.NoteInput) (core.Note, error)
+	ListTasks(context.Context, core.Actor, core.ListInput) (core.TasksPage, error)
+	ListEpics(context.Context, core.Actor, core.ListInput) (core.TasksPage, error)
+	Sessions(context.Context, core.Actor, core.ListInput) (core.SessionsPage, error)
+	ListNotes(context.Context, core.Actor, core.NotesInput) (core.NotesPage, error)
+	Stats(context.Context, core.Actor, core.StatsInput) (core.Stats, error)
 }
 
 type operation struct {
@@ -88,8 +94,20 @@ func operations(s Service) []operation {
 		bind("heartbeat", "Renew only live leases using their exact generations.", false, s.Heartbeat),
 		bind("link", "Add a typed dependency; cycles and unsuccessful gates are rejected.", false, s.Link),
 		bind("next", "Claim one eligible task for this session's role.", false, s.Next),
+		bind("note", "Create or soft-delete a bounded role or epic note with provenance.", false, s.Note),
 		bind("release", "Release your live task lease with a reason.", false, s.Release),
 		bind("transition", "Change state with current generation and required evidence.", false, s.Transition),
 		bind("update", "Edit permitted metadata with ownership checks.", false, s.Update),
+	}
+}
+
+// Reads exposed by REST and resources do not expand the twelve-tool MCP budget.
+func readOperations(s Service) []operation {
+	return []operation{
+		bind("tasks", "List one stable task page.", true, s.ListTasks),
+		bind("epics", "List one stable epic page.", true, s.ListEpics),
+		bind("sessions", "List one session page.", true, s.Sessions),
+		bind("notes", "Read one page of notes.", true, s.ListNotes),
+		bind("stats", "Read historical totals with incomplete-data indicators.", true, s.Stats),
 	}
 }

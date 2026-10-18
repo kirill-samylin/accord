@@ -16,6 +16,9 @@ import (
 // Nonpositive/nonfinite values use defaults; limits cannot be disabled. There
 // are no buckets keyed by attacker-controlled bearer tokens or proxy headers.
 type HandlerOptions struct {
+	// ExternalHost allows exactly this validated DNS:port in addition to
+	// loopback authorities. Invalid values make the entire handler fail closed.
+	ExternalHost      string
 	RequestsPerSecond float64
 	Burst             int
 	MaxConcurrent     int

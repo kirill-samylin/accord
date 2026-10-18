@@ -17,7 +17,7 @@ func (s *Store) Create(ctx context.Context, a core.Actor, in core.CreateInput) (
 		if in.Type != "task" && in.Type != "epic" {
 			return zero, core.Fail("invalid_input", "type must be task or epic")
 		}
-		t := &core.Task{Key: nextKey(b), Type: in.Type, Title: in.Title, Description: in.Description, Role: in.Role, State: "ready", EpicKey: in.EpicKey, Priority: in.Priority, Version: 1, Requester: a.Principal.ID, ReadyAt: now, Areas: in.Areas}
+		t := &core.Task{CreatedAt: &now, Category: in.Category, Complexity: in.Complexity, ExternalID: in.ExternalID, Key: nextKey(b), Type: in.Type, Title: in.Title, Description: in.Description, Role: in.Role, State: "ready", EpicKey: in.EpicKey, Priority: in.Priority, Version: 1, Requester: a.Principal.ID, ReadyAt: now, Areas: in.Areas}
 		if t.Priority == 0 {
 			t.Priority = 2
 		}
@@ -64,6 +64,9 @@ func (s *Store) Create(ctx context.Context, a core.Actor, in core.CreateInput) (
 				epic.Version++
 				emit(b, now, "epic_reopened", epic.Key, a.SessionID)
 			}
+		}
+		if err := validateMetadata(b, t); err != nil {
+			return zero, err
 		}
 		b.Tasks[t.Key] = t
 		emit(b, now, "task_created", t.Key, a.SessionID)
@@ -113,11 +116,14 @@ func (s *Store) Next(ctx context.Context, a core.Actor, in core.NextInput) (core
 			return a.Key < z.Key
 		})
 		if len(candidates) == 0 {
-			return core.Claim{}, nil
+			return core.Claim{Queue: queueSummary(b, sess.Role)}, nil
 		}
 		t := candidates[0]
 		if t.Review != nil && t.Review.TargetGeneration == 0 {
 			t.Review.TargetGeneration = b.Tasks[t.Review.TargetKey].Generation
+		}
+		if t.CreatedAt != nil && t.FirstClaimAt == nil {
+			t.FirstClaimAt = &now
 		}
 		t.Generation++
 		t.Version++
@@ -126,7 +132,7 @@ func (s *Store) Next(ctx context.Context, a core.Actor, in core.NextInput) (core
 		t.Attempts = append(t.Attempts, core.Attempt{SessionID: a.SessionID, PrincipalID: a.Principal.ID, RunID: sess.RunID, Machine: sess.Machine, Generation: t.Generation, StartedAt: now})
 		emit(b, now, "claimed", t.Key, a.SessionID)
 		v := viewTask(b, t)
-		return core.Claim{Task: &v, Lease: t.Lease}, nil
+		return core.Claim{Task: &v, Lease: t.Lease, EpicNotes: scopeNotes(b, "epic", t.EpicKey), Queue: queueSummary(b, sess.Role)}, nil
 	})
 }
 func (s *Store) Update(ctx context.Context, a core.Actor, in core.UpdateInput) (core.Task, error) {
@@ -153,6 +159,18 @@ func (s *Store) Update(ctx context.Context, a core.Actor, in core.UpdateInput) (
 				return core.Task{}, core.Fail("invalid_input", "description too long")
 			}
 			t.Description = *in.Description
+		}
+		if in.Category != nil {
+			t.Category = *in.Category
+		}
+		if in.Complexity != nil {
+			t.Complexity = *in.Complexity
+		}
+		if in.ExternalID != nil {
+			t.ExternalID = *in.ExternalID
+		}
+		if err := validateMetadata(b, t); err != nil {
+			return core.Task{}, err
 		}
 		t.Version++
 		s.renew(t, now)

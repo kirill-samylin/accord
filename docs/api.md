@@ -184,22 +184,70 @@ Clock внедряется для точных TTL-тестов; сетевой 
 ## MCP bootstrap и ограничения
 
 Streamable HTTP `/mcp`, stateless transport, бизнес-сессии в SQLite.
-11 имён tools в стабильном порядке: comment, create, describe, events, get,
-heartbeat, link, next, release, transition, update. Локально авторизованным
+12 имён tools в стабильном порядке: comment, create, describe, events, get,
+heartbeat, link, next, note, release, transition, update. Локально авторизованным
 principal список одинаков; role authorization проверяется на вызове.
 `describe` не вызывает tools/list_changed и не меняет схемы списка.
 Читающие tools помечаются readOnly; у мутаций нет обещания безопасности лишь
 потому, что для повтора нужен request_id.
 
 Описания краткие; проверка ≤12 обязательна, оценка ≤3000 токенов не выдаётся
-за результат конкретного токенизатора без измерения. Resources/prompts, OAuth,
-note/statistics/import и config apply — последующие этапы. Весь transport
+за результат конкретного токенизатора без измерения. Prompts, OAuth,
+import и config apply — последующие этапы. Весь transport
 делегирует правила core; отдельного упрощённого MCP пути без проверок нет.
 
 ## Изменения полной V1
 
-В V1 появятся отдельные /epics, /notes, /stats, /config, /tokens,
+В V1 появятся отдельные /config, /tokens,
 /import,/export,/webhooks/github и веб-cookie auth. Добавление этих маршрутов
 не разрешает менять существующие fencing/idempotency/cursor semantics.
 Подробные пагинация, лимиты и compatibility matrices фиксируются до реализации
 соответствующего этапа, а не симулируются пустыми успешными ответами пилота.
+
+## Срез C: списки, заметки и статистика
+
+Эта секция описывает текущие source contracts. Проверки и установленную
+версию сверяйте с TASK-003: новый source не устанавливается автоматически.
+
+Все запросы требуют bearer и собственный `X-Session`. GET не продлевает lease.
+`GET /api/v1/tasks`, `/epics`, `/sessions`: limit1..200, cursor, state, role,
+epic_key, owner, include_closed=true|false. Ответ tasks либо sessions,
+next_cursor/high_water/has_more; курсор непрозрачен и привязан к фильтрам.
+High_water ограничивает создание новых объектов, но не замораживает состояния
+существующих. Для нового прохода не передавайте cursor. История done/cancelled
+включается явно state либо include_closed. Session state — active|expired.
+
+`POST /api/v1/notes` использует тот же DTO, что MCP `note`:
+
+```json
+{"request_id":"note-example-1","action":"create","scope_type":"role",
+ "scope_id":"developer","source_task_key":"T-2","text":"Краткий вывод"}
+```
+
+Для удаления: action=delete, key=N-N, reason. Удаление мягкое, provenance
+сохраняется. Собственная роль либо эпик доступной source task; curator может
+удалять чужие заметки. Текст≤2048UTF8bytes, quotas проверяются транзакционно.
+`GET /api/v1/notes`: scope_type, scope_id, limit, cursor, include_deleted.
+MCP resource template:
+`accord://notes{?session_id,scope_type,scope_id,limit,cursor,include_deleted}`.
+Прямой HTTP требует session_id в URI; stdio worker подставляет только свой.
+Наличие session_id не заменяет bearer. Resources не увеличивают число tools.
+
+`GET /api/v1/stats?from=RFC3339&to=RFC3339&group_by=role|owner|epic`:
+полуоткрытый UTC интервал, totals/groups, incomplete_data/incomplete_events.
+Старые события без provenance не дополняются предположениями. Текущая очередь
+отдельна от исторических completion/tokens/duration. Это не рейтинг моделей.
+CLI: `call tasks|epics|sessions|notes|stats` получает query-поля через JSON stdin;
+`call note` выполняет мутацию с request_id. Не передавайте bearer через JSON.
+
+Статистика считает tokens_spent/attempts/missing_tokens по попыткам, закрытым
+в интервале [from,to); активные delta доступны в attempts задачи. Это итоги
+по времени завершения попыток. Final total заменяет delta total. Audit хранит
+tokens_spent_delta, tokens_spent_total и correction_delta отдельно; их нельзя
+суммировать как независимые расходы. current_queue относится ко времени
+запроса. Неизвестные first timestamps старых задач остаются null/отсутствуют;
+legacy timing/attribution помечается incomplete.
+
+group_by=owner означает участника фактической попытки/серверной сессии
+(token.owner), а не владельца эпика. Для текущей очереди owner известен только
+при живой аренде; незахваченная работа относится к группе с пустым ключом.

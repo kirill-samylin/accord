@@ -30,8 +30,14 @@ func (s *Store) Describe(ctx context.Context, p core.Principal, in core.OpenSess
 		}
 		v := core.SessionView{SessionID: id, Role: in.Role, RoleGeneration: generation, ExpiresAt: now.Add(s.cfg.SessionTTL), Project: s.cfg.Project}
 		s.sessionTiming(&v)
-		b.Sessions[id] = &core.Session{SessionView: v, PrincipalID: p.ID, RunID: in.RunID, Machine: in.Machine}
+		b.Sessions[id] = &core.Session{SessionView: v, PrincipalID: p.ID, RunID: in.RunID, Machine: in.Machine, Owner: p.Owner}
 		emit(b, now, "session_opened", "", id)
+		sess := b.Sessions[id]
+		sess.Order = b.Events[len(b.Events)-1].Cursor
+		v.Notes = scopeNotes(b, "role", in.Role)
+		v.Rules = map[string]string{"independent_review": "block", "one_task_per_agent": "block", "cycle_check": "block", "singleton_role": "block"}
+		v.MyTasks = []core.Task{}
+		v.Queue = queueSummary(b, in.Role)
 		return v, nil
 	})
 }

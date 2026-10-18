@@ -92,8 +92,13 @@ func TestDoneConsumerLinkReconcilesAtomicallyAndReplaysOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// The completed consumer still invalidates the epic's gate, but does not
+	// start an operational waiting interval until explicitly reopened.
 	if len(events.Events) != 2 || events.Events[0].Type != "linked" || events.Events[1].Type != "epic_reopened" {
 		t.Fatal("rollback/replay duplicated or lost atomic audit")
+	}
+	if events.Events[0].Data == nil || events.Events[0].Data.Blocked {
+		t.Fatal("terminal consumer started an operational blocked interval")
 	}
 }
 

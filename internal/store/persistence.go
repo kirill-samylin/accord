@@ -8,7 +8,7 @@ import (
 )
 
 func loadBoard(ctx context.Context, tx *sql.Tx) (*board, error) {
-	b := &board{Tasks: map[string]*core.Task{}, Sessions: map[string]*core.Session{}, Roles: map[string]int64{}, tx: tx}
+	b := &board{Notes: map[string]*core.Note{}, Tasks: map[string]*core.Task{}, Sessions: map[string]*core.Session{}, Roles: map[string]int64{}, tx: tx}
 	if err := tx.QueryRowContext(ctx, `SELECT sequence FROM metadata WHERE id=1`).Scan(&b.Sequence); err != nil {
 		return nil, err
 	}
@@ -20,6 +20,18 @@ func loadBoard(ctx context.Context, tx *sql.Tx) (*board, error) {
 	}
 	if err := loadEntities(ctx, tx, "sessions", b.Sessions); err != nil {
 		return nil, err
+	}
+	var schema int
+	if err := tx.QueryRowContext(ctx, `PRAGMA user_version`).Scan(&schema); err != nil {
+		return nil, err
+	}
+	if schema >= 2 {
+		if err := loadEntities(ctx, tx, "notes", b.Notes); err != nil {
+			return nil, err
+		}
+		if err := tx.QueryRowContext(ctx, `SELECT sequence FROM note_metadata WHERE id=1`).Scan(&b.NoteSequence); err != nil {
+			return nil, err
+		}
 	}
 	rows, err := tx.QueryContext(ctx, `SELECT role,generation FROM role_generations`)
 	if err != nil {
@@ -60,6 +72,14 @@ func loadEntities[T any](ctx context.Context, tx *sql.Tx, table string, target m
 func saveBoard(ctx context.Context, tx *sql.Tx, b *board) error {
 	if _, err := tx.ExecContext(ctx, `UPDATE metadata SET sequence=? WHERE id=1`, b.Sequence); err != nil {
 		return err
+	}
+	if len(b.Notes) > 0 {
+		if err := saveEntities(ctx, tx, "notes", b.Notes); err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx, `UPDATE note_metadata SET sequence=? WHERE id=1`, b.NoteSequence); err != nil {
+			return err
+		}
 	}
 	if err := saveEntities(ctx, tx, "tasks", b.Tasks); err != nil {
 		return err

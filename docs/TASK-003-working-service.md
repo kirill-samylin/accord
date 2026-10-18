@@ -40,6 +40,15 @@ restore; клиенты поддерживают lease во время длит�
 | 029 | DevOps live | .local/release/accord runtime; свой report/WORK | Установка на VPS и изолированные эксплуатационные проверки |
 | 030 | Независимый test reviewer | свой report/WORK | Новые E2E, wiring и client guide |
 | 031 | Архитектор продолжения D | docs/config-contract.md; своя WORK | Исполнимый контракт конфигурации/ролей/миграций |
+| 032 | Разработчик C store | internal/core, internal/store, schema2 и проверки совместимости backup; своя WORK | Списки, заметки, показатели и история |
+| 033 | Разработчик D parser | internal/config, schema/templates, go.mod/go.sum; своя WORK | Строгая offline конфигурация и validation |
+| 034 | Координатор как разработчик C transport | HTTP/MCP/CLI consumers без store/core; своя WORK | Публичный доступ к новым возможностям C |
+| 035 | Разработчик proxy fix | Изолированная codex/native-proxy от99e722c | Явная Host policy для native MCP через TLS proxy |
+| 036 | Независимый reviewer/security | Native host policy + offline config parser | Обе дельты APPROVE |
+| 037 | Независимый reviewer/security C | Source C без parser/native fix | REQUEST CHANGES,3 дефекта |
+| 038 | Новый разработчик C fixes | Store metric attribution/blocked + bridge JSON precision | Исправляет пакет037 |
+| 039 | Тестировщик native proxy | Process regression в native worktree; свой отчёт | После036 approve |
+| 040 | Архитектор E | docs/integration-contract.md; своя WORK | Конкретный контракт webhooks/import/export |
 
 Независимые review/security выполняются до live deploy. Unit/integration пишет
 разработчик; новые process/E2E — отдельный tester после approve и review тестов.
@@ -89,3 +98,22 @@ restore; клиенты поддерживают lease во время длит�
 - Native release готова к actual VPS приёмке WORK-029. Полный запрос остаётся
   в работе: C/D/E из service-contract и внешние условия не закрыты одним deploy.
 - WORK-031 уточняет следующий конфигурационный срез независимо от live deploy.
+- WORK-031 завершена; контракты C/D сохранены в config-contract.
+- Native99e722c44f83b1808120bba1fabb04cf2f68a5b5 собрана из чистого committed
+  дерева. WORK-029 устанавливает только этот immutable artifact. Изменения C/D
+  не включаются в сервер до отдельного review/security/приёмки.
+- WORK-032/033 начаты с непересекающимися областями. WORK-034 ждёт additive
+  DTO от032; coordinator остаётся единственным редактором общей TASK.
+- WORK-029: HTTP/systemd/TLS/отзыв/backup и isolated Linux restore PASS,
+  Tandem сохранён. **Actual remote MCP FAIL**: SDK localhost DNS rebinding
+  guard отклоняет Host защищённого Tailscale proxy. WORK-035 исправляет это
+  с явной exact-host policy в изолированной копии, без ослабления Origin/auth.
+- Проверенная native99e722c отправлена в origin/codex/pilot; main не изменена.
+  Публикация не означает MCP ready: blocker выше остаётся до реального retest.
+- Blocker native MCP устранён WORK035, независимое036 APPROVE. На сервере
+  dc9c74cd692e287173def9fb5743dbf18ffdef21, схема1; реальный Codex с Mac
+  прошёл10MCP-вызовов, synthetic задачи отменены, token отозван/401 проверен.
+  Сохранность всех Serve routes/Tandem подтверждена до/после обновления.
+- Config parser033 отдельно APPROVE036. C store/transport037 REQUEST CHANGES:
+  participant attribution, точный int64 через SDK bridge и закрытие blocked
+  интервала при отмене. Свежий038 исправляет единый пакет; C пока не deployed.

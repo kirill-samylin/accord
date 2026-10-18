@@ -12,6 +12,12 @@ func (s *Store) Transition(ctx context.Context, a core.Actor, in core.Transition
 		if err != nil {
 			return core.Task{}, err
 		}
+		if in.TokensSpent != nil && (in.State != "done" || t.Type != "task") {
+			return core.Task{}, core.Fail("invalid_input", "final tokens are only accepted on task completion")
+		}
+		if len(in.Branch) > 512 {
+			return core.Task{}, core.Fail("invalid_input", "branch too long")
+		}
 		if t.Type == "epic" {
 			return transitionEpic(b, t, sess, in, now)
 		}
@@ -25,6 +31,12 @@ func (s *Store) Transition(ctx context.Context, a core.Actor, in core.Transition
 			}
 			if err = completion(b, t, sess, in); err != nil {
 				return core.Task{}, err
+			}
+			if err = finalTokens(t, in.TokensSpent); err != nil {
+				return core.Task{}, err
+			}
+			if t.CreatedAt != nil && t.FirstDoneAt == nil {
+				t.FirstDoneAt = &now
 			}
 			t.AuthorSession = a.SessionID
 			finishAttempt(t, now, "completed", in.Branch)
@@ -41,6 +53,7 @@ func (s *Store) Transition(ctx context.Context, a core.Actor, in core.Transition
 			if reference == nil || reference.State != "done" || !hasEvidence(reference.Evidence) {
 				return core.Task{}, core.Fail("evidence_missing", "reopen requires existing defect evidence")
 			}
+			t.ReturnsCount++
 			t.State = "ready"
 			t.ReadyAt = now
 		case in.State == "cancelled" && (t.State == "ready" || t.State == "created"):
@@ -71,6 +84,11 @@ func (s *Store) Transition(ctx context.Context, a core.Actor, in core.Transition
 			reopenEpic(b, t.EpicKey, now, a.SessionID)
 		}
 		emit(b, now, "task_"+t.State, t.Key, a.SessionID)
+		if in.TokensSpent != nil {
+			total := *in.TokensSpent
+			correction := total - t.Attempts[len(t.Attempts)-1].TokensDelta
+			b.Events[len(b.Events)-1].Data = &core.EventData{TokensSpentTotal: &total, CorrectionDelta: &correction}
+		}
 		return viewTask(b, t), nil
 	})
 }
@@ -117,6 +135,9 @@ func transitionEpic(b *board, t *core.Task, sess *core.Session, in core.Transiti
 		}
 	default:
 		return core.Task{}, core.Fail("invalid_transition", "invalid epic state")
+	}
+	if in.State == "done" && t.CreatedAt != nil && t.FirstDoneAt == nil {
+		t.FirstDoneAt = &now
 	}
 	t.State = in.State
 	t.Version++

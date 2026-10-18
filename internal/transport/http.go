@@ -7,6 +7,7 @@ import (
 	"mime"
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -32,6 +33,12 @@ var routes = []route{
 	{"POST", "/api/v1/links", "link", true},
 	{"POST", "/api/v1/heartbeat", "heartbeat", true},
 	{"GET", "/api/v1/events", "events", false},
+	{"GET", "/api/v1/tasks", "tasks", false},
+	{"GET", "/api/v1/epics", "epics", false},
+	{"GET", "/api/v1/sessions", "sessions", false},
+	{"GET", "/api/v1/notes", "notes", false},
+	{"POST", "/api/v1/notes", "note", true},
+	{"GET", "/api/v1/stats", "stats", false},
 }
 
 // NewHandler authenticates every API request before dispatch, including MCP list
@@ -43,14 +50,20 @@ func NewHandler(s Service, ready func(context.Context) error) http.Handler {
 // NewHandlerWithOptions retains the native HTTP/MCP contract while allowing
 // operators and isolated tests to lower the bounded admission limits.
 func NewHandlerWithOptions(s Service, ready func(context.Context) error, options HandlerOptions) http.Handler {
+	if ValidateExternalHost(options.ExternalHost) != nil {
+		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			writeError(w, core.Fail("INTERNAL", "invalid HTTP host policy"))
+		})
+	}
 	admission := newAdmission(options)
 	ops := operations(s)
-	byName := make(map[string]operation, len(ops))
-	for _, op := range ops {
+	all := append(append([]operation(nil), ops...), readOperations(s)...)
+	byName := make(map[string]operation, len(all))
+	for _, op := range all {
 		byName[op.name] = op
 	}
 	mux := http.NewServeMux()
-	mux.Handle("/mcp", mcpHandler(ops))
+	mux.Handle("/mcp", mcpHandler(ops, s, options.ExternalHost != ""))
 	mux.HandleFunc("GET /metrics", admission.metrics)
 	for _, r := range routes {
 		op := byName[r.name]
@@ -100,6 +113,10 @@ func NewHandlerWithOptions(s Service, ready func(context.Context) error, options
 			return
 		}
 		defer admission.leave()
+		if !allowedHost(r, options.ExternalHost) {
+			writeError(w, core.Fail("FORBIDDEN", "Host is not allowed"))
+			return
+		}
 		if nativePath(r.URL.Path) && hasOrigin(r.Header) {
 			writeError(w, core.Fail("FORBIDDEN", "browser Origin is not allowed on native endpoints"))
 			return
@@ -151,7 +168,10 @@ func requestBody(w http.ResponseWriter, r *http.Request, route route) ([]byte, e
 			}
 			return json.Marshal(core.GetInput{TaskKey: r.PathValue("key")})
 		}
-		return eventsQuery(r)
+		if route.name == "events" {
+			return eventsQuery(r)
+		}
+		return readQuery(route.name, r.URL.RawQuery)
 	}
 	media, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil || media != "application/json" {
@@ -179,7 +199,10 @@ func requestBody(w http.ResponseWriter, r *http.Request, route route) ([]byte, e
 }
 
 func eventsQuery(r *http.Request) ([]byte, error) {
-	query := r.URL.Query()
+	query, parseErr := url.ParseQuery(r.URL.RawQuery)
+	if parseErr != nil {
+		return nil, core.Fail("VALIDATION", "malformed query parameters")
+	}
 	for key, values := range query {
 		if len(values) != 1 {
 			return nil, core.Fail("VALIDATION", "query parameters must not repeat")

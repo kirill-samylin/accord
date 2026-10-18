@@ -94,7 +94,7 @@ def schema_snapshot(state):
 
 
 def activate(previous, revision, state, command, switch, healthy):
-    """Activate once, restoring a previous executable only on known schema 1."""
+    """Activate once, restoring a previous executable only on known compatible schema."""
     check_guard(state)
     # If stop itself fails the executable and database have not been changed.
     command('systemctl', 'stop', 'accord.service')
@@ -127,7 +127,7 @@ def recover(previous, before, state, command, switch, healthy, failure):
     try:
         check_guard(state)
         after = schema_snapshot(state)
-        if before is None or before[0] != 1 or before != after:
+        if before is None or before[0] not in (1, 2) or before != after:
             raise RuntimeError('database schema changed or compatibility is unknown')
     except FAILURES as error:
         inspection_required(state, 'activation failed; service stopped; database compatibility unproven; '

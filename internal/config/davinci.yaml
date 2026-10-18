@@ -1,0 +1,42 @@
+version: 1
+project: {name: accord, ids: {epic_prefix: E, task_prefix: T, note_prefix: N}}
+auth: {mode: local, local: {users: [OWNER]}, agent_token_ttl_days: 90}
+leases: {task_ttl: 15m, role_ttl: 15m, max_silent: 10m, sweep_interval: 30s}
+roles:
+  coordinator: {kind: agent, singleton: false, can_create: [task, epic], can_cancel: true, can_curate_notes: true, evidence_on_done: [summary]}
+  analyst: {kind: agent, evidence_on_done: [artifact, summary]}
+  architect: {kind: agent, singleton: true, evidence_on_done: [artifact, summary]}
+  developer: {kind: agent, evidence_on_done: [commit, pr, run_summary], recommended_on_done: [tokens_spent]}
+  reviewer: {kind: agent, evidence_on_done: [verdict, verified_commit, findings], independent_from: [developer]}
+  security: {kind: agent, evidence_on_done: [verdict, verified_commit, findings], independent_from: [developer]}
+  design-reviewer: {kind: agent, evidence_on_done: [verdict, verified_commit, screens], independent_from: [developer, design-owner]}
+  tester: {kind: agent, evidence_on_done: [run_id, verified_commit, result, run_summary], independent_from: [developer]}
+  devops: {kind: agent, evidence_on_done: [summary]}
+  llm-quality: {kind: agent, evidence_on_done: [summary, artifact]}
+  human:
+    kind: human
+    categories:
+      product_rule: {answer_by: any, complexity_max: high}
+      ux_path: {answer_by: [OWNER], complexity_max: high}
+      technical: {answer_by: any, complexity_max: normal}
+    evidence_on_done: [answer]
+  design-owner:
+    kind: human
+    members: [OWNER]
+    categories: {visual_defect: {}, new_state: {}, ds_import: {}}
+    evidence_on_done: [commit, pr]
+states: {contract_delivered_at: done}
+reopen: {tester: [developer], reviewer: [developer], security: [developer], design-reviewer: [developer, design-owner], developer: [analyst, architect], coordinator: ['*'], human: ['*']}
+rules:
+  evidence_required: {mode: block}
+  independent_review: {mode: block}
+  singleton_role: {mode: block}
+  one_task_per_agent: {mode: block}
+  epic_owner: {mode: warn, shared_roles: [reviewer, security, tester, design-reviewer]}
+  area_overlap: {mode: warn}
+  duplicate_check: {mode: warn, threshold: 0.8}
+  cycle_check: {mode: block}
+areas: []
+questions: {escalate_after: 48h, default_option_note: 'Работа идёт по варианту 1 до ответа'}
+notes: {max_per_role: 30, max_bytes_per_role: 24000, max_per_epic: 20, max_bytes_per_epic: 16000}
+mcp: {tool_budget_tokens: 3000, tools_by_role: {}}

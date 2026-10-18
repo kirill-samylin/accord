@@ -116,6 +116,10 @@ func clientRoute(operation string, fields map[string]json.RawMessage) (string, s
 		path = "/api/v1/links"
 	case "heartbeat":
 		path = "/api/v1/heartbeat"
+	case "note":
+		path = "/api/v1/notes"
+	case "tasks", "epics", "sessions", "notes", "stats":
+		return readClientRoute(operation, fields)
 	case "events":
 		data, _ := json.Marshal(fields)
 		var input core.EventsInput
