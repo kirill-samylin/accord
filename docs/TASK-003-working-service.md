@@ -20,7 +20,9 @@
 - Main checkpoint2dfd86b: C source/Host APPROVE041, полный C check PASS042,
   новые process tests/README APPROVE045. Method delta047 APPROVE048; C QA checkpoint1e9025c committed.
 - D: codex/config-fixes d5a3a12, все050/051 defects CLOSED/APPROVE054;
-  отдельная codex/config-qa WORK056 пишет process tests, source неизменна.
+  codex/config-qa WORK056:33 targeted process suites PASS, fullcheck FAIL
+  QA056-01 (concurrent CLI startup sqlite locked261). Источник d5 неизменён;
+  исправление и обязательный повтор включены в057, не сняты flaky green retry.
 - Performance: codex/performance отd5a3a12 + rootdocs bee0bea, WORK057;
   schema4 owner один, production ещё не менялась. Метод055 на review058.
 - E pure libraries: integration-libs-003/codex/integration-libs,59ae1a1,
@@ -84,7 +86,9 @@ restore; клиенты поддерживают lease во время длит�
 | 056 | Отдельный tester D | Изолированная codex/config-qa отd5a3a12, только tests/docs | Process приёмка D после APPROVE054, TTL/bootstrap/schema3 fixtures |
 | 057 | Developer performance | Изолированная codex/performance отd5a3a12 | Единственный schema4 owner: cache/COW/dirty/events/stats, полный053 contract |
 | 058 | Независимый reviewer load method | Frozen055 main Python/docs, свой report/WORK | REQUEST CHANGES: achieved concurrency/partial-failure latency evidence |
-| 059 | Новый developer load fixes | Только Python harness/helpers/tests/docs main | Исправляет REV058-01/02 без изменения production admission |
+| 059 | Новый developer load fixes | Только Python harness/helpers/tests/docs main | Frozen a25a896d…2475; измеряет concurrency/сохраняет partialFAIL |
+| 060 | Co-author unit/integration performance | Только новые *_performance_extra_test.go в performance-003 | Alias/cache/cross-Store/auth/rollback/cancel, не processQA/approve |
+| 061 | Независимый test/method reviewer | Frozen056 codex/config-qa и059 main; свои report/WORK | Новые Dprocess tests и две corrections load method |
 
 Независимые review/security выполняются до live deploy. Unit/integration пишет
 разработчик; новые process/E2E — отдельный tester после approve и review тестов.
@@ -224,3 +228,16 @@ restore; клиенты поддерживают lease во время длит�
 - Перед checkpoint055/058 coordinator убрал лишнюю пустую строку EOF в
   catalog_runtime.py по git diff --check; semantic code не менялся.
   Исторический freeze055/058 остаётся до этой whitespace-дельты.
+
+- QA056-01: полный makecheck наd5 остановлен Go process CAS: один concurrent
+  config apply вернул sqlite BUSY_RECOVERY261 вместо CONFIG_CONFLICT.
+  Не доказаны partial writes/двойнойwinner; один разрешённый повтор PASS с
+  сохранёнными winners/version/hash/history/audit не закрывает race.
+  Тест усиливает evidence до exactcodeassert; финальныйtestfreeze будет новый.
+  Root поручил startup/gate fix владельцу057; dependentCAS остаётсяFAIL.
+
+- WORK056 окончательныйfunctional FAIL QA056-01; source155 unchanged;
+  Python41/race174(exceptCAS)/build PASS. Finaltest28 freeze344114d0…bd4f2.
+  WORK059 correction freezea25a896d…2475,40unit/6probes/tinyC PASS;
+  source/method readiness ещё не APPROVE. WORK061 проверяет обе test deltas,
+  WORK060 — co-author unit regressions057 без production/migrationownership.

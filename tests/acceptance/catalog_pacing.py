@@ -10,11 +10,50 @@ import time
 
 
 class Ledger:
-    """Count completed HTTP responses, including failures, by phase/operation."""
+    """One locked ledger for HTTP attempts, completed bodies and raw timings.
+
+    begin/finish bracket actual client roundtrips, not barrier participants.
+    Snapshots are copied under the same lock; callers freeze after worker join.
+    """
     def __init__(self):
         self.lock = threading.Lock()
         self.responses = {}
         self.attempts = 0
+        self.active = self.peak = 0
+        self.phases, self.timings = {}, []
+
+    def begin(self, phase):
+        with self.lock:
+            row = self.phases.setdefault(phase, {'phase': phase, 'attempted_requests': 0,
+                                                'completed_responses': 0,
+                                                'active_in_flight': 0, 'peak_in_flight': 0})
+            self.attempts += 1
+            self.active += 1
+            self.peak = max(self.peak, self.active)
+            row['attempted_requests'] += 1
+            row['active_in_flight'] += 1
+            row['peak_in_flight'] = max(row['peak_in_flight'], row['active_in_flight'])
+
+    def finish(self, phase, operation, status, completed, latency_ms, error_type):
+        with self.lock:
+            self.active -= 1
+            row = self.phases[phase]
+            row['active_in_flight'] -= 1
+            if completed:
+                self._record(phase, operation, status)
+                row['completed_responses'] += 1
+            self.timings.append({'phase': phase, 'operation': operation, 'status': status,
+                                 'completed_response': completed, 'latency_ms': latency_ms,
+                                 'successful_response': completed and status == 200,
+                                 'error_type': error_type})
+
+    def samples(self):
+        with self.lock:
+            return [dict(row) for row in self.timings]
+
+    def _record(self, phase, operation, status):
+        key = (phase, operation, str(status))
+        self.responses[key] = self.responses.get(key, 0) + 1
 
     def attempt(self):
         with self.lock:
@@ -22,16 +61,21 @@ class Ledger:
 
     def record(self, phase, operation, status):
         with self.lock:
-            key = (phase, operation, str(status))
-            self.responses[key] = self.responses.get(key, 0) + 1
+            self._record(phase, operation, status)
 
     def report(self):
         with self.lock:
             rows = [{'phase': phase, 'operation': operation, 'status': status, 'count': count}
                     for (phase, operation, status), count in sorted(self.responses.items())]
-        return {'attempted_requests': self.attempts, 'completed_responses': sum(row['count'] for row in rows), 'by_operation': rows,
-                'scope': 'All completed HTTP responses, including readiness; transport failures '
-                         'have no HTTP status. Token CLI calls are not HTTP.'}
+            return {'attempted_requests': self.attempts,
+                    'completed_responses': sum(row['count'] for row in rows), 'by_operation': rows,
+                    'by_phase': [dict(self.phases[key]) for key in sorted(self.phases)],
+                    'client_http_concurrency': {'peak_in_flight': self.peak,
+                                                'active_in_flight': self.active,
+                                                'scope': 'Client request through full body/error; '
+                                                         'all phases, not server in-flight.'},
+                    'scope': 'Completed HTTP bodies including readiness and non200; transport '
+                             'failures are attempts without completed response. Token CLI excluded.'}
 
 
 class SerialPacer:
@@ -53,11 +97,17 @@ class SerialPacer:
     def wait(self):
         started = self.now()
         current = started
-        if self.previous is not None:
-            deadline = self.previous + self.interval
-            while current < deadline:
-                self.sleep(deadline - current)
-                current = self.now()
+        wall_started = time.monotonic()
+        try:
+            if self.previous is not None:
+                deadline = self.previous + self.interval
+                while current < deadline:
+                    self.sleep(deadline - current)
+                    current = self.now()
+        except BaseException:
+            # Aborted sleep has no release/clock sample, but its wait still happened.
+            self.wait_seconds += time.monotonic() - wall_started
+            raise
         self.previous = current
         elapsed = current - started
         self.wait_seconds += elapsed

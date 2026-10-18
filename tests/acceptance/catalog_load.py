@@ -34,13 +34,52 @@ def percentile(values, fraction):
 
 
 def summary(values):
+    if not values:
+        return dict.fromkeys(('p50_ms', 'p95_ms', 'p99_ms', 'max_ms')) | {'count': 0}
     return {'count': len(values), 'p50_ms': statistics.median(values),
             'p95_ms': percentile(values, .95), 'p99_ms': percentile(values, .99),
             'max_ms': max(values)}
 
 
+def observations(ledger, context, expected):
+    """Freeze only after the workload drains; failed samples never enter success p95."""
+    samples, counts = ledger.samples(), ledger.report()
+    measured = [row for row in samples if row['phase'] == 'measured']
+    successes = [row for row in measured if row['successful_response']]
+    failures = [row for row in measured if not row['successful_response']]
+    completed = sum(row['completed_response'] for row in measured)
+    elapsed = context.get('elapsed_seconds', 0)
+    complete = context.get('workload_complete', False)
+    return {**context, 'http_count': counts, 'http_samples': samples,
+            'client_http_concurrency': counts['client_http_concurrency'],
+            'expected_measured_requests': expected, 'workload_complete': complete,
+            'measured_attempt_count': len(measured), 'measured_http_count': completed,
+            'measured_success_count': len(successes), 'latency_is_partial': not complete,
+            'actual_measured_rps': completed / elapsed if elapsed else 0,
+            'actual_measured_attempt_rps': len(measured) / elapsed if elapsed else 0,
+            'request_latency': summary([row['latency_ms'] for row in successes]),
+            'failed_request_latency': summary([row['latency_ms'] for row in failures]),
+            'per_operation': {name: summary([row['latency_ms'] for row in successes
+                                            if row['operation'] == name])
+                              for name in sorted({row['operation'] for row in successes})},
+            'latency_scope': 'Successful measured HTTP200 only; failed timings/raw outcomes '
+                             'separate. Partial percentiles are diagnostic, never acceptance PASS.'}
+
+
 def run(binary, sessions, tasks, requests, offered_rps=0, persisted_defaults=False, ledger=None):
     ledger = Ledger() if ledger is None else ledger
+    context = {'elapsed_seconds': 0, 'measurement_started': False, 'workload_complete': False,
+               'workload_errors': [], 'pacing_context': {'mode': 'barrier-waves' if offered_rps else 'unpaced-legacy'}}
+    try:
+        return run_owned(binary, sessions, tasks, requests, offered_rps, persisted_defaults, ledger, context)
+    except BaseException as error:
+        context.update(getattr(error, 'workload_context', {}))
+        context['workload_complete'] = False
+        error.load_context = context
+        raise
+
+
+def run_owned(binary, sessions, tasks, requests, offered_rps, persisted_defaults, ledger, context):
     serial = SerialPacer(offered_rps) if offered_rps else None
     with tempfile.TemporaryDirectory(prefix='accord-synthetic-load-') as temporary:
         directory = pathlib.Path(temporary)
@@ -107,24 +146,21 @@ def run(binary, sessions, tasks, requests, offered_rps=0, persisted_defaults=Fal
             sampler.start()
             waves = Waves(sessions, offered_rps) if offered_rps else None
             records, elapsed, pacing = measure_people(people, keys, requests, waves, serial)
-            latency = summary([value for _, value in records])
-            per_operation = {name: summary([value for operation, value in records if operation == name])
-                             for name in sorted({operation for operation, _ in records})}
+            context.update(elapsed_seconds=elapsed, pacing_context=pacing, measurement_started=True,
+                           workload_complete=len(records) == sessions * requests)
+            observed = observations(ledger, context, sessions * requests)
+            latency = observed['request_latency']
             if not rss:
                 raise RuntimeError('RSS measurement unavailable; result would be incomplete')
-            return {'method_version': 'catalog-load-055-v1', 'experiment_status': 'COMPLETED',
+            return {**observed, 'method_version': 'catalog-load-055-v2', 'experiment_status': 'COMPLETED',
                     'offered_rps': offered_rps, 'persisted_defaults': persisted_defaults,
-                    'http_count': ledger.report(), 'pacing_context': pacing,
                     'platform': platform.platform(), 'machine': platform.machine(),
                     'logical_cpus': os.cpu_count(), 'cgroup_limits': cgroup_limits(child.pid),
                     'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
                     'sessions': sessions, 'tasks': tasks, 'requests_per_session': requests,
                     'seed_seconds': seed_seconds, 'startup_empty_ms': startup,
                     'startup_populated_ms': populated_startup, 'sampled_peak_rss_mib': max(rss) / 1024,
-                    'rss_sampling_seconds': .05, 'elapsed_seconds': elapsed,
-                    'actual_measured_rps': len(records) / elapsed,
-                    'measured_http_count': len(records),
-                    'request_latency': latency, 'per_operation': per_operation,
+                    'rss_sampling_seconds': .05,
                     'thresholds_observed': {'p95_le_50ms': latency['p95_ms'] <= 50,
                                             'rss_le_128mib': max(rss) <= 128 * 1024,
                                             'populated_start_le_1s': populated_startup <= 1000},
@@ -132,6 +168,7 @@ def run(binary, sessions, tasks, requests, offered_rps=0, persisted_defaults=Fal
                              'sampled server RSS only; client excluded; no annual-event-volume proof; '
                              'no certification of another host or CPU/memory limits.'}
         finally:
+            context['pacing_context']['serial_setup_seed_warmup_wait_seconds'] = serial.wait_seconds if serial else 0
             stop_sampling.set()
             if sampler is not None:
                 sampler.join()
@@ -168,13 +205,22 @@ def main():
     ledger = Ledger()
     # Reserve output before starting child: never overwrite an earlier experiment.
     with args.output.open('x') as stream:
+        started = time.perf_counter()
         try:
             report = run(args.binary.resolve(), args.sessions, args.tasks, args.requests_per_session,
                          args.offered_rps, args.persisted_defaults, ledger)
-        except Exception as error:
-            report = {'method_version': 'catalog-load-055-v1', 'experiment_status': 'FAIL',
+        except BaseException as error:
+            context = {'elapsed_seconds': 0, 'measurement_started': False, 'workload_complete': False,
+                       'workload_errors': [],
+                       'pacing_context': {'mode': 'barrier-waves' if args.offered_rps else 'unpaced-legacy',
+                                          'serial_setup_seed_warmup_wait_seconds': 0}}
+            context.update(getattr(error, 'load_context', getattr(error, 'workload_context', {})))
+            context['workload_complete'] = False
+            report = {**observations(ledger, context, args.sessions * args.requests_per_session),
+                      'method_version': 'catalog-load-055-v2', 'experiment_status': 'FAIL',
                       'offered_rps': args.offered_rps, 'persisted_defaults': args.persisted_defaults,
-                      'http_count': ledger.report(), 'error_type': type(error).__name__}
+                      'experiment_elapsed_seconds': time.perf_counter() - started,
+                      'error_type': type(error).__name__}
             json.dump(report, stream, indent=2)
             stream.write('\n')
             raise

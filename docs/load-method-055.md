@@ -1,6 +1,7 @@
 # Catalog load055: optional offered-rate method
 
-18.10.2026. Method `catalog-load-055-v1`; реализация метода, не performance fix.
+18.10.2026. Текущий method `catalog-load-055-v2` (исправления059 к frozen v1);
+реализация метода, не performance fix. Исходный055/v1 и review058 сохранены.
 Нужен отдельный независимый approve перед целевым Linux/VPS опытом.
 Исторические APPROVE048 и unpaced baseline049 не переписываются.
 
@@ -35,6 +36,10 @@ HTTP socket timeout30s сохранён. Rollback инъецированных m
 или адаптивного снижения нагрузки нет. Ошибка даёт nonzero exit и отчёт FAIL;
 у FAIL отсутствуют положительные threshold results. Уже запущенные calls могут
 штатно завершиться перед cleanup, их ответы также считаются.
+Отчёт замораживается только после завершения всех futures; ошибка одного
+worker не выбрасывает observations остальных. Причинная HTTP/transport ошибка
+и ошибки barriers сохраняются отдельно как `workload_errors`, без текста
+ответов, payloads или токенов. Новые measured calls после замеченной отмены не запускаются.
 
 20 sessions,2000 tasks и400 measured requests остаются defaults. Equal mix:
 get, tasks(limit20), events(limit20), stats(owner), heartbeat — по80.
@@ -84,21 +89,43 @@ PYTHONDONTWRITEBYTECODE=1 python3 tests/acceptance/catalog_load.py \
 - `method_version`, `offered_rps`, `persisted_defaults` фиксируют способ запуска.
 - `elapsed_seconds`: фактическое wall время measured workload, включая
   pool/barriers/waits; legacy включает свой threaded warmup, paced исключает
-  sequential warmup. `actual_measured_rps` = measured count/это время.
-- `measured_http_count`, `request_latency.count`, per-operation counts:
-  ровно400/400 и80×5 в полном default успешном опыте. `http_count` содержит
+  sequential warmup. При FAIL сохраняется время до завершения всех workers,
+  включая поздний peer. До начала measured этапа это0 с
+  `measurement_started=false`; `experiment_elapsed_seconds` в FAIL включает
+  также подготовку и cleanup. `actual_measured_rps` = completed measured
+  responses/это время, `actual_measured_attempt_rps` = attempts/это время;
+  до measured этапа оба0.
+- `measured_http_count`, `measured_attempt_count`, `measured_success_count`,
+  `request_latency.count`, per-operation counts:
+  первые четыре равны400, per-operation80×5 в полном default успешном опыте.
+  `http_count` содержит
   attempts и completed HTTP responses по phase/operation/status, включая
   setup/readiness. Expected successful total = tasks+2*sessions+
   sessions*requests_per_session+5 =2445 для default,39 для tiny2/10/10.
-  Transport failures видны как разница attempts/completed, без выдуманного
-  HTTP status; при них опыт FAIL. HTTP ошибки считаются и не retried.
+  Transport failures видны как разница attempts/completed и raw error sample;
+  при них опыт FAIL. Полученный status при ошибке чтения body не означает
+  completed response. HTTP ошибки считаются и не retried; non200 не входит
+  в measured_success_count.
+- `client_http_concurrency.peak_in_flight` — достигнутый максимум overlap
+  клиентских roundtrips от request до полного body/error, по всем фазам.
+  `http_count.by_phase` содержит attempted/completed и peak/active каждой фазы;
+  `active_in_flight` после drain должен быть0. Вход и finally-выход защищены
+  одним lock, также при transport error. Это не server in-flight и не wave_size.
 - `request_latency`/`per_operation`: только время от HTTP request до полного
   чтения response body; JSON encode/decode, счётчики и pacer исключены.
-  Все400 успешных измеряемых samples сохраняются при расчёте percentile,
-  включая slow; отдельные raw samples исторически не экспортируются.
+  Все400 успешных измеряемых samples сохраняются, включая slow. Начиная с059,
+  `http_samples` сохраняет каждую timing запись всех фаз (также non200 и
+  transport failure), с phase/operation/status/completed/success/error_type.
+  `failed_request_latency` отдельно суммирует measured non200/transport timing;
+  их нельзя выдавать за успешные samples. Пустая summary имеет count0 и null
+  percentiles. `expected_measured_requests` фиксирует план без достраивания
+  недостающих attempts. При FAIL `workload_complete=false`,
+  `latency_is_partial=true`, percentiles диагностические, thresholds отсутствуют.
 - `pacing_context`: actual wave release offsets, wave count/size, minimum
   interval, отдельный rate wait и сумма ожиданий worker. Worker wait включает
   peers/scheduling и является суммой по потокам, не дополнительным wall time.
+  Failed/aborted waits также сохраняются; незавершённый rate wait измеряется
+  реальными monotonic часами, поскольку release timestamp для него отсутствует.
   Serial wait относится к setup/seed/warmup. Ничто из этого не включается в
   HTTP latency и не вычитается из измеренного roundtrip.
 - `experiment_status=COMPLETED` означает завершение requests, не target PASS.
@@ -139,3 +166,15 @@ API semantics сверены18.10.2026 по primary Python documentation:
 [monotonic clock](https://docs.python.org/3.14/library/time.html#time.monotonic),
 [Barrier/action/abort](https://docs.python.org/3.14/library/threading.html#barrier-objects),
 [Event.wait](https://docs.python.org/3.14/library/threading.html#threading.Event.wait).
+
+## Исправления059 и отдельная проверка
+
+REV058-01/02: actual client HTTP overlap, raw timings/errors и partial
+duration/pacing/counts сохраняются на FAIL после drain всех futures.
+`submit/as_completed` заменяет теряющий результаты `pool.map`; общий ledger
+записывает ровно один sample на actual attempt. API сверено по
+[Python futures/shutdown](https://docs.python.org/3.14/library/concurrent.futures.html).
+Авторские stdlib regression units воспроизводят потерю055 и проверяют
+429/transport/barrier failure, поздний slow peer, phases/cleanup и400/80×5.
+Текущий freeze, фактические результаты и ограничения — WORK-059.
+Независимое approve новой версии ещё требуется; baseline049 p95 FAIL сохраняется.

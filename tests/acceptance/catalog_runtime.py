@@ -16,6 +16,37 @@ class HTTPFailure(RuntimeError):
         super().__init__('Synthetic ' + operation + ' status=' + str(status))
 
 
+def roundtrip(connection, method, path, body=None, headers=None, ledger=None,
+              phase='readiness', operation=None):
+    """Time HTTP through full body/error; always release client in-flight slot.
+
+    Status may exist on an incomplete body; only fully read responses count as
+    completed. JSON processing and accounting are outside the latency timer.
+    """
+    status, completed, error_type, elapsed = None, False, None, None
+    if ledger is not None:
+        ledger.begin(phase)
+    started = time.perf_counter()
+    try:
+        connection.request(method, path, body, headers or {})
+        response = connection.getresponse()
+        status = response.status
+        data = response.read()
+        elapsed = (time.perf_counter() - started) * 1000
+        completed = True
+        if status != 200:
+            raise HTTPFailure(operation, status)
+    except BaseException as error:
+        error_type = type(error).__name__
+        raise
+    finally:
+        if elapsed is None:
+            elapsed = (time.perf_counter() - started) * 1000
+        if ledger is not None:
+            ledger.finish(phase, operation, status, completed, elapsed, error_type)
+    return data, elapsed
+
+
 def server_command(binary, database, persisted_defaults=False):
     command = [str(binary), 'serve', '--db', str(database), '--listen', '127.0.0.1:0']
     if not persisted_defaults:
@@ -45,17 +76,8 @@ class Participant:
             body = json.dumps(payload).encode()
         if self.pacer is not None:
             self.pacer.wait()
-        if self.ledger is not None:
-            self.ledger.attempt()
-        started = time.perf_counter()
-        self.connection.request('GET' if read else 'POST', path, body, self.headers)
-        response = self.connection.getresponse()
-        data = response.read()
-        elapsed = (time.perf_counter() - started) * 1000
-        if self.ledger is not None:
-            self.ledger.record(self.phase, operation, response.status)
-        if response.status != 200:
-            raise HTTPFailure(operation, response.status)
+        data, elapsed = roundtrip(self.connection, 'GET' if read else 'POST', path,
+                                  body, self.headers, self.ledger, self.phase, operation)
         return json.loads(data), elapsed
 
     def close(self):
@@ -92,15 +114,7 @@ def start_server(binary, database, persisted_defaults=False, ledger=None):
         health = Participant(origin, 'synthetic-unused')
         try:
             for path in ['/healthz', '/readyz']:
-                if ledger is not None:
-                    ledger.attempt()
-                health.connection.request('GET', path)
-                response = health.connection.getresponse()
-                response.read()
-                if ledger is not None:
-                    ledger.record('readiness', path, response.status)
-                if response.status != 200:
-                    raise RuntimeError('Synthetic child not ready')
+                roundtrip(health.connection, 'GET', path, ledger=ledger, operation=path)
         finally:
             health.close()
         return child, origin, (time.perf_counter() - started) * 1000
