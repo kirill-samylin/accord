@@ -107,7 +107,7 @@ func (c *client) raw(operation string, input []byte) result {
 
 func (c *client) ok(t *testing.T, operation string, input payload) []byte {
 	t.Helper()
-	if operation == "get" || operation == "events" {
+	if operation == "get" || operation == "events" || operation == "tasks" || operation == "epics" || operation == "sessions" || operation == "notes" || operation == "stats" {
 		input["session_id"] = c.session
 		data, err := json.Marshal(input)
 		if err != nil {

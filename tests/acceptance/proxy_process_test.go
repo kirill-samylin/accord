@@ -49,7 +49,7 @@ func TestProxyProcessConfiguredHost(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	tools, err := session.ListTools(ctx, nil)
-	if err != nil || len(tools.Tools) != 11 {
+	if err != nil || len(tools.Tools) != 12 {
 		t.Fatal("TLS proxy MCP tool discovery failed")
 	}
 	invoke := func(name string, input payload) *mcp.CallToolResult {
