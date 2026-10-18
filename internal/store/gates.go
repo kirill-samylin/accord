@@ -15,10 +15,10 @@ func verificationCurrent(b *board, t *core.Task) bool {
 		return false
 	}
 	target := b.Tasks[t.Review.TargetKey]
-	if target == nil || target.State != "done" || target.Evidence.Commit != t.Review.TargetCommit || target.Generation != t.Review.TargetGeneration {
+	if target == nil || target.State != "done" || target.Evidence.Text("commit") != t.Review.TargetCommit || target.Generation != t.Review.TargetGeneration {
 		return false
 	}
-	return t.Role == "reviewer" && t.Review.Outcome == "approve" || t.Role == "tester" && t.Review.Outcome == "passed"
+	return taskOutcomeField(b, t) == "verdict" && t.Review.Outcome == "approve" || taskOutcomeField(b, t) == "result" && t.Review.Outcome == "passed"
 }
 
 func successful(b *board, t *core.Task, condition string) bool {
@@ -26,11 +26,11 @@ func successful(b *board, t *core.Task, condition string) bool {
 }
 
 func gateSuccessful(b *board, t *core.Task, condition string, visiting map[string]bool) bool {
-	if t == nil || t.State != "done" || visiting[t.Key] {
+	if t == nil || t.State != "done" || visiting[t.Key] || t.EvidenceComplete != nil && !*t.EvidenceComplete {
 		return false
 	}
-	if t.Role == "reviewer" || t.Role == "tester" {
-		if !verificationCurrent(b, t) || !activeVerification(b, t) || t.Role == "reviewer" && condition == "passed" || t.Role == "tester" && condition == "approved" {
+	if t.Review != nil {
+		if !verificationCurrent(b, t) || !activeVerification(b, t) || taskOutcomeField(b, t) == "verdict" && condition == "passed" || taskOutcomeField(b, t) == "result" && condition == "approved" {
 			return false
 		}
 	} else if condition != "" && condition != "completed" {
@@ -65,7 +65,7 @@ func latestVerification(b *board, targetKey, role string) *core.Task {
 	var latestOrder int64
 	for _, candidate := range b.Tasks {
 		r := candidate.Review
-		if candidate.Role != role || r == nil || r.TargetKey != targetKey || r.TargetCommit != target.Evidence.Commit || r.TargetGeneration != 0 && r.TargetGeneration != target.Generation {
+		if candidate.Role != role || r == nil || r.TargetKey != targetKey || r.TargetCommit != target.Evidence.Text("commit") || r.TargetGeneration != 0 && r.TargetGeneration != target.Generation {
 			continue
 		}
 		number, ok := strings.CutPrefix(candidate.Key, "T-")
@@ -91,8 +91,15 @@ func gateBlocked(b *board, t *core.Task, visiting map[string]bool) bool {
 	defer delete(visiting, t.Key)
 	if t.Review != nil {
 		target := b.Tasks[t.Review.TargetKey]
-		if target == nil || target.State != "done" || target.Evidence.Commit != t.Review.TargetCommit || (t.Review.TargetGeneration != 0 && target.Generation != t.Review.TargetGeneration) || gateBlocked(b, target, visiting) {
+		if target == nil || target.State != "done" || target.Evidence.Text("commit") != t.Review.TargetCommit || (t.Review.TargetGeneration != 0 && target.Generation != t.Review.TargetGeneration) || gateBlocked(b, target, visiting) {
 			return true
+		}
+	}
+	if t.Type == "epic" {
+		for _, child := range b.Tasks {
+			if child.EpicKey == t.Key && child.State != "cancelled" && !(child.State == "done" && child.Review != nil && (!verificationCurrent(b, child) || !activeVerification(b, child))) && !gateSuccessful(b, child, "", visiting) {
+				return true
+			}
 		}
 	}
 	for _, link := range t.Links {
@@ -106,6 +113,13 @@ func gateBlocked(b *board, t *core.Task, visiting map[string]bool) bool {
 // epicClosable is shared by explicit closure and reconciliation. Obligations
 // belong to developer targets globally, regardless of a verifier's epic.
 func epicClosable(b *board, key string) error {
+	if epic := b.Tasks[key]; epic != nil {
+		for _, link := range epic.Links {
+			if link.To == key && (link.Type == "blocks" || link.Type == "contract_of") && !successful(b, b.Tasks[link.From], link.Condition) {
+				return core.Fail("RULE_VIOLATION", "epic dependencies are unsatisfied")
+			}
+		}
+	}
 	targets := map[string]bool{}
 	for _, child := range b.Tasks {
 		if child.EpicKey != key {
@@ -114,7 +128,7 @@ func epicClosable(b *board, key string) error {
 		if child.Lease != nil || child.State != "done" && child.State != "cancelled" {
 			return core.Fail("rule_violation", "epic contains unfinished work")
 		}
-		if child.Role == "developer" {
+		if child.Evidence.Text("commit") != "" {
 			targets[child.Key] = true
 		}
 		if child.Review != nil {

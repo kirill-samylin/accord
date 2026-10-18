@@ -8,7 +8,7 @@ import (
 
 func validateBuiltinValues(value map[string]any) error {
 	for key, limit := range map[string]int{"summary": 4096, "run_summary": 1024, "findings": 16384, "answer": 16384, "run_id": 128, "pr": 2048} {
-		if text, ok := value[key].(string); ok && len(text) > limit {
+		if text, ok := value[key].(string); ok && (len(text) > limit || strings.TrimSpace(text) == "") {
 			return fmt.Errorf("built-in evidence string exceeds byte limit")
 		}
 	}

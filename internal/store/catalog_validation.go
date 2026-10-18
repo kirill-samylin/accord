@@ -2,8 +2,8 @@ package store
 
 import "agent-board/internal/core"
 
-func validateList(in core.ListInput, kind string) error {
-	if in.Role != "" && !core.ValidRole(in.Role) {
+func validateList(b *board, in core.ListInput, kind string) error {
+	if in.Role != "" && !validRole(b, in.Role) {
 		return core.Fail("invalid_input", "unknown role filter")
 	}
 	if in.State == "" {
@@ -17,11 +17,11 @@ func validateList(in core.ListInput, kind string) error {
 	}
 	return core.Fail("invalid_input", "invalid state filter for "+kind)
 }
-func validateNotes(in core.NotesInput) error {
+func validateNotes(b *board, in core.NotesInput) error {
 	if in.ScopeType != "" && in.ScopeType != "role" && in.ScopeType != "epic" {
 		return core.Fail("invalid_input", "scope_type must be role or epic")
 	}
-	if in.ScopeType == "role" && in.ScopeID != "" && !core.ValidRole(in.ScopeID) {
+	if in.ScopeType == "role" && in.ScopeID != "" && !validRole(b, in.ScopeID) {
 		return core.Fail("invalid_input", "unknown note role")
 	}
 	return nil

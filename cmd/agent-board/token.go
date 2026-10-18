@@ -1,12 +1,14 @@
 package main
 
 import (
+	"agent-board/internal/store"
 	"context"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"agent-board/internal/core"
@@ -17,6 +19,7 @@ func createToken(args []string, out io.Writer) error {
 	db := f.String("db", ".local/board.db", "database path")
 	owner := f.String("owner", "", "participant name")
 	machine := f.String("machine", "", "machine name")
+	roles := f.String("roles", "", "explicit comma-separated role scopes")
 	days := f.Int("days", 30, "validity in days, 1..365")
 	output := f.String("output", "", "new private output file; never overwritten")
 	if err := parse(f, args); err != nil {
@@ -40,14 +43,18 @@ func createToken(args []string, out io.Writer) error {
 			_ = os.Remove(*output)
 		}
 	}()
-	s, err := openDB(*db, 15*time.Minute, 15*time.Minute)
+	s, err := store.Open(*db, core.Config{Project: "agent-board", LeaseTTL: 15 * time.Minute, SessionTTL: 15 * time.Minute, BootstrapUsers: []string{*owner}}, nil)
 	if err != nil {
 		return err
 	}
 	defer s.Close()
-	token, err := s.CreateToken(context.Background(), core.TokenInput{Owner: *owner, Machine: *machine, TTL: time.Duration(*days) * 24 * time.Hour})
+	var roleNames []string
+	if *roles != "" {
+		roleNames = strings.Split(*roles, ",")
+	}
+	token, err := s.CreateToken(context.Background(), core.TokenInput{Roles: roleNames, Owner: *owner, Machine: *machine, TTL: time.Duration(*days) * 24 * time.Hour})
 	if err != nil {
-		return errors.New("token creation failed")
+		return err
 	}
 	if _, err = io.WriteString(file, token.Secret+"\n"); err == nil {
 		err = file.Sync()

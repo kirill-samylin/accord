@@ -16,7 +16,7 @@ func TestCrossEpicVerificationObligationsRequireCurrentPositive(t *testing.T) {
 				f := newFixture(t)
 				dev := f.actor(t, "developer")
 				target := f.task(t, "developer")
-				f.finish(t, dev, f.claim(t, dev, target.Key), core.Evidence{Commit: commitA, RunSummary: "tested"}, "")
+				f.finish(t, dev, f.claim(t, dev, target.Key), core.EvidenceOf(map[string]any{"commit": commitA, "run_summary": "tested"}), "")
 				targetEpic := f.epic.Key
 				if late {
 					f.closeEpic(t, targetEpic)
@@ -37,7 +37,7 @@ func TestCrossEpicVerificationObligationsRequireCurrentPositive(t *testing.T) {
 				if role == "tester" {
 					negative, positive = "failed", "passed"
 				}
-				evidence := core.Evidence{VerifiedCommit: commitA, Findings: "checked", RunSummary: "tested"}
+				evidence := core.EvidenceOf(map[string]any{"verified_commit": commitA, "findings": "checked", "run_summary": "tested"})
 				f.finish(t, verifier, f.claim(t, verifier, check.Key), evidence, negative)
 				assertCannotClose()
 				replacement := f.verification(t, role, target.Key, commitA)
@@ -52,7 +52,7 @@ func TestCrossEpicVerificationObligationsRequireCurrentPositive(t *testing.T) {
 				if f.get(t, f.epic.Key).State != "open" {
 					t.Fatal("stale remote verifier left its epic done")
 				}
-				f.finish(t, dev, f.claim(t, dev, target.Key), core.Evidence{Commit: commitA, RunSummary: "retested"}, "")
+				f.finish(t, dev, f.claim(t, dev, target.Key), core.EvidenceOf(map[string]any{"commit": commitA, "run_summary": "retested"}), "")
 				assertCannotClose()
 				fresh := f.verification(t, role, target.Key, commitA)
 				f.finish(t, verifier, f.claim(t, verifier, fresh.Key), evidence, positive)
@@ -67,7 +67,7 @@ func TestLateCrossEpicCheckReopensEvenWithExistingCurrentPositive(t *testing.T) 
 	f := newFixture(t)
 	dev := f.actor(t, "developer")
 	target := f.task(t, "developer")
-	f.finish(t, dev, f.claim(t, dev, target.Key), core.Evidence{Commit: commitA, RunSummary: "tested"}, "")
+	f.finish(t, dev, f.claim(t, dev, target.Key), core.EvidenceOf(map[string]any{"commit": commitA, "run_summary": "tested"}), "")
 	targetEpic := f.epic.Key
 	f.epic = f.newEpic(t)
 	// Force creation-order keys across the lexical T-9/T-10 boundary.
@@ -79,7 +79,7 @@ func TestLateCrossEpicCheckReopensEvenWithExistingCurrentPositive(t *testing.T) 
 		t.Fatal("regression setup must put older approval at T-9")
 	}
 	reviewer := f.actor(t, "reviewer")
-	f.finish(t, reviewer, f.claim(t, reviewer, check.Key), core.Evidence{VerifiedCommit: commitA, Findings: "checked"}, "approve")
+	f.finish(t, reviewer, f.claim(t, reviewer, check.Key), core.EvidenceOf(map[string]any{"verified_commit": commitA, "findings": "checked"}), "approve")
 	f.closeEpic(t, targetEpic)
 	f.closeEpic(t, f.epic.Key)
 	pending := f.verification(t, "reviewer", target.Key, commitA)
@@ -95,10 +95,10 @@ func TestLateCrossEpicCheckReopensEvenWithExistingCurrentPositive(t *testing.T) 
 		requireCode(t, err, "RULE_VIOLATION")
 	}
 	assertCannotClose()
-	f.finish(t, reviewer, f.claim(t, reviewer, pending.Key), core.Evidence{VerifiedCommit: commitA, Findings: "new defect"}, "changes_requested")
+	f.finish(t, reviewer, f.claim(t, reviewer, pending.Key), core.EvidenceOf(map[string]any{"verified_commit": commitA, "findings": "new defect"}), "changes_requested")
 	assertCannotClose()
 	replacement := f.verification(t, "reviewer", target.Key, commitA)
-	f.finish(t, reviewer, f.claim(t, reviewer, replacement.Key), core.Evidence{VerifiedCommit: commitA, Findings: "fixed"}, "approve")
+	f.finish(t, reviewer, f.claim(t, reviewer, replacement.Key), core.EvidenceOf(map[string]any{"verified_commit": commitA, "findings": "fixed"}), "approve")
 	f.closeEpic(t, targetEpic)
 	f.closeEpic(t, f.epic.Key)
 }
@@ -109,7 +109,7 @@ func TestSupersededVerificationRequiresExplicitDependencyReplacement(t *testing.
 			f := newFixture(t)
 			dev := f.actor(t, "developer")
 			target := f.task(t, "developer")
-			f.finish(t, dev, f.claim(t, dev, target.Key), core.Evidence{Commit: commitA, RunSummary: "tested"}, "")
+			f.finish(t, dev, f.claim(t, dev, target.Key), core.EvidenceOf(map[string]any{"commit": commitA, "run_summary": "tested"}), "")
 			f.epic = f.newEpic(t)
 			verificationEpic := f.epic
 			old := f.verification(t, role, target.Key, commitA)
@@ -118,7 +118,7 @@ func TestSupersededVerificationRequiresExplicitDependencyReplacement(t *testing.
 			if role == "tester" {
 				positive, negative = "passed", "failed"
 			}
-			evidence := core.Evidence{VerifiedCommit: commitA, Findings: "checked", RunSummary: "tested"}
+			evidence := core.EvidenceOf(map[string]any{"verified_commit": commitA, "findings": "checked", "run_summary": "tested"})
 			f.finish(t, verifier, f.claim(t, verifier, old.Key), evidence, positive)
 			f.epic = f.newEpic(t)
 			consumer := f.task(t, "human")

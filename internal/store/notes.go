@@ -37,7 +37,7 @@ func (s *Store) Note(ctx context.Context, a core.Actor, in core.NoteInput) (core
 			if n == nil {
 				return core.Note{}, core.Fail("not_found", "note does not exist")
 			}
-			if n.AuthorPrincipal != a.Principal.ID && sess.Role != "coordinator" {
+			if n.AuthorPrincipal != a.Principal.ID && !b.Config.Workflow.Roles[sess.Role].CanCurateNotes {
 				return core.Note{}, core.Fail("forbidden", "only author or note curator may delete")
 			}
 			if !bounded(in.Reason, 4096) {
@@ -76,7 +76,7 @@ func (s *Store) Note(ctx context.Context, a core.Actor, in core.NoteInput) (core
 		countLimit, byteLimit := b.Config.Notes.MaxPerRole, b.Config.Notes.MaxBytesPerRole
 		switch in.ScopeType {
 		case "role":
-			if !core.ValidRole(in.ScopeID) {
+			if !validRole(b, in.ScopeID) {
 				return core.Note{}, core.Fail("invalid_input", "unknown note role")
 			}
 			if in.ScopeID != sess.Role {

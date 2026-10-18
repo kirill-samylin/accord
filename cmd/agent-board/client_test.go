@@ -52,7 +52,7 @@ func TestTokenFileAndRevoke(t *testing.T) {
 	if !bytes.Equal(after, secret) {
 		t.Fatal("existing token file changed")
 	}
-	s, err := store.Open(db, core.Config{}, nil)
+	s, err := store.Open(db, core.Config{BootstrapUsers: []string{"alice"}}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func TestTokenFileAndRevoke(t *testing.T) {
 
 func TestCallDescribeCreateGetAndEvents(t *testing.T) {
 	dir := t.TempDir()
-	s, err := store.Open(filepath.Join(dir, "board.db"), core.Config{LeaseTTL: time.Minute, SessionTTL: time.Minute}, nil)
+	s, err := store.Open(filepath.Join(dir, "board.db"), core.Config{BootstrapUsers: []string{"alice"}, LeaseTTL: time.Minute, SessionTTL: time.Minute}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -24,7 +24,7 @@ func TestAttemptTokensFinalTotalReplayAndReworkStats(t *testing.T) {
 		t.Fatal(err)
 	}
 	bad := int64(10)
-	complete := core.TransitionInput{LeaseInput: core.LeaseInput{RequestID: f.id(), TaskKey: task.Key, Generation: claim.Lease.Generation}, State: "done", Evidence: &core.Evidence{Commit: commitA, RunSummary: "passed"}, TokensSpent: &bad}
+	complete := core.TransitionInput{LeaseInput: core.LeaseInput{RequestID: f.id(), TaskKey: task.Key, Generation: claim.Lease.Generation}, State: "done", Evidence: evidencePtr(core.EvidenceOf(map[string]any{"commit": commitA, "run_summary": "passed"})), TokensSpent: &bad}
 	_, err = f.s.Transition(testContext, d, complete)
 	requireCode(t, err, "VALIDATION")
 	good := int64(15)
@@ -44,7 +44,7 @@ func TestAttemptTokensFinalTotalReplayAndReworkStats(t *testing.T) {
 	}
 	defect := f.task(t, "coordinator")
 	c := f.claim(t, f.coord, defect.Key)
-	f.finish(t, f.coord, c, core.Evidence{Summary: "rework needed"}, "")
+	f.finish(t, f.coord, c, core.EvidenceOf(map[string]any{"summary": "rework needed"}), "")
 	reopen := core.TransitionInput{LeaseInput: core.LeaseInput{RequestID: f.id(), TaskKey: task.Key, Reason: "fix"}, State: "ready", EvidenceRef: defect.Key}
 	returned, err := f.s.Transition(testContext, f.coord, reopen)
 	if err != nil || returned.ReturnsCount != 1 {
@@ -54,7 +54,7 @@ func TestAttemptTokensFinalTotalReplayAndReworkStats(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f.finish(t, d, f.claim(t, d, task.Key), core.Evidence{Commit: commitB, RunSummary: "passed"}, "")
+	f.finish(t, d, f.claim(t, d, task.Key), core.EvidenceOf(map[string]any{"commit": commitB, "run_summary": "passed"}), "")
 	stat, err := f.s.Stats(testContext, f.coord, core.StatsInput{From: f.clock.read().Add(-time.Hour), To: f.clock.read().Add(time.Second), GroupBy: "role"})
 	if err != nil {
 		t.Fatal(err)
@@ -132,7 +132,7 @@ func TestBlockedDurationAndLegacyIncomplete(t *testing.T) {
 	}
 	f.clock.advance(12 * time.Second)
 	a := f.actor(t, "analyst")
-	f.finish(t, a, f.claim(t, a, source.Key), core.Evidence{Artifact: []string{"a"}, Summary: "done"}, "")
+	f.finish(t, a, f.claim(t, a, source.Key), core.EvidenceOf(map[string]any{"artifact": []string{"a"}, "summary": "done"}), "")
 	in := core.StatsInput{From: f.clock.read().Add(-time.Hour), To: f.clock.read().Add(time.Second), GroupBy: "owner"}
 	s, err := f.s.Stats(testContext, f.coord, in)
 	if err != nil || s.Totals.BlockedDurationSeconds != 12 {
@@ -156,7 +156,7 @@ func TestExplicitZeroTokensAreKnownAndStatsSurvivesStoreReopen(t *testing.T) {
 	task := f.task(t, "developer")
 	claim := f.claim(t, d, task.Key)
 	zero := int64(0)
-	done, err := f.s.Transition(testContext, d, core.TransitionInput{LeaseInput: core.LeaseInput{RequestID: f.id(), TaskKey: task.Key, Generation: claim.Lease.Generation}, State: "done", TokensSpent: &zero, Evidence: &core.Evidence{Commit: commitA, RunSummary: "passed"}})
+	done, err := f.s.Transition(testContext, d, core.TransitionInput{LeaseInput: core.LeaseInput{RequestID: f.id(), TaskKey: task.Key, Generation: claim.Lease.Generation}, State: "done", TokensSpent: &zero, Evidence: evidencePtr(core.EvidenceOf(map[string]any{"commit": commitA, "run_summary": "passed"}))})
 	if err != nil || done.Attempts[0].TokensSpent == nil || *done.Attempts[0].TokensSpent != 0 {
 		t.Fatal("explicit zero became missing")
 	}

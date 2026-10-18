@@ -56,7 +56,7 @@ func setup(t *testing.T, interval time.Duration) *fixture {
 	if err := os.Chmod(dir, 0700); err != nil {
 		t.Fatal(err)
 	}
-	s, err := store.Open(filepath.Join(dir, "board.db"), core.Config{SessionTTL: time.Second, LeaseTTL: time.Second}, nil)
+	s, err := store.Open(filepath.Join(dir, "board.db"), core.Config{BootstrapUsers: []string{"alice"}, SessionTTL: time.Second, LeaseTTL: time.Second}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -63,6 +63,14 @@ func mutate[T any](s *Store, ctx context.Context, a core.Actor, request, method 
 				return zero, err
 			}
 		}
+		if sess != nil {
+			if err := roleAuthorized(ctx, b, a.Principal, sess.Role); err != nil {
+				return zero, err
+			}
+			if err := toolAllowed(b, sess.Role, method); err != nil {
+				return zero, err
+			}
+		}
 		// Domain mutations operate on an isolated copy: a rejected operation cannot
 		// persist partial task changes, events, or lease renewals.
 		snapshot, err := json.Marshal(b)
@@ -73,6 +81,7 @@ func mutate[T any](s *Store, ctx context.Context, a core.Actor, request, method 
 		if err = json.Unmarshal(snapshot, &candidate); err != nil {
 			return zero, err
 		}
+		candidate.Config = b.Config
 		candidate.tx = b.tx
 		candidate.EventBase = b.EventBase
 		if sess != nil {
@@ -84,7 +93,11 @@ func mutate[T any](s *Store, ctx context.Context, a core.Actor, request, method 
 		}
 		reconcileEpics(&candidate, now, a.SessionID)
 		if sess != nil {
-			sess.ExpiresAt = now.Add(s.cfg.SessionTTL)
+			sess.ExpiresAt = now.Add(candidate.Config.SessionTTL)
+			if singleton(&candidate, sess.Role) {
+				expiry := now.Add(candidate.Config.RoleTTL)
+				sess.RoleExpiresAt = &expiry
+			}
 		}
 		response, err := json.Marshal(result)
 		if err != nil {
@@ -115,22 +128,16 @@ func owned(b *board, a core.Actor, key string, generation int64) (*core.Task, er
 	}
 	return t, nil
 }
-func coordinator(sess *core.Session) error {
-	if sess.Role != "coordinator" {
-		return core.Fail("forbidden", "coordinator role required")
-	}
-	return nil
-}
 func bounded(value string, max int) bool {
 	return len(strings.TrimSpace(value)) > 0 && len(value) <= max
 }
-func (s *Store) renew(t *core.Task, now time.Time) {
-	if t.Lease != nil {
-		t.Lease.ExpiresAt = now.Add(s.cfg.LeaseTTL)
-	}
+func viewTask(b *board, t *core.Task) core.Task {
+	v := *t
+	v.ConfigVersion = b.Config.ConfigVersion
+	v.Blocked = blocked(b, t)
+	return v
 }
-func viewTask(b *board, t *core.Task) core.Task { v := *t; v.Blocked = blocked(b, t); return v }
-func nextKey(b *board) string                   { b.Sequence++; return fmt.Sprintf("T-%d", b.Sequence) }
+func nextKey(b *board) string { b.Sequence++; return fmt.Sprintf("T-%d", b.Sequence) }
 
 func validTitle(value string) bool {
 	return strings.TrimSpace(value) != "" && utf8.RuneCountInString(value) <= 200

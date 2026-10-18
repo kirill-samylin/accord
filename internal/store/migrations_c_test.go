@@ -12,7 +12,7 @@ import (
 func schema1Fixture(t *testing.T) *fixture {
 	t.Helper()
 	f := newFixture(t)
-	for _, q := range []string{`DROP TABLE notes`, `DROP TABLE note_metadata`, `PRAGMA user_version=1`} {
+	for _, q := range []string{`DROP TABLE notes`, `DROP TABLE note_metadata`, `DROP TABLE config_active`, `DROP TABLE config_history`, `ALTER TABLE tokens DROP COLUMN roles`, `ALTER TABLE tokens DROP COLUMN scopes_version`, `PRAGMA user_version=1`} {
 		if _, err := f.s.db.Exec(q); err != nil {
 			t.Fatal(err)
 		}
@@ -31,19 +31,19 @@ func TestMigrationSchema1BackupAndNoInventedHistoricalTimes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, q := range []string{`DROP TABLE notes`, `DROP TABLE note_metadata`, `PRAGMA user_version=1`} {
+	for _, q := range []string{`DROP TABLE notes`, `DROP TABLE note_metadata`, `DROP TABLE config_active`, `DROP TABLE config_history`, `ALTER TABLE tokens DROP COLUMN roles`, `ALTER TABLE tokens DROP COLUMN scopes_version`, `PRAGMA user_version=1`} {
 		if _, err = f.s.db.Exec(q); err != nil {
 			t.Fatal(err)
 		}
 	}
 	f.s.Close()
-	s, err := Open(f.path, core.Config{}, f.clock.read)
+	s, err := Open(f.path, core.Config{BootstrapUsers: []string{"alice"}}, f.clock.read)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.Close()
 	var version int
-	if err = s.db.QueryRow(`PRAGMA user_version`).Scan(&version); err != nil || version != 2 {
+	if err = s.db.QueryRow(`PRAGMA user_version`).Scan(&version); err != nil || version != 3 {
 		t.Fatalf("version %d %v", version, err)
 	}
 	var created sql.NullString
@@ -71,7 +71,7 @@ func TestMigrationBackupFailureLeavesSchema1Untouched(t *testing.T) {
 	if err := os.WriteFile(f.path+".migrations", []byte("block directory"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	if s, err := Open(f.path, core.Config{}, f.clock.read); err == nil {
+	if s, err := Open(f.path, core.Config{BootstrapUsers: []string{"alice"}}, f.clock.read); err == nil {
 		s.Close()
 		t.Fatal("migration ignored backup failure")
 	}
@@ -101,7 +101,7 @@ func TestMigrationDDLFailureAtomicAndNewerRejected(t *testing.T) {
 		t.Fatal(err)
 	}
 	db.Close()
-	if s, err := Open(f.path, core.Config{}, f.clock.read); err == nil {
+	if s, err := Open(f.path, core.Config{BootstrapUsers: []string{"alice"}}, f.clock.read); err == nil {
 		s.Close()
 		t.Fatal("migration accepted conflicting DDL")
 	}
@@ -119,7 +119,7 @@ func TestMigrationDDLFailureAtomicAndNewerRejected(t *testing.T) {
 		t.Fatal(err)
 	}
 	db.Close()
-	if s, err := Open(f.path, core.Config{}, f.clock.read); err == nil {
+	if s, err := Open(f.path, core.Config{BootstrapUsers: []string{"alice"}}, f.clock.read); err == nil {
 		s.Close()
 		t.Fatal("future schema accepted")
 	}
@@ -151,9 +151,9 @@ func TestLegacyReworkKeepsUnknownFirstTimestamps(t *testing.T) {
 	f := newFixture(t)
 	d := f.actor(t, "developer")
 	task := f.task(t, "developer")
-	f.finish(t, d, f.claim(t, d, task.Key), core.Evidence{Commit: commitA, RunSummary: "original"}, "")
+	f.finish(t, d, f.claim(t, d, task.Key), core.EvidenceOf(map[string]any{"commit": commitA, "run_summary": "original"}), "")
 	defect := f.task(t, "coordinator")
-	f.finish(t, f.coord, f.claim(t, f.coord, defect.Key), core.Evidence{Summary: "defect"}, "")
+	f.finish(t, f.coord, f.claim(t, f.coord, defect.Key), core.EvidenceOf(map[string]any{"summary": "defect"}), "")
 	if _, err := f.s.db.Exec(`UPDATE tasks SET data=json_remove(data,'$.created_at','$.first_claim_at','$.first_done_at') WHERE key=?`, task.Key); err != nil {
 		t.Fatal(err)
 	}
@@ -165,7 +165,7 @@ func TestLegacyReworkKeepsUnknownFirstTimestamps(t *testing.T) {
 	if claim.Task.FirstClaimAt != nil {
 		t.Fatal("legacy claim invented first timestamp")
 	}
-	done := f.finish(t, d, claim, core.Evidence{Commit: commitB, RunSummary: "rework"}, "")
+	done := f.finish(t, d, claim, core.EvidenceOf(map[string]any{"commit": commitB, "run_summary": "rework"}), "")
 	if done.FirstDoneAt != nil || done.CreatedAt != nil {
 		t.Fatal("legacy rework invented first timestamp")
 	}

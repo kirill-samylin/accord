@@ -121,3 +121,15 @@ func TestToolBudgetIsBytesAndSeparateSchemas(t *testing.T) {
 		}
 	}
 }
+
+func TestRefRejectsInvalidJSONPointerEscape(t *testing.T) {
+	root := map[string]any{"$defs": map[string]any{"bad~2": map[string]any{"type": "string"}, "valid~name": map[string]any{"type": "string"}}}
+	for _, ref := range []string{"#/$defs/bad~2", "#/$defs/bad~", "#/$defs/bad%7E2"} {
+		if _, ok := resolveRef(root, ref); ok {
+			t.Fatalf("invalid escape accepted %s", ref)
+		}
+	}
+	if _, ok := resolveRef(root, "#/$defs/valid~0name"); !ok {
+		t.Fatal("valid escape rejected")
+	}
+}

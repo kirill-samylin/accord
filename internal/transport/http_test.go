@@ -24,7 +24,7 @@ type fixture struct {
 
 func newFixture(t *testing.T) fixture {
 	t.Helper()
-	s, err := store.Open(filepath.Join(t.TempDir(), "board.db"), core.Config{SessionTTL: 15 * time.Minute, LeaseTTL: 15 * time.Minute}, nil)
+	s, err := store.Open(filepath.Join(t.TempDir(), "board.db"), core.Config{BootstrapUsers: []string{"alice"}, SessionTTL: 15 * time.Minute, LeaseTTL: 15 * time.Minute}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

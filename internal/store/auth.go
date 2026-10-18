@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"time"
 )
 
@@ -30,7 +31,15 @@ func (s *Store) CreateToken(ctx context.Context, in core.TokenInput) (core.Token
 	}
 	result = core.TokenView{ID: id, Secret: "ab_" + secret, ExpiresAt: s.clock().UTC().Add(in.TTL)}
 	err = s.adminTransaction(ctx, func(b *board, now time.Time) error {
-		if _, err := b.tx.ExecContext(ctx, `INSERT INTO tokens(id,hash,owner,machine,expires) VALUES(?,?,?,?,?)`, id, tokenHash(result.Secret), in.Owner, in.Machine, result.ExpiresAt.UnixNano()); err != nil {
+		roles, err := tokenRoles(b, in)
+		if err != nil {
+			return err
+		}
+		raw, err := json.Marshal(roles)
+		if err != nil {
+			return err
+		}
+		if _, err := b.tx.ExecContext(ctx, `INSERT INTO tokens(id,hash,owner,machine,expires,roles) VALUES(?,?,?,?,?,?)`, id, tokenHash(result.Secret), in.Owner, in.Machine, result.ExpiresAt.UnixNano(), string(raw)); err != nil {
 			return err
 		}
 		emit(b, now, "token_created", "", "")
@@ -77,7 +86,7 @@ func (s *Store) RevokeToken(ctx context.Context, id string) error {
 
 // ListTokens exposes identity and validity only; neither secrets nor hashes.
 func (s *Store) ListTokens(ctx context.Context) ([]core.TokenInfo, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id,owner,machine,expires,revoked FROM tokens ORDER BY id`)
+	rows, err := s.db.QueryContext(ctx, `SELECT id,owner,machine,expires,revoked,roles,scopes_version FROM tokens ORDER BY id`)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +95,11 @@ func (s *Store) ListTokens(ctx context.Context) ([]core.TokenInfo, error) {
 	for rows.Next() {
 		var token core.TokenInfo
 		var expires int64
-		if err = rows.Scan(&token.ID, &token.Owner, &token.Machine, &expires, &token.Revoked); err != nil {
+		var raw []byte
+		if err = rows.Scan(&token.ID, &token.Owner, &token.Machine, &expires, &token.Revoked, &raw, &token.ScopesVersion); err != nil {
+			return nil, err
+		}
+		if err = json.Unmarshal(raw, &token.Roles); err != nil {
 			return nil, err
 		}
 		token.ExpiresAt = time.Unix(0, expires).UTC()

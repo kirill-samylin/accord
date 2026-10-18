@@ -92,7 +92,7 @@ func TestTaskMetadataUniqueAndReadHistory(t *testing.T) {
 	_, err = f.s.Update(testContext, f.coord, core.UpdateInput{LeaseInput: core.LeaseInput{TaskKey: v.Key, RequestID: f.id()}, Complexity: &bad})
 	requireCode(t, err, "VALIDATION")
 	d := f.actor(t, "developer")
-	f.finish(t, d, f.claim(t, d, v.Key), core.Evidence{Commit: commitA, RunSummary: "test"}, "")
+	f.finish(t, d, f.claim(t, d, v.Key), core.EvidenceOf(map[string]any{"commit": commitA, "run_summary": "test"}), "")
 	p, err := f.s.ListTasks(testContext, f.coord, core.ListInput{})
 	if err != nil || len(p.Tasks) != 0 {
 		t.Fatal("closed task in live list")

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math"
+	"regexp"
 	"time"
 
 	"agent-board/internal/core"
@@ -15,7 +16,14 @@ func (b *bridge) timing(v core.SessionView, started time.Time) error {
 			return errors.New("invalid server TTL")
 		}
 	}
-	interval := time.Duration(min(v.SessionTTLSeconds, v.TaskTTLSeconds) / 3 * float64(time.Second))
+	roleTTL := v.RoleTTLSeconds
+	if roleTTL == 0 {
+		roleTTL = v.SessionTTLSeconds
+	}
+	if math.IsNaN(roleTTL) || math.IsInf(roleTTL, 0) || roleTTL <= 0 || roleTTL > 86400 {
+		return errors.New("invalid server role TTL")
+	}
+	interval := time.Duration(min(v.SessionTTLSeconds, v.TaskTTLSeconds, roleTTL) / 3 * float64(time.Second))
 	advertised := time.Duration(v.HeartbeatEverySeconds * float64(time.Second))
 	interval = min(interval, advertised)
 	if b.override > 0 {
@@ -27,14 +35,18 @@ func (b *bridge) timing(v core.SessionView, started time.Time) error {
 	if b.session.SessionID != "" && (v.SessionID != b.session.SessionID || v.Role != b.session.Role || v.RoleGeneration != b.session.RoleGeneration) {
 		return errors.New("session identity changed")
 	}
-	if v.SessionID == "" || !core.ValidRole(v.Role) || v.ExpiresAt.IsZero() {
+	if v.SessionID == "" || !regexp.MustCompile(`^[a-z][a-z0-9-]{0,47}$`).MatchString(v.Role) || v.ExpiresAt.IsZero() {
 		return errors.New("invalid session")
 	}
 	b.session = v
 	b.interval = interval
-	b.rpcTimeout = time.Duration(min(v.SessionTTLSeconds, v.TaskTTLSeconds) / 3 * float64(time.Second))
+	b.rpcTimeout = time.Duration(min(v.SessionTTLSeconds, v.TaskTTLSeconds, roleTTL) / 3 * float64(time.Second))
 	// A replay or a clock difference cannot extend the local safety horizon.
 	b.sessionDeadline = minTime(started.Add(time.Duration(v.SessionTTLSeconds*float64(time.Second))), v.ExpiresAt)
+	if v.RoleExpiresAt != nil {
+		b.sessionDeadline = minTime(b.sessionDeadline, *v.RoleExpiresAt)
+	}
+	b.sessionDeadline = minTime(b.sessionDeadline, started.Add(time.Duration(roleTTL*float64(time.Second))))
 	if !b.sessionDeadline.After(time.Now()) {
 		return errors.New("session already expired")
 	}
@@ -47,6 +59,9 @@ func (b *bridge) accept(name string, fields map[string]json.RawMessage, data jso
 		var view core.SessionView
 		if err := json.Unmarshal(data, &view); err != nil {
 			return err
+		}
+		if name == "describe" && view.Role != stringField(fields, "role") {
+			return errors.New("describe role differs from requested identity")
 		}
 		if err := b.timing(view, started); err != nil {
 			return err
@@ -98,7 +113,11 @@ func (b *bridge) accept(name string, fields map[string]json.RawMessage, data jso
 			}
 		}
 	}
-	b.sessionDeadline = started.Add(time.Duration(b.session.SessionTTLSeconds * float64(time.Second)))
+	ttl := b.session.SessionTTLSeconds
+	if b.session.RoleTTLSeconds > 0 {
+		ttl = min(ttl, b.session.RoleTTLSeconds)
+	}
+	b.sessionDeadline = started.Add(time.Duration(ttl * float64(time.Second)))
 	return nil
 }
 

@@ -17,6 +17,7 @@ func (s *Store) Stats(ctx context.Context, a core.Actor, in core.StatsInput) (co
 		return result, core.Fail("invalid_input", "from < to and group_by role, owner or epic required")
 	}
 	return transact(s, ctx, func(b *board, now time.Time) (core.Stats, error) {
+		result.ConfigVersion = b.Config.ConfigVersion
 		if err := readActor(ctx, b, a, now); err != nil {
 			return result, err
 		}

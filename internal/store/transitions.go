@@ -15,12 +15,16 @@ func (s *Store) Transition(ctx context.Context, a core.Actor, in core.Transition
 		if in.TokensSpent != nil && (in.State != "done" || t.Type != "task") {
 			return core.Task{}, core.Fail("invalid_input", "final tokens are only accepted on task completion")
 		}
+		if in.Owner != nil && t.Type != "epic" {
+			return core.Task{}, core.Fail("VALIDATION", "owner only applies to epic handoff")
+		}
 		if len(in.Branch) > 512 {
 			return core.Task{}, core.Fail("invalid_input", "branch too long")
 		}
 		if t.Type == "epic" {
 			return transitionEpic(b, t, sess, in, now)
 		}
+		t.Warnings = nil
 		switch {
 		case in.State == "done" && t.State == "in_progress":
 			if _, err = owned(b, a, t.Key, in.Generation); err != nil {
@@ -31,6 +35,14 @@ func (s *Store) Transition(ctx context.Context, a core.Actor, in core.Transition
 			}
 			if err = completion(b, t, sess, in); err != nil {
 				return core.Task{}, err
+			}
+			if total, present, tokenErr := t.Evidence.Integer("tokens_spent"); tokenErr != nil {
+				return core.Task{}, core.Fail("VALIDATION", tokenErr.Error())
+			} else if present {
+				if in.TokensSpent != nil && *in.TokensSpent != total {
+					return core.Task{}, core.Fail("VALIDATION", "tokens_spent totals disagree")
+				}
+				in.TokensSpent = &total
 			}
 			if err = finalTokens(t, in.TokensSpent); err != nil {
 				return core.Task{}, err
@@ -43,7 +55,7 @@ func (s *Store) Transition(ctx context.Context, a core.Actor, in core.Transition
 			t.Lease = nil
 			t.State = "done"
 		case in.State == "ready" && t.State == "done":
-			if !reopenAllowed(sess.Role, t.Role) {
+			if !reopenAllowed(b, sess.Role, t.Role) {
 				return core.Task{}, core.Fail("forbidden", "role cannot reopen this task")
 			}
 			if !bounded(in.Reason, 4096) {
@@ -57,7 +69,7 @@ func (s *Store) Transition(ctx context.Context, a core.Actor, in core.Transition
 			t.State = "ready"
 			t.ReadyAt = now
 		case in.State == "cancelled" && (t.State == "ready" || t.State == "created"):
-			if sess.Role != "coordinator" && t.Requester != a.Principal.ID {
+			if !canCancel(b, sess, t) {
 				return core.Task{}, core.Fail("forbidden", "only requester or coordinator may cancel")
 			}
 			if !bounded(in.Reason, 4096) {
@@ -71,6 +83,12 @@ func (s *Store) Transition(ctx context.Context, a core.Actor, in core.Transition
 			if t.State == "cancelled" && !bounded(in.Reason, 4096) {
 				return core.Task{}, core.Fail("invalid_input", "restoration reason required")
 			}
+			if !bounded(t.Description, 16384) {
+				return core.Task{}, core.Fail("VALIDATION", "ready task requires description")
+			}
+			if err := validateMetadata(b, t); err != nil {
+				return core.Task{}, err
+			}
 			t.State = "ready"
 			t.ReadyAt = now
 		default:
@@ -83,6 +101,7 @@ func (s *Store) Transition(ctx context.Context, a core.Actor, in core.Transition
 		if t.State != "done" {
 			reopenEpic(b, t.EpicKey, now, a.SessionID)
 		}
+		emitWarnings(b, t, now, a.SessionID)
 		emit(b, now, "task_"+t.State, t.Key, a.SessionID)
 		if in.TokensSpent != nil {
 			total := *in.TokensSpent
@@ -92,15 +111,6 @@ func (s *Store) Transition(ctx context.Context, a core.Actor, in core.Transition
 		return viewTask(b, t), nil
 	})
 }
-func reopenAllowed(role, target string) bool {
-	if role == "coordinator" || role == "human" {
-		return true
-	}
-	if (role == "reviewer" || role == "tester") && target == "developer" {
-		return true
-	}
-	return role == "developer" && (target == "analyst" || target == "architect")
-}
 func reopenEpic(b *board, key string, now time.Time, session string) {
 	if epic := b.Tasks[key]; epic != nil && epic.State == "done" {
 		epic.State = "open"
@@ -109,8 +119,17 @@ func reopenEpic(b *board, key string, now time.Time, session string) {
 	}
 }
 func transitionEpic(b *board, t *core.Task, sess *core.Session, in core.TransitionInput, now time.Time) (core.Task, error) {
-	if sess.Role != "coordinator" && sess.Role != "human" {
+	if sess.Role != "coordinator" && sess.Role != "human" && !(in.State == "cancelled" && canCancel(b, sess, t)) {
 		return core.Task{}, core.Fail("forbidden", "epic transition requires coordinator or human")
+	}
+	if in.Owner != nil {
+		if in.State != "open" {
+			return core.Task{}, core.Fail("VALIDATION", "handoff transition state must be open")
+		}
+		if sess.Role != "coordinator" {
+			return core.Task{}, core.Fail("FORBIDDEN_ROLE", "coordinator required for handoff")
+		}
+		return handoffEpic(b, t, *in.Owner, in.ExpectedVersion, in.Reason, sess.SessionID, now)
 	}
 	switch in.State {
 	case "done":
@@ -146,5 +165,5 @@ func transitionEpic(b *board, t *core.Task, sess *core.Session, in core.Transiti
 }
 
 func hasEvidence(e core.Evidence) bool {
-	return e.Commit != "" || e.Summary != "" || e.Answer != "" || e.VerifiedCommit != ""
+	return len(e) > 0
 }

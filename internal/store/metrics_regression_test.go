@@ -30,7 +30,7 @@ func TestStatsParticipantOwnsAttemptAndCurrentLease(t *testing.T) {
 	doneTask := f.task(t, "developer")
 	claim := f.claim(t, bob, doneTask.Key)
 	tokens := int64(42)
-	_, err := f.s.Transition(testContext, bob, core.TransitionInput{LeaseInput: core.LeaseInput{RequestID: f.id(), TaskKey: doneTask.Key, Generation: claim.Lease.Generation}, State: "done", TokensSpent: &tokens, Evidence: &core.Evidence{Commit: commitA, RunSummary: "done"}})
+	_, err := f.s.Transition(testContext, bob, core.TransitionInput{LeaseInput: core.LeaseInput{RequestID: f.id(), TaskKey: doneTask.Key, Generation: claim.Lease.Generation}, State: "done", TokensSpent: &tokens, Evidence: evidencePtr(core.EvidenceOf(map[string]any{"commit": commitA, "run_summary": "done"}))})
 	if err != nil {
 		t.Fatal(err)
 	}

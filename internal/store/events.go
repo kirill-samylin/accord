@@ -18,10 +18,14 @@ func (s *Store) Events(ctx context.Context, a core.Actor, in core.EventsInput) (
 		if err := authenticatePrincipal(ctx, b, a.Principal, now); err != nil {
 			return core.EventsPage{}, err
 		}
-		if _, err := sessionFor(b, a, now); err != nil {
+		if err := readActor(ctx, b, a, now); err != nil {
 			return core.EventsPage{}, err
 		}
-		page := core.EventsPage{Events: []core.Event{}, NextCursor: in.SinceCursor, HighWater: b.EventBase + int64(len(b.Events))}
+		sess, _ := sessionFor(b, a, now)
+		if err := toolAllowed(b, sess.Role, "events"); err != nil {
+			return core.EventsPage{}, err
+		}
+		page := core.EventsPage{ConfigVersion: b.Config.ConfigVersion, Events: []core.Event{}, NextCursor: in.SinceCursor, HighWater: b.EventBase + int64(len(b.Events))}
 		// Materialized expiry events are included in the same snapshot as reads.
 		if err := persistNewEvents(ctx, b); err != nil {
 			return page, err

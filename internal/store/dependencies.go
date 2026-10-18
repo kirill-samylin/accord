@@ -13,6 +13,9 @@ func cycle(b *board, from, to string) bool {
 		if key == from {
 			return true
 		}
+		if t := b.Tasks[key]; t != nil && t.EpicKey != "" && visit(t.EpicKey) {
+			return true
+		}
 		if seen[key] {
 			return false
 		}
@@ -38,8 +41,8 @@ func (s *Store) Link(ctx context.Context, a core.Actor, in core.LinkInput) (core
 		if err != nil {
 			return core.Task{}, err
 		}
-		if source.Type != "task" || target.Type != "task" {
-			return core.Task{}, core.Fail("invalid_input", "pilot links require tasks")
+		if in.Type == "duplicate_of" {
+			return duplicateLink(b, source, target, sess, in, now)
 		}
 
 		if target.Lease != nil || in.Generation != 0 {
@@ -57,7 +60,7 @@ func (s *Store) Link(ctx context.Context, a core.Actor, in core.LinkInput) (core
 				if l.From == in.From && l.To == in.To && l.Type == in.Type {
 					target.Links = append(target.Links[:i], target.Links[i+1:]...)
 					target.Version++
-					s.renew(target, now)
+					renew(b, target, now)
 					emit(b, now, "unlinked", target.Key, a.SessionID)
 					return viewTask(b, target), nil
 				}
@@ -74,7 +77,7 @@ func (s *Store) Link(ctx context.Context, a core.Actor, in core.LinkInput) (core
 		default:
 			return core.Task{}, core.Fail("invalid_input", "unsupported link condition")
 		}
-		if in.Condition == "approved" && source.Role != "reviewer" || in.Condition == "passed" && source.Role != "tester" {
+		if in.Condition == "approved" && (source.Review == nil || taskOutcomeField(b, source) != "verdict") || in.Condition == "passed" && (source.Review == nil || taskOutcomeField(b, source) != "result") {
 			return core.Task{}, core.Fail("invalid_input", "condition incompatible with source role")
 		}
 		if (in.Type == "blocks" || in.Type == "contract_of") && cycle(b, in.From, in.To) {
@@ -87,7 +90,7 @@ func (s *Store) Link(ctx context.Context, a core.Actor, in core.LinkInput) (core
 		}
 		target.Links = append(target.Links, core.Link{From: in.From, To: in.To, Type: in.Type, Condition: in.Condition})
 		target.Version++
-		s.renew(target, now)
+		renew(b, target, now)
 		emit(b, now, "linked", target.Key, a.SessionID)
 		return viewTask(b, target), nil
 	})

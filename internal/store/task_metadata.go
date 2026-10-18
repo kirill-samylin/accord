@@ -15,6 +15,17 @@ func validateMetadata(b *board, t *core.Task) error {
 	if t.Complexity != "" && t.Complexity != "low" && t.Complexity != "normal" && t.Complexity != "high" {
 		return core.Fail("invalid_input", "complexity must be low, normal or high")
 	}
+	if t.Type == "task" {
+		r, ok := b.Config.Workflow.Roles[t.Role]
+		if !ok {
+			return core.Fail("VALIDATION", "unknown configured role")
+		}
+		if r.Kind == "human" && len(r.Categories) > 0 {
+			if _, ok := r.Categories[t.Category]; !ok || t.Complexity == "" {
+				return core.Fail("VALIDATION", "categorized human requires category and complexity")
+			}
+		}
+	}
 	if t.ExternalID != "" {
 		if strings.TrimSpace(t.ExternalID) == "" {
 			return core.Fail("invalid_input", "external_id cannot be whitespace")

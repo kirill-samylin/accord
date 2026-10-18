@@ -60,6 +60,18 @@ func (s *Store) adminTransaction(ctx context.Context, fn func(*board, time.Time)
 	if err != nil {
 		return err
 	}
+	var schema int
+	if err = tx.QueryRowContext(ctx, `PRAGMA user_version`).Scan(&schema); err != nil {
+		return err
+	}
+	if schema >= 3 {
+		b.Config, err = loadActiveConfig(ctx, tx)
+	}
+	if schema < 3 || err == sql.ErrNoRows && s.cfg.SkipBootstrap {
+		b.Config = s.cfg
+	} else if err != nil {
+		return err
+	}
 	before := metricFacts(b)
 	now := s.clock().UTC()
 	if err = fn(b, now); err != nil {

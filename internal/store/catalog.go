@@ -12,8 +12,11 @@ func readActor(ctx context.Context, b *board, a core.Actor, now time.Time) error
 	if err := authenticatePrincipal(ctx, b, a.Principal, now); err != nil {
 		return err
 	}
-	_, err := sessionFor(b, a, now)
-	return err
+	sess, err := sessionFor(b, a, now)
+	if err != nil {
+		return err
+	}
+	return roleAuthorized(ctx, b, a.Principal, sess.Role)
 }
 func (s *Store) ListTasks(ctx context.Context, a core.Actor, in core.ListInput) (core.TasksPage, error) {
 	return s.listTasks(ctx, a, in, "task")
@@ -24,7 +27,7 @@ func (s *Store) ListEpics(ctx context.Context, a core.Actor, in core.ListInput) 
 func (s *Store) listTasks(ctx context.Context, a core.Actor, in core.ListInput, kind string) (core.TasksPage, error) {
 	return transact(s, ctx, func(b *board, now time.Time) (core.TasksPage, error) {
 		page := core.TasksPage{Tasks: []core.Task{}}
-		if err := validateList(in, kind); err != nil {
+		if err := validateList(b, in, kind); err != nil {
 			return page, err
 		}
 		if err := readActor(ctx, b, a, now); err != nil {
@@ -73,6 +76,7 @@ func (s *Store) listTasks(ctx context.Context, a core.Actor, in core.ListInput, 
 			last = id
 		}
 		page.PageInfo = finishPage(c, last, more)
+		page.ConfigVersion = b.Config.ConfigVersion
 		return page, nil
 	})
 }
@@ -82,7 +86,7 @@ func (s *Store) listTasks(ctx context.Context, a core.Actor, in core.ListInput, 
 func (s *Store) Sessions(ctx context.Context, a core.Actor, in core.ListInput) (core.SessionsPage, error) {
 	return transact(s, ctx, func(b *board, now time.Time) (core.SessionsPage, error) {
 		page := core.SessionsPage{Sessions: []core.Session{}}
-		if err := validateList(in, "sessions"); err != nil {
+		if err := validateList(b, in, "sessions"); err != nil {
 			return page, err
 		}
 		if err := readActor(ctx, b, a, now); err != nil {
@@ -125,7 +129,7 @@ func (s *Store) Sessions(ctx context.Context, a core.Actor, in core.ListInput) (
 			if sess.Order <= c.After || sess.Order > c.High {
 				continue
 			}
-			live := sess.ExpiresAt.After(now)
+			live := sessionLive(b, &sess, now)
 			if in.State == "active" && !live || in.State == "expired" && live || in.State == "" && !in.IncludeClosed && !live {
 				continue
 			}
@@ -151,13 +155,14 @@ func (s *Store) Sessions(ctx context.Context, a core.Actor, in core.ListInput) (
 			last = sess.Order
 		}
 		page.PageInfo = finishPage(c, last, more)
+		page.ConfigVersion = b.Config.ConfigVersion
 		return page, nil
 	})
 }
 func (s *Store) ListNotes(ctx context.Context, a core.Actor, in core.NotesInput) (core.NotesPage, error) {
 	return transact(s, ctx, func(b *board, now time.Time) (core.NotesPage, error) {
 		page := core.NotesPage{Notes: []core.Note{}}
-		if err := validateNotes(in); err != nil {
+		if err := validateNotes(b, in); err != nil {
 			return page, err
 		}
 		if err := readActor(ctx, b, a, now); err != nil {
@@ -190,6 +195,7 @@ func (s *Store) ListNotes(ctx context.Context, a core.Actor, in core.NotesInput)
 			last = id
 		}
 		page.PageInfo = finishPage(c, last, more)
+		page.ConfigVersion = b.Config.ConfigVersion
 		return page, nil
 	})
 }

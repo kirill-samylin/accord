@@ -37,12 +37,12 @@ func newFixture(t *testing.T) *fixture {
 	t.Helper()
 	clock := &testClock{now: time.Date(2026, 10, 18, 12, 0, 0, 0, time.UTC)}
 	path := filepath.Join(t.TempDir(), "board.db")
-	s, err := Open(path, core.Config{SessionTTL: time.Hour, LeaseTTL: time.Minute, Project: "test"}, clock.read)
+	s, err := Open(path, core.Config{BootstrapUsers: []string{"alice"}, SessionTTL: time.Hour, LeaseTTL: time.Minute, Project: "test"}, clock.read)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { s.Close() })
-	token, err := s.CreateToken(testContext, core.TokenInput{Owner: "alice", Machine: "pc-a", TTL: 24 * time.Hour})
+	token, err := s.CreateToken(testContext, core.TokenInput{Roles: legacyRoles, Owner: "alice", Machine: "pc-a", TTL: 24 * time.Hour})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +52,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 	f := &fixture{s: s, clock: clock, p: p, path: path}
 	f.coord = f.actor(t, "coordinator")
-	f.epic, err = s.Create(testContext, f.coord, core.CreateInput{RequestID: "epic", Type: "epic", Title: "Pilot"})
+	f.epic, err = s.Create(testContext, f.coord, core.CreateInput{RequestID: "epic", Type: "epic", Owner: "alice", Title: "Pilot"})
 	if err != nil {
 		t.Fatal(err)
 	}

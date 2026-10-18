@@ -34,6 +34,10 @@ func run(args []string, in io.Reader, out io.Writer) error {
 		return errors.New("usage: agent-board serve | token | sessions list | backup | maintenance reset | mcp | call <operation>")
 	}
 	switch args[0] {
+	case "epic":
+		return epicCommand(args[1:], out)
+	case "config":
+		return configCommand(args[1:], out)
 	case "serve":
 		return serve(args[1:], out)
 	case "mcp":
@@ -55,6 +59,8 @@ func run(args []string, in io.Reader, out io.Writer) error {
 			return errors.New("usage: agent-board token create | list | revoke | revoke-all")
 		}
 		switch args[1] {
+		case "scopes":
+			return tokenScopes(args[2:], out)
 		case "create":
 			return createToken(args[2:], out)
 		case "revoke":
@@ -79,7 +85,7 @@ func helpRequested(args []string) bool {
 	}
 	if len(args) == 2 && (args[1] == "-h" || args[1] == "--help") {
 		switch args[0] {
-		case "serve", "mcp", "call", "backup", "token", "sessions", "maintenance":
+		case "serve", "mcp", "call", "backup", "token", "sessions", "maintenance", "config", "epic":
 			return true
 		}
 	}
@@ -88,10 +94,17 @@ func helpRequested(args []string) bool {
 
 const commandHelp = `Accord — authenticated coordination server and native client
 
-agent-board serve --db PATH --listen 127.0.0.1:8080 [--external-host DNS:PORT] [--task-ttl 15m --session-ttl 15m]
+agent-board serve --db PATH --listen 127.0.0.1:8080 [--bootstrap-owner NAME] [--project NAME] [--external-host DNS:PORT] [--task-ttl 15m --session-ttl 15m]
 agent-board mcp --server ORIGIN --token-file PRIVATE [--heartbeat-interval 1m]
 agent-board call OPERATION --server ORIGIN --token-file PRIVATE < request.json
-agent-board token create --db PATH --owner NAME --machine NAME --output NEW_PRIVATE [--days 30]
+agent-board token create --db PATH --owner NAME --machine NAME --output NEW_PRIVATE [--days 30 --roles coordinator,developer]
+agent-board config init --profile davinci
+agent-board config validate FILE
+agent-board config get --db PATH
+agent-board config history --db PATH [--after-version N --limit 100]
+agent-board config apply --db PATH --file FILE --expected-version N --actor LABEL
+agent-board token scopes set --db PATH --id ID --roles LIST --expected-version N --actor LABEL
+agent-board epic handoff --db PATH --key E-N --owner NAME --expected-version N --reason TEXT --actor LABEL
 agent-board token list --db PATH
 agent-board token revoke --db PATH --id TOKEN_ID
 agent-board token revoke-all --db PATH --reason REASON
@@ -135,6 +148,8 @@ func serve(args []string, out io.Writer) error {
 	externalHost := f.String("external-host", os.Getenv("ACCORD_EXTERNAL_HOST"), "exact advertised DNS:port; defaults to ACCORD_EXTERNAL_HOST")
 	taskTTL := f.Duration("task-ttl", 15*time.Minute, "task lease TTL")
 	sessionTTL := f.Duration("session-ttl", 15*time.Minute, "session and singleton role TTL")
+	project := f.String("project", "agent-board", "project name")
+	owner := f.String("bootstrap-owner", "", "initial local user for a new database")
 	if err := parse(f, args); err != nil {
 		return err
 	}
@@ -152,7 +167,21 @@ func serve(args []string, out io.Writer) error {
 		return errors.New("cannot listen on requested loopback address")
 	}
 	defer listener.Close()
-	s, err := openDB(*db, *taskTTL, *sessionTTL)
+	cfg := core.Config{Project: *project, LeaseTTL: *taskTTL, SessionTTL: *sessionTTL}
+	if *owner != "" {
+		cfg.BootstrapUsers = []string{*owner}
+	}
+	f.Visit(func(flag *flag.Flag) {
+		switch flag.Name {
+		case "project":
+			cfg.ExplicitProject = true
+		case "task-ttl":
+			cfg.ExplicitTaskTTL = true
+		case "session-ttl":
+			cfg.ExplicitSessionTTL = true
+		}
+	})
+	s, err := store.Open(*db, cfg, nil)
 	if err != nil {
 		return err
 	}
@@ -160,6 +189,7 @@ func serve(args []string, out io.Writer) error {
 	server := &http.Server{Handler: transport.NewHandlerWithOptions(s, s.Ready, transport.HandlerOptions{ExternalHost: *externalHost}), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: time.Minute, MaxHeaderBytes: 16 << 10}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	go sweep(ctx, s)
 	done := make(chan struct{})
 	defer close(done)
 	go func() {

@@ -14,9 +14,10 @@ type ListInput struct {
 	IncludeClosed bool   `json:"include_closed,omitempty"`
 }
 type PageInfo struct {
-	NextCursor string `json:"next_cursor,omitempty"`
-	HighWater  int64  `json:"high_water"`
-	HasMore    bool   `json:"has_more"`
+	ConfigVersion int64  `json:"config_version"`
+	NextCursor    string `json:"next_cursor,omitempty"`
+	HighWater     int64  `json:"high_water"`
+	HasMore       bool   `json:"has_more"`
 }
 type TasksPage struct {
 	PageInfo
@@ -116,6 +117,7 @@ type StatsGroup struct {
 	Metrics StatsMetrics `json:"metrics"`
 }
 type Stats struct {
+	ConfigVersion    int64        `json:"config_version"`
 	From             time.Time    `json:"from"`
 	To               time.Time    `json:"to"`
 	GroupBy          string       `json:"group_by"`

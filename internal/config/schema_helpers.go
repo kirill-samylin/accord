@@ -35,6 +35,14 @@ func resolveRef(root map[string]any, ref string) (map[string]any, bool) {
 	}
 	var value any = root
 	for _, part := range strings.Split(fragment, "/") {
+		for i := 0; i < len(part); i++ {
+			if part[i] == '~' {
+				if i+1 == len(part) || (part[i+1] != '0' && part[i+1] != '1') {
+					return nil, false
+				}
+				i++
+			}
+		}
 		part = strings.ReplaceAll(strings.ReplaceAll(part, "~1", "/"), "~0", "~")
 		m, ok := value.(map[string]any)
 		if !ok {

@@ -73,7 +73,7 @@ func TestSDKLeaseWorkflowAndRevocation(t *testing.T) {
 	if claim.Lease == nil || claim.Lease.Generation <= lease.Generation {
 		t.Fatal("generation did not advance")
 	}
-	done := toolValue[core.Task](t, invoke("transition", developer.SessionID, core.TransitionInput{LeaseInput: core.LeaseInput{TaskKey: task.Key, Generation: claim.Lease.Generation}, State: "done", Evidence: &core.Evidence{Commit: "1111111111111111111111111111111111111111", RunSummary: "in-process integration"}}))
+	done := toolValue[core.Task](t, invoke("transition", developer.SessionID, core.TransitionInput{LeaseInput: core.LeaseInput{TaskKey: task.Key, Generation: claim.Lease.Generation}, State: "done", Evidence: evidencePtr(core.EvidenceOf(map[string]any{"commit": "1111111111111111111111111111111111111111", "run_summary": "in-process integration"}))}))
 	if done.State != "done" {
 		t.Fatal("transition failed")
 	}

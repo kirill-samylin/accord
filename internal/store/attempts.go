@@ -38,7 +38,7 @@ func (s *Store) Comment(ctx context.Context, a core.Actor, in core.CommentInput)
 		}
 		t.Comments = append(t.Comments, core.Comment{Text: in.Text, SessionID: a.SessionID, At: now})
 		t.Version++
-		s.renew(t, now)
+		renew(b, t, now)
 		emit(b, now, "commented", t.Key, a.SessionID)
 		if in.TokensSpentDelta != nil {
 			delta := *in.TokensSpentDelta

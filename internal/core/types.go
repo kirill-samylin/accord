@@ -2,6 +2,7 @@
 package core
 
 import (
+	"agent-board/internal/config"
 	"strings"
 	"time"
 )
@@ -16,10 +17,19 @@ type Actor struct {
 	SessionID string
 }
 type Config struct {
-	SessionTTL time.Duration
-	LeaseTTL   time.Duration
-	Project    string
-	Notes      NoteLimits
+	SessionTTL         time.Duration
+	LeaseTTL           time.Duration
+	Project            string
+	Notes              NoteLimits
+	RoleTTL            time.Duration
+	ConfigVersion      int64            `json:"config_version"`
+	Snapshot           *config.Snapshot `json:"-"`
+	Workflow           config.Config    `json:"workflow"`
+	SkipBootstrap      bool             `json:"-"`
+	BootstrapUsers     []string         `json:"-"`
+	ExplicitProject    bool             `json:"-"`
+	ExplicitTaskTTL    bool             `json:"-"`
+	ExplicitSessionTTL bool             `json:"-"`
 }
 type Clock func() time.Time
 
@@ -30,11 +40,14 @@ type OpenSession struct {
 	Machine   string `json:"machine"`
 }
 type SessionView struct {
+	ConfigVersion         int64             `json:"config_version"`
 	SessionID             string            `json:"session_id"`
 	Role                  string            `json:"role"`
 	RoleGeneration        int64             `json:"role_generation"`
+	RoleExpiresAt         *time.Time        `json:"role_expires_at,omitempty"`
 	ExpiresAt             time.Time         `json:"expires_at"`
 	Project               string            `json:"project"`
+	RoleTTLSeconds        float64           `json:"role_ttl_seconds,omitempty"`
 	SessionTTLSeconds     float64           `json:"session_ttl_seconds"`
 	TaskTTLSeconds        float64           `json:"task_ttl_seconds"`
 	HeartbeatEverySeconds float64           `json:"heartbeat_every_seconds"`
@@ -56,15 +69,6 @@ type Lease struct {
 	Generation int64     `json:"generation"`
 	ExpiresAt  time.Time `json:"expires_at"`
 }
-type Evidence struct {
-	Commit         string   `json:"commit,omitempty"`
-	RunSummary     string   `json:"run_summary,omitempty"`
-	Artifact       []string `json:"artifact,omitempty"`
-	Summary        string   `json:"summary,omitempty"`
-	Answer         string   `json:"answer,omitempty"`
-	VerifiedCommit string   `json:"verified_commit,omitempty"`
-	Findings       string   `json:"findings,omitempty"`
-}
 type Attempt struct {
 	TokensSpent *int64     `json:"tokens_spent,omitempty"`
 	TokensDelta int64      `json:"tokens_delta,omitempty"`
@@ -80,6 +84,7 @@ type Attempt struct {
 	Commit      string     `json:"commit,omitempty"`
 }
 type Review struct {
+	OutcomeField     string `json:"outcome_field,omitempty"`
 	TargetKey        string `json:"target_key"`
 	TargetCommit     string `json:"target_commit"`
 	TargetGeneration int64  `json:"target_generation"`
@@ -98,37 +103,44 @@ type Comment struct {
 	At        time.Time `json:"at"`
 }
 type Task struct {
-	CreatedAt     *time.Time `json:"created_at,omitempty"`
-	FirstClaimAt  *time.Time `json:"first_claim_at,omitempty"`
-	FirstDoneAt   *time.Time `json:"first_done_at,omitempty"`
-	ReturnsCount  int64      `json:"returns_count"`
-	Category      string     `json:"category,omitempty"`
-	Complexity    string     `json:"complexity,omitempty"`
-	ExternalID    string     `json:"external_id,omitempty"`
-	Key           string     `json:"key"`
-	Type          string     `json:"type"`
-	Owner         string     `json:"owner,omitempty"`
-	Requester     string     `json:"requester,omitempty"`
-	ReadyAt       time.Time  `json:"ready_at"`
-	Attempts      []Attempt  `json:"attempts,omitempty"`
-	Areas         []string   `json:"areas,omitempty"`
-	EpicKey       string     `json:"epic_key,omitempty"`
-	Title         string     `json:"title"`
-	Description   string     `json:"description"`
-	Role          string     `json:"role"`
-	State         string     `json:"state"`
-	Priority      int        `json:"priority"`
-	Version       int64      `json:"version"`
-	Generation    int64      `json:"generation"`
-	Lease         *Lease     `json:"lease,omitempty"`
-	Evidence      Evidence   `json:"evidence"`
-	Review        *Review    `json:"review,omitempty"`
-	AuthorSession string     `json:"author_session,omitempty"`
-	Comments      []Comment  `json:"comments,omitempty"`
-	Links         []Link     `json:"links,omitempty"`
-	Blocked       bool       `json:"blocked"`
+	ConfigVersion    int64         `json:"config_version"`
+	CreatedAt        *time.Time    `json:"created_at,omitempty"`
+	FirstClaimAt     *time.Time    `json:"first_claim_at,omitempty"`
+	FirstDoneAt      *time.Time    `json:"first_done_at,omitempty"`
+	ReturnsCount     int64         `json:"returns_count"`
+	Category         string        `json:"category,omitempty"`
+	Complexity       string        `json:"complexity,omitempty"`
+	ExternalID       string        `json:"external_id,omitempty"`
+	Key              string        `json:"key"`
+	Type             string        `json:"type"`
+	Owner            string        `json:"owner,omitempty"`
+	Requester        string        `json:"requester,omitempty"`
+	ReadyAt          time.Time     `json:"ready_at"`
+	Attempts         []Attempt     `json:"attempts,omitempty"`
+	Areas            []string      `json:"areas,omitempty"`
+	EpicKey          string        `json:"epic_key,omitempty"`
+	Title            string        `json:"title"`
+	Description      string        `json:"description"`
+	Role             string        `json:"role"`
+	State            string        `json:"state"`
+	Priority         int           `json:"priority"`
+	Version          int64         `json:"version"`
+	Generation       int64         `json:"generation"`
+	Lease            *Lease        `json:"lease,omitempty"`
+	EvidenceComplete *bool         `json:"evidence_complete,omitempty"`
+	Warnings         []RuleWarning `json:"warnings,omitempty"`
+	Similar          []SimilarTask `json:"similar,omitempty"`
+	Evidence         Evidence      `json:"evidence"`
+	Review           *Review       `json:"review,omitempty"`
+	AuthorSession    string        `json:"author_session,omitempty"`
+	Comments         []Comment     `json:"comments,omitempty"`
+	Links            []Link        `json:"links,omitempty"`
+	Blocked          bool          `json:"blocked"`
 }
 type CreateInput struct {
+	Ready        *bool    `json:"ready,omitempty"`
+	Force        bool     `json:"force,omitempty"`
+	Reason       string   `json:"reason,omitempty"`
 	Category     string   `json:"category,omitempty"`
 	Complexity   string   `json:"complexity,omitempty"`
 	ExternalID   string   `json:"external_id,omitempty"`
@@ -150,10 +162,11 @@ type NextInput struct {
 	TaskKey   string `json:"task_key,omitempty"`
 }
 type Claim struct {
-	EpicNotes []Note       `json:"epic_notes,omitempty"`
-	Queue     QueueSummary `json:"queue"`
-	Task      *Task        `json:"task"`
-	Lease     *Lease       `json:"lease,omitempty"`
+	ConfigVersion int64        `json:"config_version"`
+	EpicNotes     []Note       `json:"epic_notes,omitempty"`
+	Queue         QueueSummary `json:"queue"`
+	Task          *Task        `json:"task"`
+	Lease         *Lease       `json:"lease,omitempty"`
 }
 type GetInput struct {
 	TaskKey string `json:"task_key"`
@@ -166,15 +179,20 @@ type LeaseInput struct {
 	Branch     string `json:"branch,omitempty"`
 }
 type UpdateInput struct {
-	Category   *string `json:"category,omitempty"`
-	Complexity *string `json:"complexity,omitempty"`
-	ExternalID *string `json:"external_id,omitempty"`
+	Priority   *int      `json:"priority,omitempty"`
+	Areas      *[]string `json:"areas,omitempty"`
+	Force      bool      `json:"force,omitempty"`
+	Category   *string   `json:"category,omitempty"`
+	Complexity *string   `json:"complexity,omitempty"`
+	ExternalID *string   `json:"external_id,omitempty"`
 	LeaseInput
 	Title       *string `json:"title,omitempty"`
 	Description *string `json:"description,omitempty"`
 }
 type TransitionInput struct {
-	TokensSpent *int64 `json:"tokens_spent,omitempty"`
+	Owner           *string `json:"owner,omitempty"`
+	ExpectedVersion int64   `json:"expected_version,omitempty"`
+	TokensSpent     *int64  `json:"tokens_spent,omitempty"`
 	LeaseInput
 	EvidenceRef string    `json:"evidence_ref,omitempty"`
 	State       string    `json:"state"`
@@ -187,6 +205,7 @@ type LinkInput struct {
 	From       string `json:"from"`
 	To         string `json:"to"`
 	Type       string `json:"type"`
+	Reason     string `json:"reason,omitempty"`
 	Condition  string `json:"condition,omitempty"`
 	Unlink     bool   `json:"unlink,omitempty"`
 }
@@ -202,14 +221,15 @@ type CommentInput struct {
 	Text string `json:"text"`
 }
 type Event struct {
-	Data      *EventData `json:"data,omitempty"`
-	Cursor    int64      `json:"cursor"`
-	Type      string     `json:"type"`
-	TaskKey   string     `json:"task_key,omitempty"`
-	SessionID string     `json:"session_id,omitempty"`
-	TokenID   string     `json:"token_id,omitempty"`
-	Reason    string     `json:"reason,omitempty"`
-	At        time.Time  `json:"at"`
+	Data      *EventData   `json:"data,omitempty"`
+	Cursor    int64        `json:"cursor"`
+	Type      string       `json:"type"`
+	Warning   *RuleWarning `json:"warning,omitempty"`
+	TaskKey   string       `json:"task_key,omitempty"`
+	SessionID string       `json:"session_id,omitempty"`
+	TokenID   string       `json:"token_id,omitempty"`
+	Reason    string       `json:"reason,omitempty"`
+	At        time.Time    `json:"at"`
 }
 type EventsInput struct {
 	SinceCursor int64    `json:"since_cursor"`
@@ -218,15 +238,17 @@ type EventsInput struct {
 	TaskKey     string   `json:"task_key,omitempty"`
 }
 type EventsPage struct {
-	Events     []Event `json:"events"`
-	NextCursor int64   `json:"next_cursor"`
-	HasMore    bool    `json:"has_more"`
-	HighWater  int64   `json:"high_water"`
+	ConfigVersion int64   `json:"config_version"`
+	Events        []Event `json:"events"`
+	NextCursor    int64   `json:"next_cursor"`
+	HasMore       bool    `json:"has_more"`
+	HighWater     int64   `json:"high_water"`
 }
 type TokenInput struct {
 	Owner   string
 	Machine string
 	TTL     time.Duration
+	Roles   []string
 }
 type TokenView struct {
 	ID        string    `json:"id"`
@@ -246,11 +268,3 @@ func Fail(code, message string) error {
 	}
 	return &Error{Code: strings.ToUpper(code), Message: message}
 }
-func ValidRole(role string) bool {
-	switch role {
-	case "coordinator", "analyst", "architect", "developer", "reviewer", "tester", "human":
-		return true
-	}
-	return false
-}
-func Singleton(role string) bool { return role == "architect" }

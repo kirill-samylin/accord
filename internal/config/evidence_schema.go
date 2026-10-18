@@ -20,7 +20,7 @@ var builtinSchemas = map[string]string{
 	"summary":         `{"type":"string","minLength":1,"maxLength":4096}`, "run_summary": `{"type":"string","minLength":1,"maxLength":1024}`,
 	"findings": `{"type":"string","maxLength":16384}`, "answer": `{"type":"string","minLength":1,"maxLength":16384}`,
 	"run_id": `{"type":"string","minLength":1,"maxLength":128}`, "tokens_spent": `{"type":"integer","minimum":0}`,
-	"verdict": `{"type":"string","enum":["approve","request_changes"]}`, "result": `{"type":"string","enum":["passed","failed"]}`,
+	"verdict": `{"type":"string","enum":["approve","request_changes","changes_requested","blocked"]}`, "result": `{"type":"string","enum":["passed","failed","not_run","not_applicable"]}`,
 }
 
 func decodeJSON(raw []byte, out any) error {

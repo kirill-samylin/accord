@@ -42,7 +42,7 @@ func Open(path string, cfg core.Config, clock core.Clock) (*Store, error) {
 	if cfg.LeaseTTL == 0 {
 		cfg.LeaseTTL = 15 * time.Minute
 	}
-	if cfg.SessionTTL < time.Second || cfg.LeaseTTL < time.Second {
+	if cfg.SessionTTL < time.Second || cfg.LeaseTTL < time.Second || cfg.SessionTTL > 24*time.Hour || cfg.LeaseTTL > 24*time.Hour {
 		return nil, core.Fail("invalid_input", "TTL must be at least one second")
 	}
 	if clock == nil {
@@ -62,10 +62,13 @@ func Open(path string, cfg core.Config, clock core.Clock) (*Store, error) {
 	db.SetMaxOpenConns(1)
 	s := &Store{db: db, cfg: cfg, clock: clock}
 	if _, err = db.Exec(`PRAGMA busy_timeout=5000`); err == nil {
-		err = migrate(context.Background(), db, path)
+		err = migrate(context.Background(), db, path, cfg)
 	}
 	if err == nil {
 		_, err = db.Exec(`PRAGMA journal_mode=WAL`)
+	}
+	if err == nil && !cfg.SkipBootstrap {
+		err = s.checkStartup(context.Background(), cfg)
 	}
 	if err != nil {
 		db.Close()
@@ -89,8 +92,10 @@ func transact[T any](s *Store, ctx context.Context, fn func(*board, time.Time) (
 	if err != nil {
 		return zero, err
 	}
-	b.Config = s.cfg
-	defaultNoteLimits(&b.Config.Notes)
+	b.Config, err = loadActiveConfig(ctx, tx)
+	if err != nil {
+		return zero, err
+	}
 	now := s.clock().UTC()
 	before := metricFacts(b)
 	s.expire(b, now)
@@ -110,7 +115,7 @@ func (s *Store) expire(b *board, now time.Time) {
 	for _, t := range b.Tasks {
 		if t.Lease != nil {
 			session := b.Sessions[t.Lease.SessionID]
-			if !t.Lease.ExpiresAt.After(now) || session == nil || !session.ExpiresAt.After(now) {
+			if !t.Lease.ExpiresAt.After(now) || !sessionLive(b, session, now) {
 				old := t.Lease.SessionID
 				finishAttempt(t, now, "lease_expired", "")
 				t.Lease = nil
@@ -130,7 +135,7 @@ func sessionFor(b *board, a core.Actor, now time.Time) (*core.Session, error) {
 	if v == nil || v.PrincipalID != a.Principal.ID {
 		return nil, core.Fail("unauthorized", "session does not belong to credential")
 	}
-	if !v.ExpiresAt.After(now) {
+	if !sessionLive(b, v, now) {
 		return nil, core.Fail("session_expired", "open a new session; old session cannot resume")
 	}
 	return v, nil

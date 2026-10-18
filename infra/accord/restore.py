@@ -58,7 +58,7 @@ def verify(path, owner):
         raise RuntimeError('backup SHA256 mismatch')
     # Read SQLite through its own API; do not interpret or rewrite application data.
     with sqlite3.connect(path.as_uri() + '?mode=ro&immutable=1', uri=True) as database:
-        if database.execute('PRAGMA user_version').fetchone()[0] not in (1, 2):
+        if database.execute('PRAGMA user_version').fetchone()[0] not in (1, 2, 3):
             raise RuntimeError('unsupported backup schema')
         if database.execute('PRAGMA integrity_check').fetchall() != [('ok',)]:
             raise RuntimeError('backup integrity check failed')

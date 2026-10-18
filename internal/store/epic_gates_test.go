@@ -44,7 +44,7 @@ func TestDoneConsumerLinkReconcilesAtomicallyAndReplaysOnce(t *testing.T) {
 	f := newFixture(t)
 	dev := f.actor(t, "developer")
 	consumer := f.task(t, "developer")
-	before := f.finish(t, dev, f.claim(t, dev, consumer.Key), core.Evidence{Commit: commitA, RunSummary: "tested"}, "")
+	before := f.finish(t, dev, f.claim(t, dev, consumer.Key), core.EvidenceOf(map[string]any{"commit": commitA, "run_summary": "tested"}), "")
 	ep := f.epic
 	f.closeEpic(t, ep.Key)
 	f.epic = f.newEpic(t)
@@ -106,7 +106,7 @@ func TestReopenSourceCascadesAcrossDoneEpics(t *testing.T) {
 	f := newFixture(t)
 	analyst := f.actor(t, "analyst")
 	source := f.task(t, "analyst")
-	f.finish(t, analyst, f.claim(t, analyst, source.Key), core.Evidence{Artifact: []string{"decision"}, Summary: "resolved"}, "")
+	f.finish(t, analyst, f.claim(t, analyst, source.Key), core.EvidenceOf(map[string]any{"artifact": []string{"decision"}, "summary": "resolved"}), "")
 	epics := []string{f.epic.Key}
 	previous := source.Key
 	var history []core.Task
@@ -115,7 +115,7 @@ func TestReopenSourceCascadesAcrossDoneEpics(t *testing.T) {
 		epics = append(epics, f.epic.Key)
 		consumer := f.task(t, "analyst")
 		f.link(t, previous, consumer.Key)
-		history = append(history, f.finish(t, analyst, f.claim(t, analyst, consumer.Key), core.Evidence{Artifact: []string{"decision"}, Summary: "resolved"}, ""))
+		history = append(history, f.finish(t, analyst, f.claim(t, analyst, consumer.Key), core.EvidenceOf(map[string]any{"artifact": []string{"decision"}, "summary": "resolved"}), ""))
 		previous = consumer.Key
 	}
 	for _, key := range epics {
@@ -144,10 +144,10 @@ func TestImplicitReviewDependencyCycleFailsClosed(t *testing.T) {
 	f := newFixture(t)
 	dev := f.actor(t, "developer")
 	target := f.task(t, "developer")
-	f.finish(t, dev, f.claim(t, dev, target.Key), core.Evidence{Commit: commitA, RunSummary: "tested"}, "")
+	f.finish(t, dev, f.claim(t, dev, target.Key), core.EvidenceOf(map[string]any{"commit": commitA, "run_summary": "tested"}), "")
 	check := f.verification(t, "reviewer", target.Key, commitA)
 	reviewer := f.actor(t, "reviewer")
-	f.finish(t, reviewer, f.claim(t, reviewer, check.Key), core.Evidence{VerifiedCommit: commitA, Findings: "checked"}, "approve")
+	f.finish(t, reviewer, f.claim(t, reviewer, check.Key), core.EvidenceOf(map[string]any{"verified_commit": commitA, "findings": "checked"}), "approve")
 	f.closeEpic(t, f.epic.Key)
 	f.link(t, check.Key, target.Key)
 	if !f.get(t, check.Key).Blocked || !f.get(t, target.Key).Blocked || f.get(t, f.epic.Key).State != "open" {

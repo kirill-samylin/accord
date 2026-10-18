@@ -31,7 +31,7 @@ func TestDeveloperAsksArchitectAndResumesAfterContract(t *testing.T) {
 		t.Fatal("dependency bypass")
 	}
 	architect := f.actor(t, "architect")
-	f.finish(t, architect, f.claim(t, architect, request.Key), core.Evidence{Artifact: []string{"docs/decision.md"}, Summary: "Decision"}, "")
+	f.finish(t, architect, f.claim(t, architect, request.Key), core.EvidenceOf(map[string]any{"artifact": []string{"docs/decision.md"}, "summary": "Decision"}), "")
 	resumed := f.claim(t, dev, task.Key)
 	if resumed.Lease.Generation != 2 {
 		t.Fatal("generation did not persist release")

@@ -60,9 +60,12 @@ func decode(data []byte, out any) error {
 }
 
 func bind[I, O any](name, description string, readOnly bool, call func(context.Context, core.Actor, I) (O, error)) operation {
-	schema, err := jsonschema.ForType(reflect.TypeFor[I](), nil)
+	schema, err := jsonschema.ForType(reflect.TypeFor[I](), &jsonschema.ForOptions{TypeSchemas: map[reflect.Type]*jsonschema.Schema{reflect.TypeFor[core.Evidence](): {Type: "object", AdditionalProperties: &jsonschema.Schema{}}}})
 	if err != nil {
 		panic("invalid internal operation schema")
+	}
+	if name == "transition" {
+		schema.Properties["evidence"] = &jsonschema.Schema{Type: "object", AdditionalProperties: &jsonschema.Schema{}}
 	}
 	return operation{name: name, description: description, readOnly: readOnly, schema: schema,
 		run: func(ctx context.Context, p core.Principal, session string, data []byte) (any, error) {

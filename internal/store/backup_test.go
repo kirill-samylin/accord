@@ -74,7 +74,7 @@ func TestBackupOnlineWALAndRecovery(t *testing.T) {
 	if err = f.s.RevokeToken(testContext, token.ID); err != nil {
 		t.Fatal(err)
 	}
-	restored, err := OpenExisting(target, core.Config{}, f.clock.read)
+	restored, err := OpenExisting(target, core.Config{BootstrapUsers: []string{"alice"}}, f.clock.read)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +94,7 @@ func TestBackupOnlineWALAndRecovery(t *testing.T) {
 	if err = restored.Close(); err != nil {
 		t.Fatal(err)
 	}
-	restored, err = OpenExisting(target, core.Config{}, f.clock.read)
+	restored, err = OpenExisting(target, core.Config{BootstrapUsers: []string{"alice"}}, f.clock.read)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,7 +132,7 @@ func TestBackupRejectsUnsafePathsWithoutMutation(t *testing.T) {
 	if data, err := os.ReadFile(old); err != nil || string(data) != "keep" {
 		t.Fatal("existing output overwritten", err)
 	}
-	if _, err := OpenExisting(missing, core.Config{}, nil); err == nil {
+	if _, err := OpenExisting(missing, core.Config{BootstrapUsers: []string{"alice"}}, nil); err == nil {
 		t.Fatal("OpenExisting created missing source")
 	}
 	ctx, cancel := context.WithCancel(testContext)
@@ -148,7 +148,7 @@ func TestBackupRejectsUnsafePathsWithoutMutation(t *testing.T) {
 	if err := os.WriteFile(unsafe, []byte{}, 0600); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := OpenExisting(unsafe, core.Config{}, nil); err == nil {
+	if _, err := OpenExisting(unsafe, core.Config{BootstrapUsers: []string{"alice"}}, nil); err == nil {
 		t.Fatal("empty file silently bootstrapped by admin")
 	}
 	if info, _ := os.Stat(unsafe); info.Size() != 0 {

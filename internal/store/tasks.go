@@ -19,21 +19,22 @@ func (s *Store) Create(ctx context.Context, a core.Actor, in core.CreateInput) (
 		}
 		t := &core.Task{CreatedAt: &now, Category: in.Category, Complexity: in.Complexity, ExternalID: in.ExternalID, Key: nextKey(b), Type: in.Type, Title: in.Title, Description: in.Description, Role: in.Role, State: "ready", EpicKey: in.EpicKey, Priority: in.Priority, Version: 1, Requester: a.Principal.ID, ReadyAt: now, Areas: in.Areas}
 		if t.Priority == 0 {
-			t.Priority = 2
+			t.Priority = 3
 		}
 		if in.Type == "epic" {
-			if sess.Role != "coordinator" && sess.Role != "human" {
-				return zero, core.Fail("forbidden", "epic creation requires coordinator or human")
+			if err := requireCreate(b, sess, "epic"); err != nil {
+				return zero, err
 			}
 			t.Key = fmt.Sprintf("E-%d", b.Sequence)
 			t.Role = ""
 			t.EpicKey = ""
 			t.State = "open"
 			t.Owner = in.Owner
-			if t.Owner == "" {
-				t.Owner = a.Principal.Owner
-			}
+
 		} else {
+			if err := requireCreate(b, sess, "task"); err != nil {
+				return zero, err
+			}
 			epic, err := taskFor(b, in.EpicKey)
 			if err != nil {
 				return zero, err
@@ -41,15 +42,24 @@ func (s *Store) Create(ctx context.Context, a core.Actor, in core.CreateInput) (
 			if epic.Type != "epic" || epic.State == "cancelled" {
 				return zero, core.Fail("invalid_input", "active epic required")
 			}
-			if !core.ValidRole(in.Role) || !bounded(in.Description, 16384) {
+			if !validRole(b, in.Role) || (in.Ready == nil || *in.Ready) && !bounded(in.Description, 16384) {
 				return zero, core.Fail("invalid_input", "task role and description required")
 			}
-			if in.Role == "reviewer" || in.Role == "tester" {
+			if in.Priority == 0 {
+				t.Priority = epic.Priority
+			}
+			if in.Areas == nil {
+				t.Areas = append([]string(nil), epic.Areas...)
+			}
+			if in.Ready != nil && !*in.Ready {
+				t.State = "created"
+			}
+			if verifier(b, in.Role) {
 				target, err := taskFor(b, in.TargetKey)
 				if err != nil {
 					return zero, err
 				}
-				if target.Role != "developer" || !validCommit(in.TargetCommit) {
+				if !reviewTargetAllowed(b, in.Role, target.Role) || !validCommit(in.TargetCommit) {
 					return zero, core.Fail("invalid_input", "review requires developer target and commit")
 				}
 				generation := int64(0)
@@ -65,10 +75,17 @@ func (s *Store) Create(ctx context.Context, a core.Actor, in core.CreateInput) (
 				emit(b, now, "epic_reopened", epic.Key, a.SessionID)
 			}
 		}
+		if err := prepareAreas(b, t); err != nil {
+			return zero, err
+		}
+		if err := checkDuplicate(b, t, sess, in.Force, in.Reason); err != nil {
+			return zero, err
+		}
 		if err := validateMetadata(b, t); err != nil {
 			return zero, err
 		}
 		b.Tasks[t.Key] = t
+		emitWarnings(b, t, now, a.SessionID)
 		emit(b, now, "task_created", t.Key, a.SessionID)
 		return viewTask(b, t), nil
 	})
@@ -78,7 +95,11 @@ func (s *Store) Get(ctx context.Context, a core.Actor, in core.GetInput) (core.T
 		if err := authenticatePrincipal(ctx, b, a.Principal, now); err != nil {
 			return core.Task{}, err
 		}
-		if _, err := sessionFor(b, a, now); err != nil {
+		if err := readActor(ctx, b, a, now); err != nil {
+			return core.Task{}, err
+		}
+		sess, _ := sessionFor(b, a, now)
+		if err := toolAllowed(b, sess.Role, "get"); err != nil {
 			return core.Task{}, err
 		}
 		t, err := taskFor(b, in.TaskKey)
@@ -102,23 +123,45 @@ func (s *Store) Next(ctx context.Context, a core.Actor, in core.NextInput) (core
 				continue
 			}
 			if t.Type == "task" && t.Role == sess.Role && t.State == "ready" && t.Lease == nil && !blocked(b, t) && (in.TaskKey == "" || in.TaskKey == t.Key) && (in.EpicKey == "" || in.EpicKey == t.EpicKey) {
-				candidates = append(candidates, t)
+				if eligibleClaim(b, t, sess) == nil {
+					candidates = append(candidates, t)
+				}
 			}
 		}
 		sort.Slice(candidates, func(i, j int) bool {
 			a, z := candidates[i], candidates[j]
+			if b.Config.Workflow.Rules.EpicOwner.Mode == "warn" {
+				af, zf := foreignEpic(b, a, sess), foreignEpic(b, z, sess)
+				if af != zf {
+					return !af
+				}
+			}
 			if a.Priority != z.Priority {
 				return a.Priority < z.Priority
 			}
 			if !a.ReadyAt.Equal(z.ReadyAt) {
 				return a.ReadyAt.Before(z.ReadyAt)
 			}
-			return a.Key < z.Key
+			if b.Tasks[a.EpicKey].Priority != b.Tasks[z.EpicKey].Priority {
+				return b.Tasks[a.EpicKey].Priority < b.Tasks[z.EpicKey].Priority
+			}
+			return numericKey(a.Key) < numericKey(z.Key)
 		})
 		if len(candidates) == 0 {
-			return core.Claim{Queue: queueSummary(b, sess.Role)}, nil
+			if in.TaskKey != "" {
+				if t := b.Tasks[in.TaskKey]; t != nil && t.Role == sess.Role && t.State == "ready" {
+					if err := eligibleClaim(b, t, sess); err != nil {
+						return core.Claim{}, err
+					}
+				}
+			}
+			return core.Claim{ConfigVersion: b.Config.ConfigVersion, Queue: queueSummary(b, sess.Role)}, nil
 		}
 		t := candidates[0]
+		t.Warnings = nil
+		if err := claimRules(b, t, sess, now); err != nil {
+			return core.Claim{}, err
+		}
 		if t.Review != nil && t.Review.TargetGeneration == 0 {
 			t.Review.TargetGeneration = b.Tasks[t.Review.TargetKey].Generation
 		}
@@ -128,11 +171,12 @@ func (s *Store) Next(ctx context.Context, a core.Actor, in core.NextInput) (core
 		t.Generation++
 		t.Version++
 		t.State = "in_progress"
-		t.Lease = &core.Lease{SessionID: a.SessionID, Generation: t.Generation, ExpiresAt: now.Add(s.cfg.LeaseTTL)}
+		t.Lease = &core.Lease{SessionID: a.SessionID, Generation: t.Generation, ExpiresAt: now.Add(b.Config.LeaseTTL)}
 		t.Attempts = append(t.Attempts, core.Attempt{SessionID: a.SessionID, PrincipalID: a.Principal.ID, RunID: sess.RunID, Machine: sess.Machine, Generation: t.Generation, StartedAt: now})
 		emit(b, now, "claimed", t.Key, a.SessionID)
+		emitWarnings(b, t, now, a.SessionID)
 		v := viewTask(b, t)
-		return core.Claim{Task: &v, Lease: t.Lease, EpicNotes: scopeNotes(b, "epic", t.EpicKey), Queue: queueSummary(b, sess.Role)}, nil
+		return core.Claim{ConfigVersion: b.Config.ConfigVersion, Task: &v, Lease: t.Lease, EpicNotes: scopeNotes(b, "epic", t.EpicKey), Queue: queueSummary(b, sess.Role)}, nil
 	})
 }
 func (s *Store) Update(ctx context.Context, a core.Actor, in core.UpdateInput) (core.Task, error) {
@@ -147,6 +191,25 @@ func (s *Store) Update(ctx context.Context, a core.Actor, in core.UpdateInput) (
 			}
 		} else if sess.Role != "coordinator" && t.Requester != a.Principal.ID {
 			return core.Task{}, core.Fail("forbidden", "only requester or coordinator may update unclaimed work")
+		}
+		t.Warnings = nil
+		t.Similar = nil
+		if in.Priority != nil {
+			if *in.Priority < 1 || *in.Priority > 100 {
+				return core.Task{}, core.Fail("VALIDATION", "priority must be 1..100")
+			}
+			t.Priority = *in.Priority
+		}
+		if in.Areas != nil {
+			t.Areas = append([]string{}, (*in.Areas)...)
+			if err := prepareAreas(b, t); err != nil {
+				return core.Task{}, err
+			}
+			if t.Type == "task" {
+				if err := checkAreaOverlap(b, t, sess, now); err != nil {
+					return core.Task{}, err
+				}
+			}
 		}
 		if in.Title != nil {
 			if !validTitle(*in.Title) {
@@ -169,12 +232,16 @@ func (s *Store) Update(ctx context.Context, a core.Actor, in core.UpdateInput) (
 		if in.ExternalID != nil {
 			t.ExternalID = *in.ExternalID
 		}
+		if err := checkDuplicate(b, t, sess, in.Force, in.Reason); err != nil {
+			return core.Task{}, err
+		}
 		if err := validateMetadata(b, t); err != nil {
 			return core.Task{}, err
 		}
 		t.Version++
-		s.renew(t, now)
+		renew(b, t, now)
 		emit(b, now, "task_updated", t.Key, a.SessionID)
+		emitWarnings(b, t, now, a.SessionID)
 		return viewTask(b, t), nil
 	})
 }

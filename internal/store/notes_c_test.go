@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"agent-board/internal/config"
 	"agent-board/internal/core"
 )
 
@@ -14,7 +15,9 @@ func TestNotesProvenanceReplayDeleteQuotaAndSummaries(t *testing.T) {
 	f := newFixture(t)
 	d := f.actor(t, "developer")
 	source := f.task(t, "developer")
-	f.s.cfg.Notes = core.NoteLimits{MaxPerRole: 1, MaxBytesPerRole: 20, MaxPerEpic: 1, MaxBytesPerEpic: 20}
+	f.configure(t, func(c *config.Config) {
+		c.Notes = config.Notes{MaxPerRole: 1, MaxBytesPerRole: 20, MaxPerEpic: 1, MaxBytesPerEpic: 20}
+	})
 	in := core.NoteInput{RequestID: f.id(), Action: "create", ScopeType: "role", ScopeID: "developer", SourceTaskKey: source.Key, Text: "remember"}
 	n, err := f.s.Note(testContext, d, in)
 	if err != nil {
@@ -73,7 +76,7 @@ func TestNotesRejectForeignRoleAndPrincipalAndAtomicLimits(t *testing.T) {
 	f := newFixture(t)
 	d := f.actor(t, "developer")
 	source := f.task(t, "developer")
-	f.s.cfg.Notes.MaxPerRole = 1
+	f.configure(t, func(c *config.Config) { c.Notes.MaxPerRole = 1 })
 	in := core.NoteInput{Action: "create", ScopeType: "role", ScopeID: "architect", SourceTaskKey: source.Key, Text: "x", RequestID: f.id()}
 	_, err := f.s.Note(testContext, d, in)
 	requireCode(t, err, "FORBIDDEN_ROLE")

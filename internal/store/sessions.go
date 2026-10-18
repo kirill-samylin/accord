@@ -9,12 +9,18 @@ import (
 func (s *Store) Describe(ctx context.Context, p core.Principal, in core.OpenSession) (core.SessionView, error) {
 	return mutate(s, ctx, core.Actor{Principal: p}, in.RequestID, "describe", in, func(b *board, _ *core.Session, now time.Time) (core.SessionView, error) {
 		var zero core.SessionView
-		if !core.ValidRole(in.Role) || !bounded(in.RunID, 128) || in.Machine != p.Machine {
+		if !validRole(b, in.Role) || !bounded(in.RunID, 128) || in.Machine != p.Machine {
 			return zero, core.Fail("invalid_input", "valid role, run_id and token machine required")
 		}
-		if core.Singleton(in.Role) {
+		if err := roleAuthorized(ctx, b, p, in.Role); err != nil {
+			return zero, err
+		}
+		if err := toolAllowed(b, in.Role, "describe"); err != nil {
+			return zero, err
+		}
+		if singleton(b, in.Role) {
 			for _, sess := range b.Sessions {
-				if sess.Role == in.Role && sess.ExpiresAt.After(now) {
+				if sess.Role == in.Role && sessionLive(b, sess, now) {
 					return zero, core.Fail("role_held", "singleton role has an active session")
 				}
 			}
@@ -24,18 +30,22 @@ func (s *Store) Describe(ctx context.Context, p core.Principal, in core.OpenSess
 			return zero, err
 		}
 		generation := int64(0)
-		if core.Singleton(in.Role) {
+		if singleton(b, in.Role) {
 			b.Roles[in.Role]++
 			generation = b.Roles[in.Role]
 		}
-		v := core.SessionView{SessionID: id, Role: in.Role, RoleGeneration: generation, ExpiresAt: now.Add(s.cfg.SessionTTL), Project: s.cfg.Project}
-		s.sessionTiming(&v)
+		v := core.SessionView{SessionID: id, Role: in.Role, RoleGeneration: generation, ExpiresAt: now.Add(b.Config.SessionTTL), Project: b.Config.Project}
+		if singleton(b, in.Role) {
+			expiry := now.Add(b.Config.RoleTTL)
+			v.RoleExpiresAt = &expiry
+		}
+		sessionTiming(b, &v)
 		b.Sessions[id] = &core.Session{SessionView: v, PrincipalID: p.ID, RunID: in.RunID, Machine: in.Machine, Owner: p.Owner}
 		emit(b, now, "session_opened", "", id)
 		sess := b.Sessions[id]
 		sess.Order = b.Events[len(b.Events)-1].Cursor
 		v.Notes = scopeNotes(b, "role", in.Role)
-		v.Rules = map[string]string{"independent_review": "block", "one_task_per_agent": "block", "cycle_check": "block", "singleton_role": "block"}
+		v.Rules = ruleHints(b)
 		v.MyTasks = []core.Task{}
 		v.Queue = queueSummary(b, in.Role)
 		return v, nil
@@ -43,7 +53,7 @@ func (s *Store) Describe(ctx context.Context, p core.Principal, in core.OpenSess
 }
 func (s *Store) Heartbeat(ctx context.Context, a core.Actor, in core.HeartbeatInput) (core.SessionView, error) {
 	return mutate(s, ctx, a, in.RequestID, "heartbeat", in, func(b *board, sess *core.Session, now time.Time) (core.SessionView, error) {
-		if core.Singleton(sess.Role) && in.RoleGeneration != sess.RoleGeneration {
+		if singleton(b, sess.Role) && in.RoleGeneration != sess.RoleGeneration {
 			return core.SessionView{}, core.Fail("lease_lost", "singleton generation does not match")
 		}
 		var active *core.Task
@@ -60,16 +70,14 @@ func (s *Store) Heartbeat(ctx context.Context, a core.Actor, in core.HeartbeatIn
 			if err != nil {
 				return core.SessionView{}, err
 			}
-			s.renew(t, now)
+			renew(b, t, now)
 		}
-		sess.ExpiresAt = now.Add(s.cfg.SessionTTL)
-		s.sessionTiming(&sess.SessionView)
+		sess.ExpiresAt = now.Add(b.Config.SessionTTL)
+		if singleton(b, sess.Role) {
+			expiry := now.Add(b.Config.RoleTTL)
+			sess.RoleExpiresAt = &expiry
+		}
+		sessionTiming(b, &sess.SessionView)
 		return sess.SessionView, nil
 	})
-}
-
-func (s *Store) sessionTiming(v *core.SessionView) {
-	v.SessionTTLSeconds = s.cfg.SessionTTL.Seconds()
-	v.TaskTTLSeconds = s.cfg.LeaseTTL.Seconds()
-	v.HeartbeatEverySeconds = min(s.cfg.SessionTTL, s.cfg.LeaseTTL).Seconds() / 3
 }

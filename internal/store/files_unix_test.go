@@ -19,7 +19,7 @@ func TestDatabasePrivateBeforeSQLiteIOInPublicDirectory(t *testing.T) {
 	}
 	// Special URI characters must remain filename characters after preparation.
 	path := filepath.Join(dir, "board?#.db")
-	s, err := Open(path, core.Config{}, nil)
+	s, err := Open(path, core.Config{BootstrapUsers: []string{"alice"}}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +39,7 @@ func TestDatabasePrivateBeforeSQLiteIOInPublicDirectory(t *testing.T) {
 	}
 	checkModes()
 	// A second connection exercises startup with existing live WAL and SHM.
-	reopened, err := Open(path, core.Config{}, nil)
+	reopened, err := Open(path, core.Config{BootstrapUsers: []string{"alice"}}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +50,7 @@ func TestDatabasePrivateBeforeSQLiteIOInPublicDirectory(t *testing.T) {
 	if err = s.Close(); err != nil {
 		t.Fatal(err)
 	}
-	s, err = Open(path, core.Config{}, nil)
+	s, err = Open(path, core.Config{BootstrapUsers: []string{"alice"}}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func TestDatabaseRejectsUnsafeExistingFilesWithoutChangingTargets(t *testing.T) 
 				} else if err := os.Symlink(foreign, path+suffix); err != nil {
 					t.Fatal(err)
 				}
-				opened, err := Open(path, core.Config{}, nil)
+				opened, err := Open(path, core.Config{BootstrapUsers: []string{"alice"}}, nil)
 				if err == nil {
 					opened.Close()
 					t.Fatal("unsafe path was accepted")
@@ -115,7 +115,7 @@ func TestDatabaseRejectsPubliclyWritableDirectory(t *testing.T) {
 	if err := os.Chmod(dir, 0777); err != nil {
 		t.Fatal(err)
 	}
-	if opened, err := Open(filepath.Join(dir, "board.db"), core.Config{}, nil); err == nil {
+	if opened, err := Open(filepath.Join(dir, "board.db"), core.Config{BootstrapUsers: []string{"alice"}}, nil); err == nil {
 		opened.Close()
 		t.Fatal("publicly writable database directory accepted")
 	}
@@ -127,7 +127,7 @@ func TestDatabaseRejectsSQLiteURIWithoutChangingItsTarget(t *testing.T) {
 	if err := os.WriteFile(path, data, 0600); err != nil {
 		t.Fatal(err)
 	}
-	if opened, err := Open("file:"+path+"?mode=rwc", core.Config{}, nil); err == nil {
+	if opened, err := Open("file:"+path+"?mode=rwc", core.Config{BootstrapUsers: []string{"alice"}}, nil); err == nil {
 		opened.Close()
 		t.Fatal("SQLite URI unexpectedly accepted")
 	}

@@ -86,6 +86,7 @@ func NewHandlerWithOptions(s Service, ready func(context.Context) error, options
 			writeJSON(w, http.StatusOK, value)
 		})
 	}
+	registerConfig(mux, s)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		methods := methodsForPath(r.URL.Path)
 		if len(methods) > 0 {
@@ -264,7 +265,7 @@ func ValidateListen(address string) error {
 }
 
 func methodsForPath(path string) []string {
-	if path == "/metrics" {
+	if path == "/metrics" || path == "/api/v1/config" || path == "/api/v1/config/history" {
 		return []string{"GET"}
 	}
 	var methods []string

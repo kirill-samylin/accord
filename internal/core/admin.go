@@ -4,11 +4,13 @@ import "time"
 
 // TokenInfo is safe for local administration: it never exposes credential material.
 type TokenInfo struct {
-	ID        string    `json:"id"`
-	Owner     string    `json:"owner"`
-	Machine   string    `json:"machine"`
-	ExpiresAt time.Time `json:"expires_at"`
-	Revoked   bool      `json:"revoked"`
+	ID            string    `json:"id"`
+	Owner         string    `json:"owner"`
+	Machine       string    `json:"machine"`
+	ExpiresAt     time.Time `json:"expires_at"`
+	Roles         []string  `json:"roles"`
+	ScopesVersion int64     `json:"scopes_version"`
+	Revoked       bool      `json:"revoked"`
 }
 
 type SessionInfo struct {

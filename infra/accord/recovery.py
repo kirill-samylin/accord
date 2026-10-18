@@ -127,7 +127,7 @@ def recover(previous, before, state, command, switch, healthy, failure):
     try:
         check_guard(state)
         after = schema_snapshot(state)
-        if before is None or before[0] not in (1, 2) or before != after:
+        if before is None or before[0] not in (1, 2, 3) or before != after:
             raise RuntimeError('database schema changed or compatibility is unknown')
     except FAILURES as error:
         inspection_required(state, 'activation failed; service stopped; database compatibility unproven; '

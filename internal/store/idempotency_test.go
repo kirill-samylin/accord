@@ -67,13 +67,13 @@ func TestRejectedMutationLeavesNoPartialTaskOrEvents(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = f.s.Transition(testContext, a, core.TransitionInput{LeaseInput: core.LeaseInput{RequestID: f.id(), TaskKey: task.Key, Generation: claim.Lease.Generation}, State: "done", Evidence: &core.Evidence{Commit: commitA}})
+	_, err = f.s.Transition(testContext, a, core.TransitionInput{LeaseInput: core.LeaseInput{RequestID: f.id(), TaskKey: task.Key, Generation: claim.Lease.Generation}, State: "done", Evidence: evidencePtr(core.EvidenceOf(map[string]any{"commit": commitA}))})
 	requireCode(t, err, "EVIDENCE_MISSING")
 	after, err := f.s.Get(testContext, a, core.GetInput{TaskKey: task.Key})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if after.State != "in_progress" || after.Evidence.Commit != "" {
+	if after.State != "in_progress" || after.Evidence.Text("commit") != "" {
 		t.Fatal("rejected operation persisted task changes")
 	}
 	next, err := f.s.Events(testContext, f.coord, core.EventsInput{})

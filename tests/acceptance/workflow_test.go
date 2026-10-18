@@ -83,13 +83,15 @@ func TestCLIArchitectureHandoff(t *testing.T) {
 		t.Fatal("developer bypassed an unfinished architecture dependency")
 	}
 	decision := architect.claim(t, request.Key)
-	architect.ok(t, "transition", payload{"task_key": request.Key, "generation": decision.Lease.Generation, "state": "done", "evidence": core.Evidence{Artifact: []string{"docs/synthetic-decision.md"}, Summary: "Synthetic agreed contract"}})
+	architect.ok(t, "transition", payload{"task_key": request.Key, "generation": decision.Lease.Generation, "state": "done", "evidence": core.EvidenceOf(map[string]any{"artifact": []string{"docs/synthetic-decision.md"}, "summary": "Synthetic agreed contract"})})
 	resumed := developer.claim(t, task.Key)
 	if resumed.Lease.Generation != first.Lease.Generation+1 || resumed.Task.Key != first.Task.Key || len(resumed.Task.Attempts) != 2 || resumed.Task.Attempts[0].Branch != "synthetic/architecture" {
 		t.Fatal("resumed developer task lost its key, generation or handoff branch")
 	}
 	read := decode[core.Task](t, coordinator.ok(t, "get", payload{"task_key": request.Key}))
-	if read.State != "done" || read.Evidence.Summary == "" || len(read.Evidence.Artifact) != 1 {
+	summary, summaryErr := read.Evidence.String("summary")
+	artifacts, artifactErr := read.Evidence.Strings("artifact")
+	if read.State != "done" || summaryErr != nil || artifactErr != nil || summary == "" || len(artifacts) != 1 {
 		t.Fatal("architect completion evidence was not stored")
 	}
 	t.Log("live generation checked; dependency blocked until architect evidence; original developer task reacquired")
