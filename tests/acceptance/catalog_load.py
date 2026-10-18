@@ -4,11 +4,11 @@
 Only synthetic state is created in a private temporary directory. Defaults model
 20 simultaneous sessions / 2000 tasks, not 200000 annual events. Measured mix is
 get, tasks(limit=20), events(limit=20), stats(owner), heartbeat, repeated equally.
-HTTP latency includes loopback socket/JSON/client overhead, excludes seed time.
+HTTP latency includes loopback request/socket/response-body overhead; excludes
+JSON encode/decode, seed and pacing waits.
 Results describe the observed machine; they cannot certify a different VPS.
 """
 import argparse
-import concurrent.futures
 import hashlib
 import http.client
 import json
@@ -16,7 +16,6 @@ import math
 import os
 import pathlib
 import platform
-import selectors
 import statistics
 import subprocess
 import tempfile
@@ -25,38 +24,9 @@ import time
 import urllib.parse
 
 from catalog_cgroup import cgroup_limits
-
-
-class Participant:
-    def __init__(self, origin, token):
-        authority = urllib.parse.urlsplit(origin)
-        self.connection = http.client.HTTPConnection(authority.hostname, authority.port, timeout=30)
-        self.headers = {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'}
-        self.sequence = 0
-
-    def request(self, operation, payload, read=False):
-        self.sequence += 1
-        if read:
-            query = urllib.parse.urlencode(payload)
-            path, body = '/api/v1/' + operation + '?' + query, None
-            if operation == 'get':
-                path = '/api/v1/tasks/' + urllib.parse.quote(payload['task_key'], safe='')
-        else:
-            routes = {'describe': 'session', 'create': 'tasks', 'note': 'notes'}
-            path = '/api/v1/' + routes.get(operation, operation)
-            payload = dict(payload, request_id='load-' + str(self.sequence))
-            body = json.dumps(payload).encode()
-        started = time.perf_counter()
-        self.connection.request('GET' if read else 'POST', path, body, self.headers)
-        response = self.connection.getresponse()
-        data = response.read()
-        elapsed = (time.perf_counter() - started) * 1000
-        if response.status != 200:
-            raise RuntimeError('Synthetic ' + operation + ' status=' + str(response.status))
-        return json.loads(data), elapsed
-
-    def close(self):
-        self.connection.close()
+from catalog_pacing import Ledger, SerialPacer, Waves
+from catalog_runtime import Participant, rss_kib, start_server, stop_server
+from catalog_workload import measure_people
 
 
 def percentile(values, fraction):
@@ -64,70 +34,53 @@ def percentile(values, fraction):
 
 
 def summary(values):
+    if not values:
+        return dict.fromkeys(('p50_ms', 'p95_ms', 'p99_ms', 'max_ms')) | {'count': 0}
     return {'count': len(values), 'p50_ms': statistics.median(values),
             'p95_ms': percentile(values, .95), 'p99_ms': percentile(values, .99),
             'max_ms': max(values)}
 
 
-def rss_kib(pid):
-    status = pathlib.Path('/proc') / str(pid) / 'status'
-    if status.exists():
-        for line in status.read_text().splitlines():
-            if line.startswith('VmRSS:'):
-                return int(line.split()[1])
-    value = subprocess.check_output(['ps', '-o', 'rss=', '-p', str(pid)], text=True)
-    return int(value.strip())
+def observations(ledger, context, expected):
+    """Freeze only after the workload drains; failed samples never enter success p95."""
+    samples, counts = ledger.samples(), ledger.report()
+    measured = [row for row in samples if row['phase'] == 'measured']
+    successes = [row for row in measured if row['successful_response']]
+    failures = [row for row in measured if not row['successful_response']]
+    completed = sum(row['completed_response'] for row in measured)
+    elapsed = context.get('elapsed_seconds', 0)
+    complete = context.get('workload_complete', False)
+    return {**context, 'http_count': counts, 'http_samples': samples,
+            'client_http_concurrency': counts['client_http_concurrency'],
+            'expected_measured_requests': expected, 'workload_complete': complete,
+            'measured_attempt_count': len(measured), 'measured_http_count': completed,
+            'measured_success_count': len(successes), 'latency_is_partial': not complete,
+            'actual_measured_rps': completed / elapsed if elapsed else 0,
+            'actual_measured_attempt_rps': len(measured) / elapsed if elapsed else 0,
+            'request_latency': summary([row['latency_ms'] for row in successes]),
+            'failed_request_latency': summary([row['latency_ms'] for row in failures]),
+            'per_operation': {name: summary([row['latency_ms'] for row in successes
+                                            if row['operation'] == name])
+                              for name in sorted({row['operation'] for row in successes})},
+            'latency_scope': 'Successful measured HTTP200 only; failed timings/raw outcomes '
+                             'separate. Partial percentiles are diagnostic, never acceptance PASS.'}
 
 
-def start_server(binary, database):
-    environment = {k: v for k, v in os.environ.items()
-                   if k not in ['AGENT_BOARD_TOKEN', 'ACCORD_EXTERNAL_HOST']}
-    started = time.perf_counter()
-    child = subprocess.Popen([str(binary), 'serve', '--db', str(database),
-                              '--listen', '127.0.0.1:0', '--session-ttl', '1h',
-                              '--task-ttl', '1h'], stdout=subprocess.PIPE,
-                             stderr=subprocess.DEVNULL, env=environment, text=True)
-    selector = selectors.DefaultSelector()
+def run(binary, sessions, tasks, requests, offered_rps=0, persisted_defaults=False, ledger=None):
+    ledger = Ledger() if ledger is None else ledger
+    context = {'elapsed_seconds': 0, 'measurement_started': False, 'workload_complete': False,
+               'workload_errors': [], 'pacing_context': {'mode': 'barrier-waves' if offered_rps else 'unpaced-legacy'}}
     try:
-        selector.register(child.stdout, selectors.EVENT_READ)
-        if not selector.select(timeout=10):
-            raise RuntimeError('Synthetic child startup deadline exceeded')
-        line = child.stdout.readline().strip()
-        prefix = 'agent-board listening on '
-        if not line.startswith(prefix):
-            raise RuntimeError('Synthetic child did not announce address')
-        origin = line[len(prefix):]
-        health = Participant(origin, 'synthetic-unused')
-        try:
-            for path in ['/healthz', '/readyz']:
-                health.connection.request('GET', path)
-                response = health.connection.getresponse()
-                response.read()
-                if response.status != 200:
-                    raise RuntimeError('Synthetic child not ready')
-        finally:
-            health.close()
-        return child, origin, (time.perf_counter() - started) * 1000
-    except BaseException:
-        stop_server(child)
+        return run_owned(binary, sessions, tasks, requests, offered_rps, persisted_defaults, ledger, context)
+    except BaseException as error:
+        context.update(getattr(error, 'workload_context', {}))
+        context['workload_complete'] = False
+        error.load_context = context
         raise
-    finally:
-        selector.close()
 
 
-def stop_server(child):
-    child.terminate()
-    try:
-        child.wait(timeout=7)
-    except subprocess.TimeoutExpired:
-        child.kill()
-        child.wait()
-        raise RuntimeError('Owned child exceeded graceful shutdown deadline')
-    finally:
-        child.stdout.close()
-
-
-def run(binary, sessions, tasks, requests):
+def run_owned(binary, sessions, tasks, requests, offered_rps, persisted_defaults, ledger, context):
+    serial = SerialPacer(offered_rps) if offered_rps else None
     with tempfile.TemporaryDirectory(prefix='accord-synthetic-load-') as temporary:
         directory = pathlib.Path(temporary)
         directory.chmod(0o700)
@@ -145,7 +98,7 @@ def run(binary, sessions, tasks, requests):
                                 'synthetic-' + str(number), '--output', str(token)],
                                check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                                env=environment, timeout=30)
-            child, origin, startup = start_server(binary, database)
+            child, origin, startup = start_server(binary, database, persisted_defaults, ledger)
 
             def sample():
                 while not stop_sampling.is_set():
@@ -159,7 +112,7 @@ def run(binary, sessions, tasks, requests):
             sampler.start()
             for number in range(sessions):
                 secret = (directory / ('participant-' + str(number) + '.token')).read_text().strip()
-                person = Participant(origin, secret)
+                person = Participant(origin, secret, ledger, serial)
                 people.append(person)
                 view, _ = person.request('describe', {'role': 'coordinator' if number == 0 else 'developer',
                                                     'run_id': 'synthetic-' + str(number),
@@ -168,6 +121,7 @@ def run(binary, sessions, tasks, requests):
             coordinator = people[0]
             epic, _ = coordinator.request('create', {'type': 'epic', 'title': 'Synthetic load',
                                                     'description': 'No real user data'})
+            coordinator.phase = 'seed'
             seed_started = time.perf_counter()
             keys = []
             for number in range(tasks):
@@ -183,50 +137,30 @@ def run(binary, sessions, tasks, requests):
                 person.close()
             stop_server(child)
             child = None
-            child, restarted_origin, populated_startup = start_server(binary, database)
+            child, restarted_origin, populated_startup = start_server(binary, database, persisted_defaults, ledger)
             for person in people:
                 authority = urllib.parse.urlsplit(restarted_origin)
                 person.connection = http.client.HTTPConnection(authority.hostname, authority.port, timeout=30)
             stop_sampling.clear()
             sampler = threading.Thread(target=sample)
             sampler.start()
-            barrier = threading.Barrier(sessions)
-            from_date, to_date = '2000-01-01T00:00:00Z', '2100-01-01T00:00:00Z'
-
-            def exercise(index):
-                person = people[index]
-                person.request('get', {'task_key': keys[index % len(keys)]}, read=True)
-                barrier.wait(timeout=30)
-                records = []
-                operations = [('get', {'task_key': keys[index % len(keys)]}, True),
-                              ('tasks', {'limit': 20}, True),
-                              ('events', {'since_cursor': 0, 'limit': 20, 'task_key': keys[index % len(keys)]}, True),
-                              ('stats', {'from': from_date, 'to': to_date, 'group_by': 'owner'}, True),
-                              ('heartbeat', {}, False)]
-                for number in range(requests):
-                    name, payload, read = operations[number % len(operations)]
-                    _, elapsed = person.request(name, payload, read)
-                    records.append((name, elapsed))
-                return records
-
-            measured_started = time.perf_counter()
-            with concurrent.futures.ThreadPoolExecutor(max_workers=sessions) as pool:
-                measured = list(pool.map(exercise, range(sessions)))
-            elapsed = time.perf_counter() - measured_started
-            records = [record for participant in measured for record in participant]
-            latency = summary([value for _, value in records])
-            per_operation = {name: summary([value for operation, value in records if operation == name])
-                             for name in sorted({operation for operation, _ in records})}
+            waves = Waves(sessions, offered_rps) if offered_rps else None
+            records, elapsed, pacing = measure_people(people, keys, requests, waves, serial)
+            context.update(elapsed_seconds=elapsed, pacing_context=pacing, measurement_started=True,
+                           workload_complete=len(records) == sessions * requests)
+            observed = observations(ledger, context, sessions * requests)
+            latency = observed['request_latency']
             if not rss:
                 raise RuntimeError('RSS measurement unavailable; result would be incomplete')
-            return {'platform': platform.platform(), 'machine': platform.machine(),
+            return {**observed, 'method_version': 'catalog-load-055-v2', 'experiment_status': 'COMPLETED',
+                    'offered_rps': offered_rps, 'persisted_defaults': persisted_defaults,
+                    'platform': platform.platform(), 'machine': platform.machine(),
                     'logical_cpus': os.cpu_count(), 'cgroup_limits': cgroup_limits(child.pid),
                     'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
                     'sessions': sessions, 'tasks': tasks, 'requests_per_session': requests,
                     'seed_seconds': seed_seconds, 'startup_empty_ms': startup,
                     'startup_populated_ms': populated_startup, 'sampled_peak_rss_mib': max(rss) / 1024,
-                    'rss_sampling_seconds': .05, 'elapsed_seconds': elapsed,
-                    'request_latency': latency, 'per_operation': per_operation,
+                    'rss_sampling_seconds': .05,
                     'thresholds_observed': {'p95_le_50ms': latency['p95_ms'] <= 50,
                                             'rss_le_128mib': max(rss) <= 128 * 1024,
                                             'populated_start_le_1s': populated_startup <= 1000},
@@ -234,6 +168,7 @@ def run(binary, sessions, tasks, requests):
                              'sampled server RSS only; client excluded; no annual-event-volume proof; '
                              'no certification of another host or CPU/memory limits.'}
         finally:
+            context['pacing_context']['serial_setup_seed_warmup_wait_seconds'] = serial.wait_seconds if serial else 0
             stop_sampling.set()
             if sampler is not None:
                 sampler.join()
@@ -243,19 +178,52 @@ def run(binary, sessions, tasks, requests):
                 stop_server(child)
 
 
-def main():
+def parse_arguments(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--binary', type=pathlib.Path, required=True)
     parser.add_argument('--output', type=pathlib.Path, required=True)
     parser.add_argument('--sessions', type=int, default=20)
     parser.add_argument('--tasks', type=int, default=2000)
     parser.add_argument('--requests-per-session', type=int, default=20)
-    args = parser.parse_args()
+    parser.add_argument('--offered-rps', type=float, default=0,
+                        help='0=legacy unpaced; finite 1..100=all-session paced waves')
+    parser.add_argument('--persisted-defaults', action='store_true',
+                        help='omit serve TTL flags; use token-bootstrap persisted defaults')
+    args = parser.parse_args(argv)
     if args.sessions < 2 or args.tasks < 1 or args.requests_per_session < 5:
         parser.error('sessions>=2, tasks>=1, requests-per-session>=5 required')
+    if not math.isfinite(args.offered_rps) or not (args.offered_rps == 0 or 1 <= args.offered_rps <= 100):
+        parser.error('offered-rps must be 0 (legacy) or finite 1..100')
+    if args.offered_rps and args.sessions > 200:
+        parser.error('paced method bounds burst to 200 sessions; not a product session limit')
+    return args
+
+
+def main():
+    args = parse_arguments()
     os.umask(0o077)
-    report = run(args.binary.resolve(), args.sessions, args.tasks, args.requests_per_session)
+    ledger = Ledger()
+    # Reserve output before starting child: never overwrite an earlier experiment.
     with args.output.open('x') as stream:
+        started = time.perf_counter()
+        try:
+            report = run(args.binary.resolve(), args.sessions, args.tasks, args.requests_per_session,
+                         args.offered_rps, args.persisted_defaults, ledger)
+        except BaseException as error:
+            context = {'elapsed_seconds': 0, 'measurement_started': False, 'workload_complete': False,
+                       'workload_errors': [],
+                       'pacing_context': {'mode': 'barrier-waves' if args.offered_rps else 'unpaced-legacy',
+                                          'serial_setup_seed_warmup_wait_seconds': 0}}
+            context.update(getattr(error, 'load_context', getattr(error, 'workload_context', {})))
+            context['workload_complete'] = False
+            report = {**observations(ledger, context, args.sessions * args.requests_per_session),
+                      'method_version': 'catalog-load-055-v2', 'experiment_status': 'FAIL',
+                      'offered_rps': args.offered_rps, 'persisted_defaults': args.persisted_defaults,
+                      'experiment_elapsed_seconds': time.perf_counter() - started,
+                      'error_type': type(error).__name__}
+            json.dump(report, stream, indent=2)
+            stream.write('\n')
+            raise
         json.dump(report, stream, indent=2)
         stream.write('\n')
     print('Synthetic load completed; report saved. Target-environment acceptance is separate.')

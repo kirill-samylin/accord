@@ -48,8 +48,11 @@ allowlist. В E добавить optional `github.repository_allowlist`: unique 
 непустом github.events allowlist обязателен; пустое значение → CONFIG_INVALID,
 никакого неявного wildcard. Это additive язык config version1; старые binary
 не понимают новое поле, поэтому config применяют только после upgrade.
-`project.repository` из исходника не существует в текущей schema: не добавлять
-параллельный источник доверия. `require_approval_for_merge` только отражается,
+`project.repository` уже существует в D как необязательная строка метаданных
+(`internal/config/types.go`, обе JSON Schema). Это не allowlist и не полномочие:
+сохранить обратную совместимость поля, не выводить из него доверие к webhook.
+Единственный источник доверия — explicit `github.repository_allowlist`.
+`require_approval_for_merge` только отражается,
 не включает merge и не делает GitHub review серверным approve.
 
 Secrets по существующим env-name полям; значения private env-file, не YAML.
