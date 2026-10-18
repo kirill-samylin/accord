@@ -1,6 +1,7 @@
 # TASK-003 — рабочий общий Accord
 
-- Статус: в работе; этап: C live/performance FAIL, D fixes, E foundations.
+- Статус: в работе; этап: performance fixes review069, D processQA056 FAIL,
+  backup process068/method review070 и E pure config067.
 - Источник: пользователь18.10.2026 поручил доделать оставшееся до рабочего проекта.
 - База:966dda6, рабочая ветка codex/pilot, репозиторий Accord.
 - Координатор: основной агент. Общую карточку редактирует только координатор.
@@ -19,12 +20,21 @@
   C checkpoint опубликован в origin/codex/pilot; nativefix также origin/codex/native-proxy.
 - Main checkpoint2dfd86b: C source/Host APPROVE041, полный C check PASS042,
   новые process tests/README APPROVE045. Method delta047 APPROVE048; C QA checkpoint1e9025c committed.
-- D: config-runtime-003/codex/config-runtime, HEAD932aa2a; source freeze043,
-  main1e9025c объединён; независимые code050/security051 выполняются.
+- D: codex/config-fixes d5a3a12, все050/051 defects CLOSED/APPROVE054;
+  codex/config-qa WORK056:33 targeted process suites PASS, fullcheck FAIL
+  QA056-01 (concurrent CLI startup sqlite locked261). Источник d5 неизменён;
+  исправление и обязательный повтор включены в057, не сняты flaky green retry.
+- Performance: codex/performance b9fdc155, WORK057, source freeze
+  42d32f78…c2d6; schema4 owner один, live production ещё не менялась.
+  Метод059 APPROVE061; два source blocker063 открыты.
+  Авторские unit/race и local annual diagnostic не заменяют target acceptance.
+- Performance fixes: codex/performance-fixes96f3bfd, sourcef3037b91…1370;
+  автор066 закрыл R063-01/02, независимый re-review069 выполняется.
 - E pure libraries: integration-libs-003/codex/integration-libs,59ae1a1,
-  автор044, APPROVE046; SQL/runtime/schema4 и включение доставок отсутствуют.
-- Непосредственно далее: WORK049 private deploy1e9025c/schema2 и isolatedVPS
-  load; D независимые reviews после sourcefreeze, E runtime после D.
+  автор044, APPROVE046; SQL/runtime/schema5 и включение доставок отсутствуют.
+- Непосредственно далее: завершить057 и062,
+  независимые source/security review и combined QA/annual load; E runtime/schema5
+  после этих контрактов. Live1e9025c остаётся текущим, нагрузка049 latencyFAIL.
 
 ## Цель и критерии
 
@@ -80,6 +90,20 @@ restore; клиенты поддерживают lease во время длит�
 | 055 | Developer load method | Только Python acceptance harness/helpers/unit/doc; main | Явный offered-rate режим без ослабления native admission |
 | 056 | Отдельный tester D | Изолированная codex/config-qa отd5a3a12, только tests/docs | Process приёмка D после APPROVE054, TTL/bootstrap/schema3 fixtures |
 | 057 | Developer performance | Изолированная codex/performance отd5a3a12 | Единственный schema4 owner: cache/COW/dirty/events/stats, полный053 contract |
+| 058 | Независимый reviewer load method | Frozen055 main Python/docs, свой report/WORK | REQUEST CHANGES: achieved concurrency/partial-failure latency evidence |
+| 059 | Новый developer load fixes | Только Python harness/helpers/tests/docs main | Frozen a25a896d…2475; измеряет concurrency/сохраняет partialFAIL |
+| 060 | Co-author unit/integration performance | Только новые *_performance_extra_test.go в performance-003 | Alias/cache/cross-Store/auth/rollback/cancel, не processQA/approve |
+| 061 | Независимый test/method reviewer | Frozen056 codex/config-qa и059 main; свои report/WORK | APPROVE обеих test deltas; QA056-01 не снят |
+| 062 | DevOps backup budget | Изолированная codex/backup-budget, только backup helper/tests/docs | Annual backup capacity/byte budget/retention, без live deletion |
+| 063 | Независимый code reviewer performance | Read-only codex/performance; свой report/WORK | Полный contract053, cache/COW/stats/schema4 и corrections QA056-01/scopes |
+| 064 | Независимый security performance | Frozen b9fdc155; свой report/WORK | Authority/replay/cache/COW/migration4, известные063 blockers |
+| 065 | Независимый review backup budget | Frozen aeb085c0; свой report/WORK | Policy/source/new tests062, без live deletion |
+| 066 | Новый developer performance fixes | Изолированная codex/performance-fixes отb9fdc155 | R063-01/02, unit regression и аудит аналогичных outward wrappers |
+| 067 | Developer pure integration config | Изолированная codex/integration-config от approved D+E libs | Explicit repository allowlist, endpoint validation/dedupe, Encode NUL; без SQL/runtime |
+| 068 | Независимый backup process tester | Изолированная codex/backup-qa отd433718 | Real CLI/wrapper standalone harness после APPROVE065; Linux позже |
+| 069 | Независимый code/security recheck | Frozen performance-fixes96f3bfd; свои report/WORK | Closure R063-01/02 и новые unit066 |
+| 070 | Независимый pure/test reviewer | Frozen config067d1d3fb87 и backup method0687200cc9; свои docs в main | Два отдельных verdict, без source/runtime claims |
+| 071 | Архитектор native completion | Read-only source/контракты; свои docs в main | MCP resources/prompts, CLI, packaging/observability gap audit |
 
 Независимые review/security выполняются до live deploy. Unit/integration пишет
 разработчик; новые process/E2E — отдельный tester после approve и review тестов.
@@ -201,3 +225,75 @@ restore; клиенты поддерживают lease во время длит�
   получает schema4 (владелец057), E перенесена наschema5 до начала её runtime.
   Config/integration contracts синхронизированы. Все прежние latency FAIL/
   NOT-RUN сохраняются до реальной повторной приёмки; цели не ослаблены.
+
+- WORK055 frozen760f3d3c…dac16: opt-in offeredrate и persisteddefaults,
+  legacy сохранён,31 Pythonunit и tinyC39/39HTTP200 PASS. WORK058 проверяет
+  метод независимо; VPS/annual/D performance не запускались этим срезом.
+
+- Дополнительная сверка исходника §11.3/11.6: после основных D/performance/E
+  остаются полные MCP resources (rules/epic/report templates и board:// aliases),
+  prompts start-as-role/coordinate и CLI aliases/events follow. C сейчас
+  реализует только accord://notes resource; это не полный §11.3 PASS.
+  Проверить также delivery artifacts/документы по V1-08 при финальном gap audit.
+
+- WORK058 REQUEST CHANGES по методу055: нет actual HTTP concurrency;
+  при FAIL теряются partial latency/duration/pacing. 31unit/probes/tinyC PASS
+  не закрывают метод. WORK059 исправляет ровно два замечания до нового review.
+
+- Перед checkpoint055/058 coordinator убрал лишнюю пустую строку EOF в
+  catalog_runtime.py по git diff --check; semantic code не менялся.
+  Исторический freeze055/058 остаётся до этой whitespace-дельты.
+
+- QA056-01: полный makecheck наd5 остановлен Go process CAS: один concurrent
+  config apply вернул sqlite BUSY_RECOVERY261 вместо CONFIG_CONFLICT.
+  Не доказаны partial writes/двойнойwinner; один разрешённый повтор PASS с
+  сохранёнными winners/version/hash/history/audit не закрывает race.
+  Тест усиливает evidence до exactcodeassert; финальныйtestfreeze будет новый.
+  Root поручил startup/gate fix владельцу057; dependentCAS остаётсяFAIL.
+
+- WORK056 окончательныйfunctional FAIL QA056-01; source155 unchanged;
+  Python41/race174(exceptCAS)/build PASS. Finaltest28 freeze344114d0…bd4f2.
+  WORK059 correction freezea25a896d…2475,40unit/6probes/tinyC PASS;
+  source/method readiness на тот момент ещё не APPROVE. WORK061 проверяет обе test deltas,
+  WORK060 — co-author unit regressions057 без production/migrationownership.
+
+- Уточнение toolchain: executable `.local/toolchains/go/bin/go`, версия
+  go1.27.2; версии в имени файла нет. Неоднозначная запись coordinator задания
+  вызвала ранний launchFAIL056; фактические проверки используют правильныйbin/go.
+
+- WORK061 APPROVE056 tests и059 method; 3process/2recovery/40Python +
+  independent partial-failure counterfactual PASS. P3: SQLite fixture close и
+  WORK056 EOF whitespace; исправить при следующей test compatibility delta.
+- Annual057 diagnostic DB173051904bytes × прежние168 hourly snapshots =
+  29072719872bytes, больше всегоVPSдиска. Root read-only VPS подтвердил
+  diskTotal21028065280/free17726021632, MemTotal1002659840/Available641052672,
+  1CPU. WORK062 готовит bounded local backup policy; existing live backups
+  не удаляются этим шагом. Offsite остаётся внешним условием.
+
+- WORK063 предварительно воспроизвёл два source blocker в performance:
+  Create мутирует общий parent epic без COW barrier; HandoffEpic отдаёт
+  наружу shared timestamp pointer. Три private unit probes FAIL, release закрыт.
+  Review продолжается до final freeze057; затем единый пакет исправляет
+  новый исполнитель и проходит повторное независимое ревью.
+- WORK063 final REQUEST CHANGES относится к b9fdc155/source42d32f…c2d6;
+  финальные 21unit/events race1/strict existing CAS2 PASS, собственные3probes FAIL,
+  old tasks.go negative control2 PASS. Отчёт committed cb5388b8 в performance.
+  WORK066 исправляет этот пакет в отдельной копии; security064 проверяет
+  исходный frozen b9 независимо. Backup062 committed aeb085c0, review065 идёт.
+- WORK064 final REQUEST CHANGES: те же R063-01/02 независимо FAIL3, новых
+  security blockers нет; targeted23/race5/readiness5 PASS, source48 unchanged.
+- WORK065 APPROVE aeb085c0: независимые32unit+7focused probes PASS.
+  Review committed d433718, дальнейшая process проверка068 использует real Go CLI;
+  Linux/VPS/лимиты/retention actual deletion plan остаются NOT-RUN.
+- WORK067 — независимая pure подготовка E до SQL/schema5: optional allowlist
+  при disabled events может быть[], при enabled обязательно1..16; metadata
+  project.repository не даёт доверия. Runtime integration пока отсутствует.
+- WORK066 frozen96f3bfd: affected43unit/race PASS, final5регрессий+3reviewer
+  probes PASS8, b9 negative control EXPECTED FAIL8. Независимый069 ещё нужен.
+- WORK067 frozen14files committed d1d3fb87; parser/interchange/github/notifications
+  unit/race/vet PASS, source approval070 не выдан.
+- WORK068 frozen7200cc9: Mac actual C binary/schema2, process6/support4 PASS;
+  bootstrap/readonly plan/retention/unsafe-source/isolated revoke/reset проверены.
+  Это маленькая БД, tasks/notes/sessions пусты; Linux/annual/liveWAL NOT-RUN.
+  Метод review070; delivery5/evidence9 hashes сверены root. После frozen передачи
+  idle author остановлен coordinator, дополнительных прогонов не выполнялось.
