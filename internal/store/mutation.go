@@ -94,7 +94,7 @@ func mutate[T any](s *Store, ctx context.Context, a core.Actor, request, method 
 		reconcileEpics(&candidate, now, a.SessionID)
 		if sess != nil {
 			sess.ExpiresAt = now.Add(candidate.Config.SessionTTL)
-			if singleton(&candidate, sess.Role) {
+			if hasRoleLease(sess) {
 				expiry := now.Add(candidate.Config.RoleTTL)
 				sess.RoleExpiresAt = &expiry
 			}

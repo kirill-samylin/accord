@@ -119,7 +119,11 @@ func reopenEpic(b *board, key string, now time.Time, session string) {
 	}
 }
 func transitionEpic(b *board, t *core.Task, sess *core.Session, in core.TransitionInput, now time.Time) (core.Task, error) {
-	if sess.Role != "coordinator" && sess.Role != "human" && !(in.State == "cancelled" && canCancel(b, sess, t)) {
+	if in.State == "cancelled" {
+		if !canCancel(b, sess, t) {
+			return core.Task{}, core.Fail("forbidden", "cancel permission or requester required")
+		}
+	} else if sess.Role != "coordinator" && sess.Role != "human" {
 		return core.Task{}, core.Fail("forbidden", "epic transition requires coordinator or human")
 	}
 	if in.Owner != nil {

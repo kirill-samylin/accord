@@ -101,25 +101,14 @@ func (s *Store) Stats(ctx context.Context, a core.Actor, in core.StatsInput) (co
 				metricGroup(groups, statsKey(start.Data, in.GroupBy)).BlockedDurationSeconds += seconds
 			}
 		}
-		result.Totals.CurrentQueue = queueSummary(b, "")
+		result.Totals.CurrentQueue = queueSummary(b, "", nil, now)
 		for _, t := range b.Tasks {
 			if t.Type != "task" {
 				continue
 			}
 			d := &core.EventData{Role: t.Role, Owner: leaseOwner(b, t), EpicKey: t.EpicKey}
 			q := &metricGroup(groups, statsKey(d, in.GroupBy)).CurrentQueue
-			if t.State == "in_progress" {
-				q.InProgress++
-			} else if t.State == "created" {
-				q.Waiting++
-			} else if t.State == "ready" {
-				epic := b.Tasks[t.EpicKey]
-				if blocked(b, t) || epic == nil || epic.State != "open" {
-					q.Waiting++
-				} else {
-					q.Ready++
-				}
-			}
+			addToQueue(q, b, t, nil, now)
 		}
 		missingShare(&result.Totals)
 		if result.Totals.MissingTokens > 0 {

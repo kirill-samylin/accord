@@ -134,7 +134,7 @@ func epicClosable(b *board, key string) error {
 		if child.Review != nil {
 			targets[child.Review.TargetKey] = true
 		}
-		if child.State == "done" && blocked(b, child) && (child.Review == nil || verificationCurrent(b, child) && activeVerification(b, child)) {
+		if child.State == "done" && !successful(b, child, "") && (child.Review == nil || verificationCurrent(b, child) && activeVerification(b, child)) {
 			return core.Fail("rule_violation", "epic contains unsatisfied gates")
 		}
 	}

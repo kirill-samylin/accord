@@ -143,8 +143,12 @@ func renew(b *board, t *core.Task, now time.Time) {
 	}
 }
 
+// RoleGeneration is the historical lease kind: configuration changes must not
+// turn an expired singleton session into an ordinary live session.
+func hasRoleLease(v *core.Session) bool { return v.RoleGeneration > 0 }
+
 func sessionLive(b *board, v *core.Session, now time.Time) bool {
-	return v != nil && v.ExpiresAt.After(now) && (!singleton(b, v.Role) || (v.RoleExpiresAt == nil || v.RoleExpiresAt.After(now)) && v.RoleGeneration == b.Roles[v.Role])
+	return v != nil && v.ExpiresAt.After(now) && (!hasRoleLease(v) || (v.RoleExpiresAt == nil || v.RoleExpiresAt.After(now)) && v.RoleGeneration == b.Roles[v.Role])
 }
 
 // Historical completions keep their server-bound verifier kind even if an

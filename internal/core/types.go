@@ -138,16 +138,17 @@ type Task struct {
 	Blocked          bool          `json:"blocked"`
 }
 type CreateInput struct {
-	Ready        *bool    `json:"ready,omitempty"`
-	Force        bool     `json:"force,omitempty"`
-	Reason       string   `json:"reason,omitempty"`
-	Category     string   `json:"category,omitempty"`
-	Complexity   string   `json:"complexity,omitempty"`
-	ExternalID   string   `json:"external_id,omitempty"`
-	RequestID    string   `json:"request_id"`
-	Type         string   `json:"type"`
-	Owner        string   `json:"owner,omitempty"`
-	Areas        []string `json:"areas,omitempty"`
+	Ready      *bool  `json:"ready,omitempty"`
+	Force      bool   `json:"force,omitempty"`
+	Reason     string `json:"reason,omitempty"`
+	Category   string `json:"category,omitempty"`
+	Complexity string `json:"complexity,omitempty"`
+	ExternalID string `json:"external_id,omitempty"`
+	RequestID  string `json:"request_id"`
+	Type       string `json:"type"`
+	Owner      string `json:"owner,omitempty"`
+	// Omitted areas inherit; explicit [] must survive request hashing and SDK encoding.
+	Areas        []string `json:"areas,omitzero"`
 	EpicKey      string   `json:"epic_key,omitempty"`
 	Title        string   `json:"title"`
 	Description  string   `json:"description"`

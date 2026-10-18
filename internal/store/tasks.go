@@ -123,7 +123,7 @@ func (s *Store) Next(ctx context.Context, a core.Actor, in core.NextInput) (core
 				continue
 			}
 			if t.Type == "task" && t.Role == sess.Role && t.State == "ready" && t.Lease == nil && !blocked(b, t) && (in.TaskKey == "" || in.TaskKey == t.Key) && (in.EpicKey == "" || in.EpicKey == t.EpicKey) {
-				if eligibleClaim(b, t, sess) == nil {
+				if eligibleClaim(b, t, sess, now) == nil {
 					candidates = append(candidates, t)
 				}
 			}
@@ -150,12 +150,12 @@ func (s *Store) Next(ctx context.Context, a core.Actor, in core.NextInput) (core
 		if len(candidates) == 0 {
 			if in.TaskKey != "" {
 				if t := b.Tasks[in.TaskKey]; t != nil && t.Role == sess.Role && t.State == "ready" {
-					if err := eligibleClaim(b, t, sess); err != nil {
+					if err := eligibleClaim(b, t, sess, now); err != nil {
 						return core.Claim{}, err
 					}
 				}
 			}
-			return core.Claim{ConfigVersion: b.Config.ConfigVersion, Queue: queueSummary(b, sess.Role)}, nil
+			return core.Claim{ConfigVersion: b.Config.ConfigVersion, Queue: sessionQueueSummary(b, sess, now)}, nil
 		}
 		t := candidates[0]
 		t.Warnings = nil
@@ -176,7 +176,7 @@ func (s *Store) Next(ctx context.Context, a core.Actor, in core.NextInput) (core
 		emit(b, now, "claimed", t.Key, a.SessionID)
 		emitWarnings(b, t, now, a.SessionID)
 		v := viewTask(b, t)
-		return core.Claim{ConfigVersion: b.Config.ConfigVersion, Task: &v, Lease: t.Lease, EpicNotes: scopeNotes(b, "epic", t.EpicKey), Queue: queueSummary(b, sess.Role)}, nil
+		return core.Claim{ConfigVersion: b.Config.ConfigVersion, Task: &v, Lease: t.Lease, EpicNotes: scopeNotes(b, "epic", t.EpicKey), Queue: sessionQueueSummary(b, sess, now)}, nil
 	})
 }
 func (s *Store) Update(ctx context.Context, a core.Actor, in core.UpdateInput) (core.Task, error) {
@@ -206,7 +206,12 @@ func (s *Store) Update(ctx context.Context, a core.Actor, in core.UpdateInput) (
 				return core.Task{}, err
 			}
 			if t.Type == "task" {
-				if err := checkAreaOverlap(b, t, sess, now); err != nil {
+				if t.Lease != nil {
+					if err := areaRoleAllowed(b, t.Areas, sess.Role); err != nil {
+						return core.Task{}, err
+					}
+				}
+				if err := checkAreaOverlap(b, t, now); err != nil {
 					return core.Task{}, err
 				}
 			}

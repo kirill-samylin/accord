@@ -47,13 +47,13 @@ func (s *Store) Describe(ctx context.Context, p core.Principal, in core.OpenSess
 		v.Notes = scopeNotes(b, "role", in.Role)
 		v.Rules = ruleHints(b)
 		v.MyTasks = []core.Task{}
-		v.Queue = queueSummary(b, in.Role)
+		v.Queue = sessionQueueSummary(b, sess, now)
 		return v, nil
 	})
 }
 func (s *Store) Heartbeat(ctx context.Context, a core.Actor, in core.HeartbeatInput) (core.SessionView, error) {
 	return mutate(s, ctx, a, in.RequestID, "heartbeat", in, func(b *board, sess *core.Session, now time.Time) (core.SessionView, error) {
-		if singleton(b, sess.Role) && in.RoleGeneration != sess.RoleGeneration {
+		if hasRoleLease(sess) && in.RoleGeneration != sess.RoleGeneration {
 			return core.SessionView{}, core.Fail("lease_lost", "singleton generation does not match")
 		}
 		var active *core.Task
@@ -73,7 +73,7 @@ func (s *Store) Heartbeat(ctx context.Context, a core.Actor, in core.HeartbeatIn
 			renew(b, t, now)
 		}
 		sess.ExpiresAt = now.Add(b.Config.SessionTTL)
-		if singleton(b, sess.Role) {
+		if hasRoleLease(sess) {
 			expiry := now.Add(b.Config.RoleTTL)
 			sess.RoleExpiresAt = &expiry
 		}

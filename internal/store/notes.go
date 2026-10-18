@@ -119,25 +119,38 @@ func scopeNotes(b *board, kind, id string) []core.Note {
 	sort.Slice(result, func(i, j int) bool { return numericKey(result[i].Key) < numericKey(result[j].Key) })
 	return result
 }
-func queueSummary(b *board, role string) core.QueueSummary {
+func sessionQueueSummary(b *board, sess *core.Session, now time.Time) core.QueueSummary {
+	return queueSummary(b, sess.Role, sess, now)
+}
+func queueSummary(b *board, role string, sess *core.Session, now time.Time) core.QueueSummary {
 	var q core.QueueSummary
 	for _, t := range b.Tasks {
 		if t.Type != "task" || role != "" && role != t.Role {
 			continue
 		}
-		switch t.State {
-		case "in_progress":
-			q.InProgress++
-		case "created":
-			q.Waiting++
-		case "ready":
-			epic := b.Tasks[t.EpicKey]
-			if blocked(b, t) || epic == nil || epic.State != "open" {
-				q.Waiting++
-			} else {
-				q.Ready++
-			}
-		}
+		addToQueue(&q, b, t, sess, now)
 	}
 	return q
+}
+
+// Identity-dependent eligibility belongs to session views; global statistics
+// still enforce the area's role authorization and blocking overlap rules.
+func addToQueue(q *core.QueueSummary, b *board, t *core.Task, sess *core.Session, now time.Time) {
+	switch t.State {
+	case "in_progress":
+		q.InProgress++
+	case "created":
+		q.Waiting++
+	case "ready":
+		epic := b.Tasks[t.EpicKey]
+		eligible := areaRoleAllowed(b, t.Areas, t.Role) == nil && overlapAllowed(b, t, now) == nil
+		if sess != nil {
+			eligible = eligibleClaim(b, t, sess, now) == nil
+		}
+		if !eligible || blocked(b, t) || epic == nil || epic.State != "open" {
+			q.Waiting++
+		} else {
+			q.Ready++
+		}
+	}
 }
