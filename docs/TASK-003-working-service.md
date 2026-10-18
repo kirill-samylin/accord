@@ -12,6 +12,11 @@
   по отдельным токенам. GitHub OAuth/browser identity не подменяется bearer.
 - Второй физический ПК пользователь сможет проверить позже, ОС пока не указана.
   Это внешняя зависимость; подготовить воспроизводимую инструкцию и не заявлять PASS.
+- Последующее уточнение пользователя: второй ПК должен был подключиться;
+  приоритет — фактический доступ второй машины, новые расширения не запускать
+  до закрытия текущей проверки доступа. Root проверил сеть с Mac и VPS:
+  видны только эти две машины, второго ПК нет среди доступных peers.
+  ОС второй машины по сети определить нельзя; доступа к ней в Codex hosts нет.
 
 ## Текущее состояние
 
@@ -104,6 +109,9 @@ restore; клиенты поддерживают lease во время длит�
 | 069 | Независимый code/security recheck | Frozen performance-fixes96f3bfd; свои report/WORK | Closure R063-01/02 и новые unit066 |
 | 070 | Независимый pure/test reviewer | Frozen config067d1d3fb87 и backup method0687200cc9; свои docs в main | Два отдельных verdict, без source/runtime claims |
 | 071 | Архитектор native completion | Read-only source/контракты; свои docs в main | MCP resources/prompts, CLI, packaging/observability gap audit |
+| 072 | Отдельный tester combined D4 | Изолированная codex/performance-qa c1ef9ae2, только tests/docs | Strict CAS/migrations/scopes/reopen и один combined check; annual отложен |
+| 073 | Новый developer backup method fix | Изолированная codex/backup-method-fixes c8ce77e0 | R070-B01 UTC oracle/provenance, 14unit+6process PASS |
+| 074 | Независимый reviewer backup method | Frozen c8ce77e0, свои docs в main | Closure R070-B01 и новые boundary regressions |
 
 Независимые review/security выполняются до live deploy. Unit/integration пишет
 разработчик; новые process/E2E — отдельный tester после approve и review тестов.
@@ -297,3 +305,26 @@ restore; клиенты поддерживают lease во время длит�
   Это маленькая БД, tasks/notes/sessions пусты; Linux/annual/liveWAL NOT-RUN.
   Метод review070; delivery5/evidence9 hashes сверены root. После frozen передачи
   idle author остановлен coordinator, дополнительных прогонов не выполнялось.
+- WORK069 FINAL APPROVE96f3bfd: R063-01/02 CLOSED; independent48unit,
+  13race,8schema/events/stats PASS, b9 negative controls подтверждены.
+  WORK070 APPROVE067 d1d3fb87; backup method068 REQUEST CHANGES R070-B01:
+  неверное ожидание при UTC hour rollover, source wrapper APPROVE065 сохраняется.
+  Исправления073 frozen c8ce77e0, review074 идёт.
+- Combined performance QA база c1ef9ae2: автоматические merges approved96f3bfd,
+  reviews, main docs/method059, tests056 и backup062/068, без conflict/manual
+  production edits. 111 source manifest SHA a6033126…c307. Existing standalone
+  backup068 не запускать до closure074; его исправления идут отдельно.
+- WORK072 targeted strict concurrent CLI CAS PASS, native C2→4 и D3→4,
+  rollback/old binary refusal, exact legacy1, config+backup/reset, current SQL
+  scopes/allowlist replay after expiry и epic SQL/restart PASS. Это ещё не final
+  combined check. Annual draft убран в ignored; tiny draft FAIL404 сохранён как
+  непринятая методика, не product FAIL. 200k/VPS нагрузка не выполнялась.
+- Second-PC access подготовлен root на текущем live1e9025c: отдельный pc-2
+  token получен по SSH в private .local/accord/second-pc, удалена только его
+  серверная plaintext-копия; Mac token сохранён. HTTPS auth200, реальный bridge
+  initialize и12tools PASS с Mac, board session pc-2 не создавалась. Это НЕ
+  physical2PC PASS. Пять client targets из clean1e9025c cross-built/archived;
+  archives без credentials, foreign-platform runtime NOT-RUN. Секрет/hostname
+  не включены в Git. Для дальнейшего подключения второй ПК должен стать
+  доступен в той же Tailscale-сети; автоматическое подключение недоступной
+  машины и доступ к её ОС не выдумываются.
