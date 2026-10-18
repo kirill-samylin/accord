@@ -1,5 +1,6 @@
 # Synthetic filesystem/SQLite regressions; service commands are mocked, not Linux runtime.
 import os
+from contextlib import closing, contextmanager
 import pathlib
 import sqlite3
 import stat
@@ -17,6 +18,14 @@ import recovery
 import install
 import rollback
 import restore
+
+
+@contextmanager
+def transaction(path):
+    """Commit/rollback exactly as before, then deterministically close SQLite."""
+    with closing(sqlite3.connect(path)) as connection:
+        with connection:
+            yield connection
 
 
 class ActivationTests(unittest.TestCase):
@@ -42,7 +51,7 @@ class ActivationTests(unittest.TestCase):
         self.original = self.database.read_bytes()
 
     def write_database(self, version):
-        with sqlite3.connect(self.database) as database:
+        with transaction(self.database) as database:
             database.execute('CREATE TABLE IF NOT EXISTS data(value TEXT)')
             database.execute("INSERT INTO data VALUES('preserved')")
             database.execute('PRAGMA user_version=' + str(version))
@@ -107,7 +116,7 @@ class ActivationTests(unittest.TestCase):
 
     def test_schema_migration_fails_closed_and_preserves_migrated_data(self):
         def migrate():
-            with sqlite3.connect(self.database) as database:
+            with transaction(self.database) as database:
                 database.execute('PRAGMA user_version=2')
                 database.execute("UPDATE data SET value='migrated'")
         self.on_start = migrate
@@ -117,12 +126,12 @@ class ActivationTests(unittest.TestCase):
         self.assertEqual(os.readlink(self.current), 'releases/' + self.new)
         self.assertEqual(self.starts, 1)
         self.assert_inspection()
-        with sqlite3.connect(self.database) as database:
+        with transaction(self.database) as database:
             self.assertEqual(database.execute('PRAGMA user_version').fetchone()[0], 2)
             self.assertEqual(database.execute('SELECT value FROM data').fetchone()[0], 'migrated')
 
     def test_unknown_preexisting_schema_does_not_infer_compatibility(self):
-        with sqlite3.connect(self.database) as database:
+        with transaction(self.database) as database:
             database.execute('PRAGMA user_version=99')
         self.fail_starts = {1}
         with self.assertRaisesRegex(RuntimeError, 'compatibility unproven'):
@@ -132,7 +141,7 @@ class ActivationTests(unittest.TestCase):
         self.assert_inspection()
 
     def test_unchanged_schema2_allows_previous_executable_recovery(self):
-        with sqlite3.connect(self.database) as database:
+        with transaction(self.database) as database:
             database.execute('PRAGMA user_version=2')
         self.original = self.database.read_bytes()
         self.fail_starts = {1}
@@ -143,10 +152,10 @@ class ActivationTests(unittest.TestCase):
         self.assert_preserved()
 
     def test_schema2_to3_change_blocks_previous_executable_recovery(self):
-        with sqlite3.connect(self.database) as database:
+        with transaction(self.database) as database:
             database.execute('PRAGMA user_version=2')
         def migrate():
-            with sqlite3.connect(self.database) as database:
+            with transaction(self.database) as database:
                 database.execute('PRAGMA user_version=3')
                 database.execute("UPDATE data SET value='schema3-preserved'")
         self.on_start = migrate
@@ -156,14 +165,44 @@ class ActivationTests(unittest.TestCase):
         self.assertEqual(self.starts, 1)
         self.assertEqual(os.readlink(self.current), 'releases/' + self.new)
         self.assert_inspection()
-        with sqlite3.connect(self.database) as database:
+        with transaction(self.database) as database:
             self.assertEqual(database.execute('PRAGMA user_version').fetchone()[0], 3)
             self.assertEqual(database.execute('SELECT value FROM data').fetchone()[0],
                              'schema3-preserved')
 
     def test_unchanged_schema3_allows_previous_executable_recovery(self):
-        with sqlite3.connect(self.database) as database:
+        with transaction(self.database) as database:
             database.execute('PRAGMA user_version=3')
+        self.original = self.database.read_bytes()
+        self.fail_starts = {1}
+        with self.assertRaisesRegex(RuntimeError, 'previous executable restored and ready'):
+            self.activate()
+        self.assertEqual(self.starts, 2)
+        self.assertEqual(os.readlink(self.current), self.previous)
+        self.assert_preserved()
+
+    def test_schema3_to4_change_blocks_previous_executable_recovery(self):
+        with transaction(self.database) as database:
+            database.execute('PRAGMA user_version=3')
+        def migrate():
+            with transaction(self.database) as database:
+                database.execute('PRAGMA user_version=4')
+                database.execute("UPDATE data SET value='schema4-preserved'")
+        self.on_start = migrate
+        self.ready = [False]
+        with self.assertRaisesRegex(RuntimeError, 'compatibility unproven'):
+            self.activate()
+        self.assertEqual(self.starts, 1)
+        self.assertEqual(os.readlink(self.current), 'releases/' + self.new)
+        self.assert_inspection()
+        with transaction(self.database) as database:
+            self.assertEqual(database.execute('PRAGMA user_version').fetchone()[0], 4)
+            self.assertEqual(database.execute('SELECT value FROM data').fetchone()[0],
+                             'schema4-preserved')
+
+    def test_unchanged_schema4_allows_previous_executable_recovery(self):
+        with transaction(self.database) as database:
+            database.execute('PRAGMA user_version=4')
         self.original = self.database.read_bytes()
         self.fail_starts = {1}
         with self.assertRaisesRegex(RuntimeError, 'previous executable restored and ready'):
@@ -174,7 +213,7 @@ class ActivationTests(unittest.TestCase):
 
     def test_unversioned_ddl_change_also_blocks_recovery(self):
         def migrate():
-            with sqlite3.connect(self.database) as database:
+            with transaction(self.database) as database:
                 database.execute('CREATE TABLE unexpected(value TEXT)')
         self.on_start = migrate
         self.fail_starts = {1}

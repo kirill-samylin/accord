@@ -60,8 +60,8 @@ func TestConfigNativeSchema2MigrationOldBinaryRefusalProcess(t *testing.T) {
 		t.Fatal("legacy scopes were not exact seven historical roles")
 	}
 	db = inspectDatabase(t, b.db)
-	if sqlString(t, db, "PRAGMA user_version") != "3" || sqlString(t, db, "SELECT count(*) FROM tokens") != beforeTokens {
-		t.Fatal("schema2→3 changed credentials")
+	if sqlString(t, db, "PRAGMA user_version") != fmt.Sprint(expectedCurrentSchema) || sqlString(t, db, "SELECT count(*) FROM tokens") != beforeTokens {
+		t.Fatal("schema2→4 changed credentials")
 	}
 	snap := inspectDatabase(t, snapshot)
 	if sqlString(t, snap, "SELECT count(*) FROM sqlite_schema WHERE name='config_history'") != "0" {
@@ -73,7 +73,7 @@ func TestConfigNativeSchema2MigrationOldBinaryRefusalProcess(t *testing.T) {
 	b.start()
 	migrationSnapshotVersion(t, b, 2)
 	if configView(t, b).SHA256 != current.SHA256 {
-		t.Fatal("schema3 restart changed persisted config")
+		t.Fatal("schema4 restart changed persisted config")
 	}
 	b.stop()
 	before, err := os.ReadFile(b.db)
@@ -82,13 +82,13 @@ func TestConfigNativeSchema2MigrationOldBinaryRefusalProcess(t *testing.T) {
 	}
 	refused := commandPath(legacy, nil, "serve", "--db", b.db, "--listen", "127.0.0.1:0")
 	if refused.err == nil || string(refused.stderr) != "agent-board: cannot open board database\n" || bytes.Contains(refused.data, []byte("listening")) {
-		t.Fatal("historical binary did not reject schema3 before serving")
+		t.Fatal("historical binary did not reject schema4 before serving")
 	}
 	after, err := os.ReadFile(b.db)
 	if err != nil || !bytes.Equal(before, after) {
-		t.Fatal("historical binary changed schema3 database bytes")
+		t.Fatal("historical binary changed schema4 database bytes")
 	}
-	t.Logf("D056-11 native C2→D3 with verified schema2 snapshot/hash/modes; exact legacy scopes; restart persistence; old binary refuses and leaves DB unchanged (legacy sha256=%x)", hashFile(t, legacy))
+	t.Logf("D056-11 native C2→D4 with verified schema2 snapshot/hash/modes; exact legacy scopes; restart persistence; old binary refuses and leaves DB unchanged (legacy sha256=%x)", hashFile(t, legacy))
 }
 func hashFile(t *testing.T, path string) [32]byte {
 	t.Helper()

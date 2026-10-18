@@ -15,6 +15,9 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+// Acceptance expectation is deliberately independent of store.SchemaVersion.
+const expectedCurrentSchema = 4
+
 func legacyDatabase(t *testing.T, b *board) {
 	t.Helper()
 	ddl, err := os.ReadFile("testdata/schema1.sql")
@@ -107,7 +110,7 @@ func TestCatalogLegacySchemaProcessMigrationBackupRestart(t *testing.T) {
 	localFails(t, migrated, "CONFIG_CONFLICT")
 	snapshot := migrationSnapshot(t, b)
 	db := inspectDatabase(t, b.db)
-	if sqlString(t, db, "PRAGMA user_version") != "3" || sqlString(t, db, "SELECT data FROM tasks WHERE key='T-2'") != taskRow || sqlString(t, db, "SELECT data FROM events WHERE cursor=1") != eventRow || sqlString(t, db, "SELECT response FROM idempotency WHERE key='synthetic-legacy-replay'") != replayRow {
+	if sqlString(t, db, "PRAGMA user_version") != fmt.Sprint(expectedCurrentSchema) || sqlString(t, db, "SELECT data FROM tasks WHERE key='T-2'") != taskRow || sqlString(t, db, "SELECT data FROM events WHERE cursor=1") != eventRow || sqlString(t, db, "SELECT response FROM idempotency WHERE key='synthetic-legacy-replay'") != replayRow {
 
 		t.Fatal("migration rewrote historical rows or exact replay payload")
 	}
@@ -130,7 +133,7 @@ func TestCatalogLegacySchemaProcessMigrationBackupRestart(t *testing.T) {
 	if !stat.IncompleteData || stat.IncompleteEvents != 1 || stat.Totals.FirstCompletions != 0 {
 		t.Fatal("legacy event provenance was inferred instead of marked incomplete")
 	}
-	note := decode[core.Note](t, c.ok(t, "note", payload{"action": "create", "scope_type": "epic", "scope_id": "E-1", "source_task_key": "T-2", "text": "Schema3 accepts notes after migration"}))
+	note := decode[core.Note](t, c.ok(t, "note", payload{"action": "create", "scope_type": "epic", "scope_id": "E-1", "source_task_key": "T-2", "text": "Schema4 accepts notes after migration"}))
 	stat = decode[core.Stats](t, c.ok(t, "stats", statInput))
 	incompleteBeforeRestart := stat.IncompleteEvents
 	b.stop()
@@ -138,13 +141,13 @@ func TestCatalogLegacySchemaProcessMigrationBackupRestart(t *testing.T) {
 	migrationSnapshot(t, b) // Restart must not migrate or create another backup.
 	notes := decode[core.NotesPage](t, c.ok(t, "notes", payload{"scope_type": "epic", "scope_id": "E-1"}))
 	if len(notes.Notes) != 1 || notes.Notes[0].Key != note.Key {
-		t.Fatal("schema3 notes lost on post-migration restart")
+		t.Fatal("schema4 notes lost on post-migration restart")
 	}
 	stat = decode[core.Stats](t, c.ok(t, "stats", statInput))
 	if !stat.IncompleteData || stat.IncompleteEvents != incompleteBeforeRestart || sqlString(t, db, "SELECT data FROM events WHERE cursor=1") != eventRow {
 		t.Fatal("restart erased legacy incomplete proof")
 	}
-	t.Log("C-04 canonical synthetic schema1 migrated by real offline CLI; backup/hash and historical bytes retained; schema3 restart passed")
+	t.Log("C-04 canonical synthetic schema1 migrated by real offline CLI; backup/hash and historical bytes retained; schema4 restart passed")
 }
 
 func TestCatalogMigrationProcessFailuresAtomic(t *testing.T) {

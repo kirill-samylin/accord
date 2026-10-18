@@ -71,4 +71,3 @@ PerformanceC FAIL остаётся у architect053. VPS/live D/providers/UI/OAut
 arbitrary inflight commit kill — NOT-RUN. Source correction принадлежит WORK057;
 после source approve обязателен CAS retest и review новой test delta.
 Общая TASK/main/Davinci, commit/push/deploy не менялись.
-

@@ -63,12 +63,13 @@ func TestMain(m *testing.M) {
 }
 
 type board struct {
-	t      *testing.T
-	db     string
-	url    string
-	ttl    string
-	cmd    *exec.Cmd
-	exited chan error
+	t          *testing.T
+	db         string
+	url        string
+	ttl        string
+	executable string
+	cmd        *exec.Cmd
+	exited     chan error
 }
 
 func newBoard(t *testing.T, ttl string) *board {
@@ -90,7 +91,11 @@ func (b *board) start() {
 func (b *board) startOptions(options ...string) {
 	b.t.Helper()
 	args := append([]string{"serve", "--db", b.db, "--listen", "127.0.0.1:0"}, options...)
-	b.cmd = exec.Command(binary, args...)
+	executable := b.executable
+	if executable == "" {
+		executable = binary
+	}
+	b.cmd = exec.Command(executable, args...)
 	stdout, err := b.cmd.StdoutPipe()
 	if err != nil {
 		b.t.Fatal(err)
