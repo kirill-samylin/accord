@@ -258,3 +258,9 @@ restore; клиенты поддерживают lease во время длит�
   diskTotal21028065280/free17726021632, MemTotal1002659840/Available641052672,
   1CPU. WORK062 готовит bounded local backup policy; existing live backups
   не удаляются этим шагом. Offsite остаётся внешним условием.
+
+- WORK063 предварительно воспроизвёл два source blocker в performance:
+  Create мутирует общий parent epic без COW barrier; HandoffEpic отдаёт
+  наружу shared timestamp pointer. Три private unit probes FAIL, release закрыт.
+  Review продолжается до final freeze057; затем единый пакет исправляет
+  новый исполнитель и проходит повторное независимое ревью.
