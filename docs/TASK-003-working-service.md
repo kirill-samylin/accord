@@ -1,6 +1,7 @@
 # TASK-003 — рабочий общий Accord
 
-- Статус: в работе; этап: performance implementation057, D processQA056, E foundations.
+- Статус: в работе; этап: performance source review063, D processQA056 FAIL,
+  ограничение backup062 и E foundations.
 - Источник: пользователь18.10.2026 поручил доделать оставшееся до рабочего проекта.
 - База:966dda6, рабочая ветка codex/pilot, репозиторий Accord.
 - Координатор: основной агент. Общую карточку редактирует только координатор.
@@ -24,10 +25,11 @@
   QA056-01 (concurrent CLI startup sqlite locked261). Источник d5 неизменён;
   исправление и обязательный повтор включены в057, не сняты flaky green retry.
 - Performance: codex/performance отd5a3a12 + rootdocs bee0bea, WORK057;
-  schema4 owner один, production ещё не менялась. Метод055 на review058.
+  schema4 owner один, live production ещё не менялась. Метод059 APPROVE061.
+  Авторские unit/race и local annual diagnostic не заменяют target acceptance.
 - E pure libraries: integration-libs-003/codex/integration-libs,59ae1a1,
-  автор044, APPROVE046; SQL/runtime/schema4 и включение доставок отсутствуют.
-- Непосредственно далее: принять056/tests review и058; завершить057,
+  автор044, APPROVE046; SQL/runtime/schema5 и включение доставок отсутствуют.
+- Непосредственно далее: завершить057 и062,
   независимые source/security review и combined QA/annual load; E runtime/schema5
   после этих контрактов. Live1e9025c остаётся текущим, нагрузка049 latencyFAIL.
 
@@ -88,7 +90,9 @@ restore; клиенты поддерживают lease во время длит�
 | 058 | Независимый reviewer load method | Frozen055 main Python/docs, свой report/WORK | REQUEST CHANGES: achieved concurrency/partial-failure latency evidence |
 | 059 | Новый developer load fixes | Только Python harness/helpers/tests/docs main | Frozen a25a896d…2475; измеряет concurrency/сохраняет partialFAIL |
 | 060 | Co-author unit/integration performance | Только новые *_performance_extra_test.go в performance-003 | Alias/cache/cross-Store/auth/rollback/cancel, не processQA/approve |
-| 061 | Независимый test/method reviewer | Frozen056 codex/config-qa и059 main; свои report/WORK | Новые Dprocess tests и две corrections load method |
+| 061 | Независимый test/method reviewer | Frozen056 codex/config-qa и059 main; свои report/WORK | APPROVE обеих test deltas; QA056-01 не снят |
+| 062 | DevOps backup budget | Изолированная codex/backup-budget, только backup helper/tests/docs | Annual backup capacity/byte budget/retention, без live deletion |
+| 063 | Независимый code reviewer performance | Read-only codex/performance; свой report/WORK | Полный contract053, cache/COW/stats/schema4 и corrections QA056-01/scopes |
 
 Независимые review/security выполняются до live deploy. Unit/integration пишет
 разработчик; новые process/E2E — отдельный tester после approve и review тестов.
@@ -239,5 +243,18 @@ restore; клиенты поддерживают lease во время длит�
 - WORK056 окончательныйfunctional FAIL QA056-01; source155 unchanged;
   Python41/race174(exceptCAS)/build PASS. Finaltest28 freeze344114d0…bd4f2.
   WORK059 correction freezea25a896d…2475,40unit/6probes/tinyC PASS;
-  source/method readiness ещё не APPROVE. WORK061 проверяет обе test deltas,
+  source/method readiness на тот момент ещё не APPROVE. WORK061 проверяет обе test deltas,
   WORK060 — co-author unit regressions057 без production/migrationownership.
+
+- Уточнение toolchain: executable `.local/toolchains/go/bin/go`, версия
+  go1.27.2; версии в имени файла нет. Неоднозначная запись coordinator задания
+  вызвала ранний launchFAIL056; фактические проверки используют правильныйbin/go.
+
+- WORK061 APPROVE056 tests и059 method; 3process/2recovery/40Python +
+  independent partial-failure counterfactual PASS. P3: SQLite fixture close и
+  WORK056 EOF whitespace; исправить при следующей test compatibility delta.
+- Annual057 diagnostic DB173051904bytes × прежние168 hourly snapshots =
+  29072719872bytes, больше всегоVPSдиска. Root read-only VPS подтвердил
+  diskTotal21028065280/free17726021632, MemTotal1002659840/Available641052672,
+  1CPU. WORK062 готовит bounded local backup policy; existing live backups
+  не удаляются этим шагом. Offsite остаётся внешним условием.
