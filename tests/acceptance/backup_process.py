@@ -14,18 +14,20 @@ import tempfile
 import time
 import uuid
 
-from backup_process_support import DRIVER, Evidence, counts, database, private_write, require, sha, tree
+from backup_process_support import (DRIVER, Evidence, counts, database, expected_at_interval,
+                                    expected_retained, known_snapshot, private_write, require, sha, tree)
 
 
 class Acceptance:
-    def __init__(self, args, work, evidence):
+    def __init__(self, args, work, evidence, clock=None):
         self.args, self.work, self.evidence = args, work, evidence
         self.state, self.backups = work / 'state', work / 'backups'
         self.state.mkdir(mode=0o700)
         self.backups.mkdir(mode=0o700)
         self.db, self.driver = self.state / 'board.db', work / 'driver.py'
         private_write(self.driver, DRIVER.encode())
-        self.latest = []
+        self.clock = clock or (lambda: dt.datetime.now(dt.timezone.utc))
+        self.known, self.images = {}, {}
 
     def cli(self, label, *arguments, hidden=False):
         return self.evidence.command(label, [self.args.binary, *arguments], hidden=hidden)
@@ -39,6 +41,30 @@ class Acceptance:
 
     def snapshots(self):
         return sorted(self.backups.glob('board-*.db'))
+
+    def declare(self, path, origin):
+        self.known[path.name] = known_snapshot(path, origin)
+
+    def checked_plan(self, label):
+        before, source, start = tree(self.backups), tree(self.state), self.clock()
+        out, _ = self.wrapper(label, plan=True)
+        end, plan = self.clock(), json.loads(out)
+        require(tree(self.backups) == before and tree(self.state) == source, 'plan_readonly_bytes_names_mtime')
+        require(plan['mode'] == 'plan' and plan['verified'] == len(self.known) and plan['ignored'] == 2, 'plan_inventory')
+        require(plan['budget_bytes'] == 5 * 1024 ** 3 and plan['floor_bytes'] == 512 * 1024 ** 2,
+                'plan_resource_contract')
+        estimate = sum(path.stat().st_size for path in (self.db, self.state / 'board.db-wal') if path.exists()) + 16 * 1024 ** 2
+        require(plan['estimate_bytes'] == estimate, 'plan_source_estimate')
+        require(plan['free_bytes'] >= plan['reserve_bytes'] + plan['floor_bytes'], 'fixture_no_space_pressure')
+        require(plan['reserve_bytes'] == 2 * plan['estimate_bytes'], 'plan_reserve_contract')
+        records = list(self.known.values())
+        protected = {item.name for item in sorted(records, key=lambda item: item.order, reverse=True)[:2]}
+        require(set(plan['protected']) == protected, 'plan_latest_two')
+        options = expected_at_interval(records, start, end, plan['budget_bytes'], plan['estimate_bytes'])
+        require(frozenset(set(self.known) - set(plan['delete'])) in options, 'plan_exact_retention_deletes')
+        require(len(plan['delete']) == len(set(plan['delete'])) and set(plan['delete']) <= set(self.known),
+                'plan_delete_identities')
+        return plan
 
     def verify(self, path, expected):
         require(stat.S_IMODE(path.stat().st_mode) == 0o600, 'snapshot_mode')
@@ -61,6 +87,8 @@ class Acceptance:
         require(len(self.snapshots()) == 1, 'first_snapshot_count')
         self.first = self.snapshots()[0]
         self.verify(self.first, self.first_image)
+        self.images['first'] = self.first_image
+        self.declare(self.first, 'first')
         return {'schema': self.first_image[0], 'table_counts': counts(self.first_image), 'redundancy': '1/2'}
 
     def second(self):
@@ -75,28 +103,31 @@ class Acceptance:
         self.second_copy = next(path for path in self.snapshots() if path != self.first)
         self.verify(self.first, self.first_image)
         self.verify(self.second_copy, self.second_image)
-        self.latest = {self.first.name, self.second_copy.name}
+        self.images['second'] = self.second_image
+        self.declare(self.second_copy, 'second')
+        self.recovery = self.work / 'recovery.db'
+        shutil.copyfile(self.second_copy, self.recovery)
+        self.recovery.chmod(0o600)
         return {'table_counts': counts(self.second_image), 'redundancy': '2/2'}
 
     def history(self):
-        now = dt.datetime.now(dt.timezone.utc)
+        now = self.clock()
         hour = now.replace(minute=0, second=0, microsecond=0)
         day = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        items = [(hour - dt.timedelta(days=40), False),
-                 (hour - dt.timedelta(hours=2) + dt.timedelta(minutes=5), False),
-                 (hour - dt.timedelta(hours=2) + dt.timedelta(minutes=10), True),
-                 (day - dt.timedelta(days=3) + dt.timedelta(hours=1), False),
-                 (day - dt.timedelta(days=3) + dt.timedelta(hours=2), True),
-                 (day - dt.timedelta(days=6) + dt.timedelta(hours=12), True),
-                 (day - dt.timedelta(days=7), False)]
-        self.delete, self.keep = set(), set(self.latest)
-        for created, retained in items:
+        items = [hour - dt.timedelta(days=40),
+                 hour - dt.timedelta(hours=2) + dt.timedelta(minutes=5),
+                 hour - dt.timedelta(hours=2) + dt.timedelta(minutes=10),
+                 day - dt.timedelta(days=3) + dt.timedelta(hours=1),
+                 day - dt.timedelta(days=3) + dt.timedelta(hours=2),
+                 day - dt.timedelta(days=6) + dt.timedelta(hours=12),
+                 day - dt.timedelta(days=7)]
+        for created in items:
             name = 'board-' + created.strftime('%Y%m%dT%H%M%SZ') + '-' + uuid.uuid4().hex + '.db'
             path = self.backups / name
             shutil.copyfile(self.second_copy, path)
             path.chmod(0o600)
             private_write(self.backups / (name + '.sha256'), (sha(path) + '  ' + name + '\n').encode())
-            (self.keep if retained else self.delete).add(name)
+            self.declare(path, 'second')
         self.unsafe = []
         for suffix in ('corrupt', 'symlink'):
             name = 'board-' + (day - dt.timedelta(days=50)).strftime('%Y%m%dT%H%M%SZ') + '-' + uuid.uuid4().hex + '.db'
@@ -111,36 +142,39 @@ class Acceptance:
             self.unsafe.extend([name, name + '.sha256'])
         private_write(self.backups / 'pre-upgrade-unknown.db', b'synthetic-preserve')
         self.unsafe.append('pre-upgrade-unknown.db')
-        before, source = tree(self.backups), tree(self.state)
-        out, _ = self.wrapper('retention_plan', plan=True)
-        plan = json.loads(out)
-        require(tree(self.backups) == before and tree(self.state) == source, 'plan_readonly_bytes_names_mtime')
-        require(plan['mode'] == 'plan' and plan['verified'] == 9 and plan['ignored'] == 2, 'plan_inventory')
-        require(set(plan['protected']) == self.latest, 'plan_latest_two')
-        require(set(plan['delete']) == self.delete, 'plan_exact_retention_deletes')
+        before = tree(self.backups)
+        plan = self.checked_plan('retention_plan')
         self.unsafe_before = {name: before[name] for name in self.unsafe}
         self.plan = plan
         return plan
 
     def prune(self):
+        prior = dict(self.known)
         self.wrapper('retention_apply')
-        for name in self.delete:
-            require(not (self.backups / name).exists() and not (self.backups / (name + '.sha256')).exists(), 'obsolete_pair_deleted')
-        # A third current-hour snapshot may retire the older of the original two;
-        # latest2 protection before apply forbids pre-copy deletion, not future retention.
-        out, _ = self.wrapper('post_apply_plan', plan=True)
-        plan = json.loads(out)
-        require(not plan['delete'] and plan['ignored'] == 2, 'post_apply_plan_clean')
-        require(self.second_copy.exists(), 'prior_latest_preserved')
-        require(all((self.backups / name).exists() for name in self.keep - self.latest), 'preferred_buckets_preserved')
+        unsafe_db = {name for name in self.unsafe if name.endswith('.db')}
+        observed = {path.name for path in self.snapshots()} - unsafe_db
+        new_names = observed - set(prior)
+        require(len(new_names) == 1, 'one_new_snapshot')
+        name = new_names.pop()
+        self.declare(self.backups / name, 'second')
+        created = self.known[name].created  # The real wrapper captures one UTC instant for both plans.
+        pre_keep = expected_retained(list(prior.values()), created, self.plan['budget_bytes'], self.plan['estimate_bytes'])
+        candidates = [item for item in prior.values() if item.name in pre_keep] + [self.known[name]]
+        selected = expected_retained(candidates, created, self.plan['budget_bytes'])
+        require(observed == selected, 'retained_exact_identities')
+        for removed in set(prior) - selected:
+            require(not (self.backups / (removed + '.sha256')).exists(), 'obsolete_pair_deleted')
+        self.known = {item.name: item for item in candidates if item.name in selected}
+        plan = self.checked_plan('post_apply_plan')
         after = tree(self.backups)
         require({name: after.get(name) for name in self.unsafe} == self.unsafe_before, 'unsafe_unchanged')
-        verified_names = {path.name for path in self.snapshots()} - {name for name in self.unsafe if name.endswith('.db')}
-        require(len(verified_names) == 5 and plan['verified'] == 5, 'retained_pair_count')
-        for name in verified_names:
-            self.verify(self.backups / name, self.second_image)
-        return {'planned_obsolete_deleted': len(self.delete), 'verified_retained': plan['verified'],
-                'ignored': plan['ignored'], 'protected': plan['protected']}
+        for item in self.known.values():
+            require(sha(self.backups / item.name) == item.digest, 'declared_snapshot_hash')
+            self.verify(self.backups / item.name, self.images[item.origin])
+        return {'obsolete_deleted': len(set(prior) - selected), 'verified_retained': plan['verified'],
+                'ignored': plan['ignored'], 'protected': plan['protected'],
+                'provenance': [{'name': item.name, 'origin': item.origin, 'sha256': item.digest}
+                               for item in sorted(self.known.values(), key=lambda item: item.order)]}
 
     def unsafe_source(self):
         before = tree(self.backups)
@@ -157,7 +191,7 @@ class Acceptance:
         directory = self.work / 'restore'
         directory.mkdir(mode=0o700)
         restored = directory / 'board.db'
-        shutil.copyfile(self.second_copy, restored)
+        shutil.copyfile(self.recovery, restored)
         restored.chmod(0o600)
         require(database(restored) == self.second_image, 'restore_copy_exact')
         before = tree(self.backups)
@@ -185,7 +219,7 @@ def main():
     parent = args.output.parent.stat()
     require(parent.st_uid == os.getuid() and stat.S_IMODE(parent.st_mode) == 0o700, 'output_parent_private0700')
     require(0 < args.timeout <= 300, 'bounded_timeout')
-    report = {'suite': 'backup-process-068-v1', 'status': 'RUNNING', 'cases': [], 'processes': [],
+    report = {'suite': 'backup-process-068-v2-work073', 'status': 'RUNNING', 'cases': [], 'processes': [],
               'environment': {'os': platform.system(), 'release': platform.release(), 'arch': platform.machine(),
                               'python': platform.python_version(), 'sqlite': sqlite3.sqlite_version},
               'hashes_before': {'binary': sha(args.binary), 'wrapper': sha(args.backup_wrapper),

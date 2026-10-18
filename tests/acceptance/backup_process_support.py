@@ -1,5 +1,7 @@
 """Private evidence and bounded child-process support for backup_process.py."""
 import contextlib
+from dataclasses import dataclass
+import datetime as dt
 import hashlib
 import json
 import os
@@ -69,6 +71,71 @@ def database(path):
 
 def counts(image):
     return {name: len(rows) for name, rows in image[2].items()}
+
+
+@dataclass(frozen=True)
+class KnownSnapshot:
+    """Declared fixture identity and content origin; never inferred from plan output."""
+    name: str
+    created: dt.datetime
+    mtime_ns: int
+    size: int
+    digest: str
+    origin: str
+
+    @property
+    def order(self):
+        return self.created, self.mtime_ns, self.name
+
+
+def known_snapshot(path, origin):
+    created = dt.datetime.strptime(path.name.split('-')[1], '%Y%m%dT%H%M%SZ').replace(tzinfo=dt.timezone.utc)
+    return KnownSnapshot(path.name, created, path.stat().st_mtime_ns,
+                         path.stat().st_size + path.with_name(path.name + '.sha256').stat().st_size,
+                         sha(path), origin)
+
+
+def expected_retained(records, now, budget=5 * 1024 ** 3, estimate=0):
+    """Contract oracle: enumerate bucket members, choose maxima, then fit logical budget.
+
+    No production module/import/plan output is used. Free-space pressure is excluded
+    separately by the small process fixture; this oracle models the logical budget.
+    """
+    ordered = sorted(records, key=lambda item: item.order, reverse=True)
+    protected = {item.name for item in ordered[:2]}
+    selected = set(protected)
+    current_hour = now.replace(minute=0, second=0, microsecond=0)
+    buckets = [current_hour - dt.timedelta(hours=offset) for offset in range(24)]
+    for hour in buckets:
+        members = [item for item in records if hour <= item.created < hour + dt.timedelta(hours=1)
+                   and item.created <= now]
+        if members:
+            selected.add(max(members, key=lambda item: item.order).name)
+    for offset in range(7):
+        date = now.date() - dt.timedelta(days=offset)
+        members = [item for item in records if item.created.date() == date and item.created <= now]
+        if members:
+            selected.add(max(members, key=lambda item: item.order).name)
+    for item in reversed(ordered):
+        if sum(record.size for record in records if record.name in selected) + estimate <= budget:
+            return selected
+        if item.name in selected and item.name not in protected:
+            selected.remove(item.name)
+    require(sum(item.size for item in records if item.name in selected) + estimate <= budget,
+            'oracle_budget_preserving_two')
+    return selected
+
+
+def expected_at_interval(records, start, end, budget, estimate):
+    """Exact possibilities when an unmodified child crosses UTC clock boundaries."""
+    require(start <= end, 'fixture_clock_monotonic')
+    instants = {start, end}
+    boundary = start.replace(minute=0, second=0, microsecond=0) + dt.timedelta(hours=1)
+    while boundary <= end:
+        instants.add(boundary)
+        boundary += dt.timedelta(hours=1)
+    instants.update(item.created for item in records if start <= item.created <= end)
+    return {frozenset(expected_retained(records, instant, budget, estimate)) for instant in instants}
 
 
 class Evidence:
