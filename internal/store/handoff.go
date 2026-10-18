@@ -34,20 +34,20 @@ func handoffEpic(b *board, t *core.Task, owner string, version int64, reason, se
 
 // HandoffEpic is the local administrator entrypoint, unavailable to bearer API.
 func (s *Store) HandoffEpic(ctx context.Context, key, owner string, version int64, reason, actor string) (core.Task, error) {
-	var out core.Task
 	if !bounded(actor, 128) {
-		return out, core.Fail("VALIDATION", "local actor required")
+		return core.Task{}, core.Fail("VALIDATION", "local actor required")
 	}
-	err := s.adminTransaction(ctx, func(b *board, now time.Time) error {
+	// Return the entity through transaction so its complete outward graph is
+	// detached while an error can still roll back this administrative mutation.
+	return transaction(s, ctx, false, func(b *board, now time.Time) (core.Task, error) {
 		t, err := taskFor(b, key)
 		if err != nil {
-			return err
+			return core.Task{}, err
 		}
-		out, err = handoffEpic(b, t, owner, version, reason, "", now)
+		out, err := handoffEpic(b, t, owner, version, reason, "", now)
 		if err == nil {
 			b.Events[len(b.Events)-1].Reason = actor + ": " + reason
 		}
-		return err
+		return out, err
 	})
-	return out, err
 }

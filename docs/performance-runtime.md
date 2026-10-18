@@ -1,10 +1,10 @@
 # Производительность и schema4
 
 Реализация WORK057 следует [контракту053](performance-contract-053.md).
-Независимая проверка063 выявила открытые блокеры: Create пишет shared done-epic
-мимо COW, local HandoffEpic возвращает alias nested поля. **REQUEST CHANGES**;
-исправления назначает root отдельному свежему исполнителю. Ниже описан механизм
-и его текущие исключения, не готовый к выпуску runtime.
+Независимая проверка063 выявила два блокера изоляции snapshot. WORK066 исправляет
+Create done-epic и local HandoffEpic; авторские регрессии и исходные reviewer
+probes проходят. До независимого повторного ревью и отдельной QA эти исправления
+не приняты. Ниже описан механизм, не готовый к выпуску runtime.
 Это не подтверждение p95/RSS на VPS. Текущий target runtime,
 независимые review/security и QA фиксируются отдельно в TASK003.
 
@@ -37,15 +37,18 @@ replay не требует живой lease и ничего не продлев�
 
 Candidate содержит отдельные maps, общие immutable entities и dirty journal.
 Первый editTask/editSession/editNote делает полный JSON detach одного entity.
-В Create ветка done-epic пока пишет через readTaskFor; reviewer063 подтвердил
-изменение committed RAM и расхождение с SQL даже после rejected candidate.
-Это открытый blocker, который должен закрыть следующий fixer.
+Create открывает завершённый parent через тот же reopenEpic/editTask barrier.
+Повторный lookup внутри reopenEpic учитывает уже открытый verifier target:
+один эпик меняет version и получает reopen audit только один раз. Отказ после
+этого изменения оставляет исходный snapshot; успешный reopen входит в dirty SQL.
 Новый объект регистрируется в journal. Metadata и role generations сохраняются
 только при изменении; UPSERT готовится один раз на изменённую таблицу.
 Expiry имеет отдельную границу candidate, поэтому доменный отказ не сохраняет
 частичные изменения/renewal/replay. Generic transact/mutate DTO detach до commit: aliases
-RawMessage/attempts/lease/maps/slices не получают доступа к snapshot. Local HandoffEpic обходит этот generic результат:
-это открытый blocker063, а не подтверждённый detached outward path.
+RawMessage/attempts/lease/maps/slices не получают доступа к snapshot. Local
+HandoffEpic также возвращает Task через generic transaction с полным detach
+до commit, сохраняя admin-режим без материализации expiry. Ошибка копирования
+может откатить операцию; после успешного commit дополнительного detach нет.
 
 Индексы numeric order, role tasks, ownership, active lease areas, title trigrams,
 epic children, verification и reverse dependencies обновляются dirty delta
@@ -140,4 +143,6 @@ filtered events20 0.487ms, stats20owners2.487ms; обычные мутации0.
 Peak RSS всего streaming test process (seed+migration+API)79,904,768bytes
 (76.20MiB); это macOS diagnostic, не target VPS RSS. Annual raw fixture SHA256
 `4ef88b11725e7a53c3a8b522666568afd7b4c43e52b57d46be14534cdc3e096b`.
-Локальные числа не снимают R063-01/02 и не означают correctness approve.
+Локальные числа не означают correctness approve. Исправления R063-01/02 и их
+negative controls, SQL/cache/restart/replay и nested DTO проверки записаны в
+[WORK066](work/WORK-066-performance-fixes.md); независимая приёмка остаётся отдельной.

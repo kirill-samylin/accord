@@ -69,11 +69,7 @@ func (s *Store) Create(ctx context.Context, a core.Actor, in core.CreateInput) (
 				t.Review = &core.Review{TargetKey: in.TargetKey, TargetCommit: in.TargetCommit, TargetGeneration: generation, AuthorSession: target.AuthorSession}
 				reopenEpic(b, target.EpicKey, now, a.SessionID)
 			}
-			if epic.State == "done" {
-				epic.State = "open"
-				epic.Version++
-				emit(b, now, "epic_reopened", epic.Key, a.SessionID)
-			}
+			reopenEpic(b, in.EpicKey, now, a.SessionID)
 		}
 		if err := prepareAreas(b, t); err != nil {
 			return zero, err
