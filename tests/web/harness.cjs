@@ -28,9 +28,9 @@ async function port() {
   const s = net.createServer(); await new Promise(r => s.listen(0, '127.0.0.1', r));
   const n = s.address().port; await new Promise(r => s.close(r)); return n;
 }
-async function server(bin, state, n, web = true) {
+async function server(bin, state, n, web = true, ttl = {}) {
   const origin = `http://127.0.0.1:${n}`;
-  const args = ['serve', '--db', path.join(state, 'board.db'), '--listen', `127.0.0.1:${n}`, '--task-ttl', '20s', '--session-ttl', '10m'];
+  const args = ['serve', '--db', path.join(state, 'board.db'), '--listen', `127.0.0.1:${n}`, '--task-ttl', ttl.task || '20s', '--session-ttl', ttl.session || '10m'];
   if (web) args.push('--web-origin', origin, '--web-data', path.join(state, 'web'));
   const child = cp.spawn(bin, args, {env, stdio: ['ignore', 'ignore', 'ignore']});
   let exited = false; child.once('exit', () => {exited = true;});

@@ -62,3 +62,54 @@ HTTP fixture разрешён только literal loopback. Secure/HttpOnly/Sam
 production TLS/proxy и физический второй ПК этим набором не аттестуются.
 Human→developer task кейс проверяет создание/видимость/захват, не полный цикл
 выполнения developer/evidence/review. Независимый UI вердикт — WORK092.
+
+## Control UI TASK-005
+
+После актуального code/security approve и freeze приложения:
+
+```sh
+node tests/web/control.cjs
+```
+
+Обязательны `ACCORD_QA_BINARY`, `ACCORD_QA_DIR`, `ACCORD_QA_PLAYWRIGHT` и
+`ACCORD_QA_CHROME` из запуска выше. Новый уникальный private QA_DIR на каждый
+запуск. `control-results.json` содержит scope, фактические checks, test/binary SHA,
+process IDs и ограничения. Failed JSON/screenshots сохраняются. Полный прежний
+`browser.cjs` запускается отдельно один раз после финального freeze; его14
+journeys/domain assertions сохранены, новые labels/navigation учитываются.
+
+Новый набор создаёт через human/native настоящие112задач и2эпика. Проверяет
+точные totals, whole-project literal/cyrillic/HTML search после первой страницы,
+list/board/filter-bound paging,2agent sessions/human/current lease/release/revoked
+credential с будущим TTL, DESC activity с insert между страницами, реальную
+неполную статистику, single-project read-only settings,12экранов1440/390,
+keyboard drawer/focus, theme persistence и self-hosted Inter.
+
+Polling использует настоящий Go HTTP: offline через browser transport,
+SIGSTOP/SIGCONT только своего synthetic server для in-flight/timeout/recovery,
+реальные401после token revoke и409после GoTTL2s. Playwright Clock ускоряет JS timers;
+в409проверке client Date на60sпозади, чтобы достичь server branch до client guard.
+Go clock/state и HTTP ответы не подменяются. Отдельный answer draft и его lease
+должны остаться прежними. Terminal401/409 не порождают следующие polls; explicit
+continue остаётся protected POST.
+
+Обычный Playwright launch включает focus emulation, поэтому реальную hidden
+вкладку проверяет отдельный headed Chrome с новым private profile и loopback CDP.
+Документированный `connectOverCDP({noDefaults:true})` применяется только к этому
+новому default context. Background/foreground вкладки должны фактически дать
+`document.visibilityState=hidden/visible`; иначе проверка FAIL. Этот browser
+закрывается после проверки, профиль и доказательства остаются private.
+
+Быстрые scopes для независимого review: `ACCORD_QA_CONTROL_SCOPE=data-only`,
+`poll-only`, `visibility-only`, `layout-poll-only` (затронутый retest). Scope явно записывается; subset не выдаётся за
+полный прогон. Никакие production state/tokens/SSH/system services не используются.
+Для повторяемой ручной проверки используйте те же synthetic данные/маршруты:
+ожидания приведены в WORK107, измерения layout/screenshots лежат рядом с JSON.
+Независимый визуальный вердикт принадлежит design-reviewer.
+
+Официальные API стенда: [Playwright Clock](https://playwright.dev/docs/api/class-clock),
+[offline transport](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-offline),
+[CDP noDefaults](https://playwright.dev/docs/api/class-browsertype#browser-type-connect-over-cdp).
+Неизменённые `upload-process.cjs`120s/50MiB проверены в QA095/097; их прежний
+результат отделён от текущего control/browser прогона. Full makecheck/race,
+production HTTPS/deployment и второй физический ПК здесь не проверяются.

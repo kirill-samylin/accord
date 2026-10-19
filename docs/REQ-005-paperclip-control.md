@@ -5,8 +5,8 @@
   показывать работающих агентов; предусмотреть простое подключение проектов,
   настройку агентов и координацию при дальнейшем масштабировании. «Приступай».
 - Текущая база a6501d8, работа codex/web-control, отдельный worktree.
-- Статус: анализ/контракт, затем реализация, независимое ревью, QA и выпуск
-  в уже разрешённом контуре Accord. Старые ответы, файлы, токены и MCP сохраняются.
+- Статус: текущая поставка TASK005 завершена/установлена (sourceac6c965),
+  оставшиеся будущие волны перечислены WORK100. Старые ответы/файлы/MCP сохранены.
 - Paperclip — явно выбранный пользователем источник UI/поведения. Это заменяет
   прежний выбор простого интерфейса; отдельный Claude Design экспорт не требуется.
 - Tandem OFF. Davinci read-only; общая очередь и профили оттуда применяются
@@ -18,7 +18,7 @@
 
 | WORK | Роль | Область записи | Зависимость | Статус |
 | --- | --- | --- | --- | --- |
-| 099 | coordinator | этот REQ и общий контракт/приёмка | запрос | в работе |
+| 099 | coordinator | этот REQ и общий контракт/приёмка | запрос | TASK005 завершена |
 | 100 | analyst | docs/work/WORK-100-paperclip-analysis.md, /private/tmp/accord-control-099/analysis/ | запрос, reference/current source | завершено (WORK100) |
 | 101 | architect | docs/work/WORK-101-control-architecture.md, /private/tmp/accord-control-099/architecture/ | запрос, current source | завершено (WORK101) |
 | 102 | design-reviewer | docs/work/WORK-102-reference-ui.md, /private/tmp/accord-control-099/reference-ui/ | reference | завершено, early audit (WORK102) |
@@ -52,8 +52,8 @@
 18 категорий и будущие волны — [WORK100](work/WORK-100-paperclip-analysis.md).
 Это этап доработки работающего веб-клиента, не утверждение полной Paperclip parity.
 
-- WORK103 /control_backend103 — backend/core/store/web, резерв активен.
-- WORK104 /control_ui104 — webui/templates/assets/render, резерв активен.
+- WORK103 /control_backend103 — backend/core/store/web, реализация завершена.
+- WORK104 /control_ui104 — webui/templates/assets/render, реализация завершена.
 - WORK105 /control_security105 — ранняя security-проверка контракта, без source edits.
 - Root099 — единственный координатор/редактор REQ/TASK/docs/release.
 Новые пользовательские чаты не создаются. Модели наследуются; Claude bindings

@@ -1,8 +1,9 @@
 # WORK-099 — интеграция и выпуск control UI Accord
 
 - Роль: root, координатор/интегратор; модель наследуется. Родитель TASK-005/REQ-005.
-- Статус: code/unit приняты; actual visual/browser/process QA в работе, выпуск впереди.
-- Вход: действующий web release d9aa4c7, Git a6501d8. Текущий source a30746c.
+- Статус: **завершено и установлено**. QA107/APPROVE115/guarded release приняты;
+  source ac6c965, последующие изменения только QA/reports/docs.
+- Вход: действующий web release d9aa4c7, Git a6501d8. Текущий source ac6c965.
 - Владелец общей TASK/REQ/документации/release — root. Исходники authored103/104;
   независимые review106/109, ранние analyst100/architect101/design102/security105.
 - Davinci read-only, Tandem OFF по прямому указанию пользователя. Нет имитации
@@ -65,3 +66,50 @@ SHA3c934e54af980dccad37878dcc980a939f9e66e532287199e64664830aefb697 unchanged.
   browser/native/control/file smoke, новый backup и post-restart checks, push.
 - Физический второй ПК, реальные provider execution и load/SLA здесь NOT-RUN;
   текущий scope не является обещанием полной Paperclip parity/полной V1.
+
+## Последний пакет исправлений и freeze
+
+QA107 обнаружил реальный HTTP400 для canonical epic E-N; root113 подтвердил
+fail-before-fix и исправил раздельную E/T валидацию с negative unit regression.
+Root111 исправил240px mobile drawer, status dot specificity и пустую рамку.
+Independent112 APPROVE ac6c965; actual visual114 APPROVE,8PNG/source214 совпали.
+Mac final binary SHA2569efa45893de16e369d3a12bd21add9ca9793f891993f229a5af0539250f25a27.
+Manifest SHA256451e6888353900b1ba8016bdf2830c185b961b892d2749bb6fc83d10bae50a1c.
+Повторный полный make check оправдан Go113: PASS, exit0, log make-check-final.log.
+Прежний browser14/14 на этом binary PASS, новый control suite в завершении.
+Linux release собирается в чистом detached ac6c965, поздние QA/docs не меняют
+принятые production файлы. Review115 — новые tests плюс release/operator parity.
+
+QA107 final acceptance24cases PASS по независимым scopes: прежний14 один раз,
+новые data5/layout1/poll4. Кейс actual hidden/visible требует headedChromeCDP,
+не JS override. Reviewer115 нашёл nondeterministic clock-pause race теста,
+не app defect; tester107 исправил bounded fixed anchor до navigation. Poll4/4
+повторно PASS; полный14/неизменённыйdata без причины не повторялись.
+Final testmanifest SHA3f9e0e2835fb68626328cd0425cc3cdfb0906483e35c4ce6a9e75dde97f55f8a;
+acceptanceevidence SHAf85892406334575cf418c9d88e81a94c505583fe3dab7a245381b6d3355bb217.
+
+Clean Linux release ac6c965 SHA1db9fee0874c3709b3688bd2a31c4e6b7ac28525760f0a4b91de4102fdd4a9ce;
+27files strict manifest4f79b2a9c4daad39008f138d41837b57d4c1e157e24005cc0022ba349136ab2f.
+Python explicit USTAR transfer + remote exactfile/hash verification PASS; guarded
+stage real nginx/systemd PASS, live_changed=false, inventory/env unchanged.
+Существующий pc2credential с этогоMac даёт trustedHTTPS/tools12 PASS доupgrade.
+Прежний localmac.token отсутствует (не удалялся в этой задаче); такой доступ
+NOT-RUN, токены не переиздаются/не отзываются. Physical2PC остаётся NOT-RUN.
+Secrets scan439workingfiles+82newhistoryblobs: доступный realpc2token, private
+endpoint и privatekey markers не найдены; отсутствующий macsecret недоступен
+для literalcomparison. Proof остаётся private, никаких values вGit.
+
+## Выпуск и закрытие
+
+APPROVE115 получен доapply. Guarded applyac6c965 PASS. Actual authenticated
+public trusted HTTPS smoke36checks PASS: pc2credential сMac, anonymous401/Origin403/
+cookieboundary/native12, все10browserroutes/controlJSON/poll/mobile/theme, exact
+Inter/licensing и ранее загруженныйdesignSHA/MCPresource. Реальные task/design
+фиктивно не создавались, usertoken не отзывался. Mac отсутствующийfile NOT-RUN.
+
+Finalize PASS: новый consistency snapshot/validate_snapshot, timer preservation,
+postrestart readiness, strict web/private backup ownership/modes, current
+revision/binaryhash/manifest PASS. Исходные private Serve/Tandem inventory и
+server.env точно сохранены. Private deploy/runtime evidence остаются внеGit.
+После закрытия docs публикуются codex/pilot+codex/web-control (безmainmerge/force);
+source production совпадает сac6c965, документы/тесты не меняют установленныйcode.

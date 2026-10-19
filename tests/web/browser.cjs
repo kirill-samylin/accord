@@ -18,7 +18,7 @@ async function login(file, js = true) {
   const ctx = await browser.newContext({javaScriptEnabled: js, viewport: {width: 1280, height: 900}});
   const p = await ctx.newPage(); await p.goto(origin + '/web/login');
   await p.locator('#token-file').setInputFiles(file);
-  const r = await postButton(p, p.getByRole('button', {name: 'Войти', exact: true}));
+  const r = await postButton(p, p.getByRole('button', {name: 'Войти в проект →', exact: true}));
   assert.equal(await r.headerValue('referrer-policy'), 'same-origin');
   assert.equal(await p.locator('.identity').count(), 1, 'login failed');
   return {ctx, p};
@@ -91,11 +91,11 @@ async function main() {
   report.browser = browser.version(); report.binary_sha256 = sha(fs.readFileSync(binary)); report.old_binary_sha256 = sha(fs.readFileSync(required('ACCORD_QA_OLD_BINARY')));
   const a = await login(human); const b = await login(second); const basic = await login(human, false);
   await basic.ctx.close(); pass('login-real-file-js-and-basic-post');
-  for (const size of [{width: 1280, height: 900}, {width: 390, height: 844}]) {
+  for (const size of [{width: 1440, height: 900}, {width: 390, height: 844}]) {
     await a.p.setViewportSize(size);
     for (const url of ['/web/?view=questions', '/web/?view=tasks', '/web/designs', '/web/history']) {
       const r = await a.p.goto(origin + url); assert.equal(r.status(), 200);
-      assert.equal(await a.p.locator('nav[aria-label="Основные разделы"] a').count(), 4);
+      assert.equal(await a.p.locator('nav[aria-label="Основные разделы"] a').count(), 10);
       assert(await a.p.locator('h1').isVisible());
       assert(await a.p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'horizontal overflow');
     }

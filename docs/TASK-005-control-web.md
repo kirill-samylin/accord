@@ -1,88 +1,86 @@
 # TASK-005 — панель управления Accord по Paperclip
 
-- Родитель: [REQ-005](REQ-005-paperclip-control.md).
-- Источник: пользователь 19.10.2026 выбрал Paperclip как источник дизайна и
-  возможностей и поручил «Приступай». Действующий сервис Accord сохраняется.
-- Статус: в работе, этап реализации после аналитического, архитектурного
-  и раннего визуального аудита. Текущий результат ещё не принят и не установлен.
-- База: a6501d8; ветка codex/web-control, отдельная рабочая копия.
-- Контракт: [control-web-contract.md](control-web-contract.md), DTO §8 и
-  приоритетные уточнения §9. Визуальный источник — WORK102, Paperclip5739a53.
-- Общие REQ/TASK, назначения и приёмку ведёт root099. Давинчи только для чтения,
-  Tandem отключён по прямому указанию пользователя.
+- Родитель: [REQ-005](REQ-005-paperclip-control.md); прямое поручение19.10.2026.
+- Статус: **завершена и установлена**, этап выпуска принят.
+- База a6501d8, ветка codex/web-control; production release **ac6c965**.
+- Контракт: [control-web-contract.md](control-web-contract.md), DTO§8/уточнения§9.
+- Paperclip source5739a53/MIT, Inter4.1/OFL; exact provenance/лицензии сохранены.
+- Общую приёмку ведёт root099. Давинчи read-only, TandemOFF по прямому указанию.
 
-## Результат поставки
+## Результат
 
-Рабочий интерфейс с боковой навигацией и обзором проекта, реальные сессии агентов
-с текущими задачами и проверкой действительности доступа, список/доска задач,
-поиск по всему проекту, лента событий, статистика, текущий проект и настройки.
-Существующие вопросы, ответы, дизайн и история решений продолжают работать.
+Рабочая боковая навигация, обзор проекта, действительные сессии агентов с текущими
+задачами, список/доска задач, поиск по всему проекту, лента событий, статистика,
+текущий проект и настройки. Светлая/тёмная тема, мобильное меню, self-hosted Inter.
+Прежние вопросы/ответы, загрузка дизайна и история решений продолжают работать.
+Автоматически обновляются только overview counters; roster/events имеют свои
+времена чтения. Сессия/действительный доступ не выдаются за работающий OS процесс.
 
-Будущее подключение нескольких проектов и управляемый запуск агентов получают
-отдельные границы данных, доступа и исполнения. Настройка моделей, бюджеты,
-навыки, интеграции и остальные категории Paperclip не подменяются формами без
-работающего backend. Полный целевой roadmap остаётся в REQ-005/WORK100; эта
-поставка не объявляет полную совместимость со всем Paperclip.
+PC-01 закрыт прямым ответом пользователя: «Подключение и контроль уже запущенных
+агентов». Текущий scope не запускает внешние процессы. Изоляция нескольких
+проектов, agent profiles/provider execution, бюджеты/skills/integrations относятся
+к будущим волнам WORK100. Единственный настроенный board честно показан одним
+проектом; эпики не объявлены tenant projects. Полная Paperclip parity не заявлена.
 
-PC-01 закрыт ответом пользователя19.10.2026: «Подключение и контроль уже запущенных
-агентов». Текущая поставка не включает запуск внешних процессов из панели.
+## Участники и независимая приёмка
 
-## Приёмка
+| WORK | Роль / результат |
+| --- | --- |
+| 099 | root coordinator/integrator/release — завершено |
+| 100 | analyst —18-category inventory/AC/roadmap принят |
+| 101 | architect — readers/DTO и будущие ACL/isolation границы приняты |
+| 102 | design-reviewer — ранний source/pixel audit, не final approve |
+| 103/104 | разные backend/UI authors — implementation/targeted tests завершены |
+| 105 | security — ранний contract audit, не final source approve |
+| 106 | independent code/security46fffb9 — P2 exact draftLF найден |
+| 108/109 | другой author исправил draft; независимый delta APPROVEa30746c |
+| 110 | actual visual a30746c — два P2 mobile width/status colors найдены |
+| 111/113 | root исправил CSS/empty paragraph и epic E-N validator; fail-before proof |
+| 112 | independent code/security batch APPROVEac6c965/source214 |
+| 114 | independent actual visual APPROVEac6c965,8осмотренныхPNG |
+| 107 | independent tester —24accepted checks в точных scopes |
+| 115 | independent tests/release review — APPROVE; data5/poll4 собственные PASS |
 
-WORK100 AC-01…10 и архитектурные AC; независимые code/security/actual UI reviews;
-process/browser QA после code approve; полный make check один раз при приёмке;
-фактический HTTPS upgrade/smoke, резервная копия и публикация проверенной ветки.
-Изменённый код получает повторную проверку затронутой области.
+Reviewer115 нашёл race тестовых clock.setup, tester107 исправил общий helper;
+исходный FAIL сохранён, affected4/4 повторены tester и reviewer. Product assertions
+не ослаблены. Reviewer не автор соответствующего исправления. Именованные модели
+Claude недоступны; авторы/проверяющие — разные агенты с наследованной моделью.
 
-Сохранить auth/Origin/CSRF/leases/MCP12/cookies/native clients, базы, файлы и историю.
-Невыпущенные D4/E не включаются. Реальные секреты и параметры подключения в Git
-не помещаются. Физический второй ПК не подменяется проверкой его токена с Mac.
+## Фактические проверки
 
-## Назначения и состояние
+- Полный make check после Go113 PASS: fmt/vet/Go/native process acceptance,
+  76infra tests/race/build. Python3.14 ResourceWarning сохранены, suite exit0.
+- QA107: прежние14browser journeys один раз PASS; новыеdata5/layout1/poll4 PASS.
+  Это24accepted checks по scopes, не выдуманный один монолитный прогон.
+- Реальные Go/native/Chrome; SQL112task counts/search/pagination/filters/credential
+  revoke/DESCactivity/stats. Poll offline/timeout/one-in-flight/retained drafts,
+  actual headed hidden/visible, настоящие401/409 и terminalstop PASS.
+- Final12test manifest SHA2563f9e0e2835fb68626328cd0425cc3cdfb0906483e35c4ce6a9e75dde97f55f8a;
+  accepted evidence SHAf85892406334575cf418c9d88e81a94c505583fe3dab7a245381b6d3355bb217.
+- Linux release из чистого detached ac6c965, source214 совпал сQA. VCSmodified=false,
+  Linuxamd64CGO0; SHA1db9fee0874c3709b3688bd2a31c4e6b7ac28525760f0a4b91de4102fdd4a9ce.
+  Mac QA binary имеет другую платформу/флаги, byteidentity не заявлена.
 
-| WORK | Исполнитель / роль | Область | Статус |
-| --- | --- | --- | --- |
-| 099 | root, coordinator | REQ/TASK, интеграция, документация, выпуск | в работе |
-| 100 | paperclip_analysis100, analyst | inventory/сценарии/AC/roadmap | завершено |
-| 101 | control_architecture101, architect | readers/DTO/будущая изоляция | завершено |
-| 102 | paperclip_ui102, design-reviewer | исходники/пиксели/tokens/state gaps | ранний аудит завершён |
-| 103 | control_backend103, developer | core/control, store/control, web | реализация и targeted tests |
-| 104 | control_ui104, developer | webui/templates/assets/render | реализация |
-| 105 | control_security105, security | ранние security-границы и negative AC | завершено, не final source approve |
+## Выпуск
 
-Backend103 и UI104 работают с непересекающимися файлами по §9 контракта.
-Следующий этап — независимые review конкретной версии, затем browser/process QA.
-Именованные модели Claude недоступны; авторы и проверяющие — разные агенты с
-наследованной моделью. Самопроверка автора не выдаётся за независимый approve.
+27manifestfiles переданы явным Python USTAR без AppleDouble/extras; remote exact
+file/hash verification PASS. Guarded stage actual nginx/systemd PASS; env/inventory
+parity independently115 PASS. Guardedapply PASS; authenticated public HTTPS
+browser/native smoke **36checks PASS**, включая все10разделов, cookie/Origin/auth,
+font/license assets, control JSON/poll, темы/mobile и прежнийassetSHA/MCPmetadata.
+Finalize PASS: consistent snapshot проверен, timers активны, postrestart readiness,
+permissions иmanifest PASS, исходные private routes/Tandem/env точно сохранены.
 
-## Очередь проверки
+Application source послеac6c965 не менялся: поздний commit включает QA/отчёты/docs.
+Публикация проверенных codex/pilot и codex/web-control выполняется координатором;
+main не меняется. Точный server origin, параметры иcredentials вGit не записаны.
 
-- WORK106 control_review106: независимый code/security review; backend103 frozen
-  с manifest, UI104 ещё завершает targeted coverage. Общий approve только после
-  полного freeze и сверки хешей; production code reviewer не редактирует.
-- WORK107 control_qa107: подготовка acceptance плана/окружения; новые browser/
-  process tests пишет и запускает только после явного code approve106.
+## Практические ограничения
 
-WORK106 final code/security на46fffb9: CHANGES REQUESTED, один P2 R106-01:
-форматирование textarea добавляет LF к точному сохранённому черновику. Остальные
-source/unit границы приняты. До исправления и delta approve browser QA не начинается.
-WORK108 — новый developer для узкого исправления templates task/create/layout
-и exact-value unit regression; предыдущий UI104 завершил запись, резерв этих
-файлов передаётся108. Остальные production-файлы остаются frozen.
-
-WORK110 — отдельный design-reviewer: сравнивает actual UI с Paperclip reference
-на отдельной synthetic loopback fixture, source не меняет. Приоритетный baseline
-current streamlined, Inter/neutral tokens/sidebar/density изWORK102. Подготовка
-reference сейчас, actual screenshots на новом binary послеfix108. Это независимая
-визуальная проверка, не замена code/security approve или process acceptance107.
-
-Design110 actual a307: CHANGES REQUESTED, два P2: fullscreen mobile drawer вместо
-240px и серые status badge dots из-за CSS specificity. WORK111 root исправляет
-только shell.css/cards.css/layout empty status paragraph; резерв передан после
-завершения authors104/108. Последний P3 включён в тот же батч, без отдельного цикла.
-Нужны code delta112 и actual visual retest110. QA107 пишет tests, finalfull14 ждёт.
-
-QA107 обнаружил HTTP regression фильтра E-N; root113 подтвердил fail-before-fix,
-исправил prefix validation и добавил actual-handler unit на пять old/new routes.
-Code delta112 проверит общий узкий пакет111(CSS/emptyparagraph)+113(validators/tests).
-Нативные token/Origin/lease/MCP12 и схемы не менялись. Affected fourpackagesPASS.
+- Токен второгоПК проверен сMac; физический второйПК **NOT-RUN**.
+- Старый mac.token сейчас отсутствует локально; этот credential smoke NOT-RUN,
+  он не удалялся/не перевыпускался вTASK005. Доступ второгоПК сохранён.
+- Реальные provider process execution, SLA/load и полная V1/Paperclip parity
+  **не входят в поставку**. Пределы и следующие этапы — REQ005/WORK100.
+- Browser/process source/evidence находятся в WORK107/115; приватные runtime
+  снимки, токены, базы и параметры не копируются вGit.

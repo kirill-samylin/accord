@@ -6,7 +6,8 @@
 `docs/requirements.md`, технический контракт — `docs/architecture.md` и
 `docs/api.md`, состояние работы — `docs/TASK-001-pilot.md` и последующая
 проверка/публикация `docs/TASK-002-publication-readiness.md`; текущее продолжение
-до рабочего сервиса — `docs/TASK-003-working-service.md`.
+до рабочего сервиса — `docs/TASK-003-working-service.md`; веб-версия —
+`docs/TASK-004-human-web.md`, текущая панель — `docs/TASK-005-control-web.md`.
 
 ## Работа
 
