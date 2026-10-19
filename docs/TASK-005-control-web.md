@@ -75,3 +75,14 @@ WORK110 — отдельный design-reviewer: сравнивает actual UI �
 current streamlined, Inter/neutral tokens/sidebar/density изWORK102. Подготовка
 reference сейчас, actual screenshots на новом binary послеfix108. Это независимая
 визуальная проверка, не замена code/security approve или process acceptance107.
+
+Design110 actual a307: CHANGES REQUESTED, два P2: fullscreen mobile drawer вместо
+240px и серые status badge dots из-за CSS specificity. WORK111 root исправляет
+только shell.css/cards.css/layout empty status paragraph; резерв передан после
+завершения authors104/108. Последний P3 включён в тот же батч, без отдельного цикла.
+Нужны code delta112 и actual visual retest110. QA107 пишет tests, finalfull14 ждёт.
+
+QA107 обнаружил HTTP regression фильтра E-N; root113 подтвердил fail-before-fix,
+исправил prefix validation и добавил actual-handler unit на пять old/new routes.
+Code delta112 проверит общий узкий пакет111(CSS/emptyparagraph)+113(validators/tests).
+Нативные token/Origin/lease/MCP12 и схемы не менялись. Affected fourpackagesPASS.

@@ -38,23 +38,23 @@
   flex: none;
 }
 
-[data-state=in_progress]::before, .status-dot[data-state=in_progress] {
+.badge[data-state=in_progress]::before, .status-dot[data-state=in_progress] {
   background: #2563eb;
 }
 
-[data-state=active]::before, [data-state=done]::before, .status-dot[data-state=done] {
+.badge[data-state=active]::before, .badge[data-state=done]::before, .status-dot[data-state=done] {
   background: #22c55e;
 }
 
-[data-state=ready]::before, [data-state=waiting]::before, .status-dot[data-state=ready] {
+.badge[data-state=ready]::before, .badge[data-state=waiting]::before, .status-dot[data-state=ready] {
   background: #f59e0b;
 }
 
-[data-state=credential_invalid]::before, [data-state=blocked]::before {
+.badge[data-state=credential_invalid]::before, .badge[data-state=blocked]::before {
   background: #dc2626;
 }
 
-[data-state=review]::before {
+.badge[data-state=review]::before {
   background: #7c3aed;
 }
 

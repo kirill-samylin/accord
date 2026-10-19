@@ -67,7 +67,11 @@ func controlQuery(r *http.Request) error {
 			if value != "" && !core.ValidRole(value) {
 				err = core.Fail("validation", "Неизвестная роль")
 			}
-		case "epic_key", "task_key":
+		case "epic_key":
+			if value != "" && !core.ValidControlEpicKey(value) {
+				err = core.Fail("validation", "Неверный ключ эпика")
+			}
+		case "task_key":
 			if value != "" && !core.ValidControlTaskKey(value) {
 				err = core.Fail("validation", "Неверный ключ задачи")
 			}

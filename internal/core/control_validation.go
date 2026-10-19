@@ -14,8 +14,13 @@ func ValidControlSessionID(id string) bool {
 	_, err := hex.DecodeString(id)
 	return err == nil && strings.ToLower(id) == id
 }
-func ValidControlTaskKey(key string) bool {
-	value, ok := strings.CutPrefix(key, "T-")
+func ValidControlTaskKey(key string) bool { return validControlKey(key, "T-") }
+
+// ValidControlEpicKey accepts canonical positive epic identifiers, not task IDs.
+func ValidControlEpicKey(key string) bool { return validControlKey(key, "E-") }
+
+func validControlKey(key, prefix string) bool {
+	value, ok := strings.CutPrefix(key, prefix)
 	n, err := strconv.ParseInt(value, 10, 64)
 	return ok && err == nil && n > 0 && strconv.FormatInt(n, 10) == value
 }
