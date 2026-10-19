@@ -69,6 +69,12 @@ type QueueSummary struct {
 // EventData records facts at mutation time. Missing Data in historical events
 // means unknown provenance; consumers must never reconstruct it from today's task.
 type EventData struct {
+	// Human decisions retain event-time facts after a question is reopened.
+	Answer           *string    `json:"answer,omitempty"`
+	Generation       int64      `json:"generation,omitempty"`
+	AuthorPrincipal  string     `json:"author_principal,omitempty"`
+	QuestionTitle    string     `json:"question_title,omitempty"`
+	Machine          string     `json:"machine,omitempty"`
 	NoteKey          string     `json:"note_key,omitempty"`
 	ScopeType        string     `json:"scope_type,omitempty"`
 	ScopeID          string     `json:"scope_id,omitempty"`

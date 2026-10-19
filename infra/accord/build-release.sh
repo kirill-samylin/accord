@@ -29,6 +29,9 @@ export GOTMPDIR="$repo/.local/toolchains/tmp"
 mkdir -p "$GOTMPDIR"
 GOOS=linux GOARCH=amd64 CGO_ENABLED=0 "$go_bin" build -trimpath -buildvcs=true -o "$release/agent-board" ./cmd/agent-board
 cp infra/accord/*.py infra/accord/*.service infra/accord/*.timer "$release/infra/"
+# Optional web/proxy assets belong to the same reviewed, checksummed release.
+cp -R infra/accord/web "$release/infra/web"
+cp -R infra/accord/public "$release/infra/public"
 printf '%s\n' "$revision" > "$release/SOURCE"
 python3 - "$release" <<'PY'
 import hashlib, pathlib, sys

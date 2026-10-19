@@ -17,6 +17,8 @@ import (
 	"agent-board/internal/core"
 	"agent-board/internal/store"
 	"agent-board/internal/transport"
+	"agent-board/internal/web"
+	"agent-board/internal/webui"
 )
 
 func main() {
@@ -133,6 +135,9 @@ func serve(args []string, out io.Writer) error {
 	db := f.String("db", ".local/board.db", "database path")
 	address := f.String("listen", "127.0.0.1:8080", "loopback IP:port")
 	externalHost := f.String("external-host", os.Getenv("ACCORD_EXTERNAL_HOST"), "exact advertised DNS:port; defaults to ACCORD_EXTERNAL_HOST")
+	webOrigin := f.String("web-origin", os.Getenv("ACCORD_WEB_ORIGIN"), "canonical HTTPS browser origin; enables web UI")
+	webData := f.String("web-data", os.Getenv("ACCORD_WEB_DATA"), "private web state directory")
+	trustedProxy := f.Bool("web-trusted-proxy", false, "trust loopback proxy overwritten client IP")
 	taskTTL := f.Duration("task-ttl", 15*time.Minute, "task lease TTL")
 	sessionTTL := f.Duration("session-ttl", 15*time.Minute, "session and singleton role TTL")
 	if err := parse(f, args); err != nil {
@@ -157,7 +162,33 @@ func serve(args []string, out io.Writer) error {
 		return err
 	}
 	defer s.Close()
-	server := &http.Server{Handler: transport.NewHandlerWithOptions(s, s.Ready, transport.HandlerOptions{ExternalHost: *externalHost}), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: time.Minute, MaxHeaderBytes: 16 << 10}
+	options := transport.HandlerOptions{ExternalHost: *externalHost}
+	ready := s.Ready
+	if *webOrigin != "" {
+		if *webData == "" {
+			return errors.New("web-data required when web-origin is set")
+		}
+		renderer, err := webui.New()
+		if err != nil {
+			return errors.New("cannot initialize web templates")
+		}
+		browser, err := web.New(s, web.Options{Origin: *webOrigin, DataDir: *webData, Renderer: renderer, StaticHandler: renderer.Static(), TrustedProxy: *trustedProxy})
+		if err != nil {
+			return fmt.Errorf("cannot initialize web: %w", err)
+		}
+		defer browser.Close()
+		options.Extra = browser
+		options.Designs = browser
+		ready = func(ctx context.Context) error {
+			if err := s.Ready(ctx); err != nil {
+				return err
+			}
+			return browser.Ready(ctx)
+		}
+	} else if *webData != "" || *trustedProxy {
+		return errors.New("web-origin required for web options")
+	}
+	server := &http.Server{Handler: transport.NewHandlerWithOptions(s, ready, options), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: time.Minute, MaxHeaderBytes: 16 << 10}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	done := make(chan struct{})

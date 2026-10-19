@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -22,11 +23,15 @@ func (b *bridge) mirrorResources(ctx context.Context) error {
 		if count > 32 {
 			return errors.New("too many resource templates")
 		}
-		if template.URITemplate != "accord://notes{?session_id,scope_type,scope_id,limit,cursor,include_deleted}" {
+		switch template.URITemplate {
+		case "accord://notes{?session_id,scope_type,scope_id,limit,cursor,include_deleted}",
+			"accord://designs{?session_id,scope,scope_key,design_id,limit,cursor}",
+			"accord://designs/{asset_id}{?session_id}":
+		default:
 			continue
 		}
 		copy := *template
-		copy.Description = "Read notes for this worker's board session; session_id is optional and cannot select another worker."
+		copy.Description = "Read project metadata for this worker; session_id is optional and cannot select another worker."
 		b.server.AddResourceTemplate(&copy, b.readNotes)
 	}
 	return nil
@@ -39,7 +44,7 @@ func (b *bridge) readNotes(ctx context.Context, request *mcp.ReadResourceRequest
 		return nil, errors.New("NO_SESSION: call describe first")
 	}
 	u, err := url.Parse(request.Params.URI)
-	if err != nil || u.Scheme != "accord" || u.Host != "notes" || u.Path != "" || u.User != nil || u.Fragment != "" {
+	if err != nil || u.Scheme != "accord" || (u.Host != "notes" && u.Host != "designs") || (u.Host == "notes" && u.Path != "") || (u.Host == "designs" && strings.Contains(strings.TrimPrefix(u.Path, "/"), "/")) || u.User != nil || u.Fragment != "" {
 		return nil, errors.New("invalid notes resource URI")
 	}
 	query, err := url.ParseQuery(u.RawQuery)
@@ -49,7 +54,7 @@ func (b *bridge) readNotes(ctx context.Context, request *mcp.ReadResourceRequest
 	if ids, present := query["session_id"]; present && (len(ids) != 1 || ids[0] != b.session.SessionID) {
 		return nil, errors.New("SESSION_MISMATCH: resource belongs to this worker only")
 	}
-	if !b.quarantined {
+	if u.Host == "notes" && !b.quarantined {
 		if !b.live(time.Now()) {
 			b.quarantine()
 		} else if time.Since(b.lastHeartbeat) >= b.interval {
@@ -64,7 +69,7 @@ func (b *bridge) readNotes(ctx context.Context, request *mcp.ReadResourceRequest
 	defer cancel()
 	result, err := b.upstream.ReadResource(reading, &mcp.ReadResourceParams{URI: u.String()})
 	if err != nil {
-		return nil, errors.New("cannot read notes; verify session and connectivity")
+		return nil, errors.New("cannot read project resource; verify session and connectivity")
 	}
 	// The consumer requested a worker-local URI, without its injected SID.
 	for _, content := range result.Contents {

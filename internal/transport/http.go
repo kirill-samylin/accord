@@ -63,7 +63,7 @@ func NewHandlerWithOptions(s Service, ready func(context.Context) error, options
 		byName[op.name] = op
 	}
 	mux := http.NewServeMux()
-	mux.Handle("/mcp", mcpHandler(ops, s, options.ExternalHost != ""))
+	mux.Handle("/mcp", mcpHandler(ops, s, options.ExternalHost != "", options.Designs))
 	mux.HandleFunc("GET /metrics", admission.metrics)
 	for _, r := range routes {
 		op := byName[r.name]
@@ -136,6 +136,10 @@ func NewHandlerWithOptions(s Service, ready func(context.Context) error, options
 			writeJSON(w, http.StatusOK, struct {
 				Status string `json:"status"`
 			}{"ok"})
+			return
+		}
+		if options.Extra != nil && extraPath(r.URL.Path) {
+			options.Extra.ServeHTTP(w, r)
 			return
 		}
 		fields := strings.Fields(r.Header.Get("Authorization"))
@@ -289,4 +293,9 @@ func methodsForPath(path string) []string {
 		}
 	}
 	return methods
+}
+
+// Extra never intercepts native task routes, metrics or MCP authentication.
+func extraPath(path string) bool {
+	return !nativePath(path) || path == "/api/v1/designs" || strings.HasPrefix(path, "/api/v1/designs/")
 }

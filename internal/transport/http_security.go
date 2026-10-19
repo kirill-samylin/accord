@@ -16,6 +16,11 @@ import (
 // Nonpositive/nonfinite values use defaults; limits cannot be disabled. There
 // are no buckets keyed by attacker-controlled bearer tokens or proxy headers.
 type HandlerOptions struct {
+	// Extra serves browser routes and authenticated design REST endpoints under
+	// the same admission/Host/native-Origin perimeter. It handles its own auth.
+	Extra   http.Handler
+	Designs DesignReader
+
 	// ExternalHost allows exactly this validated DNS:port in addition to
 	// loopback authorities. Invalid values make the entire handler fail closed.
 	ExternalHost      string

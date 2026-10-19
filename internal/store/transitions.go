@@ -89,6 +89,15 @@ func (s *Store) Transition(ctx context.Context, a core.Actor, in core.Transition
 			correction := total - t.Attempts[len(t.Attempts)-1].TokensDelta
 			b.Events[len(b.Events)-1].Data = &core.EventData{TokensSpentTotal: &total, CorrectionDelta: &correction}
 		}
+		if t.Role == "human" && t.State == "done" {
+			answer := t.Evidence.Answer
+			emit(b, now, "human_answered", t.Key, a.SessionID)
+			e := &b.Events[len(b.Events)-1]
+			e.TokenID = a.Principal.ID
+			e.Data = &core.EventData{Kind: "decision", Role: "human", Owner: a.Principal.Owner, EpicKey: t.EpicKey,
+				Answer: &answer, Generation: t.Generation, AuthorPrincipal: a.Principal.ID,
+				QuestionTitle: t.Title, Machine: a.Principal.Machine}
+		}
 		return viewTask(b, t), nil
 	})
 }

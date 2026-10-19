@@ -1,0 +1,27 @@
+[Unit]
+Description=Consistent Accord board and design snapshot
+After=accord.service
+ConditionPathExists=/var/lib/accord/web/web.db
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+ExecStart=/usr/bin/python3 /opt/accord/admin/web-backup.py
+UMask=0077
+TimeoutStartSec=10min
+TimeoutStopSec=60s
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/accord /var/backups/accord-web
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+CapabilityBoundingSet=CAP_DAC_OVERRIDE CAP_CHOWN CAP_FOWNER
+RestrictAddressFamilies=AF_UNIX
+MemoryMax=192M
+CPUQuota=50%

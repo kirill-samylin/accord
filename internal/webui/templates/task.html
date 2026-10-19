@@ -1,0 +1,106 @@
+{{define "task"}}{{template "head" .}}
+{{with .Task}}<div class="breadcrumb">
+<a href="/web/?view={{if eq .Role "human"}}questions{{else}}tasks{{end}}">← К списку</a>
+<span>{{.Key}}</span>
+</div>
+<article class="panel">
+<div class="card-top">
+<span class="badge">{{state .State}}</span>
+<span>{{role .Role}}</span>{{if .Blocked}}<span class="badge warning">Есть блокировки</span>{{end}}</div>
+<h2>{{.Title}}</h2>
+<div class="prose">{{.Description}}</div>
+<dl class="facts">
+<div>
+<dt>Ключ</dt>
+<dd>{{.Key}}</dd>
+</div>{{if .EpicKey}}<div>
+<dt>Эпик</dt>
+<dd>
+<a href="{{taskURL .EpicKey}}">{{.EpicKey}}</a>
+</dd>
+</div>{{end}}<div>
+<dt>Приоритет</dt>
+<dd>{{.Priority}}</dd>
+</div>{{if .Requester}}<div>
+<dt>Автор запроса</dt>
+<dd>{{.Requester}}</dd>
+</div>{{end}}{{if .Owner}}<div>
+<dt>Ответственный</dt>
+<dd>{{.Owner}}</dd>
+</div>{{end}}{{if .Areas}}<div>
+<dt>Области</dt>
+<dd>{{join .Areas ", "}}</dd>
+</div>{{end}}{{if .CreatedAt}}<div>
+<dt>Создано</dt>
+<dd>{{date .CreatedAt}}</dd>
+</div>{{end}}</dl>
+{{if .Lease}}<div class="message">
+<strong>{{if $.CanEdit}}Вы отвечаете на этот вопрос{{else}}Задача взята участником{{end}}</strong>
+<p>Время владения: до <time data-lease-expiry="{{.Lease.ExpiresAt.Format "2006-01-02T15:04:05Z07:00"}}">{{date .Lease.ExpiresAt}}</time>
+<span data-lease-remaining>
+</span>
+</p>{{if not $.CanEdit}}<p>Ответить или снять действующее чужое владение нельзя.</p>{{end}}</div>{{end}}
+{{if .Links}}<h3>Связи и зависимости</h3>
+<ul>{{range .Links}}<li>
+<a href="{{taskURL .From}}">{{.From}}</a> → <a href="{{taskURL .To}}">{{.To}}</a> · {{.Type}}{{if .Condition}} · {{.Condition}}{{end}}</li>{{end}}</ul>{{end}}
+{{if canClaim .}}{{if not $.CanContinue}}<form method="post" action="{{taskURL .Key}}/claim">
+<input type="hidden" name="csrf" value="{{$.CSRF}}">
+<input type="hidden" name="action_id" value="{{action $ "claim" .Key}}">
+<button type="submit">Взять и ответить</button>
+</form>{{end}}{{end}}</article>
+{{if eq .Role "human"}}{{if $.CanEdit}}{{template "answer-form" $}}{{else}}{{if answer $}}<section class="panel">
+<h2>Ваш текст ответа</h2>
+<p>Владение вопросом изменилось. Скопируйте текст, проверьте состояние и возьмите вопрос заново явно.</p>
+<textarea readonly rows="8" aria-label="Сохранённый текст ответа">{{answer $}}</textarea>
+<a href="{{taskURL .Key}}">Обновить состояние вопроса</a>
+</section>{{end}}{{end}}{{end}}
+{{template "evidence" .}}
+{{if .Attempts}}<section class="panel">
+<h2>История попыток</h2>{{range .Attempts}}<article class="attempt">
+<strong>{{.PrincipalID}}</strong>
+<p class="hint">{{date .StartedAt}}{{if .EndedAt}} — {{date .EndedAt}}{{end}} · {{.Machine}}</p>{{if .Reason}}<p class="prose">{{.Reason}}</p>{{end}}{{if .Commit}}<p class="break">Commit: {{.Commit}}</p>{{end}}</article>{{end}}</section>{{end}}
+{{if .Comments}}<section class="panel">
+<h2>Комментарии</h2>{{range .Comments}}<article class="attempt">
+<p class="hint">{{date .At}}</p>
+<p class="prose">{{.Text}}</p>
+</article>{{end}}</section>{{end}}
+{{else}}{{if not .CanContinue}}<div class="empty">Задача не найдена.</div>{{end}}{{end}}{{template "foot" .}}{{end}}
+
+{{define "answer-form"}}<section class="panel answer-editor" data-answer-editor data-task="{{.Task.Key}}" data-generation="{{generation .}}" data-csrf="{{.CSRF}}" data-action="{{action . "heartbeat" .Task.Key}}" data-interval="{{.Session.HeartbeatEverySeconds}}">
+<h2>Ответ на вопрос</h2>
+<div class="heartbeat">
+<button type="button" class="secondary" data-heartbeat-toggle hidden>Продлевать время ответа</button>
+<p class="hint" data-heartbeat-status role="status">Автоматическое продление выключено. Для включения нужен JavaScript. При уходе со страницы оно остановится.</p>
+</div>
+<form method="post" action="{{taskURL .Task.Key}}/answer">
+<input type="hidden" name="csrf" value="{{.CSRF}}">
+<input type="hidden" name="action_id" value="{{action . "answer" .Task.Key}}">
+<input type="hidden" name="generation" value="{{generation .}}">
+<label for="answer">Ваш ответ <span class="required">*</span>
+<textarea id="answer" name="answer" rows="9" required aria-describedby="answer-error" aria-invalid="{{if fieldError . "answer"}}true{{else}}false{{end}}">{{answer .}}</textarea>
+</label><p class="field-error" id="answer-error" data-field-error="answer" {{if not (fieldError . "answer")}}hidden{{end}}>{{fieldError . "answer"}}</p><p class="hint">Ответ сохранится в истории решений и станет доступен агенту. Черновик существует только на этой странице.</p>
+<button type="submit">Ответить и завершить</button>
+</form>
+<details>
+<summary>Вернуть вопрос в очередь</summary>
+<form method="post" action="{{taskURL .Task.Key}}/release">
+<input type="hidden" name="csrf" value="{{.CSRF}}">
+<input type="hidden" name="action_id" value="{{action . "release" .Task.Key}}">
+<input type="hidden" name="generation" value="{{generation .}}">
+<label for="release-reason">Причина возврата<textarea id="release-reason" name="reason" rows="3" required aria-describedby="release-error" aria-invalid="{{if fieldError . "reason"}}true{{else}}false{{end}}">{{draft . "reason"}}</textarea>
+</label><p class="field-error" id="release-error" data-field-error="reason" {{if not (fieldError . "reason")}}hidden{{end}}>{{fieldError . "reason"}}</p>
+<button class="secondary" type="submit">Вернуть в очередь</button>
+</form>
+</details>
+</section>{{end}}
+
+{{define "evidence"}}{{if or .Evidence.Answer .Evidence.Summary .Evidence.Commit .Evidence.VerifiedCommit .Evidence.RunSummary .Evidence.Findings .Evidence.Artifact .Review}}<section class="panel">
+<h2>Результат и доказательства</h2>{{if .Evidence.Answer}}<h3>Текущий ответ</h3>
+<p class="prose">{{.Evidence.Answer}}</p>
+<a href="/web/history?epic_key={{.EpicKey}}">История решений</a>{{end}}{{if .Evidence.Summary}}<p class="prose">{{.Evidence.Summary}}</p>{{end}}{{if .Evidence.Commit}}<p class="break">Commit: {{.Evidence.Commit}}</p>{{end}}{{if .Evidence.VerifiedCommit}}<p class="break">Проверенный commit: {{.Evidence.VerifiedCommit}}</p>{{end}}{{if .Evidence.RunSummary}}<h3>Проверки</h3>
+<p class="prose">{{.Evidence.RunSummary}}</p>{{end}}{{if .Evidence.Findings}}<h3>Замечания</h3>
+<p class="prose">{{.Evidence.Findings}}</p>{{end}}{{if .Review}}<h3>Вердикт проверки</h3>
+<p>{{.Review.Outcome}} · <a href="{{taskURL .Review.TargetKey}}">{{.Review.TargetKey}}</a>
+</p>
+<p class="break">Проверялся commit {{.Review.TargetCommit}}</p>{{end}}{{if .Evidence.Artifact}}<h3>Артефакты</h3>
+<ul>{{range .Evidence.Artifact}}<li class="break">{{.}}</li>{{end}}</ul>{{end}}</section>{{end}}{{end}}
