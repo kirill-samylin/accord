@@ -1,0 +1,22 @@
+{
+  "repository": "https://github.com/paperclipai/paperclip",
+  "revision": "5739a53f5f5e6cccbf21c7ae491ad06cb4b79b7c",
+  "license": "MIT",
+  "purpose": "User-selected feature and visual reference; no upstream instructions execute in Accord.",
+  "files": {
+    "LICENSE": "7f8a27f0979bded50e240caa8c8c29f3088ddf87032cb83e5a9732bff91d18b4",
+    "ui/src/index.css": "c1c8bde465f27f6b0b46f87977aaecd92a313252dd66a0b237d573f78870acda",
+    "ui/src/components/Sidebar.tsx": "c2397143ed06380474630905e31665eeae1e5241b0a840f777ae9db46dcc31cb",
+    "ui/src/components/SidebarShell.tsx": "a8ee5166e9c01bae1d24bc7c9ccca8faa3cbdacf5c890aa80b14d2d1711a3880",
+    "ui/src/pages/Dashboard.tsx": "006ec1dc33d97ba14475596f5c73662657822d5a7a4d39cc1682cd9499d572e3",
+    "ui/src/pages/Agents.tsx": "3002164229eed458052289ecbde5e11a2517cd7030ea217b7069ab09c28ceec4"
+  },
+  "font": {
+    "upstream": "https://github.com/rsms/inter",
+    "version": "v4.1",
+    "license": "SIL Open Font License 1.1",
+    "license_source": "https://raw.githubusercontent.com/rsms/inter/v4.1/LICENSE.txt",
+    "woff2_sha256": "693b77d4f32ee9b8bfc995589b5fad5e99adf2832738661f5402f9978429a8e3",
+    "license_sha256": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a"
+  }
+}
