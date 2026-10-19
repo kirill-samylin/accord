@@ -77,3 +77,28 @@ class WebBackupTests(unittest.TestCase):
         self.assertEqual(len(list(self.copies.iterdir())), 2)
         for item in self.copies.iterdir():
             backup.validate_snapshot(item)
+
+    def test_offline_wal_sources_produce_sidecar_free_snapshots(self):
+        for file in [self.state / "board.db", self.state / "web/web.db"]:
+            with closing(sqlite3.connect(file)) as db, db:
+                self.assertEqual(db.execute("PRAGMA journal_mode=WAL").fetchone()[0], "wal")
+                db.execute("INSERT INTO data VALUES('committed-wal-value')")
+        result = backup.snapshot(self.state, self.copies)
+        backup.validate_snapshot(result)
+        backup.validate_snapshot(result)
+        for name in ["board.db", "web/web.db"]:
+            with closing(sqlite3.connect((result / name).as_uri() + "?mode=ro&immutable=1", uri=True)) as db:
+                self.assertEqual(db.execute("PRAGMA journal_mode").fetchone()[0], "delete")
+                self.assertEqual(db.execute("SELECT COUNT(*) FROM data").fetchone()[0], 2)
+        self.assertFalse(list(result.rglob("*-wal")))
+        self.assertFalse(list(result.rglob("*-shm")))
+
+    def test_uncheckpointed_wal_is_not_ignored(self):
+        file = self.state / "board.db"
+        with closing(sqlite3.connect(file)) as db, db:
+            db.execute("PRAGMA journal_mode=WAL")
+            db.execute("INSERT INTO data VALUES('not-checkpointed')")
+            db.commit()
+            with self.assertRaises(RuntimeError):
+                backup.snapshot(self.state, self.copies)
+        self.assertEqual(list(self.copies.iterdir()), [])

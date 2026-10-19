@@ -50,3 +50,11 @@ files0600, owneraccord. Проверить loopback fixture: вопросы/ис
 Объём1ГиБ дизайнов может потребовать примерно8ГиБ с семью self-contained snapshots
 плюс board/backups/temp и системный резерв. При нехватке места upload/backup
 отклоняется с ошибкой; работа с уже сохранёнными задачами должна продолжаться.
+
+SQLite compatibility: offline source имеет закрытый/checkpointed WAL; непустой
+WAL отклоняется вместо игнорирования committed frames. Источник читается как
+immutable read-only, чтобы root backup не создавал sidecars пользователя accord.
+Копия нормализуется в journal_mode=DELETE с проверкой header1/1. После закрытия
+удаляются только собственные regular0600 sidecars нового target (WAL лишь пустой),
+поэтому строгий manifest не зависит от сохранения stale SHM конкретной SQLite.
+Живые source sidecars не удаляются. Проверки повторяются на настоящем Go fixture.

@@ -55,15 +55,40 @@ def db_copy(source, target, version):
     private(source)
     fd = os.open(target, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
     os.close(fd)
-    with closing(sqlite3.connect(source.as_uri() + "?mode=ro", uri=True)) as src, src:
+    # The sole writer has stopped and closed SQLite. Refuse an uncheckpointed
+    # WAL rather than ignoring committed frames. Immutable reads avoid creating
+    # root-owned sidecars in the service account's source directory.
+    wal = source.with_name(source.name + "-wal")
+    if wal.exists() and private(wal) != 0:
+        raise RuntimeError("offline source still has uncheckpointed WAL")
+    with closing(sqlite3.connect(source.as_uri() + "?mode=ro&immutable=1", uri=True)) as src, src:
         with closing(sqlite3.connect(target)) as dst, dst:
             src.backup(dst)
+            # Backup copies the WAL header too. Normalize the offline snapshot
+            # so every supported SQLite version can inspect it without sidecars.
+            if dst.execute("PRAGMA journal_mode=DELETE").fetchone()[0] != "delete":
+                raise RuntimeError("snapshot journal normalization failed")
             if dst.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
                 raise RuntimeError("snapshot integrity failed")
             if dst.execute("PRAGMA user_version").fetchone()[0] != version:
                 raise RuntimeError("unexpected snapshot schema")
     with target.open("rb") as stream:
+        header = stream.read(20)
+        if header[:16] != b"SQLite format 3\x00" or header[18:20] != b"\x01\x01":
+            raise RuntimeError("snapshot is not a self-contained rollback-journal database")
         os.fsync(stream.fileno())
+    # SQLite 3.54 may retain a stale SHM after leaving WAL mode. Only the newly
+    # created, closed target is cleaned; the live source is never modified.
+    for suffix in ["-wal", "-shm"]:
+        sidecar = target.with_name(target.name + suffix)
+        try:
+            size = private(sidecar)
+        except FileNotFoundError:
+            continue
+        if sidecar.lstat().st_uid != os.getuid() or (suffix == "-wal" and size != 0):
+            raise RuntimeError("unsafe or nonempty snapshot sidecar")
+        sidecar.unlink()
+    sync_dir(target.parent)
 
 
 def validate_snapshot(path):
@@ -98,10 +123,10 @@ def validate_snapshot(path):
         if sha(file) != digest:
             raise RuntimeError("snapshot checksum mismatch")
     for name, version in [("board.db", 2), ("web/web.db", 1)]:
-        with closing(sqlite3.connect((path / name).as_uri() + "?mode=ro", uri=True)) as db, db:
+        with closing(sqlite3.connect((path / name).as_uri() + "?mode=ro&immutable=1", uri=True)) as db, db:
             if db.execute("PRAGMA integrity_check").fetchone()[0] != "ok" or db.execute("PRAGMA user_version").fetchone()[0] != version:
                 raise RuntimeError("invalid snapshot database")
-    with closing(sqlite3.connect((path / "web/web.db").as_uri() + "?mode=ro", uri=True)) as db, db:
+    with closing(sqlite3.connect((path / "web/web.db").as_uri() + "?mode=ro&immutable=1", uri=True)) as db, db:
         for blob, size, digest, preview, preview_size in db.execute("SELECT blob,size,sha256,preview,preview_size FROM design_assets WHERE status='ready'"):
             if not BLOB.fullmatch(blob) or (preview and not BLOB.fullmatch(preview)):
                 raise RuntimeError("invalid design reference")
