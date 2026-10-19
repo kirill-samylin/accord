@@ -25,6 +25,19 @@ The shared-service delivery is tracked in [TASK-003](docs/TASK-003-working-servi
 Its [service contract](docs/service-contract.md) separates the working bearer
 release from the remaining V1 features and external acceptance checks.
 
+## Веб для людей
+
+Веб-интерфейс использует тот же HTTPS-сервер и отдельные токены участников:
+**Вопросы**, **Задачи**, **Дизайн**, **История решений**. В браузере можно выбрать
+локальный файл токена, ответить на вопрос, создать работу и загрузить версию
+дизайна. VPN и установка клиента для работы человека не нужны.
+[Руководство](docs/web-guide.md), [контракт](docs/web-architecture.md),
+[приёмка веба](docs/TASK-004-human-web.md).
+
+Сервер включает веб явно: `serve --web-origin HTTPS_ORIGIN --web-data PRIVATE_DIR`;
+подробности [эксплуатации](infra/accord/web/README.md). Новые MCP-клиенты содержат
+ресурсы дизайна; уже выданные токены и адрес подключения сохраняются.
+
 ## Передача проекта и второй ПК
 
 Полная [инструкция передачи](docs/handoff.md) описывает готовые клиенты,

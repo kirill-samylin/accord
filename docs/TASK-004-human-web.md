@@ -52,6 +52,6 @@
 
 WORK084/085/086 контракты завершены. Авторы087backend,088files,089UI передали
 реализацию. Independent090codeapprove baseline;091security+OS/browser delta,
-092actualUI review. Root094integration и выпуск. QA093 после approve;095reviewQA.
+092actualUI review. Root094integration и выпуск. Form delta093 approve; QA095 после approve;097review QA/выпуска.
 make check PASS до финальной узкой platform/headerdelta; targeted+browser retest
 для неё выполняются. Физический второй ПК пока user-reported, не agent-verified.
