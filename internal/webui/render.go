@@ -8,7 +8,6 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
-	"path"
 	"strings"
 	"time"
 
@@ -26,6 +25,9 @@ type Renderer struct{ templates *template.Template }
 func New() (*Renderer, error) {
 	functions := template.FuncMap{
 		"date": date, "state": state, "role": role, "size": size,
+		"agentURL": agentURL, "sessionStatus": sessionStatus, "eventLabel": eventLabel,
+		"percent": percent, "boardColumns": boardColumns, "layoutURL": layoutURL,
+		"navigation": navigation, "refreshURL": refreshURL, "ruleLabel": ruleLabel, "ruleValue": ruleValue,
 		"draft":  func(p web.Page, key string) string { return p.Draft[key] },
 		"action": action, "fieldError": func(p web.Page, key string) string { return p.FieldErrors[key] },
 		"taskURL":    func(key string) string { return "/web/tasks/" + url.PathEscape(key) },
@@ -42,7 +44,7 @@ func New() (*Renderer, error) {
 // Render buffers first: a template failure never publishes a partial success page.
 func (r *Renderer) Render(w http.ResponseWriter, status int, name string, page web.Page) error {
 	switch name {
-	case "login", "board", "task", "designs", "history", "error":
+	case "login", "board", "task", "designs", "history", "error", "overview", "agents", "agent", "activity", "projects", "settings", "stats":
 	default:
 		return fmt.Errorf("unknown web template %q", name)
 	}
@@ -53,7 +55,7 @@ func (r *Renderer) Render(w http.ResponseWriter, status int, name string, page w
 		page.View = "questions"
 	}
 	if page.Title == "" || page.Title == "Accord" {
-		titles := map[string]string{"login": "Вход в Accord", "board": "Задачи", "task": "Карточка задачи", "designs": "Дизайн", "history": "История решений", "error": "Действие не выполнено"}
+		titles := map[string]string{"login": "Вход в Accord", "board": "Задачи", "task": "Карточка задачи", "designs": "Дизайн", "history": "История решений", "error": "Действие не выполнено", "overview": "Обзор", "agents": "Агенты", "agent": "Сессия агента", "activity": "Активность", "projects": "Проекты", "settings": "Настройки", "stats": "Статистика"}
 		page.Title = titles[name]
 		if page.View == "questions" {
 			page.Title = "Вопросы"
@@ -72,7 +74,7 @@ func (r *Renderer) Render(w http.ResponseWriter, status int, name string, page w
 // Static returns the embedded asset handler for this renderer.
 func (r *Renderer) Static() http.Handler { return Static() }
 
-// Static serves only the two embedded interface assets, under the web static mount.
+// Static serves an explicit allowlist of trusted embedded interface assets.
 func Static() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
@@ -81,7 +83,8 @@ func Static() http.Handler {
 		}
 		name := strings.TrimPrefix(r.URL.Path, "/web/static/")
 		name = strings.TrimPrefix(name, "/")
-		if name != "app.css" && name != "app.js" {
+		mediaType, allowed := staticAssets[name]
+		if !allowed {
 			http.NotFound(w, r)
 			return
 		}
@@ -90,11 +93,7 @@ func Static() http.Handler {
 			http.NotFound(w, r)
 			return
 		}
-		if path.Ext(name) == ".css" {
-			w.Header().Set("Content-Type", "text/css; charset=utf-8")
-		} else {
-			w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
-		}
+		w.Header().Set("Content-Type", mediaType)
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		http.ServeContent(w, r, name, time.Time{}, bytes.NewReader(data))
 	})
@@ -116,7 +115,7 @@ func size(value int64) string {
 	return fmt.Sprintf("%.1f МиБ", float64(value)/(1024*1024))
 }
 func state(value string) string {
-	names := map[string]string{"open": "Открыто", "ready": "Готово к работе", "waiting": "Ожидает", "in_progress": "В работе", "done": "Завершено", "closed": "Закрыто", "cancelled": "Отменено", "blocked": "Заблокировано", "review": "На проверке"}
+	names := map[string]string{"created": "Создано", "open": "Открыто", "ready": "Готово к работе", "waiting": "Ожидает", "in_progress": "В работе", "done": "Завершено", "closed": "Закрыто", "cancelled": "Отменено", "blocked": "Заблокировано", "review": "На проверке"}
 	if label, ok := names[value]; ok {
 		return label
 	}
@@ -158,36 +157,6 @@ func answer(p web.Page) string {
 	}
 	return ""
 }
-func nextURL(p web.Page) string {
-	values := url.Values{"cursor": {p.NextCursor}}
-	if c := p.Draft["epic_cursor"]; c != "" {
-		values.Set("epic_cursor", c)
-	}
-	base := "/web/"
-	switch p.View {
-	case "designs":
-		base = "/web/designs"
-		for _, key := range []string{"scope", "scope_key", "design_id"} {
-			if v := p.Draft[key]; v != "" {
-				values.Set(key, v)
-			}
-		}
-	case "history":
-		base = "/web/history"
-	default:
-		values.Set("view", p.View)
-	}
-	if p.EpicKey != "" {
-		values.Set("epic_key", p.EpicKey)
-	}
-	if p.Role != "" {
-		values.Set("role", p.Role)
-	}
-	if p.State != "" {
-		values.Set("state", p.State)
-	}
-	return base + "?" + values.Encode()
-}
 
 type draftValue struct{ Label, Value string }
 
@@ -216,19 +185,4 @@ func scope(value string) string {
 		return "Задача"
 	}
 	return value
-}
-
-// Epic pagination is independent of task pagination; task page starts over.
-func epicsURL(p web.Page) string {
-	values := url.Values{"view": {"tasks"}, "epic_cursor": {p.EpicsNextCursor}}
-	if p.EpicKey != "" {
-		values.Set("epic_key", p.EpicKey)
-	}
-	if p.Role != "" {
-		values.Set("role", p.Role)
-	}
-	if p.State != "" {
-		values.Set("state", p.State)
-	}
-	return "/web/?" + values.Encode()
 }

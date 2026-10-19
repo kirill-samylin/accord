@@ -1,47 +1,129 @@
-{{define "head"}}<!doctype html>
+{{define "head"}}
+<!doctype html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{{if .Title}}{{.Title}} · {{end}}Accord</title>
+<title>
+{{if .Title}}{{.Title}} · {{end}}Accord</title>
 <link rel="stylesheet" href="/web/static/app.css">
+<link rel="stylesheet" href="/web/static/cards.css">
+<link rel="stylesheet" href="/web/static/forms.css">
+<link rel="stylesheet" href="/web/static/sidebar.css">
+<link rel="stylesheet" href="/web/static/shell.css">
+<link rel="stylesheet" href="/web/static/control.css">
+<link rel="stylesheet" href="/web/static/tasks.css">
+<script src="/web/static/control.js" defer>
+</script>
 <script src="/web/static/app.js" defer>
 </script>
 </head>
-<body>
+<body class="{{if and .Principal.ID (ne .View "login")}}authenticated{{else}}guest{{end}}">
 <a class="skip" href="#main">К содержимому</a>
-<header class="header">
-<a class="brand" href="/web/">Accord<span>Общая работа, ясные решения</span>
+{{if and .Principal.ID (ne .View "login")}}
+<div class="drawer-backdrop" data-drawer-backdrop hidden>
+</div>
+<aside class="sidebar" id="navigation" aria-label="Навигация проекта">
+<div class="sidebar-top">
+<a class="brand" href="/web/">
+<span class="brand-mark">A</span>Accord</a>
+<button type="button" class="icon-button drawer-close" data-drawer-close hidden aria-label="Закрыть меню">×</button>
+</div>
+<a class="project-identity" href="/web/projects">
+<span class="project-mark">П</span>
+<span>
+<strong>
+{{.Session.Project}}
+</strong>
+<small>Текущий проект</small>
+</span>
 </a>
-{{if .Principal.ID}}<div class="identity">
-<strong>{{.Session.Project}}</strong>
-<span>{{.Principal.Owner}} · {{.Principal.Machine}}</span>
+<p class="nav-label">Рабочее пространство</p>
+<nav class="nav" aria-label="Основные разделы">
+{{range navigation .}}
+<a href="{{.URL}}" {{if .Active}}aria-current="page"{{end}}>
+{{template "nav-icon" .Icon}}
+<span>
+{{.Label}}
+</span>
+</a>
+{{end}}
+</nav>
+<div class="sidebar-bottom">
+<span class="identity" title="{{.Principal.Owner}} · {{.Principal.Machine}}">
+<strong>
+{{.Principal.Owner}}
+</strong>
+<small>
+{{.Principal.Machine}}
+</small>
+</span>
 <form method="post" action="/web/logout">
 <input type="hidden" name="csrf" value="{{.CSRF}}">
 <input type="hidden" name="action_id" value="{{action . "logout"}}">
 <button class="text-button" type="submit">Выйти</button>
 </form>
-</div>{{end}}</header>
-{{if .Principal.ID}}<nav class="nav" aria-label="Основные разделы">
-<a href="/web/?view=questions" {{if eq .View "questions"}}aria-current="page"{{end}}>Вопросы</a>
-<a href="/web/?view=tasks" {{if eq .View "tasks"}}aria-current="page"{{end}}>Задачи</a>
-<a href="/web/designs" {{if eq .View "designs"}}aria-current="page"{{end}}>Дизайн</a>
-<a href="/web/history" {{if eq .View "history"}}aria-current="page"{{end}}>История решений</a>
-</nav>{{end}}
+</div>
+</aside>
+<div class="workspace">
+<header class="topbar">
+<button type="button" class="icon-button drawer-open" data-drawer-open hidden aria-label="Открыть меню" aria-controls="navigation" aria-expanded="false">☰</button>
+<div class="top-breadcrumb">
+<a href="/web/">
+{{.Session.Project}}
+</a>
+<span aria-hidden="true">/</span>
+<span>
+{{.Title}}
+</span>
+</div>
+<form action="/web/tasks" method="get" class="global-search" role="search">
+<label class="sr-only" for="global-q">Поиск по всем задачам проекта</label>
+<input id="global-q" name="q" value="{{.Query}}" placeholder="Поиск задач…" maxlength="200">
+<button type="submit" class="text-button">Найти</button>
+</form>
+<button type="button" class="icon-button" data-theme-toggle aria-label="Включить тёмную тему" hidden>◐</button>
+</header>
+{{else}}
+<div class="workspace">
+<header class="guest-header">
+<a class="brand" href="/web/">
+<span class="brand-mark">A</span>Accord</a>
+<button type="button" class="icon-button" data-theme-toggle aria-label="Включить тёмную тему" hidden>◐</button>
+</header>
+{{end}}
 <main id="main" tabindex="-1">
 <div class="page-heading">
 <div>
-<p class="eyebrow">ACCORD / ПРОЕКТ</p>
-<h1>{{.Title}}</h1>
+<h1>
+{{.Title}}
+</h1>
+{{if and .Principal.ID (ne .View "login")}}
+<p class="muted">
+{{.Session.Project}}
+</p>
+{{end}}
 </div>
+{{if and .Principal.ID (ne .View "login")}}
+<a class="button secondary compact" href="{{refreshURL .}}">Обновить</a>
+{{end}}
 </div>
-{{if .Error}}<div class="message error" role="alert">
+{{if .Error}}
+<div class="message error" role="alert">
 <strong>Действие не выполнено</strong>
-<p>{{.Error}}</p>
-<p>Проверьте состояние и повторите действие. Введённый текст ниже доступен для копирования.</p>
-</div>{{end}}
-{{if .Notice}}<div class="message notice" role="status">{{.Notice}}</div>{{end}}
-{{if .CanContinue}}<section class="message">
+<p>
+{{.Error}}
+</p>
+<p>Проверьте состояние и повторите действие. Введённый текст сохранён на странице.</p>
+</div>
+{{end}}
+{{if .Notice}}
+<div class="message notice" role="status">
+{{.Notice}}
+</div>
+{{end}}
+{{if .CanContinue}}
+<section class="message">
 <h2>Продолжите работу</h2>
 <p>Время рабочей сессии истекло. Продолжение не берёт вопрос заново и не отправляет ответ.</p>
 <form method="post" action="/web/session/continue">
@@ -49,20 +131,29 @@
 <input type="hidden" name="action_id" value="{{action . "continue"}}">
 <button type="submit">Продолжить</button>
 </form>
-</section>{{end}}
+</section>
 {{end}}
-{{define "foot"}}<p class="submit-status" role="status" aria-live="polite">
+{{end}}
+{{define "foot"}}
+<p class="submit-status" role="status" aria-live="polite">
 </p>
 </main>
-<footer>Accord · Координация людей и агентов</footer>
+<footer>Accord · Координация людей и агентов <span>·</span> <a href="/web/static/license-paperclip.txt">Paperclip MIT</a> <span>·</span> <a href="/web/static/license-inter.txt">Inter OFL</a>
+</footer>
+</div>
 </body>
-</html>{{end}}
-{{define "pagination"}}{{if .NextCursor}}<nav class="pagination" aria-label="Страницы списка">
+</html>
+{{end}}
+{{define "pagination"}}{{if .NextCursor}}
+<nav class="pagination" aria-label="Страницы списка">
 <a class="button secondary" href="{{nextURL .}}">Следующая страница →</a>
-</nav>{{end}}{{end}}
-{{define "login"}}{{template "head" .}}<section class="panel login-panel">
-<h2>Вход в Accord</h2>
-<p>Используйте личный токен доступа, выданный для вашей машины.</p>
+</nav>
+{{end}}{{end}}
+{{define "login"}}{{template "head" .}}
+<section class="panel login-panel">
+<p class="eyebrow">РАБОЧЕЕ ПРОСТРАНСТВО</p>
+<h2>Люди и агенты.<br>Одна общая очередь.</h2>
+<p class="muted">Войдите с личным токеном доступа, выданным для вашей машины.</p>
 <form method="post" action="/web/login" enctype="multipart/form-data" data-login>
 <input type="hidden" name="csrf" value="{{.CSRF}}">
 <label for="token">Личный токен</label>
@@ -71,14 +162,27 @@
 <label for="token-file">Файл токена</label>
 <input id="token-file" type="file" name="token_file" aria-describedby="file-help">
 <p class="hint" id="file-help">До 4 КиБ. Токен не сохраняется в браузере.</p>
-<button type="submit">Войти</button>
+<button type="submit">Войти в проект →</button>
 </form>
-</section>{{template "foot" .}}{{end}}
-{{define "error"}}{{template "head" .}}<section class="panel">
+</section>
+{{template "foot" .}}{{end}}
+{{define "error"}}{{template "head" .}}
+<section class="panel">
 <h2>Не удалось открыть страницу</h2>
-<p>Проверьте состояние перед повтором действия. Вы можете вернуться к списку или войти снова.</p>
+<p>Проверьте состояние перед повтором действия. Вы можете вернуться к обзору или войти снова.</p>
 <div class="actions">
-<a class="button secondary" href="/web/">К вопросам</a>
+<a class="button secondary" href="/web/">К обзору</a>
 <a href="/web/login">Войти снова</a>
-</div>{{with savedDraft .}}<h3>Введённые данные</h3>{{range .}}<label>{{.Label}}<textarea readonly rows="4">{{.Value}}</textarea>
-</label>{{end}}{{end}}</section>{{template "foot" .}}{{end}}
+</div>
+{{with savedDraft .}}
+<h3>Введённые данные</h3>
+{{range .}}
+<label>
+{{.Label}}
+<textarea readonly rows="4">
+{{.Value}}
+</textarea>
+</label>
+{{end}}{{end}}
+</section>
+{{template "foot" .}}{{end}}

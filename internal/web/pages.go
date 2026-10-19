@@ -6,13 +6,18 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 )
 
 func (s *Server) page(r *http.Request, b *browserSession) (Page, error) {
-	p := Page{Title: "Accord", Principal: b.Principal, Session: b.Session, CSRF: b.CSRF, CanContinue: !b.Session.ExpiresAt.After(time.Now()), Draft: map[string]string{}, Actions: map[string]string{}, Roles: []string{"coordinator", "analyst", "architect", "developer", "reviewer", "tester", "human"}, States: []string{"ready", "in_progress", "done", "cancelled"}, Complexities: []string{"low", "normal", "high"}, View: r.URL.Query().Get("view"), EpicKey: r.URL.Query().Get("epic_key"), Role: r.URL.Query().Get("role"), State: r.URL.Query().Get("state")}
-	p.Draft["epic_cursor"] = r.URL.Query().Get("epic_cursor")
+	p := Page{Title: "Accord", Principal: b.Principal, Session: b.Session, CSRF: b.CSRF, CanContinue: !b.Session.ExpiresAt.After(time.Now()), Draft: map[string]string{}, Actions: map[string]string{}, Roles: []string{"coordinator", "analyst", "architect", "developer", "reviewer", "tester", "human"}, States: []string{"created", "ready", "in_progress", "done", "cancelled"}, Complexities: []string{"low", "normal", "high"}, View: r.URL.Query().Get("view"), EpicKey: r.URL.Query().Get("epic_key"), Role: r.URL.Query().Get("role"), State: r.URL.Query().Get("state")}
+	for key, values := range r.URL.Query() {
+		if len(values) == 1 {
+			p.Draft[key] = values[0]
+		}
+	}
+	p.Query = r.URL.Query().Get("q")
+	p.AgentState = r.URL.Query().Get("state")
 	for _, op := range []string{"logout", "continue", "create", "upload"} {
 		id, err := s.issueAction(r.Context(), b, op)
 		if err != nil {
@@ -43,49 +48,6 @@ func (s *Server) taskActions(ctx context.Context, b *browserSession, p *Page, ta
 func canEdit(b *browserSession, t *core.Task) bool {
 	return t != nil && t.Role == "human" && t.Type == "task" && t.State == "in_progress" && t.Lease != nil && t.Lease.SessionID == b.Session.SessionID && t.Lease.ExpiresAt.After(time.Now()) && b.Session.ExpiresAt.After(time.Now())
 }
-func (s *Server) read(w http.ResponseWriter, r *http.Request, b *browserSession) {
-	p, err := s.page(r, b)
-	if err != nil {
-		s.fail(w, r, b, err)
-		return
-	}
-	name := ""
-	switch {
-	case r.URL.Path == "/web/":
-		name = "board"
-	case r.URL.Path == "/web/history":
-		name = "history"
-	case strings.HasPrefix(r.URL.Path, "/web/tasks/") && !strings.Contains(strings.TrimPrefix(r.URL.Path, "/web/tasks/"), "/"):
-		name = "task"
-	default:
-		http.NotFound(w, r)
-		return
-	}
-	if p.CanContinue {
-		p.Notice = "Сессия доски истекла. Нажмите «Продолжить сессию»"
-		s.render(w, 200, name, p)
-		return
-	}
-	switch name {
-	case "board":
-		err = s.boardPage(r, b, &p)
-	case "task":
-		var task core.Task
-		task, err = s.board.Get(r.Context(), b.actor(), core.GetInput{TaskKey: strings.TrimPrefix(r.URL.Path, "/web/tasks/")})
-		if err == nil {
-			p.Task = &task
-			p.CanEdit = canEdit(b, &task)
-			err = s.taskActions(r.Context(), b, &p, []core.Task{task})
-		}
-	case "history":
-		err = s.historyPage(r, b, &p)
-	}
-	if err != nil {
-		s.fail(w, r, b, err)
-		return
-	}
-	s.render(w, 200, name, p)
-}
 func (s *Server) boardPage(r *http.Request, b *browserSession, p *Page) error {
 	if p.View == "" {
 		p.View = "questions"
@@ -93,13 +55,13 @@ func (s *Server) boardPage(r *http.Request, b *browserSession, p *Page) error {
 	if p.View == "questions" {
 		p.Role = "human"
 	}
-	input := core.ListInput{Cursor: r.URL.Query().Get("cursor"), Limit: 100, State: p.State, Role: p.Role, EpicKey: p.EpicKey, IncludeClosed: p.State == "done" || p.State == "cancelled"}
+	input := core.ListInput{Cursor: r.URL.Query().Get("cursor"), Limit: 100, State: p.State, Role: p.Role, EpicKey: p.EpicKey, Owner: r.URL.Query().Get("owner"), IncludeClosed: r.URL.Query().Get("include_closed") == "true" || p.State == "done" || p.State == "cancelled"}
 	var tasks core.TasksPage
 	var err error
 	if p.View == "questions" {
 		tasks, err = s.board.ListQuestions(r.Context(), b.actor(), input)
 	} else {
-		tasks, err = s.board.ListTasks(r.Context(), b.actor(), input)
+		tasks, err = s.board.ControlTasks(r.Context(), b.actor(), core.ControlTasksInput{ListInput: input, Query: p.Query})
 	}
 	if err != nil {
 		return err

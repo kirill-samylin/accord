@@ -9,6 +9,11 @@ import (
 )
 
 type Board interface {
+	ControlOverview(context.Context, core.Actor) (core.ControlOverview, error)
+	ControlSessions(context.Context, core.Actor, core.ControlSessionsInput) (core.ControlSessionsPage, error)
+	ControlTasks(context.Context, core.Actor, core.ControlTasksInput) (core.TasksPage, error)
+	RecentEvents(context.Context, core.Actor, core.RecentEventsInput) (core.RecentEventsPage, error)
+	Stats(context.Context, core.Actor, core.StatsInput) (core.Stats, error)
 	Authenticate(context.Context, string) (core.Principal, error)
 	AuthenticateID(context.Context, string) (core.Principal, time.Time, error)
 	Describe(context.Context, core.Principal, core.OpenSession) (core.SessionView, error)
@@ -37,6 +42,13 @@ type Renderer interface {
 }
 
 type Page struct {
+	Overview                                              *core.ControlOverview
+	Agents                                                []core.ControlSession
+	Agent                                                 *core.ControlSession
+	Activity                                              []core.Event
+	Stats                                                 *core.Stats
+	ObservedAt                                            time.Time
+	Query, AgentState                                     string
 	Title, Error, Notice, CSRF, ActionID, NextCursor      string
 	EpicsNextCursor                                       string
 	Principal                                             core.Principal

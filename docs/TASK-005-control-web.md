@@ -1,32 +1,64 @@
 # TASK-005 — панель управления Accord по Paperclip
 
-- Родитель REQ-005. Источник: пользователь19.10.2026 выбрал Paperclip как источник
-  дизайна/возможностей и поручил «Приступай»; прежний runtime Accord сохраняется.
-- Статус: в работе, реализация после independent analyst/architect/reference audit.
-- База a6501d8, codex/web-control. Общий REQ/состояние редактирует root099.
-- Контракт: control-web-contract.md §8 и приоритетные уточнения §9; reference
-  WORK102, upstream5739a53. Давинчиread-only, TandemOFF.
-- Результат этой поставки: полный control shell/overview, реальные agent sessions
-  с task/credential validity, задачиlist/board+wholeprojectsearch, recentactivity,
-  stats/settings/currentproject и сохранённые вопросы/дизайн/решения.
-- Сервисы managed execution/multiproject registry/provider config/budgets/skills
-  не подменяются формами; future масштабирование описано ADR. ПолныйREQupload
-  всех18категорий остаётся дорожнойкартой. PC-01 пользователю отправлен.
+- Родитель: [REQ-005](REQ-005-paperclip-control.md).
+- Источник: пользователь 19.10.2026 выбрал Paperclip как источник дизайна и
+  возможностей и поручил «Приступай». Действующий сервис Accord сохраняется.
+- Статус: в работе, этап реализации после аналитического, архитектурного
+  и раннего визуального аудита. Текущий результат ещё не принят и не установлен.
+- База: a6501d8; ветка codex/web-control, отдельная рабочая копия.
+- Контракт: [control-web-contract.md](control-web-contract.md), DTO §8 и
+  приоритетные уточнения §9. Визуальный источник — WORK102, Paperclip5739a53.
+- Общие REQ/TASK, назначения и приёмку ведёт root099. Давинчи только для чтения,
+  Tandem отключён по прямому указанию пользователя.
+
+## Результат поставки
+
+Рабочий интерфейс с боковой навигацией и обзором проекта, реальные сессии агентов
+с текущими задачами и проверкой действительности доступа, список/доска задач,
+поиск по всему проекту, лента событий, статистика, текущий проект и настройки.
+Существующие вопросы, ответы, дизайн и история решений продолжают работать.
+
+Будущее подключение нескольких проектов и управляемый запуск агентов получают
+отдельные границы данных, доступа и исполнения. Настройка моделей, бюджеты,
+навыки, интеграции и остальные категории Paperclip не подменяются формами без
+работающего backend. Полный целевой roadmap остаётся в REQ-005/WORK100; эта
+поставка не объявляет полную совместимость со всем Paperclip.
+
+PC-01 закрыт ответом пользователя19.10.2026: «Подключение и контроль уже запущенных
+агентов». Текущая поставка не включает запуск внешних процессов из панели.
 
 ## Приёмка
 
-WORK100 AC-01…10 + архитектурныеAC, code/security/actualUI независимыеreviews,
-process/browser QA послеcodeapprove, полный makecheck одинраз, actualHTTPS
-upgrade/smoke+backup и публикацияпровереннойветки. Авторовпроверяютдругиеагенты.
-Сохранитьauth/Origin/CSRF/leases/MCP12/cookies/nativeclients/базы/файлы/историю.
-НичегоизневыпущенныхD4/Eнепереносить. НикакихсекретоввGit.
+WORK100 AC-01…10 и архитектурные AC; независимые code/security/actual UI reviews;
+process/browser QA после code approve; полный make check один раз при приёмке;
+фактический HTTPS upgrade/smoke, резервная копия и публикация проверенной ветки.
+Изменённый код получает повторную проверку затронутой области.
 
-## Назначения
+Сохранить auth/Origin/CSRF/leases/MCP12/cookies/native clients, базы, файлы и историю.
+Невыпущенные D4/E не включаются. Реальные секреты и параметры подключения в Git
+не помещаются. Физический второй ПК не подменяется проверкой его токена с Mac.
 
-- WORK100 analyst — готовыйконтракт/inventory/roadmap.
-- WORK101 architect — готовыйконтрактDTO/будущаяизоляция.
-- WORK102 early design review — source/captures/tokens,state gaps, неfinalapprove.
-- WORK103 backend author — core/control, store/control(+cataloghelper), internal/web/**.
-- WORK104 UI author — internal/webui/**.
-- WORK105 security contract — контракт/новыereaders/poll, собственнаяWORK/evidence.
-- Далее code/security/UI reviews → testerprocess/browser → release.
+## Назначения и состояние
+
+| WORK | Исполнитель / роль | Область | Статус |
+| --- | --- | --- | --- |
+| 099 | root, coordinator | REQ/TASK, интеграция, документация, выпуск | в работе |
+| 100 | paperclip_analysis100, analyst | inventory/сценарии/AC/roadmap | завершено |
+| 101 | control_architecture101, architect | readers/DTO/будущая изоляция | завершено |
+| 102 | paperclip_ui102, design-reviewer | исходники/пиксели/tokens/state gaps | ранний аудит завершён |
+| 103 | control_backend103, developer | core/control, store/control, web | реализация и targeted tests |
+| 104 | control_ui104, developer | webui/templates/assets/render | реализация |
+| 105 | control_security105, security | ранние security-границы и negative AC | завершено, не final source approve |
+
+Backend103 и UI104 работают с непересекающимися файлами по §9 контракта.
+Следующий этап — независимые review конкретной версии, затем browser/process QA.
+Именованные модели Claude недоступны; авторы и проверяющие — разные агенты с
+наследованной моделью. Самопроверка автора не выдаётся за независимый approve.
+
+## Очередь проверки
+
+- WORK106 control_review106: независимый code/security review; backend103 frozen
+  с manifest, UI104 ещё завершает targeted coverage. Общий approve только после
+  полного freeze и сверки хешей; production code reviewer не редактирует.
+- WORK107 control_qa107: подготовка acceptance плана/окружения; новые browser/
+  process tests пишет и запускает только после явного code approve106.

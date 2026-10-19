@@ -1,0 +1,87 @@
+{{define "projects"}}{{template "head" .}}{{if not .CanContinue}}
+<p class="muted">Рабочее пространство этой доски.</p>
+<section class="panel project-card">
+<div class="card-top">
+<span class="project-mark">П</span>
+<span class="badge" data-state="active">Текущий проект</span>
+</div>
+<h2>
+{{.Session.Project}}
+</h2>
+<p>Одна общая очередь, журнал событий и материалы дизайна.</p>
+<div class="actions">
+<a class="button secondary" href="/web/tasks">Открыть задачи</a>
+<a href="/web/settings">Настройки проекта →</a>
+</div>
+</section>
+<section class="panel future">
+<h2>Несколько проектов — следующий этап</h2>
+<p>Подключение новых проектов и переключение между ними пока недоступны. Для каждого проекта потребуется отдельная доска и изолированный доступ.</p>
+</section>
+{{end}}{{template "foot" .}}{{end}}
+{{define "settings"}}{{template "head" .}}{{if not .CanContinue}}
+<div class="settings-grid">
+<section class="panel">
+<h2>Проект и рабочая сессия</h2>
+<p class="hint">Фактические параметры сервера. Здесь они доступны для чтения.</p>
+<dl class="settings-facts">
+<div>
+<dt>Проект</dt>
+<dd>
+{{.Session.Project}}
+</dd>
+</div>
+<div>
+<dt>Срок сессии</dt>
+<dd>
+{{.Session.SessionTTLSeconds}} с</dd>
+</div>
+<div>
+<dt>Срок владения задачей</dt>
+<dd>
+{{.Session.TaskTTLSeconds}} с</dd>
+</div>
+<div>
+<dt>Интервал явного продления</dt>
+<dd>
+{{.Session.HeartbeatEverySeconds}} с</dd>
+</div>
+<div>
+<dt>Текущая сессия</dt>
+<dd class="mono">
+{{.Session.SessionID}}
+</dd>
+</div>
+<div>
+<dt>Действует до</dt>
+<dd>
+{{date .Session.ExpiresAt}}
+</dd>
+</div>
+<div>
+<dt>Ревизия конфигурации</dt>
+<dd>Нет данных</dd>
+</div>
+</dl>
+</section>
+<section class="panel">
+<h2>Правила проекта</h2>
+{{range $key, $value := .Session.Rules}}
+<div class="rule">
+<h3>
+{{ruleLabel $key}}
+</h3>
+<p class="prose">
+{{ruleValue $value}}
+</p>
+</div>
+{{else}}
+<div class="empty">Сервер не передал правил проекта.</div>
+{{end}}
+</section>
+</div>
+<section class="panel future">
+<h2>Профили и запуск агентов</h2>
+<p>Настройки провайдеров, моделей и прав, управление запуском и подключение других проектов требуют отдельной реализации. Сейчас агенты подключаются к доске через существующие клиенты.</p>
+</section>
+{{end}}{{template "foot" .}}{{end}}

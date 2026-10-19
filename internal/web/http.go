@@ -71,6 +71,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	if strings.HasPrefix(r.URL.Path, "/web/data/") {
+		s.controlData(w, r)
+		return
+	}
 	// Mutations of a browser session are serialized through board call and local
 	// result persistence, preventing two tabs from racing session continuation.
 	if r.Method == "POST" && r.URL.Path != "/web/designs" {
@@ -178,6 +182,11 @@ func (s *Server) fail(w http.ResponseWriter, r *http.Request, b *browserSession,
 		p.Session = b.Session
 		p.CSRF = b.CSRF
 		p.ActionID = r.PostForm.Get("action_id")
+	}
+	for key, values := range r.URL.Query() {
+		if len(values) == 1 {
+			p.Draft[key] = values[0]
+		}
 	}
 	s.render(w, errorStatus(err), "error", p)
 }

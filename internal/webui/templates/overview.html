@@ -1,0 +1,99 @@
+{{define "overview"}}{{template "head" .}}{{if not .CanContinue}}
+{{with .Overview}}
+<section class="overview" data-overview data-session-expiry="{{$.Session.ExpiresAt.Format "2006-01-02T15:04:05Z07:00"}}" aria-labelledby="overview-title">
+<div class="section-heading">
+<h2 id="overview-title">Состояние проекта</h2>
+<span class="hint" data-overview-status role="status">Автообновление счётчиков каждые 15 секунд</span>
+</div>
+<div class="metrics-grid">
+<a class="metric" href="/web/tasks">
+<span>Всего задач</span>
+<strong data-overview-value="tasks_total">
+{{.TasksTotal}}
+</strong>
+<small>Весь проект</small>
+</a>
+<a class="metric" href="/web/tasks?state=in_progress">
+<span>В работе</span>
+<strong data-overview-value="tasks_in_progress">
+{{.TasksInProgress}}
+</strong>
+<small>Состояние задач</small>
+</a>
+<a class="metric" href="/web/agents">
+<span>Активные сессии агентов</span>
+<strong data-overview-value="active_agent_sessions">
+{{.ActiveAgentSessions}}
+</strong>
+<small>С действующим доступом</small>
+</a>
+<a class="metric" href="/web/tasks?state=done">
+<span>Завершено</span>
+<strong data-overview-value="tasks_done">
+{{.TasksDone}}
+</strong>
+<small>Задач в состоянии «Завершено»</small>
+</a>
+</div>
+<div class="overview-strip">
+<span>В очереди: <b data-overview-value="tasks_ready">
+{{.TasksReady}}
+</b>
+</span>
+<span>Создано: <b data-overview-value="tasks_created">
+{{.TasksCreated}}
+</b>
+</span>
+<span>Отменено: <b data-overview-value="tasks_cancelled">
+{{.TasksCancelled}}
+</b>
+</span>
+<span>С блокировками: <b data-overview-value="tasks_blocked">
+{{.TasksBlocked}}
+</b>
+</span>
+<span>Открытых эпиков: <b data-overview-value="open_epics">
+{{.OpenEpics}}
+</b>
+</span>
+<span>Действующих владений: <b data-overview-value="leased_tasks">
+{{.LeasedTasks}}
+</b>
+</span>
+<span>Сессий людей: <b data-overview-value="active_human_sessions">
+{{.ActiveHumanSessions}}
+</b>
+</span>
+</div>
+<p class="hint">Счётчики на <time data-overview-time datetime="{{.ObservedAt.Format "2006-01-02T15:04:05Z07:00"}}">
+{{date .ObservedAt}}
+</time>. Списки ниже обновляются при открытии страницы.</p>
+</section>
+{{else}}
+<div class="message">Нет данных обзора. Обновите страницу, чтобы повторить загрузку.</div>
+{{end}}
+<div class="dashboard-grid">
+<section class="panel">
+<div class="section-heading">
+<h2>Сессии агентов</h2>
+<a href="/web/agents">Все сессии →</a>
+</div>
+<p class="hint">Выборка активных сессий. Активная сессия подтверждает доступ к очереди; запуск внешнего процесса не отслеживается.</p>
+{{range .Agents}}{{template "agent-row" .}}{{else}}
+<div class="empty">
+<h3>Активных сессий нет</h3>
+<p>Они появятся, когда агенты откроют сессии на этой доске.</p>
+</div>
+{{end}}
+</section>
+<section class="panel">
+<div class="section-heading">
+<h2>Последние события</h2>
+<a href="/web/activity">Вся активность →</a>
+</div>
+{{range .Activity}}{{template "event-row" .}}{{else}}
+<div class="empty">В журнале пока нет событий.</div>
+{{end}}
+</section>
+</div>
+{{end}}{{template "foot" .}}{{end}}

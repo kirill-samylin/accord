@@ -1,14 +1,42 @@
 {{define "board"}}{{template "head" .}}{{if not .CanContinue}}
 <form class="filters" method="get" action="/web/">
 <input type="hidden" name="view" value="{{.View}}">
+{{if ne .View "questions"}}
+<label>Поиск<input name="q" value="{{.Query}}" maxlength="200" placeholder="Ключ, название, описание">
+</label>
+<input type="hidden" name="layout" value="{{draft . "layout"}}">
+{{end}}
 <label>Эпик<input name="epic_key" placeholder="E-…" value="{{.EpicKey}}">
 </label>
-{{if ne .View "questions"}}<label>Роль<select name="role">
-<option value="">Все роли</option>{{range .Roles}}<option value="{{.}}" {{if eq $.Role .}}selected{{end}}>{{role .}}</option>{{end}}</select>
-</label>{{end}}
-<label>Состояние<select name="state">
-<option value="">Текущие</option>{{range .States}}<option value="{{.}}" {{if eq $.State .}}selected{{end}}>{{state .}}</option>{{end}}</select>
+{{if ne .View "questions"}}
+<label>Роль<select name="role">
+<option value="">Все роли</option>
+{{range .Roles}}
+<option value="{{.}}" {{if eq $.Role .}}selected{{end}}>
+{{role .}}
+</option>
+{{end}}
+</select>
 </label>
+{{end}}
+<label>Состояние<select name="state">
+<option value="">Текущие</option>
+{{range .States}}
+<option value="{{.}}" {{if eq $.State .}}selected{{end}}>
+{{state .}}
+</option>
+{{end}}
+</select>
+</label>
+{{if ne .View "questions"}}
+<label>Владелец<input name="owner" value="{{draft . "owner"}}">
+</label>
+<label>Завершённые<select name="include_closed">
+<option value="false" {{if ne (draft . "include_closed") "true"}}selected{{end}}>Скрыть</option>
+<option value="true" {{if eq (draft . "include_closed") "true"}}selected{{end}}>Показать</option>
+</select>
+</label>
+{{end}}
 <button class="secondary" type="submit">Показать</button>
 <a href="/web/?view={{.View}}">Сбросить</a>
 </form>
@@ -16,90 +44,115 @@
 <section aria-labelledby="mine-title">
 <h2 id="mine-title">Мои вопросы</h2>
 <p class="muted">Вопросы, которые вы уже взяли. Открытие страницы не продлевает время ответа.</p>
-{{range .MyQuestions}}{{template "task-card" .}}{{else}}<div class="empty">У вас нет взятых вопросов.</div>{{end}}</section>
+{{range .MyQuestions}}{{template "task-card" .}}{{else}}
+<div class="empty">У вас нет взятых вопросов.</div>
+{{end}}
+</section>
 <section aria-labelledby="questions-title">
 <h2 id="questions-title">Вопросы для человека</h2>
 <p class="muted">Откройте вопрос, чтобы изучить контекст и явно взять его для ответа.</p>
-{{range .Questions}}{{template "task-card" .}}{{else}}<div class="empty">
+{{range .Questions}}{{template "task-card" .}}{{else}}
+<div class="empty">
 <h3>Вопросов по этим условиям нет</h3>
 <p>Новые вопросы появятся здесь, когда их создадут участники проекта.</p>
 <a href="/web/?view=questions">Сбросить фильтры</a>
-</div>{{end}}</section>
+</div>
+{{end}}
+</section>
 {{else}}
 <div class="section-heading">
 <h2>Эпики</h2>
 <a href="#create">Создать эпик или задачу ↓</a>
 </div>
-<div class="card-grid">{{range .Epics}}{{template "task-card" .}}{{else}}<div class="empty">Эпиков пока нет. Создайте первый в форме ниже.</div>{{end}}</div>
-{{if .EpicsNextCursor}}<a class="pagination" href="{{epicsURL .}}" rel="next">Следующие эпики →</a>{{end}}
-<h2>Задачи</h2>{{range .Tasks}}{{template "task-card" .}}{{else}}<div class="empty">
+<div class="card-grid">
+{{range .Epics}}{{template "task-card" .}}{{else}}
+<div class="empty">Эпиков пока нет. Создайте первый в форме ниже.</div>
+{{end}}
+</div>
+{{if .EpicsNextCursor}}
+<a class="pagination" href="{{epicsURL .}}" rel="next">Следующие эпики →</a>
+{{end}}
+<div class="section-heading">
+<h2>Задачи</h2>
+<nav class="segmented" aria-label="Представление задач">
+<a href="{{layoutURL . "list"}}" {{if ne (draft . "layout") "board"}}aria-current="true"{{end}}>Список</a>
+<a href="{{layoutURL . "board"}}" {{if eq (draft . "layout") "board"}}aria-current="true"{{end}}>Доска</a>
+</nav>
+</div>
+{{if eq (draft . "layout") "board"}}
+<p class="hint">Колонки содержат задачи этой страницы. Для изменения состояния откройте карточку.</p>
+<div class="kanban" role="region" aria-label="Задачи по состояниям" tabindex="0">
+{{range boardColumns .Tasks}}
+<section class="kanban-column">
+<h3>
+<span class="status-dot" data-state="{{.State}}">
+</span>
+{{state .State}} <span class="count">
+{{len .Tasks}}
+</span>
+</h3>
+{{range .Tasks}}{{template "task-card" .}}{{else}}
+<p class="hint">Нет задач на этой странице</p>
+{{end}}
+</section>
+{{end}}
+</div>
+{{else}}
+<div class="task-list">
+{{range .Tasks}}{{template "task-card" .}}{{else}}
+<div class="empty">
 <h3>Задач по этим условиям нет</h3>
 <p>Измените фильтры или создайте задачу.</p>
-<a href="/web/?view=tasks">Сбросить фильтры</a>
-</div>{{end}}
+<a href="/web/tasks">Сбросить фильтры</a>
+</div>
+{{end}}
+</div>
+{{end}}
 {{end}}
 {{template "pagination" .}}
 {{if ne .View "questions"}}{{template "create-form" .}}{{end}}
 {{end}}{{template "foot" .}}{{end}}
 
-{{define "task-card"}}<article class="task-card">
+{{define "task-card"}}
+<article class="task-card">
 <div class="card-top">
-<a class="key" href="{{taskURL .Key}}">{{.Key}}</a>
-<span class="badge">{{state .State}}</span>{{if .Blocked}}<span class="badge warning">Есть блокировки</span>{{end}}</div>
+<a class="key" href="{{taskURL .Key}}">
+{{.Key}}
+</a>
+<span class="badge" data-state="{{.State}}">
+{{state .State}}
+</span>
+{{if .Blocked}}
+<span class="badge warning">Есть блокировки</span>
+{{end}}
+</div>
 <h3>
-<a href="{{taskURL .Key}}">{{.Title}}</a>
+<a href="{{taskURL .Key}}">
+{{.Title}}
+</a>
 </h3>
-<p class="card-description">{{.Description}}</p>
+<p class="card-description">
+{{.Description}}
+</p>
 <div class="meta">
-<span>{{role .Role}}</span>{{if .EpicKey}}<a href="{{taskURL .EpicKey}}">{{.EpicKey}}</a>{{end}}<span>Приоритет {{.Priority}}</span>{{if .Owner}}<span>Ответственный: {{.Owner}}</span>{{end}}</div>
-{{if .Lease}}<p class="hint">В работе до {{date .Lease.ExpiresAt}}</p>{{end}}</article>{{end}}
-
-{{define "create-form"}}<section class="panel" id="create">
-<h2>Создать эпик или задачу</h2>
-<p class="muted">Задача появится в общей очереди выбранной роли. Запуск агента выполняется отдельно.</p>
-<form method="post" action="/web/tasks" data-create>
-<input type="hidden" name="csrf" value="{{.CSRF}}">
-<input type="hidden" name="action_id" value="{{action . "create"}}">
-<div class="form-grid">
-<label for="create-type">Что создать<select id="create-type" name="type">
-<option value="task" {{if ne (draft . "type") "epic"}}selected{{end}}>Задачу</option>
-<option value="epic" {{if eq (draft . "type") "epic"}}selected{{end}}>Эпик</option>
-</select>
-</label>
-<label for="create-priority">Приоритет<input id="create-priority" type="number" name="priority" min="0" max="100" value="{{if draft . "priority"}}{{draft . "priority"}}{{else}}2{{end}}" required>
-</label>
+<span>
+{{role .Role}}
+</span>
+{{if .EpicKey}}
+<a href="{{taskURL .EpicKey}}">
+{{.EpicKey}}
+</a>
+{{end}}
+<span>Приоритет {{.Priority}}
+</span>
+{{if .Owner}}
+<span>Ответственный: {{.Owner}}
+</span>
+{{end}}
 </div>
-<label for="create-title">Заголовок <span class="required">*</span>
-<input id="create-title" name="title" maxlength="200" value="{{draft . "title"}}" required>
-</label>{{with fieldError . "title"}}<p class="field-error">{{.}}</p>{{end}}
-<label for="create-description">Описание<textarea id="create-description" name="description" rows="6">{{draft . "description"}}</textarea>
-</label>{{with fieldError . "description"}}<p class="field-error">{{.}}</p>{{end}}
-<div class="form-grid" data-task-fields>
-<label for="create-epic">Эпик задачи <span class="required">*</span>
-<input id="create-epic" name="epic_key" list="epic-keys" value="{{draft . "epic_key"}}" placeholder="E-…">
-</label>
-<datalist id="epic-keys">{{range .Epics}}<option value="{{.Key}}">{{.Title}}</option>{{end}}</datalist>
-<label for="create-role">Роль исполнителя<select id="create-role" name="role">{{range .Roles}}<option value="{{.}}" {{if eq (draft $ "role") .}}selected{{end}}>{{role .}}</option>{{end}}</select>
-</label>
-</div>
-{{with fieldError . "epic_key"}}<p class="field-error">{{.}}</p>{{end}}{{with fieldError . "role"}}<p class="field-error">{{.}}</p>{{end}}
-<div class="form-grid">
-<label for="create-owner">Ответственный<input id="create-owner" name="owner" value="{{draft . "owner"}}">
-</label>
-<label for="create-areas">Области работы<input id="create-areas" name="areas" value="{{draft . "areas"}}" placeholder="Через запятую">
-</label>
-</div>
-<details {{if or (draft . "target_key") (draft . "target_commit")}}open{{end}}>
-<summary>Параметры проверки</summary>
-<p class="hint">Для ревьюера и тестировщика укажите задачу разработчика и точный commit.</p>
-<div class="form-grid">
-<label>Проверяемая задача<input name="target_key" value="{{draft . "target_key"}}" placeholder="T-…">
-</label>
-<label>Проверяемый commit<input name="target_commit" value="{{draft . "target_commit"}}" spellcheck="false">
-</label>
-</div>
-</details>
-{{with fieldError . "target_key"}}<p class="field-error">{{.}}</p>{{end}}{{with fieldError . "target_commit"}}<p class="field-error">{{.}}</p>{{end}}
-<button type="submit">Создать</button>
-</form>
-</section>{{end}}
+{{if .Lease}}
+<p class="hint">Владение до {{date .Lease.ExpiresAt}}
+</p>
+{{end}}
+</article>
+{{end}}

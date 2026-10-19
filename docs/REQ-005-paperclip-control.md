@@ -19,9 +19,9 @@
 | WORK | Роль | Область записи | Зависимость | Статус |
 | --- | --- | --- | --- | --- |
 | 099 | coordinator | этот REQ и общий контракт/приёмка | запрос | в работе |
-| 100 | analyst | docs/work/WORK-100-paperclip-analysis.md, /private/tmp/accord-control-099/analysis/ | запрос, reference/current source | назначено |
-| 101 | architect | docs/work/WORK-101-control-architecture.md, /private/tmp/accord-control-099/architecture/ | запрос, current source | назначено |
-| 102 | design-reviewer | docs/work/WORK-102-reference-ui.md, /private/tmp/accord-control-099/reference-ui/ | reference | назначено |
+| 100 | analyst | docs/work/WORK-100-paperclip-analysis.md, /private/tmp/accord-control-099/analysis/ | запрос, reference/current source | завершено (WORK100) |
+| 101 | architect | docs/work/WORK-101-control-architecture.md, /private/tmp/accord-control-099/architecture/ | запрос, current source | завершено (WORK101) |
+| 102 | design-reviewer | docs/work/WORK-102-reference-ui.md, /private/tmp/accord-control-099/reference-ui/ | reference | завершено, early audit (WORK102) |
 
 ## Правила приёмки
 
@@ -41,5 +41,21 @@
    на машине проекта, разрешённые runtime adapters и проверка процессов/ошибок.
 Блокирует: выбор execution adapters/worker и запуск из панели; визуальный shell,
 просмотр текущих агентов/задач/истории и исследование не блокирует.
-Ответ пользователя: ожидается. Опциональное уточнение; без ответа независимая
-доработка control UI продолжается, отсутствие ответа не разрешает удалённый запуск.
+Ответ пользователя 19.10.2026: «Подключение и контроль уже запущенных агентов».
+Вопрос закрыт: текущая поставка наблюдает и координирует действительные сессии,
+управляемый запуск процессов не входит в неё. Независимая доработка продолжена.
+
+## Текущая реализация
+
+Принят технический контракт [control-web-contract.md](control-web-contract.md),
+§8/9. Текущая поставка — [TASK-005](TASK-005-control-web.md); общая матрица
+18 категорий и будущие волны — [WORK100](work/WORK-100-paperclip-analysis.md).
+Это этап доработки работающего веб-клиента, не утверждение полной Paperclip parity.
+
+- WORK103 /control_backend103 — backend/core/store/web, резерв активен.
+- WORK104 /control_ui104 — webui/templates/assets/render, резерв активен.
+- WORK105 /control_security105 — ранняя security-проверка контракта, без source edits.
+- Root099 — единственный координатор/редактор REQ/TASK/docs/release.
+Новые пользовательские чаты не создаются. Модели наследуются; Claude bindings
+не применяются. Direct user Tandem OFF имеет приоритет над общими инструкциями
+Давинчи о резерве доски; успешный MCP task_claim не заявляется.

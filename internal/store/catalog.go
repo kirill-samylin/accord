@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"sort"
+	"strings"
 	"time"
 
 	"agent-board/internal/core"
@@ -33,47 +34,7 @@ func (s *Store) listTasks(ctx context.Context, a core.Actor, in core.ListInput, 
 		filter := in
 		filter.Cursor = ""
 		filter.Limit = 0
-		c, limit, err := pageCursor(kind, filter, in.Cursor, in.Limit, b.Sequence)
-		if err != nil {
-			return page, err
-		}
-		keys := make([]string, 0, len(b.Tasks))
-		for key := range b.Tasks {
-			keys = append(keys, key)
-		}
-		sort.Slice(keys, func(i, j int) bool { return numericKey(keys[i]) < numericKey(keys[j]) })
-		last := c.After
-		more := false
-		for _, key := range keys {
-			id := numericKey(key)
-			t := b.Tasks[key]
-			if id <= c.After || id > c.High || t.Type != kind {
-				continue
-			}
-			if in.State != "" && t.State != in.State || in.Role != "" && t.Role != in.Role || in.EpicKey != "" && t.EpicKey != in.EpicKey {
-				continue
-			}
-			if in.State == "" && !in.IncludeClosed && (t.State == "done" || t.State == "cancelled") {
-				continue
-			}
-			owner := t.Owner
-			if t.Type == "task" {
-				if e := b.Tasks[t.EpicKey]; e != nil {
-					owner = e.Owner
-				}
-			}
-			if in.Owner != "" && owner != in.Owner {
-				continue
-			}
-			if len(page.Tasks) == limit {
-				more = true
-				break
-			}
-			page.Tasks = append(page.Tasks, viewTask(b, t))
-			last = id
-		}
-		page.PageInfo = finishPage(c, last, more)
-		return page, nil
+		return taskListPage(b, in, kind, kind, filter, "")
 	})
 }
 
@@ -192,4 +153,53 @@ func (s *Store) ListNotes(ctx context.Context, a core.Actor, in core.NotesInput)
 		page.PageInfo = finishPage(c, last, more)
 		return page, nil
 	})
+}
+
+// taskListPage shares native filters with whole-project browser search.
+func taskListPage(b *board, in core.ListInput, kind, cursorKind string, filter any, query string) (core.TasksPage, error) {
+	page := core.TasksPage{Tasks: []core.Task{}}
+	c, limit, err := pageCursor(cursorKind, filter, in.Cursor, in.Limit, b.Sequence)
+	if err != nil {
+		return page, err
+	}
+	keys := make([]string, 0, len(b.Tasks))
+	for key := range b.Tasks {
+		keys = append(keys, key)
+	}
+	sort.Slice(keys, func(i, j int) bool { return numericKey(keys[i]) < numericKey(keys[j]) })
+	last := c.After
+	more := false
+	for _, key := range keys {
+		id := numericKey(key)
+		t := b.Tasks[key]
+		if id <= c.After || id > c.High || t.Type != kind {
+			continue
+		}
+		if in.State != "" && t.State != in.State || in.Role != "" && t.Role != in.Role || in.EpicKey != "" && t.EpicKey != in.EpicKey {
+			continue
+		}
+		if in.State == "" && !in.IncludeClosed && (t.State == "done" || t.State == "cancelled") {
+			continue
+		}
+		owner := t.Owner
+		if t.Type == "task" {
+			if e := b.Tasks[t.EpicKey]; e != nil {
+				owner = e.Owner
+			}
+		}
+		if in.Owner != "" && owner != in.Owner {
+			continue
+		}
+		if query != "" && !strings.Contains(strings.ToLower(t.Key), query) && !strings.Contains(strings.ToLower(t.Title), query) && !strings.Contains(strings.ToLower(t.Description), query) {
+			continue
+		}
+		if len(page.Tasks) == limit {
+			more = true
+			break
+		}
+		page.Tasks = append(page.Tasks, viewTask(b, t))
+		last = id
+	}
+	page.PageInfo = finishPage(c, last, more)
+	return page, nil
 }

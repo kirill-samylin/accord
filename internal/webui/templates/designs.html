@@ -18,41 +18,71 @@
 <h2>Материалы и версии</h2>
 <a href="#upload">Загрузить дизайн ↓</a>
 </div>
-<div class="card-grid">{{range .Designs}}<article class="panel design-card">{{if .PreviewURL}}<a href="{{.DownloadURL}}" aria-label="Скачать {{.Filename}}">
+<div class="card-grid">
+{{range .Designs}}
+<article class="panel design-card">
+{{if .PreviewURL}}
+<a href="{{.DownloadURL}}" aria-label="Скачать {{.Filename}}">
 <img class="design-preview" src="{{.PreviewURL}}" alt="Превью: {{.Title}}" loading="lazy">
-</a>{{end}}<div class="card-top">
-<span class="badge">Версия {{.Version}}</span>
-<span>{{scope .Scope}}{{if .ScopeKey}} · {{.ScopeKey}}{{end}}</span>
+</a>
+{{end}}
+<div class="card-top">
+<span class="badge">Версия {{.Version}}
+</span>
+<span>
+{{scope .Scope}}{{if .ScopeKey}} · {{.ScopeKey}}{{end}}
+</span>
 </div>
-<h3>{{.Title}}</h3>
-<p class="break">{{.Filename}}</p>
-<p class="hint">{{.MediaType}} · {{size .Size}}</p>
-<p class="hint">{{.UploaderOwner}} · {{date .CreatedAt}}</p>
+<h3>
+{{.Title}}
+</h3>
+<p class="break">
+{{.Filename}}
+</p>
+<p class="hint">
+{{.MediaType}} · {{size .Size}}
+</p>
+<p class="hint">
+{{.UploaderOwner}} · {{date .CreatedAt}}
+</p>
 <details>
 <summary>Проверка файла</summary>
-<p class="hint break">SHA-256: {{.SHA256}}</p>
-<p class="hint break">Материал: {{.DesignID}}</p>
+<p class="hint break">SHA-256: {{.SHA256}}
+</p>
+<p class="hint break">Материал: {{.DesignID}}
+</p>
 </details>
 <div class="actions">
 <a class="button secondary" href="{{.DownloadURL}}" download>Скачать</a>
 <a href="/web/designs?design_id={{.DesignID}}">История версий</a>
 <a href="/web/designs?design_id={{.DesignID}}&amp;scope={{.Scope}}&amp;scope_key={{.ScopeKey}}#upload">Добавить версию</a>
 </div>
-</article>{{else}}<div class="empty">
+</article>
+{{else}}
+<div class="empty">
 <h3>Материалов пока нет</h3>
 <p>Загрузите первый дизайн или измените фильтры.</p>
 <a href="#upload">Загрузить дизайн</a>
-</div>{{end}}</div>
+</div>
+{{end}}
+</div>
 {{template "pagination" .}}
 <section class="panel" id="upload">
-<h2>{{if draft . "design_id"}}Добавить версию материала{{else}}Загрузить дизайн{{end}}</h2>
+<h2>
+{{if draft . "design_id"}}Добавить версию материала{{else}}Загрузить дизайн{{end}}
+</h2>
 <p class="muted">PNG, JPEG, WEBP, PDF, ZIP, HTML или SVG. Один файл — до 50 МиБ. ZIP сохраняется целиком; HTML, SVG, PDF и ZIP доступны для скачивания.</p>
 <form method="post" action="/web/designs" enctype="multipart/form-data" data-upload>
 <input type="hidden" name="csrf" value="{{.CSRF}}">
 <input type="hidden" name="action_id" value="{{action . "upload"}}">
 <label for="design-title">Название <span class="required">*</span>
 <input id="design-title" name="title" maxlength="200" value="{{draft . "title"}}" required>
-</label>{{with fieldError . "title"}}<p class="field-error">{{.}}</p>{{end}}
+</label>
+{{with fieldError . "title"}}
+<p class="field-error">
+{{.}}
+</p>
+{{end}}
 <div class="form-grid">
 <label for="design-scope">Связать с<select id="design-scope" name="scope">
 <option value="project" {{if eq (draft . "scope") "project"}}selected{{end}}>Проектом</option>
@@ -67,12 +97,22 @@
 </label>
 <p class="hint">Если указаны задача и эпик, задача должна принадлежать этому эпику.</p>
 <input type="hidden" name="design_id" value="{{draft . "design_id"}}">
-{{if draft . "design_id"}}<p class="hint break">Новая версия материала {{draft . "design_id"}}. Прежние версии сохранятся.</p>
-<a href="/web/designs#upload">Загрузить отдельный материал</a>{{end}}
+{{if draft . "design_id"}}
+<p class="hint break">Новая версия материала {{draft . "design_id"}}. Прежние версии сохранятся.</p>
+<a href="/web/designs#upload">Загрузить отдельный материал</a>
+{{end}}
 <label for="design-file">Файл <span class="required">*</span>
 <input id="design-file" type="file" name="file" accept=".png,.jpg,.jpeg,.webp,.pdf,.zip,.html,.htm,.svg" required>
 </label>
-<p class="hint" data-file-status>Размер и формат проверяются сервером. После ошибки выберите файл повторно.</p>{{with fieldError . "file"}}<p class="field-error">{{.}}</p>{{end}}
-<button type="submit">{{if draft . "design_id"}}Загрузить новую версию{{else}}Загрузить дизайн{{end}}</button>
+<p class="hint" data-file-status>Размер и формат проверяются сервером. После ошибки выберите файл повторно.</p>
+{{with fieldError . "file"}}
+<p class="field-error">
+{{.}}
+</p>
+{{end}}
+<button type="submit">
+{{if draft . "design_id"}}Загрузить новую версию{{else}}Загрузить дизайн{{end}}
+</button>
 </form>
-</section>{{template "foot" .}}{{end}}
+</section>
+{{template "foot" .}}{{end}}

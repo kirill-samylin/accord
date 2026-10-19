@@ -374,3 +374,21 @@ TASK-005 поставляет текущую рабочую веб-волну. �
 - Шрифт InterVariable self-host из reference разрешён после переноса официального
   SIL OFL notice/text; UI104 копирует только font asset, root —license/docs.
   Никакого CDN, logo или fixturedata. Paperclip MIT notice уже сохранён.
+
+### Уточнение read cursors/error envelope
+
+Opaque cursors ControlTasks/ControlSessions привязаны к нормализованным фильтрам.
+RecentEvents использует числовой `before_cursor` из §8 (как границу DESC, неopaque
+filter-bound token); при изменении фильтра форма начинает чтение с начала.
+Query parsing/неотрицательная граница валидируются, но криптографическая привязка
+этого числа к фильтру не заявляется. Это уточняет общее выражение про cursors выше.
+Browser JSON errors: `{code,error}`, строки, HTTPstatus из действующего core
+mapping; expired board session —409/LEASE_LOST. Это не новая native error схема.
+Поиск q только задачам; questions сохраняет фактическую priority queue.
+
+### Принятое пользовательское уточнение PC-01
+
+19.10.2026 пользователь выбрал «Подключение и контроль уже запущенных агентов».
+Это закрывает открытый вопрос выше. Текущая поставка показывает реальные сессии
+и владение задачами; управляемый запуск процессов/модели/provider config остаются
+будущим слоем. Существующие UI/backend контракты не меняются.

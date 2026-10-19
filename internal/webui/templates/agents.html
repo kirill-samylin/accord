@@ -1,0 +1,162 @@
+{{define "agents"}}{{template "head" .}}{{if not .CanContinue}}
+<p class="muted">Сессии участников проекта, их доступ и текущее владение задачами. Срок сессии не подтверждает работу внешнего процесса.</p>
+<form class="filters" method="get" action="/web/agents">
+<label>Участники<select name="kind">
+<option value="agent" {{if eq (draft . "kind") "agent"}}selected{{end}}>Агенты</option>
+<option value="human" {{if eq (draft . "kind") "human"}}selected{{end}}>Люди</option>
+<option value="all" {{if eq (draft . "kind") "all"}}selected{{end}}>Все</option>
+</select>
+</label>
+<label>Состояние<select name="state">
+<option value="active" {{if eq .AgentState "active"}}selected{{end}}>Активные</option>
+<option value="expired" {{if eq .AgentState "expired"}}selected{{end}}>Срок истёк</option>
+<option value="credential_invalid" {{if eq .AgentState "credential_invalid"}}selected{{end}}>Доступ недействителен</option>
+<option value="" {{if and (eq .AgentState "") (eq (draft . "include_closed") "true")}}selected{{end}}>Все состояния</option>
+</select>
+</label>
+<input type="hidden" name="include_closed" value="true">
+<label>Роль<select name="role">
+<option value="">Все роли</option>
+{{range .Roles}}
+<option value="{{.}}" {{if eq $.Role .}}selected{{end}}>
+{{role .}}
+</option>
+{{end}}
+</select>
+</label>
+<label>Владелец<input name="owner" value="{{draft . "owner"}}">
+</label>
+<button class="secondary" type="submit">Применить</button>
+<a href="/web/agents">Сбросить</a>
+</form>
+<section class="panel roster">
+<div class="table-heading">
+<span>Участник / запуск</span>
+<span>Состояние и задача</span>
+<span>Срок сессии</span>
+</div>
+{{range .Agents}}{{template "agent-row" .}}{{else}}
+<div class="empty">
+<h2>Сессий по этим условиям нет</h2>
+<p>Измените фильтры или дождитесь подключения участников.</p>
+</div>
+{{end}}
+</section>
+<p class="hint">Снимок на {{date .ObservedAt}}. Данные списка обновляются при открытии страницы.</p>
+{{template "pagination" .}}{{end}}{{template "foot" .}}{{end}}
+{{define "agent-row"}}
+<article class="agent-row">
+<div class="agent-identity">
+<span class="avatar" aria-hidden="true">
+{{template "nav-icon" "agents"}}
+</span>
+<div>
+<a class="entity-name" href="{{agentURL .SessionID}}">
+{{role .Role}}
+</a>
+<div class="hint truncate" title="{{.Owner}} · {{.Machine}}">
+{{.Owner}} · {{.Machine}}
+</div>
+<div class="micro truncate" title="{{.RunID}}">Запуск: {{.RunID}}
+</div>
+</div>
+</div>
+<div>
+<span class="badge" data-state="{{.Status}}">
+{{sessionStatus .Status}}
+</span>
+{{with .Task}}
+<p class="assigned-task">
+<a href="{{taskURL .Key}}">
+{{.Key}} · {{.Title}}
+</a>
+<small>Задача во владении</small>
+</p>
+{{else}}
+<p class="hint">Нет действующего владения задачей</p>
+{{end}}
+</div>
+<time class="micro">
+{{date .ExpiresAt}}
+</time>
+</article>
+{{end}}
+{{define "agent"}}{{template "head" .}}{{if not .CanContinue}}{{with .Agent}}
+<nav class="breadcrumb">
+<a href="/web/agents">Агенты</a>
+<span>/</span>
+<span>
+{{role .Role}}
+</span>
+</nav>
+<div class="detail-grid">
+<section class="panel">
+<div class="card-top">
+<span class="avatar" aria-hidden="true">
+{{template "nav-icon" "agents"}}
+</span>
+<span class="badge" data-state="{{.Status}}">
+{{sessionStatus .Status}}
+</span>
+</div>
+<h2>
+{{role .Role}}
+</h2>
+<p class="muted">
+{{.Owner}} · {{.Machine}}
+</p>
+<dl class="facts">
+<div>
+<dt>ID сессии</dt>
+<dd class="mono">
+{{.SessionID}}
+</dd>
+</div>
+<div>
+<dt>Имя запуска сессии</dt>
+<dd>
+{{.RunID}}
+</dd>
+</div>
+<div>
+<dt>Поколение роли</dt>
+<dd>
+{{.RoleGeneration}}
+</dd>
+</div>
+<div>
+<dt>Срок сессии</dt>
+<dd>
+{{date .ExpiresAt}}
+</dd>
+</div>
+<div>
+<dt>Последнее записанное событие</dt>
+<dd>
+{{with .LastEventAt}}{{date .}}{{else}}Нет данных{{end}}
+</dd>
+</div>
+<div>
+<dt>Внешний процесс / модель</dt>
+<dd>Нет данных</dd>
+</div>
+</dl>
+<p class="hint">Последнее событие не является сигналом присутствия. Сессия с действующим доступом не подтверждает запуск процесса или модели.</p>
+<a href="/web/activity?session_id={{.SessionID}}">События этой сессии →</a>
+</section>
+<section class="panel">
+<h2>Задача во владении</h2>
+{{with .Task}}{{template "task-card" .}}{{else}}
+<div class="empty">Действующего владения задачей нет.</div>
+{{end}}
+</section>
+</div>
+<section class="panel">
+<h2>События сессии</h2>
+{{range $.Activity}}{{template "event-row" .}}{{else}}
+<div class="empty">У этой сессии пока нет записанных событий.</div>
+{{end}}
+</section>
+{{template "pagination" $}}{{else}}
+<div class="empty">Сессия не найдена.</div>
+{{end}}{{end}}{{template "foot" .}}{{end}}
