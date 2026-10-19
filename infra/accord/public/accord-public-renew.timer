@@ -1,0 +1,11 @@
+[Unit]
+Description=Hourly renewal check for Accord short-lived public IP certificate
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=120
+Persistent=yes
+Unit=accord-public-renew.service
+
+[Install]
+WantedBy=timers.target

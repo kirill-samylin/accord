@@ -1,0 +1,26 @@
+[Unit]
+Description=Renew Accord public IP TLS certificate and reload nginx
+Wants=network-online.target
+Requires=nginx.service
+After=network-online.target nginx.service
+
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart=/opt/accord/acme/bin/certbot renew --cert-name accord-public-ip --quiet --no-random-sleep-on-renew --deploy-hook /opt/accord/admin/public-tls-reload.sh
+ExecStartPost=/opt/accord/admin/public-tls-reload.sh
+ExecStartPost=/usr/bin/openssl x509 -checkend 86400 -noout -in /etc/letsencrypt/live/accord-public-ip/fullchain.pem
+TimeoutStartSec=180
+Nice=10
+CPUQuota=25%
+MemoryMax=192M
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+ReadWritePaths=/etc/letsencrypt /var/lib/letsencrypt /var/log/letsencrypt /var/www/accord-acme /var/log/nginx /run/nginx.pid

@@ -12,7 +12,9 @@ REST, Streamable HTTP MCP and the JSON CLI share the same Go/SQLite service.
 It coordinates work; clients remain responsible for stopping local edits when
 connectivity or ownership becomes uncertain.
 
-The native bearer service runs behind a private HTTPS proxy. It is **not a
+The native bearer service runs behind a public HTTPS proxy with separate machine tokens.
+Clients do not require Tailscale; see [public HTTPS setup](docs/public-https.md).
+The former private routes remain available for compatibility. It is **not a
 completed V1**; source, deployed revision and external checks are tracked separately.
 See [requirements 1.1](docs/requirements.md), [architecture](docs/architecture.md),
 [wire API](docs/api.md), [current task](docs/TASK-003-working-service.md) and

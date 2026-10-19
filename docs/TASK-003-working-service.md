@@ -372,3 +372,54 @@ restore; клиенты поддерживают lease во время длит�
   Пакет сохраняет13committedbranches и isolated unreviewed старый testfixture.
   Физический второйПК по-прежнему требует подключения к tailnet и smoke.
   Live1e9025c/Tandem443/backup policy не переключались этим этапом.
+
+
+### 19.10.2026 — публичный HTTPS без Tailscale на клиентах
+
+Пользователь прямо поручил обычный HTTPS и отдельные токены для подключения
+второго ПК без Tailscale. Это заменяет прежнее ограничение private-only для
+Accord; Tandem/его данные и приватные маршруты сохраняются. Новый продуктовый
+срез/D4/schema4/E не выпускается: меняется только внешний TLS ingress к liveC2.
+
+- WORK078: отдельный DevOps готовит nginx templates/renderer, ACME bootstrap,
+  автоматическое продление доверенного IP-сертификата и reload; root выполняет
+  live inventory/развёртывание после review. Временная область автора
+  /private/tmp/accord-public-078/author, read-only repo.
+- WORK079: отдельный security reviewer проверяет frozen артефакты и guards;
+  исходники/сервер ему read-only. Автор и reviewer — разные экземпляры с одной
+  унаследованной моделью, named Claude mapping недоступен.
+- Основной доступ: публичный IPv4 VPS:443 с публично trusted PKI, без DNS
+  сторонних wildcard-сервисов, если IP issuance подтверждено. HTTP80 только
+  ACME challenge. Нельзя открывать backend7892 или проксировать bearer поHTTP.
+- Исходные токены остаются отдельными; секреты, частные metadata и действительный
+  адрес не коммитить. После live проверки обновить private connection.json и
+  подготовить простой комплект второго ПК; старую инструкцию пометить заменённой.
+- Приёмка: TLS hostname/IP validation, unauth401, validtoken authenticated MCP12,
+  wronghost/origin/oversize/rate guards, публичный маршрут с Mac без Tailscale,
+  автоматическое renew/reload, Tandem и backup service unchanged. Физический
+  второй ПК отдельный NOT-RUN до его собственного запуска.
+
+- WORK078/079: публичный HTTPS ingress включён. LiveC2/schema2/бинарник1e9025c
+  неизменны, Tandem и все privateServe routes unchanged. nginx/ACME separate
+  publicIPv4, trustedLEIPcert160h, hourlyrenewactive+normal/dryrunhookPASS.
+- QA081:21PASS,1предпосылкаFAIL(TailscaleRunning) сохранена. QA082 при
+  фактическомStopped:6PASS0FAIL; rootfinally восстановил Running и prefs.
+  Pc2catalog12 с Mac без board-session, MacE-5created/read/cancelledown;
+  physicalsecondPC/Windowsruntime остаютсяNOTRUN. Review083 завершает
+  независимую проверку тестов и нового клиентского порядка080.
+- Runtimeошибкидоexposureзафиксированы: unitverifyотmaskednginx; unsupported
+  HTTPssl_handshake_timeout. Исправленныеoperatorrenderer/unitиnginx-tPASS
+  опубликованы в infra/accord/public. Ни D4, ни E не развёрнуты.
+
+- WORK083 FINAL APPROVE: independent3methodprobesPASS,08121PASS+initial
+  environmentFAILretained,0826PASS0FAILwithStopped+prefsrestored. Current
+  infrastructurecopiesequalapproved079, Go/modulebytesunchangedfromlive1e.
+  FinalZIPCRC/5nestedbinarySHA/forbiddenfiles rootPASS; secrets/address
+  остаютсявprivateconnectionJSON, не в Git и не в клиентскомZIP.
+- Объём пользователя «обычный HTTPS безTailscale» ЗАВЕРШЁН на доступном
+  VPS/основномMac: publicIPTLS→C2, distinctexistingtokens, hourlyrenew
+  normal+dryrunPASS, autostart, ready200, nativeMCP12 и ownsyntheticcleanup.
+  Передача: Desktop/Project/Accord-HTTPS-2026-10-19, новыйconnection.json
+  отдельно+прежнийpc-2.token; еслиbinaryужеесть — изменитьлишь--server
+  иперезапуститьMCP. Дополнительноreadyclients5 сновымSETUPбезTailscale.
+  PhysecondPC/Windowsnative/fullV1/SLA/offsite не объявленыPASS.

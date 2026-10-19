@@ -1,3 +1,8 @@
+> Обновление 19.10.2026: клиентский доступ Accord теперь через обычный публичный HTTPS.
+> Tailscale на клиенте не требуется. Актуальные шаги — [public-https.md](public-https.md)
+> и [second-pc.md](second-pc.md); прежние клиентские указания Tailscale/8443 ниже исторические.
+> Приватные серверные маршруты сохранены для совместимости и Tandem.
+
 # Клиенты Accord: доступ и аренды
 
 Первый рабочий доступ — отдельный локально выданный токен каждой машины.
@@ -31,7 +36,7 @@ bridge для нескольких независимых ролевых аге�
 ```toml
 [mcp_servers.accord_worker]
 command = "/ABSOLUTE/PATH/agent-board"
-args = ["mcp", "--server", "https://YOUR_PRIVATE_ACCORD:8443", "--token-file", "/ABSOLUTE/PRIVATE/PATH/pc-2.token"]
+args = ["mcp", "--server", "https://ACCORD_ADDRESS", "--token-file", "/ABSOLUTE/PRIVATE/PATH/pc-2.token"]
 required = true
 ```
 
@@ -64,7 +69,7 @@ Remove-Item Env:AGENT_BOARD_TOKEN
 ```toml
 [mcp_servers.accord_worker]
 command = "C:\\ABSOLUTE\\PATH\\agent-board.exe"
-args = ["mcp", "--server", "https://YOUR_PRIVATE_ACCORD:8443"]
+args = ["mcp", "--server", "https://ACCORD_ADDRESS"]
 env_vars = ["AGENT_BOARD_TOKEN"]
 required = true
 ```
@@ -80,7 +85,7 @@ required = true
 
 ```toml
 [mcp_servers.accord]
-url = "https://YOUR_PRIVATE_ACCORD:8443/mcp"
+url = "https://ACCORD_ADDRESS/mcp"
 bearer_token_env_var = "AGENT_BOARD_TOKEN"
 required = true
 ```

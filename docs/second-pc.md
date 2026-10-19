@@ -1,124 +1,122 @@
-# Второй ПК: подключение к Accord
+# Второй компьютер: подключиться к Accord
 
-Обновлено18.10.2026. Общий Accord установлен на VPS; удалённый сценарий
-с настоящим Codex на Mac прошёл. Физическую проверку второго ПК пользователь
-выполнит позже. Точный статус — [TASK-003](TASK-003-working-service.md),
-проверенная версия — [Codex003](codex-003.md).
+Обновлено 19.10.2026. Теперь используйте обычный интернет, HTTPS и свой токен.
+Tailscale для подключения не нужен. Установленный общий сервер остаётся
+на VPS: устанавливать сервер на втором компьютере не требуется.
+Если клиент уже настроен, достаточно [сменить адрес](public-https.md).
 
-## 1. Получить доступ
+## 1. Получить три файла
 
-Подключите второй ПК к той же частной Tailscale-сети. Администратор выдаёт
-частный HTTPS-адрес Accord с портом8443 и **отдельный токен для machine=pc-2**.
-Адрес старого Tandem на443 и код его доски для Accord не подходят.
-Не запускайте `serve` на втором ПК: оба клиента используют одну серверную БД.
+- `Accord-project.zip` — пакет с готовыми клиентами и инструкциями.
+- **Обновлённый** `connection.json` — действительный адрес в поле `origin`.
+- `pc-2.token` — отдельный секрет доступа этой машины, передаётся защищённо.
 
-Администратор выпускает токен на VPS штатным helper:
+Старый токен для этой же машины сохраняется при смене адреса, пока он действителен.
+Токен первого компьютера не копируется. Адрес и токен не публикуйте в Git.
+Получение архива не заменяет получение двух отдельных файлов доступа.
+Старые указания пакета о Tailscale/порте 8443 заменены этой инструкцией.
+Состояние релиза и ограничений — [TASK-003](TASK-003-working-service.md).
+
+## 2. Выбрать готовый клиент
+
+Распакуйте `Accord-project.zip`, найдите `clients/` и выберите архив:
+
+| Компьютер | Файл |
+| --- | --- |
+| Windows x64 | `accord-client-windows-amd64-1e9025c.zip` |
+| Mac Apple Silicon | `accord-client-darwin-arm64-1e9025c.zip` |
+| Mac Intel | `accord-client-darwin-amd64-1e9025c.zip` |
+| Linux x64 | `accord-client-linux-amd64-1e9025c.zip` |
+| Linux ARM64 | `accord-client-linux-arm64-1e9025c.zip` |
+
+Windows ARM64 native-архива в пакете нет. Проверьте SHA256 архива по манифесту
+пакета, распакуйте и проверьте binary по `SHA256SUMS` его ZIP.
+Mac: `shasum -a 256 -c SHA256SUMS`; Linux: `sha256sum --check SHA256SUMS`;
+PowerShell: `Get-FileHash .\agent-board.exe -Algorithm SHA256` и сравнение
+с выданным SHA256SUMS. Для подключения Go и сборка не нужны.
+
+Поместите binary в `~/accord-client` (`%USERPROFILE%\accord-client` на Windows),
+а два файла доступа в `~/.config/accord`. Не помещайте токен в Git checkout.
+Откройте `origin` из JSON, добавив `/readyz`, в браузере: ожидается HTTP 200
+с нормальной проверкой сертификата. Не отключайте TLS-проверку.
+
+## 3. Настроить Codex на macOS/Linux
+
+После переноса файлов установите права:
 
 ```sh
-python3 /opt/accord/admin/token.py --owner SECOND_OPERATOR --machine pc-2 --days 30
+chmod 700 "$HOME/.config/accord"
+chmod 600 "$HOME/.config/accord/pc-2.token" "$HOME/.config/accord/connection.json"
+chmod 700 "$HOME/accord-client/agent-board"
 ```
 
-SECOND_OPERATOR заменяют именем участника. Helper выводит путь private-файла,
-значение в терминал не печатает. Передайте файл защищённым каналом, сохраните
-ID для отзыва, после доставки удалите серверную plaintext-копию.
-Токен Mac не копируйте; секрет не помещайте в чат, Git или config.toml.
-
-На втором ПК сохраните файл `~/.config/accord/pc-2.token`. В macOS/Linux
-каталог должен иметь0700, файл0600. Windows: ACL только текущей учётной записи;
-POSIX chmod не является проверкой Windows ACL.
-
-Откройте `https://YOUR_PRIVATE_ACCORD:8443/readyz`: ожидается200 с обычной
-проверкой TLS. YOUR_PRIVATE_ACCORD заменяется выданным именем. Сертификатную
-проверку не отключайте. Readiness без токена ещё не проверяет доступ к задачам.
-
-## 2. Собрать локальный клиент
-
-Нужны Git, Go1.26.1+ и установленный авторизованный Codex. На проверенном Mac
-использован Codex CLI0.163.0-alpha.10.2. Сборка на других ОС не заменяет запуск.
-
-```sh
-git clone --branch codex/pilot https://github.com/kirill-samylin/accord.git
-cd accord
-go build -o bin/agent-board ./cmd/agent-board
-```
-
-На Windows последняя команда:
-
-```powershell
-go build -o bin/agent-board.exe ./cmd/agent-board
-```
-
-## 3. Подключить отдельного worker
-
-В конфигурацию MCP клиента добавьте раздел, сохранив существующие настройки.
-Замените пути и адрес на реальные абсолютные значения. Содержимое токена
-в конфигурацию не вставляется.
-
-macOS/Linux:
+В `~/.codex/config.toml` сохраните существующие настройки и добавьте раздел:
 
 ```toml
 [mcp_servers.accord_worker]
-command = "/ABSOLUTE/PATH/accord/bin/agent-board"
-args = ["mcp", "--server", "https://YOUR_PRIVATE_ACCORD:8443", "--token-file", "/ABSOLUTE/PRIVATE/PATH/pc-2.token"]
+command = "/ABSOLUTE/PATH/accord-client/agent-board"
+args = ["mcp", "--server", "https://ACCORD_ADDRESS", "--token-file", "/ABSOLUTE/PRIVATE/PATH/pc-2.token"]
 required = true
 ```
 
-Windows использует защищённый файл и передачу в окружение запускающего терминала:
+Замените пути на реальные **абсолютные** пути этого ПК, а адрес-заглушку — на
+точное поле `origin` из нового `connection.json`, без добавления `/mcp`.
+Клиент не читает JSON автоматически; адрес нужно перенести в `--server`.
+Сам токен в TOML не вставляйте. Перезапустите локальный Codex.
+
+## 4. Настроить Codex CLI на Windows
+
+После переноса приватных файлов в `%USERPROFILE%\.config\accord`:
 
 ```powershell
-$env:AGENT_BOARD_TOKEN = (Get-Content -Raw "$env:USERPROFILE\.config\accord\pc-2.token").Trim()
-codex
-Remove-Item Env:AGENT_BOARD_TOKEN
+$AccordPrivate = Join-Path $env:USERPROFILE '.config\accord'
+$AccordUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+icacls $AccordPrivate /inheritance:r /grant:r "${AccordUser}:(OI)(CI)F"
+icacls "$AccordPrivate\pc-2.token" /inheritance:r /grant:r "${AccordUser}:F"
+icacls "$AccordPrivate\connection.json" /inheritance:r /grant:r "${AccordUser}:F"
+icacls "$AccordPrivate\pc-2.token"
 ```
 
-Соответствующий раздел MCP Windows:
+Если остались явные разрешения другим обычным пользователям, удалите их
+через свойства файла «Безопасность»; снятие наследования их не удаляет.
+Не изменяйте права чужих каталогов. В `%USERPROFILE%\.codex\config.toml`:
 
 ```toml
 [mcp_servers.accord_worker]
-command = "C:\\ABSOLUTE\\PATH\\accord\\bin\\agent-board.exe"
-args = ["mcp", "--server", "https://YOUR_PRIVATE_ACCORD:8443"]
+command = "C:\\Users\\YOUR_USER\\accord-client\\agent-board.exe"
+args = ["mcp", "--server", "https://ACCORD_ADDRESS"]
 env_vars = ["AGENT_BOARD_TOKEN"]
 required = true
 ```
 
-Уже открытое GUI-приложение не получает окружение нового терминала автоматически.
-Эти настройки сверены с [официальным Codex MCP](https://learn.chatgpt.com/docs/extend/mcp?surface=cli).
+Замените абсолютный путь и адрес, как описано выше. Из этого PowerShell
+запустите новый отдельный Codex CLI:
 
-**Один worker — одна роль и один запуск исполнителя.** Он поддерживает heartbeat,
-пока процесс жив, и должен завершаться вместе с исполнителем. Не используйте
-один долгоживущий worker для всех параллельных ролей внутри IDE. Для клиентов,
-которые разделяют один MCP между субагентами, требуется прямой HTTP с отдельными
-board-сессиями и явным heartbeat; пример в [client-setup](client-setup.md).
+```powershell
+$env:AGENT_BOARD_TOKEN = (Get-Content -Raw "$AccordPrivate\pc-2.token").Trim()
+try { codex } finally { Remove-Item Env:AGENT_BOARD_TOKEN -ErrorAction SilentlyContinue }
+```
 
-## 4. Проверить подключение
+Токен остаётся в памяти процесса, не печатается. Не сохраняйте его значение
+в TOML/профиле/командах. Уже открытый GUI не получит это окружение автоматически.
+Windows runtime требует фактической проверки на Windows, cross-build её не заменяет.
+Настройки: [официальная документация Codex MCP](https://learn.chatgpt.com/docs/extend/mcp).
 
-Откройте новый отдельный запуск Codex и поручите ему:
+## 5. Проверить и начать работу
 
-> Используй только Accord. Открой describe с role=coordinator, machine=pc-2,
-> свежими run_id/request_id. Создай синтетический epic с явным словом TEST,
-> прочитай его через get и events. Отмени только этот epic с причиной
-> synthetic cleanup. Сообщи результаты вызовов, ключ и next_cursor без секретов.
+В новом локальном Codex проверьте `codex mcp list`, затем Accord в `/mcp`.
+Выполните [проверку подключения с отдельным TEST-эпиком](public-https.md#проверка-именно-с-этого-компьютера):
+initialize/catalog 12, describe `machine=pc-2`, create/get/events и отмена только
+своего эпика. Новое действие получает новый request_id; required-поля — из схемы.
+Сохраните результат без токена и завершите отдельный worker.
 
-Все вызовы должны завершиться успешно. Запишите ОС/версию клиента, ключи и
-курсоры. Через worker session_id можно опускать: он подставляет только свой.
-Для другой роли нужен новый процесс worker и новый describe.
+Один worker — одна роль и один запуск исполнителя; он поддерживает heartbeat.
+Общий MCP для независимых субагентов требует прямого HTTP и явного heartbeat,
+его правила — [client-setup.md](client-setup.md). Не включайте оба режима
+одновременно для одной работы. При потере аренды остановите локальные изменения.
+Два физических ПК отдельно проверяют совместный claim/heartbeat/expiry;
+одиночный smoke это не подтверждает. Claude Code требует своей настройки.
 
-Позже совместно с первым Mac проверьте отдельную synthetic developer-задачу:
-два разных worker одновременно вызывают next на один task_key; только один
-получает аренду. Проверьте работу дольше15минут, heartbeat, release/retry,
-завершение worker, истечение аренды и следующий generation. Это пока NOT-RUN
-на двух физических ПК; локальные процессные тесты его не заменяют.
-
-## Если возникла ошибка
-
-- 401: проверьте срок/отзыв токена и правильный сервер; новый токен выдаёт администратор.
-- machine mismatch: describe.machine должен совпадать с меткой выданного токена.
-- SESSION_ALREADY_OPEN: для смены роли перезапустите worker.
-- LEASE_UNCERTAIN/LEASE_LOST: прекратите локальные изменения, завершите worker,
-  откройте новую сессию и сверьте владение. Не продолжайте старое generation.
-- Нет связи: проверьте Tailscale и readiness; не публикуйте незащищённый HTTP.
-
-Accord защищает операции очереди, но не может остановить локальный редактор
-или запретить запись файлов на другом ПК. Рабочие копии и границы файлов
-согласуются отдельно. Claude Code и Windows runtime требуют своей проверки;
-совместимость Codex на Mac не считается их подтверждением.
+Если что-то не работает — [таблица диагностики](public-https.md#если-возникла-ошибка).
+Не ищите Tandem MCP и не запускайте `serve`. Разработка передаётся отдельно
+по [handoff.md](handoff.md); её исторические частные адреса не используйте.
