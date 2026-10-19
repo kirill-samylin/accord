@@ -20,7 +20,17 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.URL.Path == "/" && (r.Method == "GET" || r.Method == "HEAD") {
-		http.Redirect(w, r, "/web/", 303)
+		// A fresh visitor must reach the login form, not an authenticated
+		// page's 401 screen. Existing browser sessions retain their home page.
+		destination := "/web/"
+		if _, err := s.loadBrowser(r); err != nil {
+			if errorStatus(err) != http.StatusUnauthorized {
+				s.fail(w, r, nil, err)
+				return
+			}
+			destination = "/web/login"
+		}
+		http.Redirect(w, r, destination, http.StatusSeeOther)
 		return
 	}
 	if !strings.HasPrefix(r.URL.Path, "/web/") {

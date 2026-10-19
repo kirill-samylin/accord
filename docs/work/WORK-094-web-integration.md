@@ -92,3 +92,15 @@ sourceWAL отклоняется без потери committed frames. 2новы
 7backupunits PASS на Python3.14 и systemPython3.9/SQLite3.54. Независимый097
 re-review и095actualrestore обязательны; предыдущий staged624helperнеактивируется.
 Go/web/client source624 неизменён, новый релиз обновит только infra helper/docs.
+
+## Фактический guarded выпуск: возврат и root entry
+
+Первый apply остановлен до мутаций строгим manifest: Mac tar добавил31AppleDouble
+sidecar. Проверены magic00051607, regular paths ._*; extras перемещены в private
+quarantine неактивного релиза; все26checksummedfiles неизменны. Следующий apply
+автоматически откатился из-за root303/web/→401 для гостя. РеальныйrollbackPASS:
+oldnativeC2ready, точныеTandem/fullServe/server.env unchanged, newweb files preserved.
+Root исправил только guest entry: rootGET/HEAD→login, validcookie→home, storageerror503.
+Independent098 APPROVE +4targetedtests; остальныеnative/webmutations неизменны.
+Для нового clean release используется явный Python tar manifest (без Macxattrs),
+проверяется точное множество файлов до apply. Новый actualHTTPSsmoke обязателен.

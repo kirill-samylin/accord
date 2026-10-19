@@ -190,7 +190,7 @@ Token/password не входят в Page/Draft. Только escaped html/templa
 
 ## Routes/forms (замороженный интеграционный контракт)
 
-Browser GET `/`→303 `/web/`; `/web/login`, `/web/?role=human` (вопросы), `/web/`, `/web/tasks/{key}`,
+Browser GET `/`→303 `/web/login` для гостя, `/web/` для действительной browser-session; `/web/login`, `/web/?role=human` (вопросы), `/web/`, `/web/tasks/{key}`,
 `/web/designs?scope=&scope_key=&design_id=&cursor=`, `/web/history?cursor=`.
 Static GET `/web/static/{asset}`; renderer.Static монтирует интегратор через Server.
 POST `/web/login` token либо token_file; `/web/logout`; `/web/session/continue`;
