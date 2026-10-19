@@ -62,3 +62,16 @@ Backend103 и UI104 работают с непересекающимися фа�
   полного freeze и сверки хешей; production code reviewer не редактирует.
 - WORK107 control_qa107: подготовка acceptance плана/окружения; новые browser/
   process tests пишет и запускает только после явного code approve106.
+
+WORK106 final code/security на46fffb9: CHANGES REQUESTED, один P2 R106-01:
+форматирование textarea добавляет LF к точному сохранённому черновику. Остальные
+source/unit границы приняты. До исправления и delta approve browser QA не начинается.
+WORK108 — новый developer для узкого исправления templates task/create/layout
+и exact-value unit regression; предыдущий UI104 завершил запись, резерв этих
+файлов передаётся108. Остальные production-файлы остаются frozen.
+
+WORK110 — отдельный design-reviewer: сравнивает actual UI с Paperclip reference
+на отдельной synthetic loopback fixture, source не меняет. Приоритетный baseline
+current streamlined, Inter/neutral tokens/sidebar/density изWORK102. Подготовка
+reference сейчас, actual screenshots на новом binary послеfix108. Это независимая
+визуальная проверка, не замена code/security approve или process acceptance107.

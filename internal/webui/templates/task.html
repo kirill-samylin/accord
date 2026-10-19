@@ -120,8 +120,7 @@
 <h2>Ваш текст ответа</h2>
 <p>Владение вопросом изменилось. Скопируйте текст, проверьте состояние и возьмите вопрос заново явно.</p>
 <textarea readonly rows="8" aria-label="Сохранённый текст ответа">
-{{answer $}}
-</textarea>
+{{answer $}}</textarea>
 <a href="{{taskURL .Key}}">Обновить состояние вопроса</a>
 </section>
 {{end}}{{end}}{{end}}
@@ -181,8 +180,7 @@
 <input type="hidden" name="generation" value="{{generation .}}">
 <label for="answer">Ваш ответ <span class="required">*</span>
 <textarea id="answer" name="answer" rows="9" required aria-describedby="answer-error" aria-invalid="{{if fieldError . "answer"}}true{{else}}false{{end}}">
-{{answer .}}
-</textarea>
+{{answer .}}</textarea>
 </label>
 <p class="field-error" id="answer-error" data-field-error="answer" {{if not (fieldError . "answer")}}hidden{{end}}>
 {{fieldError . "answer"}}
@@ -197,8 +195,7 @@
 <input type="hidden" name="action_id" value="{{action . "release" .Task.Key}}">
 <input type="hidden" name="generation" value="{{generation .}}">
 <label for="release-reason">Причина возврата<textarea id="release-reason" name="reason" rows="3" required aria-describedby="release-error" aria-invalid="{{if fieldError . "reason"}}true{{else}}false{{end}}">
-{{draft . "reason"}}
-</textarea>
+{{draft . "reason"}}</textarea>
 </label>
 <p class="field-error" id="release-error" data-field-error="reason" {{if not (fieldError . "reason")}}hidden{{end}}>
 {{fieldError . "reason"}}
