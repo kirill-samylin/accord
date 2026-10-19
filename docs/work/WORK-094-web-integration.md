@@ -3,7 +3,7 @@
 - Исполнитель: /root, координатор/интегратор; модель наследуется.
 - Источник: прямое поручение19.10.2026 о рабочем вебе для людей и агентов.
 - База: f063380. Работа в отдельном codex/web-service; Tandem OFF.
-- Статус: исходники реализованы; независимые проверки и QA/выпуск в работе.
+- Статус: выполнено. Независимые review/QA и фактический production выпуск PASS.
 - Владение: cmd wiring, transport extra/MCP, bridge resources, core/store history
   и questions, infra web backup/optionalnginx, интеграционные unit tests и docs.
   После передачи авторов также исправлены пагинация UI, OShelpers и browser header.
@@ -104,3 +104,55 @@ Root исправил только guest entry: rootGET/HEAD→login, validcooki
 Independent098 APPROVE +4targetedtests; остальныеnative/webmutations неизменны.
 Для нового clean release используется явный Python tar manifest (без Macxattrs),
 проверяется точное множество файлов до apply. Новый actualHTTPSsmoke обязателен.
+
+
+## Итоговый выпуск и закрытие TASK-004
+
+Production release `d9aa4c745a4c2038ba22bdc7d92f89dded63ad7f`, Linux binary SHA256
+`414996d7d0c802e7260beecbf632f7cac8b93c96dfb2e09c97244411fc718ff5`.
+Чистая сборка, sealed Python USTAR transfer27files, strict manifest, nginx syntax,
+systemd verify PASS. Mac AppleDouble больше не переносились.
+
+Повторный apply выявил отдельную operational race: сразу после nginx reload
+readyz200, но root404 от прежних workers. Diagnostic trace сохранён; auto rollback
+снова полный, без ошибок. Operator получил bounded public readiness:20attempts
+с timeout5s на запрос и интервалом0.5s, постоянный отказ по-прежнему ведёт к
+rollback. Independent097 exact reverse-diff +6mocked regressions APPROVE.
+Новый frozen operator SHA256
+`3c934e54af980dccad37878dcc980a939f9e66e532287199e64664830aefb697`,
+неизменный driver `b709039116c969b8f774532b69bdd3e1ecddefe801321f23cd20f5ef58f5651d`.
+Remote operator hash сверён до actual apply. Все прежние неудачи сохранены
+отдельными evidence; они не засчитаны за PASS успешного выпуска.
+
+**Actual guarded apply и finalize PASS.** Trusted public HTTPS, реальный Chrome,
+нормальный file-token form login303 и Secure/HttpOnly/Strict cookie, четыре
+страницы200, logout303. Нативные проверки: оба существующих machine tokens,
+12tools, design templates/metadata, unauth401, emptyOrigin403 и отсутствие native
+доступа по одной cookie. Один служебный1px PNG сохранён в проектной библиотеке;
+браузерный upload→native attachment download побайтно совпал, SHA256 совпал.
+Всего29 production smoke checks PASS, raw secret/cookie в evidence не записаны.
+
+Согласованный daily snapshot реально выполнен и повторно validated; snapshot и
+web tree приватны и принадлежат правильным пользователям. После backup restart
+service/HTTPS/readiness healthy, установленный binary/manifest соответствует
+указанному release. Старые hourly backup/certificate timers и новый daily timer
+активны. Полная Serve конфигурация и Tandem Id/Image/StartedAt/RestartCount/Mounts
+точно равны первоначальному pre-web baseline; server.env bytehash неизменён.
+
+Итоговые источники evidence вне Git:
+- `/private/tmp/accord-web-084/live-smoke-private.json`:29 PASS;
+- `/private/tmp/accord-web-084/post-finalize-private.json`:PASS;
+- `/private/tmp/accord-web-084/deploy/apply-result-private.json` и
+  `finalize-result-private.json`:PASS;
+- `/private/tmp/accord-web-084/make-check-final.log`:полныйPASS;
+- QA095/097 immutable manifests и результаты, final source scan373files/5ZIP0.
+
+Финальная Git фиксация меняет только документы относительно production d9aa;
+Go/native/files/infra исходники уже frozen. Primary codex/pilot получает ff-only;
+локальный установленный mac client пересобирается из принятых исходников.
+Публикуются только проверенные рабочие ветки, не merge main. Инструкция для
+браузера `docs/web-guide.md`; готовые native clients передаются отдельно безтокенов.
+Физический второй ПК NOT-RUN, обе existing credentials проверены с одного Mac.
+Завершён requested web scope; общие ограничения V1/D4/E/SLA/offsite выше сохраняются.
+
+После snapshot restart повторён authenticated native download того же служебного PNG: HTTP200 и исходный SHA256 PASS (`post-restart-file.json`).

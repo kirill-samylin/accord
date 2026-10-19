@@ -83,3 +83,53 @@ HTTP loopback двух browser contexts не является двумя ком�
 - 2026-10-19 — rechecked: final helper0dc601 + оба unit regressions + actual stopped fixture PASS.
 - 2026-10-19 — checked: два bounded independent subsets PASS; final09514/14 exact manifests/raw durable SHA проверены.
 - 2026-10-19 — completed: **APPROVE** exact released600/operators/source manifest; переданоroot для apply→authenticated smoke→finalize/rollback. Новое source/operator изменение требует затронутого re-review.
+
+
+## Узкий повторный review private operator: nginx reload readiness
+
+Вердикт: **APPROVE** frozen private operator SHA256
+`3c934e54af980dccad37878dcc980a939f9e66e532287199e64664830aefb697`.
+Driver неизменён, SHA256 `b709039116c969b8f774532b69bdd3e1ecddefe801321f23cd20f5ef58f5651d`.
+Это одобрение только operator delta для следующей попытки выпуска; приложение
+текущего d9aa release отдельно проверено WORK098 и здесь повторно не аттестуется.
+Предыдущий operator hash c56eb4 в таблице выше относится к прежнему review.
+
+Root передал факты actual apply failures/automatic rollback и transient root404
+с readyz200 сразу после nginx reload. Reviewer SSH/live не запускал и собственным
+runtime доказательством этих production наблюдений их не называет.
+
+Дельта ограничена новой `public_ready(origin)` и её вызовами: после nginx reload
+в apply вместо единственного assert и после backup restart в finalize. Обратное
+текстовое преобразование этих трёх изменений даёт точный прежний reviewed SHA
+`c56eb4cb604c189d4690b0a9522be0af31d980ce4e16ac38f563144d6338183e`.
+Иных изменений оператора не найдено.
+
+Guard требует фактический200: максимум20attempts, request timeout5s сохранён,
+между попытками sleep0.5s. Это не обещание общего wall-clock timeout10s: время
+отдельных requests добавляется. Persistent401/404 либо connection error не
+превращаются в успех; после исчерпания attempts RuntimeError содержит только
+числовые statuses. Auth/Origin/CSRF, native metrics404 и root pending-auth-smoke
+этап не ослаблены. Redirect behavior существующего HTTP клиента не менялся.
+
+**PASS6/6**, независимая isolated проверка без реальных IO/process/network:
+
+- 404→200: успех ровно на второй попытке, одна задержка0.5s.
+- Постоянный401, постоянный404 и OSError: по20попыток, затем RuntimeError.
+- Ошибка нового guard в actual apply function вызывает rollback и не выставляет
+  pending_auth_smoke/committed.
+- Ошибка нового guard в actual finalize function останавливает backup service,
+  получает mocked maintenance lock и вызывает rollback; daily timer не включается,
+  committed не выставляется.
+
+Source functions импортированы с отключённой записью bytecode; все paths,
+filesystem mutations, commands, locks, signals и network подменены только внутри
+private reviewer fixture. Продуктовая реализация не редактировалась. Существующие
+rollback handlers и их finally-restart logic неизменны. Новых блокеров нет.
+
+Воспроизведение: `/private/tmp/accord-web-084/qa-review/check_public_ready_delta.py`.
+Результат: `/private/tmp/accord-web-084/qa-review/public-ready-delta-results.json`.
+Следующий исполнитель root: перенести именно frozen operator, проверить его hash
+и выполнить разрешённый guarded apply; затем actual HTTPS native/browser smoke и
+finalize либо rollback. Повторный live apply этим reviewer **NOT-RUN**.
+
+- 2026-10-19T18:54:57.133980+00:00 — rechecked/completed: public readiness operator delta APPROVE; independent6checks PASS; handed_off root.
