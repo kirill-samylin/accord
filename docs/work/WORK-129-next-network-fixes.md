@@ -24,8 +24,12 @@ PASS:4 авторских unit на Node24.19.0 с управляемыми та
 затем зависает на JSON body: abort даёт UNKNOWN_RESULT/retry_same_action,
 автоматического POST нет, явный retry передаёт тот же body/action ID.
 Полный клиентский suite31/31 и TypeScript PASS на промежуточной дельте.
-Независимый127 scoped review APPROVE; productionbuild и реальный browser
-timeout/recovery ожидаются после остальных обязательных исправлений125.
+Независимый127 scoped review APPROVE. Итоговая application-версия `5cc0a88`:
+frontend42/42, TypeScript/format/production build PASS. Отдельный tester128
+на настоящих Go/Next/Chrome подтвердил POST15s uncertain→ручной same-ID/body
+retry с одним domain event и сохранением черновика. Final no-deadlines21/21
+PASS, WORK127 code/tests/evidence APPROVE. Upload130s budget не сокращён;
+реальные31s/120s boundaries записаны отдельно в TASK007/WORK128.
 
 Не смешивать этот mutation deadline с read-only dashboard8s: отдельную регрессию
 polling/last-good/draft persistence исправляет125 в своей области.

@@ -8,8 +8,8 @@
 проверка/публикация `docs/TASK-002-publication-readiness.md`; текущее продолжение
 до рабочего сервиса — `docs/TASK-003-working-service.md`; веб-версия —
 `docs/TASK-004-human-web.md`, текущая панель — `docs/TASK-005-control-web.md`;
-текущая доработка — `docs/TASK-006-control-refinement.md`, архитектура веба и
-масштабирования — `docs/control-web-architecture.md`. Текущее продолжение после
+предыдущая доработка — `docs/TASK-006-control-refinement.md`, архитектура веба и
+масштабирования — `docs/control-web-architecture.md`. Принятый локальный этап после
 уточнения пользователя — `docs/TASK-007-next-paperclip.md`: полноценный Next.js
 клиент и фактический перенос Paperclip UI, поверх прежнего Go backend.
 
