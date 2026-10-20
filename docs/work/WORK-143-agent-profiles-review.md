@@ -200,3 +200,99 @@ private fixtures; секретные значения не выводятся. I
 Tester принял замечания; final run/hashguard должен относиться к исправленным
 tests. Ошибочные первые предположения tester о native Sessions full snapshot и
 необходимости новой capability после validation400 не меняли product source.
+
+## Final tester145 source/evidence — APPROVE
+
+Исправленные process/browser test sources и assertions независимо прочитаны.
+Restore2/3 теперь сравнивают task history/notes/idempotency/repositories/blobs и
+сохранение всех прежних events при разрешённом security reset; создана real
+legacy note. Missing revision table после failed startup остаётся отсутствующей.
+Stdio MCP foreign profile даёт намеренно sanitized upstream error, foreign SID —
+SESSION_MISMATCH; оба реально отрицательные результаты проверены без ослабления
+server error sanitization. Native foreign ID отдельно проверяется NOT_FOUND.
+Baseline executable сопоставлен с trusted root build proof5454 по SHA.
+
+Final local report `.local/task010-qa/run-1792505088641/results.json`:
+SHA256 `0f1a21f57728245c5e877a1776fb143fd690c24568cf0df13c04381b14db02e5`.
+**17/17 PASS**,16screens, Node24.19.0/Chrome155, darwin/arm64. Reviewer сам
+пересчитал report SHA и все10test source hashes: совпадают с текущими файлами.
+Binary SHA `ff598499f30ca6da6b3caa4a074fdbe056f0bd77339f49b9e4031895375d3043`.
+Это локальный approved-source build, report source_revision=null; отдельный
+clean Linux release9599 ещё требует исполнения на фактическом executable.
+
+Screenshot spot review выполнен для final detail390dark и bound-session390dark,
+ранее просмотрены1440 detail и390list/session варианты. Двойной sticky header
+в прежнем fullPage screenshot был capture artifact; final shot сбрасывает scroll,
+ожидает fonts+2RAF, проверяет DOM header count1 и повторяет fullPage съёмку после
+стабилизации layout. В финальных
+изображениях header один и корректная bottom navigation. Product source не
+менялся. Прежний report c9fc относится к доработанному test snapshot и заменён
+финальным exact-source report0f1a; его hashes не подменялись задним числом.
+
+Production readonly test source отдельно **APPROVE**:
+`tests/browser/task010/production-readonly.cjs` SHA256
+`1d080165a0f3b675f33e27adcf8e80798e41ffe9ac2980741a0b42284ad804ad`.
+Разрешены только собственные login/logout/explicit project open, браузерные
+остальные mutations block. Direct context requests только reads, MCP method
+allowlist без tools/call/Describe и cleanup own logout. Private600 inputs/output,
+canonical HTTPS origin, no raw user fields/token diagnostics; гарантированные
+cleanup/report через independently reviewed production-support. Проверяет
+profiles/scoped resources/own session и прежние screens, но не создаёт реальные
+profiles и не меняет task/repository/ACL/lease/user data. Можно применять для
+authorized post-deploy HTTPS приёмки; actual production результат ещё NOT-RUN.
+
+**APPROVE new tester145 source, author-independent local QA evidence и readonly
+production test safety.** Linux exact release process replay, updater146 safety/
+execution, actual production HTTPS/full backup/preservation и final version
+closure остаются отдельными обязательными барьерами.
+
+## Updater146 real-process finding и source fix
+
+Независимый tester146 обнаружил **P1 FAIL**, пропущенный первым ops source review:
+после настоящей миграции stopped live SQLite сохраняет законный WAL header02/02,
+а updater ошибочно применял snapshot-only DELETE header01/01 validator. Поэтому
+реальный upgrade после DDL останавливался бы, несмотря на успешно мигрированные
+данные. Неактивный release9599 не допущен к production activation; готовится
+новый immutable release, без one-off amendment.
+
+Исправление root независимо прочитано и **source APPROVE**: `database/board`
+имеют explicit live=False по умолчанию, snapshot/restore validation остаётся
+строго01/01. Только upgrade_storage вызывает live=True; тогда допустимы01/01
+и02/02, но перед immutable reads действует readonly(), отвергающий nonempty WAL/
+rollback journal. Integrity, exact schema и все required columns/metadata,
+migration checksums и blob checks сохраняются. Никакого игнорирования committed
+WAL frames или ослабления проверенных snapshot форматов нет.
+
+Две новые actual SQLite units независимо повторены вместе с остальными:
+profile_storage **7/7 PASS**. Проверены closed checkpointed WAL live acceptance,
+тот же файл rejection в snapshot mode, snapshot normalization и nonempty live
+WAL rejection. Product Go/Next source не менялся; local tester145 evidence остаётся
+применим к продукту. Новый ops aggregate и фактический updater146 rerun после
+фикса ещё должны войти в final release evidence; начальный FAIL не скрывается.
+
+## Final updater146 test/source/evidence — APPROVE
+
+Все4Python fixture files независимо прочитаны, source/test hashes пересчитаны.
+Fixture ограничивает state/admin/journals/backups private test root, разрешает
+только выбранный loopback executable и известные lifecycle/admin hooks; live
+systemctl/Next/nginx/production paths не вызываются. Old5454 platform SHA и
+capabilities проверяются, Linux new ELF SHA обязателен. Документы и report честно
+отделяют actual Go/SQLite/markers/pointers/snapshots от simulated systemd/Next/UID.
+Старые rows всех7DB сравнивает независимый SQL oracle, не operator PASS flag.
+Реальный exit73 и новый worker проверяют persisted partial-pointer resume;
+unknown marker/helper/temp сохраняются. PASS/FAIL сохраняют source manifest.
+
+Report146 SHA256 `8f490492f1cacf1150992fdf7fbe7635f9193b8b9fb838adeec937cae9ea39ff`
+подтверждён reviewer; все43test+operator file hashes совпали с текущим source.
+4test aggregate `0c154872e29e25b46ef3a730d664fc1f4ca97621cda9fb50d27477180a831ecd`,
+новый39ops aggregate `ded9ec8e842c8a76a29898cf2f77a7358ff1cee7ded58e9e2f4d9ba93fc697f8`.
+Дополнительно reviewer сам запустил тот же frozen harness на новом private
+fixture `.local/task010-update-qa/run-1792505635949157000`: **8/8 PASS**.
+**APPROVE** test source/safety/local evidence, разрешён isolated Linux повтор.
+
+Root Linux product-only9599 report прочитан:12PASS, exact old/new ELF SHA,
+current10test hashes, clean revision и no-listeners/reusable-bind post-check.
+Начальная wrapper TIME_WAIT probe FAIL отдельно сохранена, не выдана за green;
+исправленная probe обязательна для окончательного нового release run.
+9599 остаётся inactive из-за заменённого ops source. Реальный Linux updater
+replay/production systemd/Next/HTTPS/full backup ещё требуют отдельного evidence.

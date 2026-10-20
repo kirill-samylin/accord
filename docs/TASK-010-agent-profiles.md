@@ -48,3 +48,27 @@ atomic temporary resume, malformed query и unknown helper collision.
 expectations в process acceptance. Отдельный tester145 после source APPROVE
 адаптирует их и проверяет actual process/Chrome/migration/restore/update.
 Linux synthetic, production update/HTTPS/full backup — ещё NOT-RUN.
+
+## Checkpoint независимой QA
+
+WORK145:17/17 actual local process+Chrome PASS,16screens; independent143 test
+и evidence APPROVE. Проверены actual5454→3, default+2projects, старые rows/
+tokens/cookie/session/lease/blob, old/new full restore, ACL/epochs, CRUD/replay,
+immutable snapshots/history, concurrent409/draft, committed lost response,
+late A/two tabs, viewer controls и MCP12/resources. Product source не менялся.
+
+WORK146 actual updater rehearsal выявил P1: snapshot DELETE-header validation
+ошибочно применялась к законному закрытому WAL storage. Root добавил явную
+live validation с nonempty journal rejection+full integrity/schema; snapshot
+strictness сохранена. Independent143 fix source APPROVE, новые146infra PASS.
+9599962 Go/Next были загружены только inactive и **не активируются**; будет
+новый immutable релиз с исправленным оператором. Production по-прежнему5454,
+базы и работающие guards не менялись. WORK146 local8/8 послеfix PASS;
+systemd/Next/UID в fixture явно simulated, Go/SQLite/crash/resume реальные.
+Финальные Linux exact release, actual systemd stage/update и HTTPS/fullbackup
+впереди; COMPLETE до этих барьеров не объявляется.
+
+Final source/author-test/tester-test review143: APPROVE, включая повтор updater
+8/8 самим reviewer и exact43source/testhash. Root полный `make check` после
+liveWALfix: PASS (146infra,60client, Go/all/race/vet/build/format/types).
+Исходный код и тесты заморожены для нового immutable Linux release.

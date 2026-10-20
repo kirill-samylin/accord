@@ -37,3 +37,29 @@ Unit/mock не является Linux migration/production доказатель�
 
 Независимый review, process/browser QA, Linux synthetic rehearsal, production
 update/full backup/HTTPS — пока NOT-RUN. Physical second PC — NOT-RUN.
+
+## Последующие source и synthetic проверки
+
+WORK143 source APPROVE первоначального snapshot; полный root `make check`
+PASS, включая144infra и60clientunits. Source checkpoint9599962 собран в
+отдельном clean managed checkout: Linux Go/Next загружены только в inactive
+release dirs; production pointers остались5454. Все17установленных helpers
+совпали с completed journal, alias совпал; loaded projects/next/web cache dirs
+отсутствуют. Старые rootadmin caches не входят в import chain и сохранены.
+
+Отдельный tester146 нашёл **P1 FAIL** actual updater rehearsal: snapshot-specific
+DELETE header check применялся к законной закрытой WAL board после DDL.
+9599962 не активируется. Root исправил явный `live=True` validation path:
+закрытый WAL header допускается только с `readonly` nonempty journal rejection,
+полным integrity/schema/metadata check. Snapshot default по-прежнему требует
+самодостаточный DELETE header. Два новых real SQLite regressions PASS;
+независимый143 повтор7/7 и fix source APPROVE. Финальные infra146/146 PASS.
+Нужны повтор actual updater146 и новая immutable сборка; one-off amendment
+TASK009 не переиспользуется, production БД/guards не изменялись.
+
+Linux product-only запуск проверенного9599 Go:12/12 actual cases PASS на
+synthetic fixture. Первичная external cleanup probe без SO_REUSEADDR вернула
+EADDRINUSE из-за TIME_WAIT после успешного отчёта; это не было скрыто как PASS
+самого wrapper. Независимая проверка ss показала отсутствие listeners,
+повтор bind с SO_REUSEADDR прошёл; private launcher исправлен. Финальный новый
+release будет прогнан с исправленной probe, exact hashes сохраняются отдельно.

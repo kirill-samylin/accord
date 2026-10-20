@@ -6,7 +6,7 @@ import unittest
 
 from test_projects_snapshot import ProjectsFixture, OTHER, db
 from upgrade_storage import facts
-from validate import validate
+from validate import validate, board as validate_board
 
 
 class ProfileStorage(ProjectsFixture, unittest.TestCase):
@@ -61,6 +61,28 @@ class ProfileStorage(ProjectsFixture, unittest.TestCase):
         with self.assertRaises(sqlite3.Error):
             self.snapshot()
         self.assertEqual(list(self.copies.iterdir()), [])
+
+    def test_checkpointed_live_wal_is_valid_but_not_a_self_contained_snapshot(self):
+        self.upgrade(self.state)
+        for path in (self.state / 'board.db', self.state / 'web/web.db'):
+            with closing(sqlite3.connect(path)) as connection:
+                connection.execute('PRAGMA journal_mode=WAL')
+        schemas = {'board_schema': 3, 'web_schema': 1}
+        self.assertEqual((self.state / 'board.db').read_bytes()[18:20], b'\x02\x02')
+        validate_board(self.state, schemas, live=True)
+        with self.assertRaisesRegex(RuntimeError, 'self-contained'):
+            validate_board(self.state, schemas)
+        saved = self.snapshot()
+        validate(saved)
+
+    def test_live_validation_never_ignores_uncheckpointed_wal_frames(self):
+        self.upgrade(self.state)
+        with closing(sqlite3.connect(self.state / 'board.db')) as connection:
+            connection.execute('PRAGMA journal_mode=WAL')
+            connection.execute("INSERT INTO notes VALUES('N-1','uncheckpointed')")
+            connection.commit()
+            with self.assertRaisesRegex(RuntimeError, 'journal'):
+                validate_board(self.state, {'board_schema': 3, 'web_schema': 1}, live=True)
 
     def test_missing_checksum_and_unknown_history_files_are_rejected(self):
         old, checksum = self.migration(self.projects / 'projects' / OTHER)

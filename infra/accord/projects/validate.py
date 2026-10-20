@@ -5,26 +5,31 @@ from pathlib import PurePosixPath
 import sqlite3
 
 from guard import MARKER
-from layout import LEGACY, PROJECT_ID, allowed_board_file
+from layout import LEGACY, PROJECT_ID, allowed_board_file, readonly
 from migration_files import validate_migrations
 
 
-def database(path, version):
+def database(path, version, live=False):
     LEGACY.private(path)
     with path.open('rb') as stream:
         header = stream.read(20)
-    if header[:16] != b'SQLite format 3\0' or header[18:20] != b'\x01\x01':
+    modes = (b'\x01\x01', b'\x02\x02') if live else (b'\x01\x01',)
+    if header[:16] != b'SQLite format 3\0' or header[18:20] not in modes:
         raise RuntimeError('snapshot database is not self-contained')
-    with closing(sqlite3.connect(path.absolute().as_uri() + '?mode=ro&immutable=1', uri=True)) as connection:
+    # A stopped live WAL database can retain its WAL header after checkpoint.
+    # readonly rejects unresolved journals before immutable reads; snapshots
+    # must still be self-contained DELETE-mode files with the stricter header.
+    connection = readonly(path) if live else sqlite3.connect(path.absolute().as_uri() + '?mode=ro&immutable=1', uri=True)
+    with closing(connection) as connection:
         if (connection.execute('PRAGMA user_version').fetchone()[0] != version or
                 connection.execute('PRAGMA integrity_check').fetchall() != [('ok',)]):
             raise RuntimeError('snapshot schema/integrity differs')
 
 
-def board(path, schemas):
+def board(path, schemas, live=False):
     if schemas.get('board_schema') not in (2, 3) or schemas.get('web_schema') not in (1, 2):
         raise RuntimeError('unknown project snapshot schema')
-    database(path / 'board.db', schemas['board_schema'])
+    database(path / 'board.db', schemas['board_schema'], live=live)
     if schemas['board_schema'] == 3:
         with closing(sqlite3.connect((path / 'board.db').absolute().as_uri() + '?mode=ro&immutable=1', uri=True)) as connection:
             for query in ('SELECT id,sequence FROM metadata LIMIT 0',
@@ -44,7 +49,7 @@ def board(path, schemas):
                     raise RuntimeError('snapshot board metadata missing')
     if (path / 'board.db.migrations').exists():
         validate_migrations(path / 'board.db.migrations', LEGACY)
-    database(path / 'web/web.db', schemas['web_schema'])
+    database(path / 'web/web.db', schemas['web_schema'], live=live)
     with closing(sqlite3.connect((path / 'web/web.db').absolute().as_uri() + '?mode=ro&immutable=1', uri=True)) as connection:
         for blob, size, digest, preview, preview_size in connection.execute(
                 "SELECT blob,size,sha256,preview,preview_size FROM design_assets WHERE status='ready'"):

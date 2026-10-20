@@ -1,0 +1,83 @@
+'use strict';
+const h = require('./harness.cjs');
+const {assert, Native, MCP, crypto} = h;
+const catalog = require('./catalog.cjs');
+const settings = (name = 'QA Shared Name', instructions = 'QA instructions version one') => ({name, description: 'Synthetic profile only', role: 'developer', instructions, provider: 'custom', model: 'qa-model'});
+async function run(f, pass) {
+  const a = f.aNative = new Native(f.editor, f.a); a.open('coordinator');
+  const b = f.bNative = new Native(f.ownerToken, f.b); b.open('coordinator');
+  const input = {...settings(), request_id: crypto.randomUUID()};
+  const profile = a.call('profile_create', input); f.profile = profile;
+  assert.match(profile.id, /^ap_[a-f0-9]{32}$/); assert.equal(profile.version, 1);
+  assert.equal(profile.created_by, a.session); assert.notEqual(profile.created_by, f.editor.id);
+  assert.deepEqual(a.call('profile_create', input), profile);
+  a.reject('profile_create', {...input, name: 'changed payload'}, ['IDEMPOTENCY_CONFLICT']);
+  const second = a.call('profile_create', settings());
+  const foreign = b.call('profile_create', settings()); f.bProfile = foreign;
+  assert.notEqual(second.id, profile.id); assert.notEqual(foreign.id, profile.id);
+  assert.equal(a.call('profiles', {state: 'all'}).profiles.length, 2);
+  assert(a.call('profiles').profiles.every(p => !('instructions' in p)));
+  a.reject('profile', {profile_id: foreign.id}, ['NOT_FOUND']);
+  b.reject('profile', {profile_id: profile.id}, ['NOT_FOUND']);
+  pass('native-profile-create-exact-replay-same-name-distinctIDs-project-isolation');
+  const bound = new Native(f.editor, f.a);
+  const describe = {request_id: crypto.randomUUID(), role: 'developer', run_id: 'QA-bound', machine: f.editor.machine, profile_id: profile.id, profile_version: 1};
+  const opened = bound.call('describe', describe); bound.session = opened.session_id; f.bound = bound;
+  assert.equal(opened.profile.instructions, settings().instructions); assert.equal(opened.profile.version, 1);
+  assert.equal(opened.profile.id, profile.id);
+  a.reject('describe', {...describe, request_id: crypto.randomUUID(), role: 'human'}, ['VALIDATION']);
+  a.reject('describe', {...describe, request_id: crypto.randomUUID(), profile_version: 0}, ['VALIDATION']);
+  const updated = a.call('profile_update', {...settings('QA Shared Name', 'QA instructions version two'), profile_id: profile.id, version: 1});
+  assert.equal(updated.version, 2);
+  assert.equal(a.call('profile', {profile_id: profile.id, version: 1}).profile.instructions, settings().instructions);
+  a.reject('profile_update', {...settings(), profile_id: profile.id, version: 1}, ['CONFLICT']);
+  const archived = a.call('profile_archive', {profile_id: profile.id, version: 2, state: 'archived'});
+  assert.equal(archived.version, 3);
+  bound.reject('describe', {...describe, request_id: crypto.randomUUID()}, ['CONFLICT']);
+  assert.deepEqual(bound.call('describe', describe), opened, 'archived exact describe replay changed session/snapshot');
+  const heartbeat = bound.call('heartbeat', {}); assert.equal(heartbeat.profile.version, 1); assert.equal(heartbeat.profile.instructions, settings().instructions);
+  const list = (await f.owner.read('/web/p/' + f.a + '/agents?include_closed=true')).data.page.agents;
+  assert(list.some(s => s.profile?.id === profile.id));
+  assert(!list.some(s => s.profile?.instructions), 'browser session list leaked full instructions');
+  const restored = a.call('profile_archive', {profile_id: profile.id, version: 3, state: 'active'});
+  assert.equal(restored.version, 4); f.profile = restored;
+  assert.deepEqual(a.call('profile', {profile_id: profile.id}).revisions.map(r => r.version), [4, 3, 2, 1]);
+  assert.equal(bound.call('get', {task_key: f.aTask}).lease?.session_id, f.oldWorker.session);
+  pass('explicit-describe-immutable-snapshot-edit-history-archive-replay-restore-lease-preservation');
+  const mcp = new MCP(f.editor, f.a);
+  try {
+    await mcp.init();
+    const tools = await mcp.rpc('tools/list', {}); assert.equal(tools.tools.length, 12);
+    const opened = await mcp.call('describe', {...describe, request_id: crypto.randomUUID(), profile_version: 4}); assert(!opened.isError);
+    const resource = await mcp.rpc('resources/read', {uri: 'accord://profile?profile_id=' + profile.id + '&version=1'});
+    const data = JSON.parse(resource.contents[0].text); assert.equal(data.profile.version, 1); assert.equal(data.profile.instructions, settings().instructions);
+    const profiles = await mcp.rpc('resources/read', {uri: 'accord://profiles?state=all'}); assert.equal(JSON.parse(profiles.contents[0].text).profiles.length, 2);
+    for (const [uri, code] of [['accord://profile?profile_id=' + foreign.id, /cannot read project resource; verify session and connectivity/], ['accord://profile?profile_id=' + profile.id + '&session_id=' + b.session, /SESSION_MISMATCH/]]) {
+      let denied; try {await mcp.rpc('resources/read', {uri});} catch (error) {denied = error;}
+      assert(denied && Number.isInteger(denied.protocolCode) && code.test(denied.protocolMessage), 'MCP resource lacks explicit scoped denial');
+    }
+  } finally {await mcp.close();}
+  pass('actual-stdio-MCP12tools-profile-resources-bound-describe');
+  const viewer = new Native(f.viewer, f.a); viewer.open('human');
+  assert.equal(viewer.call('profile', {profile_id: profile.id}).profile.id, profile.id);
+  viewer.reject('profile_create', settings(), ['FORBIDDEN_ROLE']);
+  viewer.reject('describe', {...describe, request_id: crypto.randomUUID(), machine: f.viewer.machine, profile_version: 4}, ['FORBIDDEN_ROLE']);
+  await catalog.member(f.owner, f.a, f.editor.id, 'viewer', 'set');
+  a.reject('profile_create', input, ['FORBIDDEN_ROLE']);
+  assert.equal(a.call('profile', {profile_id: profile.id}).profile.version, 4);
+  await catalog.member(f.owner, f.a, f.editor.id, 'editor', 'set');
+  await catalog.member(f.owner, f.a, f.editor.id, '', 'revoke');
+  await catalog.member(f.owner, f.a, f.editor.id, 'editor', 'grant');
+  a.reject('profile', {profile_id: profile.id}, ['UNAUTHORIZED']);
+  a.reject('profile_create', input, ['UNAUTHORIZED']);
+  a.open('coordinator');
+  assert.equal(a.call('profile', {profile_id: profile.id}).profile.id, profile.id);
+  pass('viewer-direct-native-denial-downgrade-cached-replay-revoke-regrant-epochs');
+  await catalog.state(f.owner, f.b, 'archived');
+  b.reject('profile_update', {...settings(), profile_id: foreign.id, version: 1}, ['FORBIDDEN_ROLE']);
+  b.reject('describe', {...describe, request_id: crypto.randomUUID(), profile_id: foreign.id, profile_version: 1, machine: f.ownerToken.machine}, ['FORBIDDEN_ROLE']);
+  assert.equal(b.call('profile', {profile_id: foreign.id}).profile.name, settings().name);
+  await catalog.state(f.owner, f.b, 'active');
+  pass('archived-project-profile-read-write-and-new-bind-boundaries');
+}
+module.exports = {run, settings};

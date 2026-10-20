@@ -48,7 +48,7 @@ def migrate_storage(binary, snapshot, manifest):
     for path, web in paths:
         with closing(readonly(web / 'web.db')) as db:
             version = db.execute('PRAGMA user_version').fetchone()[0]
-        board(path.parent, {'board_schema': 3, 'web_schema': version})
+        board(path.parent, {'board_schema': 3, 'web_schema': version}, live=True)
     for before, after in sets(snapshot, manifest):
         old, current = facts(before), facts(after)
         if any(current.get(table) != digest for table, digest in old.items()):
