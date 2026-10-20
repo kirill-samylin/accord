@@ -3,10 +3,10 @@
 20.10.2026. Ветка `codex/coordination`, старт clean checkpoint
 `343b93c71297c58c972f73fed4d1d4ca3a349740`. Прямое продолжение порученной
 пользователем очереди profiles → coordination → managed execution.
-Статус: INDEPENDENT QA IN PROGRESS. WORK147 architecture APPROVE,
-WORK150 общий SOURCE APPROVE; root make check PASS. Контракт
-[coordination.md](coordination.md) реализован. Source checkpoint f2edac94238c2b8fc267c37d9048187902bdf849.
-Сквозная QA/Linux/production/evidence review ещё не завершены.
+Статус: COMPLETE. Реализация, source/test review, local/Linux QA, production
+apply/HTTPS/finalize и итоговая независимая evidence приёмка завершены:
+WORK150 FINAL APPROVE. Контракт [coordination.md](coordination.md), product release
+`e53c18c9643b9ee086141d0f227ab485f4f88cac`. Source checkpoint f2edac9.
 
 ## Владение и последовательность
 
@@ -127,3 +127,103 @@ APPROVE до запуска, scriptSHA256
 `5cb2b9b29a8ca6ac2bae87b6a45ff8b71497f7208dfb2a25de5c5206b0828395`.
 Переходим к immutable Linux release/exact process/update/hardened stage; production
 ещё cbf/schema3, переключение и closure NOT-RUN.
+
+## Immutable Linux release и actual stage
+
+QA sourcecommit `e53c18c9643b9ee086141d0f227ab485f4f88cac` (clean), product
+unchanged отf2edac9/review74manifest. Linux Go SHA256
+`a03f64d5ff008b7f63023117fb7b1c15c33e5617ce7ac08ffc6440610315269d`,
+Next BuildID `HHViYVPwDuQx7uj4Uk1YC`, manifest SHA256
+`cb97c3dd40df2aa8340dd0e3ca2573af4d44a3f956c8498734efadb978b212c9`.
+Проверены53Go/1256Next members; inactive upload без переключения.
+Exact Linux product13/13+updater8/8 PASS, pinnedoldcbfSHA/newELF/source/test
+hashes и cleanupports подтверждены. Private release-proof.json/
+linux-product-proof-01.json/linux-update-proof.json в deploy.
+
+Actual hardened Next stage PASS: owned stagePID, LinuxNode24.19/sharp/BuildID,
+NRestarts0/MemoryPeak46825472, временный unit удалён,7894free. Stage journal staged,
+прежние Go/Nextcbf pointers сохранены, helpers/runtimeconfiguration PASS,markers0.
+Private stage-runtime-proof.json; actualschema/update/HTTPS/finalbackup впереди.
+
+## Итоговая реализация и изменённые области
+
+- `internal/core/{coordination,types,catalog}.go`, `internal/store/{assignment,
+  check_create,coordination,tasks,transitions,dependencies,sessions,notes,migrations,
+  schema_validation}.go`: pinned task routing, audit, atomic checkcycle, explain,
+  admin rules и schema4; авторские regressions в тех же пакетах.
+- `internal/projects`, `internal/transport`, `internal/bridge`, `cmd/agent-board`:
+  scoped ACL/epochs/preflight/native REST/CLI/resources/MCP12 и capabilities.
+- `internal/web/{coordination,actions,pages,browser_page,control_pages,mutations,
+  contracts,http}.go`: browser actions/recovery/metadata/permissions и tests.
+- `web/src/features/coordination`, task/create screens, lib coordination/types/API/
+  labels, common assignment renderer и styles: рабочий ручной контур Next.
+- `infra/accord/projects` guard/upgrade/storage/snapshot validation/history,
+  infra units и existing acceptance schema fixtures; новые process/browser011 и
+  updater011 tests; канонические docs/AGENTS и WORK147–152.
+
+Полный список воспроизводится diff от стартового343b93c до producte53c18c и
+closing docs checkpoint. Зависимости и lockfile не обновлялись; ветка main и remote не изменялись.
+
+## Фактическая поставка и приёмка
+
+[Рабочая панель Accord](https://157.22.207.48/app/projects).
+Production Go/Next immutable release **e53c18c9643b9ee086141d0f227ab485f4f88cac**;
+LinuxGo SHA/NextBuildID/manifest выше. WORK150 approved exactLinux+actualstage
+перед apply. Обновление только reviewed `projects/upgrade.py`, не initial apply.
+
+| Барьер | Результат |
+| --- | --- |
+| Архитектура/source/author tests | APPROVE147/150, root make check PASS |
+| Root full checks | Go/all/race/vet/build, embedded web, Next67/types/format/build, infra155 PASS |
+| Независимая local process+Chrome | PASS24/24,16screens, requiredkeyboard, sourceunchanged |
+| Independent updater repeat | PASS8/8, отдельно declared host simulations |
+| Exact Linux product/updater | PASS13/13+8/8, actual ELF/source/tests binding и cleanup |
+| Actual hardened stage | PASS, owned process/Node/sharp/BuildID, NRestarts0/7894free |
+| Actual capable apply | PASS, full snapshot доDDL, guard replacement и preserved3DB |
+| External HTTPS readonly | PASS7/7,56screens,858browser200/errors0/prefetch0, ownlogout/browserclosed |
+| Finalize/runtime | PASS, journal complete, actual ownedGo/Next/effectiveconfig/helper hashes/capfloor |
+| Final all-project backup | PASS, format2/schema4+web2/default+registry/history, validated наVPS |
+
+Production сейчас содержит только default (0дополнительных проектов), сохранность
+подтверждена для3реальныхDB. Default+2projects/7DB проверены на отдельных synthetic
+Linux/local fixtures. HTTPS реально прочитал2existingtasks coordination detail/
+resource/tab; profile/task/dependency/check mutations в production не выполнялись,
+они проверены local и exactLinux. Профили/provider prefs не запускали workers.
+
+Fresh pre-snapshot:
+`/var/backups/accord-web/projects-20261020T204410Z-98c7caa68b0e4312a5db97aaa09301cc`,
+manifestSHA `a4e06648b561c5667071fc9ca5d64a201326951a1a9e69b845a13fe6dd56d013`
+(его bytes совпали с последнимTASK010 snapshot, поскольку исходные данные те же).
+Final full backup:
+`/var/backups/accord-web/projects-20261020T204623Z-d90daa53b0614bfab1cdcbf041a9abca`,
+manifestSHA `28b9886fd12e53d0559091d94b7771346a86b016e500ac46b1d96c31fc600a39`.
+Оба повторно validated наVPS; реальныеDB не скачивались. Исторические migration
+copies сохранены. Authority marker UID999/regular0600/bytesSHA совпадают с
+pre-snapshot; root-owned helper policy к нему не применялась. Старый guard3
+проверенно заменён новым4; effective services/timers active,NRestarts0,markers0.
+
+Private evidence `.local/task011/deploy/`: release/transfer/Linux proofs,
+stage-runtime-proof.json, apply-preservation-proof.json, apply/finalize operator
+outputs, final-runtime-proof.json и https-final-01/production-readonly-results.json.
+HTTPS reportSHA `06aa3b53658adf869192d83f6a0c19dd06c92bfa3233cd8e2154d39fc59603a2`,
+approved scriptSHA `5cb2b9b29a8ca6ac2bae87b6a45ff8b71497f7208dfb2a25de5c5206b0828395`,
+scriptunchanged. Final journal complete не сбрасывал credentials/membership/
+sessions/history и не использовал DB rollback. Diagnostic cache incident и узкая
+проверенная архивная remediation остаются в WORK151, independently approved150;
+неизвестные recovery/temp artifacts не удалялись.
+
+## Границы и следующая передача
+
+Это завершение согласованной ручной координации и её безопасной поставки:
+итоговый WORK150 FINAL APPROVE, mandatory findings отсутствуют. Физический второй ПК, native Claude/Codex новый сквозной цикл,
+provider support/execution, managed workers и полный V1 — NOT-RUN. Полный axe/
+accessibility audit NOT-RUN; native OS select picker headless N/A, required
+keyboard диалога PASS. Одиночный historical catalog transient не классифицирован,
+дальнейшие полные прогоны прошли; история сохранена, rootcause не выдумана.
+Backup остаётся только на прежнемVPS. Remote push/merge/PR не выполнялись.
+
+Следующий прямо порученный отдельный чат — «Управляемый запуск»: сначала
+контракт/независимая архитектура, затем bounded implementation/review/QA/delivery.
+Pinned profile не credential/identity/session/process; current schema4 floor,
+ACL/epochs, snapshots, leases/fencing, SHA/current-latest gates и полный backup
+обязательны. Managed execution в этом чате не начинался.

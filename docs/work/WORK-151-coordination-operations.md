@@ -69,3 +69,47 @@ root0700/exact10+audit inventory и canonical cache absence проверены. 
 сам сверил10source SHA через git showcbf и exactbefore/afterset: incident evidence
 APPROVE. Detailed proof SHA256
 `f649652a1e6c490d7e2c20d80b6baf7c1f80346040dfbde50a7ededc275a1fac`.
+
+## Immutable release и Linux
+
+Из clean managed checkout e53c18c после test/localQA APPROVE собраны GoLinux
+(trimpath,CGO0,VCSmodified=false) и productionNext upstream7892. Source74manifest
+совпал с approved. Proof/release outputs сохранены `.local/task011/{deploy,releases}`.
+GoSHAa03f64d5ff008b7f63023117fb7b1c15c33e5617ce7ac08ffc6440610315269d,
+NextBuildIDHHViYVPwDuQx7uj4Uk1YC, manifestcb97c3dd40df2aa8340dd0e3ca2573af4d44a3f956c8498734efadb978b212c9.
+Transferred53Go/1256Next exactregularmembers/root-owned withoutactivechange.
+Frozen463committed QA/source files перенесены в отдельные root-only Linux fixtures:
+actualproduct13/13 и updater8/8 PASS, newbinaryhash/oldcbf/source/testsunchanged и
+ports3100/3101free послеchildcleanup. Simulatedsystemd/Next/UID вupdater остаются
+simulated; prodпути/службы fixtures неиспользовали.
+
+Actualstage through reviewed upgrade.py PASS: actualhardenedNode/sharp/ownedPID,
+NRestarts0/MemoryPeak46825472; temporaryunitremoved7894free; oldcbfpointers
+unchanged, stagedjournal/helpers/effectiveconfig/markers0 PASS.
+Independent exactLinux/stageevidencereview доapply ожидается; production schema3.
+
+## Actual apply/HTTPS/finalize
+
+После independent150 exactLinux/stageAPPROVE выполнены reviewed capable apply и
+finalize. Fresh pre-snapshot schema3/web2 default/registry/история сохранил3DB;
+logicalrows preservedtrue, publishedschema4. Реальный guardbefore dc...41be
+заменён на c1703c392fc62891e150e23e52cdc68132f05f1c5dad570c53404f4de07b50ed,
+совпадающий сnewrelease helper; old/newSHA привязаны apply-preservation-proof.json.
+Authoritymarker UID999/0600/regular/bytes==preSnapshot, effectivelaunch/backup/
+helpers/ownedGoPID+ELFSHA/NextBuildID/cap4 PASS. Journalcomplete, markers0,7894free,
+Go/Next/nginxNRestarts0, services/timersactive. Userdata не скачивались/сбрасывались.
+
+Approved readonlyHTTPS script5cb...8395 выполнен без измененияsource: PASS7/7,
+56screens/858browser200/errors0/prefetch0, existing2tasks real coordination read,
+собственные login/open/logout/browserclosed; nobusinessmutations. ReportSHA
+06aa3b53658adf869192d83f6a0c19dd06c92bfa3233cd8e2154d39fc59603a2.
+Final format2 snapshot `/var/backups/accord-web/projects-20261020T204623Z-d90daa53b0614bfab1cdcbf041a9abca`
+validated default4/web2+registry/history (12files,0extraProjects/3realDB), manifest
+28b9886fd12e53d0559091d94b7771346a86b016e500ac46b1d96c31fc600a39. Pre-snapshot
+204410Z-98c7caa68b0e4312a5db97aaa09301cc validated/hash a4e066...d013.
+Fullvalues/paths вTASK011 иprivateproofs. Final independent150review: FINAL APPROVE. Обязательных замечаний нет.
+
+Clean source/release managed checkout coordination-candidate архивирован после
+успешной поставки; все нужные ignored Go/Next bundles/logs/proofs сохранены в
+primary `.local/task011/releases/e53c18c...` и deploy. Baseline checkout ранее
+также архивирован, его executable/proof сохранены отдельно вlegacy.

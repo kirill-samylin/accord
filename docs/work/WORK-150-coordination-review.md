@@ -227,3 +227,84 @@ Production readonly script остаётся прежним reviewed SHA5cb2b9…
 updater8 repeat выше остаётся действителен, повтор не требуется. Можно сохранить
 QA checkpoint и готовить immutable final Linux release. Доставка и итоговый
 production evidence verdict этим APPROVE не подменяются.
+
+## Immutable Linux release и actual stage review
+
+**EXACT LINUX + STAGE EVIDENCE APPROVE** перед применением. Проверен clean HEAD
+`e53c18c9643b9ee086141d0f227ab485f4f88cac`; product diff к approved f2edac9
+отсутствует. Сам пересчитал все53 Go manifest entries,1256 Next manifest entries,
+Linux ELF/Node/BUILD_ID/package-lock hashes. Go SHA256
+`a03f64d5ff008b7f63023117fb7b1c15c33e5617ce7ac08ffc6440610315269d`,
+NextBuildID `HHViYVPwDuQx7uj4Uk1YC`, Next manifest SHA256
+`cb97c3dd40df2aa8340dd0e3ca2573af4d44a3f956c8498734efadb978b212c9`.
+Transfer proofs53/1256 фиксируют active_changed=false.
+
+Root actual Linux product13/13 и updater8/8 PASS: оба exit0/source_unchanged;
+сам сверил463 fixture hashes каждого отчёта,421 product source/test hashes и43
+updater/operator hashes с текущими файлами. Wrapper source проверяет exact new
+ELF hash и old cbf2020 hash до запуска, единственный raw report, успешный exit;
+product wrapper дополнительно проверяет свободные fixture ports до/после.
+Report raw SHA256: product
+`2791bfa98c0f5259ee439e9ca738d16d5da59a745cf37add68df19d1461dde8d`,
+updater `e4de5c238968de8f9c941e4ea33ceb7b8ea70f0138957c0b0ea3abd907c6f5c7`.
+Это проверка сохранённых root-run доказательств; reviewer remote не запускал.
+Linux updater systemd/Next/UID остаются simulated, физический второй ПК NOT-RUN.
+
+Actual hardened stage выполнялся source upgrade.py: bundle/ELF/capability/runtime
+checks, Linux Node/sharp от service UID, owned stage listener и nonce login,
+finally stop/remove temporary unit. Stage runtime proof повторяет check(before),
+helpers/runtime PASS, phase staged, оба active pointers cbf2020, markers0,7894free,
+owned PID264891, NRestarts0/MemoryPeak46825472. Inactive-only stage барьер закрыт.
+
+Можно продолжить authorized capable apply со full pre-update snapshot под
+startup hold. **FINAL DELIVERY REVIEW PENDING**: actual migration/preservation,
+новые active owned runtime, HTTPS readonly smoke, final all-project backup и
+complete journal должны быть представлены отдельно. Schema/data rollback или
+production business writes этим verdict не разрешаются.
+
+## FINAL independent delivery review
+
+**FINAL APPROVE — TASK011 manual coordination delivery** для неизменённого
+release `e53c18c9643b9ee086141d0f227ab485f4f88cac`. Ранее source, tester source,
+local24/24, independent updater8/8, exact Linux13/13+8/8 и actual stage APPROVE
+сохраняются. Новых обязательных findings нет; product/tests diff к release пуст.
+Reviewer сам remote/production не изменял; этот verdict основан на независимом
+чтении root-run доказательств и локальной проверке их bindings.
+
+Apply/finalize outputs и journal complete согласованы с release/runtime. До DDL
+reviewed updater под startup hold создал полный validated schema3/web2 snapshot
+`/var/backups/accord-web/projects-20261020T204410Z-98c7caa68b0e4312a5db97aaa09301cc`,
+manifest SHA256 `a4e06648b561c5667071fc9ca5d64a201326951a1a9e69b845a13fe6dd56d013`.
+Preservation proof:3DB прежних таблиц logical_rows_preserved=true, boards schema4.
+Сам сверил old installed guard SHA с git cbf2020 и new installed guard SHA с
+current source: floor действительно заменён. Final collector повторяет
+check(after), installed helpers/runtime/capability checks и service-UID guard.
+
+Final Go SHA a03f64…269d и NextBuildID HHViYVPwDuQx7uj4Uk1YC совпали с exact
+release; оба pointers новые. Owned GoPID265527/process bytes и NextPID265268,
+capabilities coordination1/board_schema[4], services/timers active, restart0,
+markers0,7894free. Authority marker regular/UID999/mode0600, SHA равен pre-snapshot.
+Full final format2 backup validated на VPS, default schema4/web2, registry и все
+наличные projects учтены: current inventory default-only, project_count0,12files.
+Путь `/var/backups/accord-web/projects-20261020T204623Z-d90daa53b0614bfab1cdcbf041a9abca`,
+manifest SHA256 `28b9886fd12e53d0559091d94b7771346a86b016e500ac46b1d96c31fc600a39`.
+Реальные БД reviewer не скачивал; validator проверяет file inventory/hashes,
+SQLite integrity/schema, registry identity, historical migrations и blobs.
+
+Approved readonly HTTPS script прежнего SHA5cb2b9…8395 выполнился без изменения
+script/support: **PASS7/7**,56screens,858responses200, page/console/asseterrors0,
+prefetch0, собственный logout и browser_closed. Existing2tasks coordination
+native/MCP/tab действительно прочитаны; task digest не изменён. Production
+business mutations NOT-RUN по readonly дизайну, mutations проверены synthetic
+local/Linux. Сам сверил report SHA256
+`06aa3b53658adf869192d83f6a0c19dd06c92bfa3233cd8e2154d39fc59603a2`,
+все56 screenshot hashes, script/support hashes и revision/runtime bindings;
+coordination detail1440dark/390light дополнительно просмотрены, overflow нет.
+
+Ограничения сохранены: физический второй ПК и provider/native Claude-Codex/worker
+execution/full V1 NOT-RUN;390 — viewport одного Chrome. Полный accessibility
+audit NOT-RUN, дополнительный native picker popup N/A. Прежний единичный handled
+catalog-read transient остаётся с неизвестной причиной и сохранённой FAIL-history;
+последующие полные PASS и HTTPS не доказывают его исправление. При повторении
+нужна диагностика продукта. Managed launch остаётся следующей отдельной задачей.
+Main/remote/push/merge не выполнялись и этим review не поручаются.
