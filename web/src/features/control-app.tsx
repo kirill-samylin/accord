@@ -10,6 +10,7 @@ import {
 import { APIError, pageQueryKey, readPage, webToApp } from "@/lib/api";
 import type { MutationResult, PageData } from "@/lib/types";
 import { Shell } from "./shell";
+import { useRouteHeadingFocus } from "./hooks/use-route-heading-focus";
 import { LoginForm } from "./mutations/LoginForm";
 import { CreateTaskDialog } from "./mutations/CreateTaskDialog";
 import { SessionControls } from "./mutations/SessionControls";
@@ -72,6 +73,13 @@ function ControlContent() {
         ? previous
         : undefined,
   });
+  useRouteHeadingFocus(
+    path,
+    result.isSuccess &&
+      !result.isPlaceholderData &&
+      result.data?.name !== "login" &&
+      path !== "/app/login",
+  );
   const createOptions = useQuery({
     queryKey: ["create-options"],
     queryFn: ({ signal }) => readPage("/app/tasks?include_closed=true", signal),

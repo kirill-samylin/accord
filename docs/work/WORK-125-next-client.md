@@ -255,3 +255,25 @@ Formatter/diff-check PASS. Новый зеркальный unit для aria ст
 по поручению координатора. Реальные mobile getByRole/focus проверки, web checks
 и build6 выполняют QA128/координатор после approve127. Автор125 сборку и runtime
 не запускал; это исправление ещё не объявляется browser PASS.
+
+### Ready-route heading focus после artifact6/final02
+
+После cleanup artifact6/final03 координатор разрешил следующую узкую дельту.
+Installed Next16.4.2 layout-router.js99/153 прямо описывает InnerScrollHandler:
+`Does not focus the first host descendant` / `intentionally leaves focus
+untouched`. Следовательно, framework не обещает focus для поздно появившегося
+h1 после клиентского PageData GET; это ответственность приложения.
+
+Добавлен `useRouteHeadingFocus`: после successful authenticated non-placeholder
+PageData он обрабатывает pathname один раз и при activeElement===BODY переводит
+focus на готовый `#main-content h1` с tabIndex=-1/preventScroll. Если focus уже
+у поля, диалога или другого живого элемента, он сохраняется, а pathname всё равно
+помечается обработанным. Query/filter changes и heartbeat/background refetch
+на том же pathname не запрашивают focus повторно. Login и loading/placeholder
+не являются ready authenticated route. Таймеров и polling focus нет.
+
+Изменены только новый hook и его подключение в ControlContent. TypeScript,
+existing42 unit, formatter и diff-check PASS; новый зеркальный DOM unit не
+создавался. Build/runtime автором NOT-RUN. Требуется approve127, затем build7
+координатора и реальные route focus/no-focus-steal проверки QA128. Прежние
+modal Escape PASS не заменяют подтверждение нового перехода после ready GET.
