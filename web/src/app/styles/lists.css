@@ -1,0 +1,162 @@
+.screen-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.list-surface {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.empty-state {
+  padding: 48px 20px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+.empty-state > svg {
+  opacity: 0.6;
+}
+.empty-state h3 {
+  color: var(--foreground);
+}
+.empty-state p {
+  font-size: 13px;
+  max-width: 360px;
+}
+.compact-empty {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+.status-ready {
+  color: var(--amber);
+}
+.status-in_progress,
+.status-active,
+.status-open {
+  color: var(--blue);
+}
+.status-done {
+  color: var(--green);
+}
+.status-blocked,
+.status-credential_invalid {
+  color: var(--red);
+}
+.task-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 16px;
+  min-height: 45px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.task-row:last-child {
+  border-bottom: 0;
+}
+.task-row:hover {
+  background: color-mix(in oklch, var(--accent) 60%, transparent);
+}
+.task-row-status .status span {
+  display: none;
+}
+.task-key {
+  color: var(--muted-foreground);
+  min-width: 38px;
+}
+.task-title {
+  flex: 1;
+  font-weight: 450;
+}
+.task-role {
+  font-size: 11px;
+  width: 105px;
+}
+.task-owner {
+  width: 110px;
+  font-size: 11px;
+}
+.peek-button {
+  height: 24px;
+  width: 24px;
+}
+.list-group-heading {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 16px;
+  background: var(--muted);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+}
+.dashboard-bottom {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.dashboard-bottom .task-role,
+.dashboard-bottom .task-owner {
+  display: none;
+}
+.event-row {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+}
+.event-row:last-child {
+  border-bottom: 0;
+}
+.event-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted-foreground);
+  margin-top: 7px;
+  flex: 0 0 6px;
+  opacity: 0.5;
+}
+.event-main {
+  flex: 1;
+  min-width: 0;
+}
+.event-title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+}
+.event-title a {
+  color: var(--muted-foreground);
+}
+.event-meta {
+  margin-top: 3px;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+.event-main > p {
+  font-size: 12px;
+  margin-top: 6px;
+}
+.event-time {
+  font-size: 10px;
+  white-space: nowrap;
+  margin-top: 2px;
+}

@@ -29,6 +29,17 @@ func (s *Server) page(r *http.Request, b *browserSession) (Page, error) {
 }
 func (s *Server) taskActions(ctx context.Context, b *browserSession, p *Page, tasks []core.Task) error {
 	for _, t := range tasks {
+		if canUpdate(b, &t) {
+			id, err := s.issueAction(ctx, b, "update")
+			if err != nil {
+				return err
+			}
+			p.Actions["update:"+t.Key] = id
+			if p.Task != nil && p.Task.Key == t.Key {
+				p.Actions["update"] = id
+				p.CanUpdate = true
+			}
+		}
 		if t.Type != "task" || t.Role != "human" {
 			continue
 		}
@@ -47,6 +58,12 @@ func (s *Server) taskActions(ctx context.Context, b *browserSession, p *Page, ta
 }
 func canEdit(b *browserSession, t *core.Task) bool {
 	return t != nil && t.Role == "human" && t.Type == "task" && t.State == "in_progress" && t.Lease != nil && t.Lease.SessionID == b.Session.SessionID && t.Lease.ExpiresAt.After(time.Now()) && b.Session.ExpiresAt.After(time.Now())
+}
+func canUpdate(b *browserSession, t *core.Task) bool {
+	if t == nil || !b.Session.ExpiresAt.After(time.Now()) {
+		return false
+	}
+	return t.Lease == nil && t.Requester == b.Principal.ID || canEdit(b, t)
 }
 func (s *Server) boardPage(r *http.Request, b *browserSession, p *Page) error {
 	if p.View == "" {

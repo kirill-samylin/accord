@@ -28,7 +28,7 @@ func (s *Server) mutate(w http.ResponseWriter, r *http.Request, b *browserSessio
 		}
 		key = parts[0]
 		op = parts[1]
-		if op != "claim" && op != "answer" && op != "release" {
+		if op != "claim" && op != "answer" && op != "release" && op != "update" {
 			http.NotFound(w, r)
 			return
 		}
@@ -95,6 +95,13 @@ func (s *Server) mutate(w http.ResponseWriter, r *http.Request, b *browserSessio
 	}
 	var input any
 	switch op {
+	case "update":
+		var err error
+		input, err = browserUpdateInput(r, id, key)
+		if err != nil {
+			s.mutationError(w, r, b, err)
+			return
+		}
 	case "create":
 		priority, err := strconv.Atoi(r.PostForm.Get("priority"))
 		if err != nil && r.PostForm.Get("priority") != "" {
@@ -149,6 +156,10 @@ func (s *Server) mutate(w http.ResponseWriter, r *http.Request, b *browserSessio
 		return
 	}
 	if op == "heartbeat" {
+		if outWriter, ok := w.(*browserJSONWriter); ok {
+			outWriter.respond(http.StatusOK, map[string]any{"ok": true, "session": out.Session, "next_action_id": out.NextActionID})
+			return
+		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(out)
 		return
@@ -156,7 +167,9 @@ func (s *Server) mutate(w http.ResponseWriter, r *http.Request, b *browserSessio
 	http.Redirect(w, r, out.Redirect, 303)
 }
 func (s *Server) mutationError(w http.ResponseWriter, r *http.Request, b *browserSession, err error) {
-	if r.URL.Path == "/web/heartbeat" {
+	browserErrorCode(w, err)
+	_, negotiated := w.(*browserJSONWriter)
+	if r.URL.Path == "/web/heartbeat" && !negotiated {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(errorStatus(err))
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": publicError(err)})
@@ -175,6 +188,14 @@ func (s *Server) mutationError(w http.ResponseWriter, r *http.Request, b *browse
 	}
 	p.Draft = draft(r)
 	p.ActionID = r.PostForm.Get("action_id")
+	if r.URL.Path == "/web/heartbeat" {
+		id, issueErr := s.issueAction(r.Context(), b, "heartbeat")
+		if issueErr != nil {
+			s.fail(w, r, b, issueErr)
+			return
+		}
+		p.Actions["heartbeat"] = id
+	}
 	name := "board"
 	if strings.HasPrefix(r.URL.Path, "/web/tasks/") {
 		name = "task"
@@ -195,6 +216,9 @@ func (s *Server) mutationError(w http.ResponseWriter, r *http.Request, b *browse
 	// receive a new ID so corrected fields do not conflict with the old payload.
 	if errorStatus(err) == 503 {
 		operation := "create"
+		if r.URL.Path == "/web/heartbeat" {
+			operation = "heartbeat"
+		}
 		if name == "task" {
 			parts := strings.Split(r.URL.Path, "/")
 			operation = parts[len(parts)-1]
@@ -239,6 +263,13 @@ func fieldErrors(r *http.Request, err error) map[string]string {
 		fields["answer"] = publicError(err)
 	case strings.HasSuffix(r.URL.Path, "/release"):
 		fields["reason"] = publicError(err)
+	case strings.HasSuffix(r.URL.Path, "/update"):
+		if strings.TrimSpace(values.Get("title")) == "" || len([]rune(values.Get("title"))) > 200 {
+			fields["title"] = "Введите заголовок до 200 символов"
+		}
+		if len(values.Get("description")) > 16384 {
+			fields["description"] = "Введите описание до 16 КиБ"
+		}
 	}
 	if len(fields) == 0 {
 		fields["title"] = publicError(err)

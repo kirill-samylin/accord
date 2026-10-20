@@ -11,6 +11,23 @@
 Node не нужен работающему Go-сервису; npm-зависимости для этих тестов не нужны.
 `make frontend-test` запускает JS unit-тесты; путь к Node можно передать
 через `make NODE=/absolute/path/to/node check`.
+
+Для нового [Next.js-клиента TASK-007](TASK-007-next-paperclip.md) нужен Node.js
+24 (проверен 24.19.0); минимальное требование dev-скриптов 22.9. Публичный
+Next16.4.2 требует Node>=20.9, более высокий порог здесь связан с выбранными
+TypeScript test scripts. Перед полным check установите точные web зависимости:
+
+```sh
+make web-install
+make check
+```
+
+`make web-check` отдельно проверяет форматирование, TypeScript, unit и production
+build Next. `NODE` задаёт runtime прежних JS tests, `NEXT_NODE` — runtime нового
+клиента; оба по умолчанию `node`. При нескольких установках можно явно передать
+`make NEXT_NODE=/absolute/path/to/node24 check`.
+Build output — `web/.local/next`, зависимости — игнорируемый `web/node_modules`.
+Node runtime теперь нужен Next-сервису; Go-only сервер собирается `make build`.
 `make infra-test` проверяет сценарии установки/восстановления
 на синтетических локальных файлах; systemctl/runuser подменены mock, реальный
 сервер не изменяется. Python-зависимости через pip не устанавливаются.

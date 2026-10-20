@@ -1,0 +1,123 @@
+.mutation-form {
+  display: grid;
+  gap: 16px;
+}
+.form-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+}
+.form-field label,
+label.form-field {
+  font-weight: 500;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.form-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  padding-top: 8px;
+}
+.form-help {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  font-weight: normal;
+}
+.field-error {
+  font-size: 12px;
+  color: var(--red);
+}
+.mutation-notice,
+.notice {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--muted);
+}
+.mutation-notice[data-error="true"],
+.error-notice {
+  border-color: color-mix(in srgb, var(--red) 30%, var(--border));
+  color: var(--red);
+}
+.notice-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+}
+.welcome {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px;
+}
+.app-loading {
+  max-width: 800px;
+  margin: 60px auto;
+  padding: 24px;
+  color: var(--muted-foreground);
+}
+.skeleton {
+  height: 24px;
+  border-radius: 6px;
+  background: var(--muted);
+  animation: loading 1.5s ease-in-out infinite;
+  margin-bottom: 14px;
+}
+.skeleton:nth-child(2) {
+  width: 70%;
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes loading {
+  50% {
+    opacity: 0.45;
+  }
+}
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+  .button,
+  .icon-button {
+    min-height: 44px;
+  }
+  .icon-button {
+    width: 44px;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .dialog-content {
+    max-height: calc(100dvh - 32px);
+    padding: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

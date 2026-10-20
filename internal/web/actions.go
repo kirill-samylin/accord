@@ -93,6 +93,13 @@ func (s *Server) runAction(ctx context.Context, b *browserSession, a *webAction)
 	actor := core.Actor{Principal: b.Principal, SessionID: a.SessionID}
 	var err error
 	switch a.Operation {
+	case "update":
+		var in core.UpdateInput
+		if err = json.Unmarshal([]byte(a.Payload), &in); err != nil {
+			return out, err
+		}
+		_, err = s.board.Update(ctx, actor, in)
+		out.Redirect = "/web/tasks/" + in.TaskKey
 	case "create":
 		var in core.CreateInput
 		if err = json.Unmarshal([]byte(a.Payload), &in); err != nil {
@@ -194,7 +201,7 @@ func (s *Server) runAction(ctx context.Context, b *browserSession, a *webAction)
 // Resolve uncertain native calls before opening another native session. Stored
 // payload and the original session are replayed even after that session expires.
 func (s *Server) recoverActions(ctx context.Context, b *browserSession) error {
-	rows, err := s.db.QueryContext(ctx, `SELECT id,operation,payload,session_id,result FROM web_actions WHERE session_hash=? AND payload<>'' AND result='' AND operation IN ('create','claim','answer','release','heartbeat') ORDER BY created`, b.Hash)
+	rows, err := s.db.QueryContext(ctx, `SELECT id,operation,payload,session_id,result FROM web_actions WHERE session_hash=? AND payload<>'' AND result='' AND operation IN ('create','claim','answer','release','heartbeat','update') ORDER BY created`, b.Hash)
 	if err != nil {
 		return err
 	}

@@ -1,5 +1,11 @@
 # Архитектура веб-клиента и масштабирование Accord
 
+> Уточнение 20.10.2026: пользователь повторно запросил аналогичный Paperclip UI
+> и возможности, спросив о Next.js. Для следующей поставки выбран отдельный
+> Next.js/TypeScript клиент поверх Go. Актуальное решение —
+> [TASK-007](TASK-007-next-paperclip.md) и [WORK122](work/WORK-122-next-architecture.md).
+> Ниже сохранено решение предыдущего SSR этапа TASK-006 для его сопровождения.
+
 20.10.2026. Решение для [TASK-006](TASK-006-control-refinement.md).
 Существующие [инварианты](architecture.md) и [API](api.md) сохраняются.
 Аудит исходников — [WORK-116](work/WORK-116-architecture-audit.md).

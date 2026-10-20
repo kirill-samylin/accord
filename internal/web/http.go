@@ -8,6 +8,14 @@ import (
 )
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if browserJSONRoute(r.URL.Path) {
+		w.Header().Add("Vary", "Accept")
+		if wantsBrowserJSON(r) {
+			out := &browserJSONWriter{ResponseWriter: w, request: r}
+			w = out
+			defer out.finish()
+		}
+	}
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	// Basic HTML form POSTs serialize Origin as null under no-referrer.
@@ -115,7 +123,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.read(w, r, b)
 }
 func parseForm(w http.ResponseWriter, r *http.Request) error {
-	r.Body = http.MaxBytesReader(w, r.Body, 32*1024)
+	maxBody := int64(32 * 1024)
+	// A 16 KiB description can expand threefold under URL encoding. Update
+	// still validates decoded field sizes before reaching the authoritative API.
+	if strings.HasPrefix(r.URL.Path, "/web/tasks/") && strings.HasSuffix(r.URL.Path, "/update") {
+		maxBody = 64 * 1024
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, maxBody)
 	if !strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-www-form-urlencoded") {
 		return core.Fail("validation", "expected form body")
 	}
@@ -139,6 +153,9 @@ func draft(r *http.Request) map[string]string {
 	return d
 }
 func (s *Server) render(w http.ResponseWriter, status int, name string, p Page) {
+	if renderBrowserJSON(w, status, name, p) {
+		return
+	}
 	if err := s.options.Renderer.Render(w, status, name, p); err != nil {
 		http.Error(w, "Страница временно недоступна", 500)
 	}
@@ -180,6 +197,7 @@ func publicError(err error) string {
 	}
 }
 func (s *Server) fail(w http.ResponseWriter, r *http.Request, b *browserSession, err error) {
+	browserErrorCode(w, err)
 	p := Page{Title: "Действие не выполнено", Error: publicError(err), Draft: draft(r)}
 	if b != nil {
 		p.Principal = b.Principal

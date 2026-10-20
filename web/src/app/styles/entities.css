@@ -1,0 +1,137 @@
+.entity-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.entity-row:last-child {
+  border-bottom: 0;
+}
+a.entity-row:hover {
+  background: color-mix(in oklch, var(--accent) 60%, transparent);
+}
+.entity-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.entity-main strong {
+  font-weight: 500;
+}
+.entity-main > span {
+  font-size: 11px;
+}
+.entity-task {
+  width: 25%;
+  color: var(--muted-foreground);
+}
+.entity-date {
+  width: 108px;
+  text-align: right;
+  font-size: 11px;
+}
+.entity-row > .status {
+  width: 112px;
+}
+.agent-list-head {
+  display: grid;
+  grid-template-columns: 1fr 25% 124px 108px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted-foreground);
+  font-size: 10px;
+}
+.agent-identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.agent-identity > .avatar {
+  width: 48px;
+  height: 48px;
+  flex-basis: 48px;
+}
+.agent-identity > div {
+  flex: 1;
+  min-width: 0;
+}
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 12px;
+}
+.caption-note {
+  font-size: 12px;
+  margin-top: 8px;
+}
+.observation {
+  font-size: 11px;
+}
+.kanban {
+  display: flex;
+  overflow-x: auto;
+  gap: 12px;
+  padding-bottom: 16px;
+  min-height: 360px;
+}
+.kanban-column {
+  width: 260px;
+  flex: 0 0 260px;
+  background: color-mix(in oklch, var(--muted) 50%, transparent);
+  border-radius: 8px;
+  padding: 10px;
+  align-self: stretch;
+}
+.kanban-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 2px 14px;
+  font-size: 11px;
+}
+.kanban-items {
+  display: grid;
+  gap: 8px;
+}
+.kanban-card {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  text-align: left;
+  padding: 12px;
+  width: 100%;
+  min-width: 0;
+}
+.kanban-card:hover {
+  border-color: var(--ring);
+}
+.kanban-card-key {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 10px;
+}
+.kanban-card strong {
+  font-size: 13px;
+  font-weight: 500;
+  display: block;
+  overflow-wrap: anywhere;
+}
+.kanban-card-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 10px;
+  color: var(--muted-foreground);
+}
+.kanban-card > .status {
+  margin-top: 10px;
+}

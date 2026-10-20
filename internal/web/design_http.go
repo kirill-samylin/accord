@@ -51,6 +51,10 @@ func designErrorInfo(err error) (int, string, string) {
 }
 func designHTTPError(w http.ResponseWriter, err error) {
 	status, code, message := designErrorInfo(err)
+	if out, ok := w.(*browserJSONWriter); ok {
+		out.respond(status, map[string]any{"ok": false, "error": map[string]string{"code": code, "message": message}, "retry_same_action": status >= 500})
+		return
+	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(status)
@@ -149,6 +153,7 @@ func (s *Server) handleDesigns(w http.ResponseWriter, r *http.Request, b *browse
 }
 
 func (s *Server) designPageError(w http.ResponseWriter, r *http.Request, b *browserSession, err error) {
+	browserErrorCode(w, err)
 	status, _, message := designErrorInfo(err)
 	action := r.PostForm.Get("action_id")
 	if status == 400 || status == 413 {
@@ -173,6 +178,9 @@ func (s *Server) renderDesignPage(w http.ResponseWriter, r *http.Request, b *bro
 		page.ActionID = base.Actions["upload"]
 	}
 	page.CanContinue = base.CanContinue
+	if renderBrowserJSON(w, status, "designs", page) {
+		return
+	}
 	if r.Method == http.MethodHead {
 		w.WriteHeader(status)
 		return

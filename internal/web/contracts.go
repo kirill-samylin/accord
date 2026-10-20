@@ -20,6 +20,7 @@ type Board interface {
 	Next(context.Context, core.Actor, core.NextInput) (core.Claim, error)
 	Get(context.Context, core.Actor, core.GetInput) (core.Task, error)
 	Create(context.Context, core.Actor, core.CreateInput) (core.Task, error)
+	Update(context.Context, core.Actor, core.UpdateInput) (core.Task, error)
 	Transition(context.Context, core.Actor, core.TransitionInput) (core.Task, error)
 	Release(context.Context, core.Actor, core.LeaseInput) (core.Task, error)
 	Heartbeat(context.Context, core.Actor, core.HeartbeatInput) (core.SessionView, error)
@@ -58,7 +59,7 @@ type Page struct {
 	Tasks, Epics, Questions, MyQuestions, LegacyDecisions []core.Task
 	Designs                                               []DesignAsset
 	Decisions                                             []core.Event
-	CanContinue, CanEdit                                  bool
+	CanContinue, CanEdit, CanUpdate                       bool
 	Draft                                                 map[string]string
 	Actions, FieldErrors                                  map[string]string
 	View, EpicKey, Role, State                            string

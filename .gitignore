@@ -14,3 +14,7 @@ __pycache__/
 .env
 .env.*
 !.env.example
+/web/node_modules/
+/web/.local/
+/web/next-env.d.ts
+/web/*.tsbuildinfo

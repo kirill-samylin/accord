@@ -1,0 +1,80 @@
+# Next.js клиент Accord
+
+Текущая реализация и приёмка: [TASK-007](TASK-007-next-paperclip.md).
+Код клиента — `web/`. Старый SSR `/web` сохранён для совместимости; новый
+интерфейс работает на `/app`. Production установка этой локальной веткой не
+меняется автоматически.
+
+## Технологии
+
+Next16.4.2/App Router, React19.3.1, TypeScript7.0.2, Tailwind4.3.3,
+TanStack Query5.104.5, Radix UI, cmdk и Lucide. Prettier и Node test runner
+проверяют формат и клиентские контракты. Точные версии/lockfile — в `web/`.
+Визуальные primitives и композиция адаптированы из Paperclip Streamlined;
+MIT/OFL notices и локальный Inter поставляются в `web/public`.
+
+Go продолжает проверять доступ, CSRF, leases/generation, evidence и replay.
+Next использует JSON-проекцию тех же browser handlers, а не второе ядро правил.
+Токен вводится только для входа; он не сохраняется в localStorage или URL.
+
+## Локальный запуск
+
+Нужны Go из development.md и Node24; проверенная версия Node24.19.0.
+Установите новые зависимости и соберите оба сервиса:
+
+```sh
+make web-install
+make build web-build
+mkdir -p .local/next-dev
+chmod 700 .local/next-dev
+bin/agent-board token create --db .local/next-dev/board.db \
+  --owner developer --machine local --output .local/next-dev/operator.token
+```
+
+Новый токен записывается в приватный файл; существующие файлы не перезаписываются.
+Не используйте эти команды на production БД. В одном терминале:
+
+```sh
+bin/agent-board serve --db .local/next-dev/board.db \
+  --listen 127.0.0.1:3101 --web-origin http://127.0.0.1:3100 \
+  --web-data .local/next-dev/web
+```
+
+В другом терминале из корня репозитория:
+
+```sh
+make web-start
+```
+
+Для разработки вместо production start используйте `make web-dev`.
+Откройте [новый клиент](http://127.0.0.1:3100/app) и выберите файл токена.
+Оба процесса останавливаются Ctrl+C. Не запускайте второй Go-процесс на той же БД.
+Для одного Go-сервера Node не нужен; Next UI требует отдельный Node runtime.
+
+## Адреса и загрузка файлов
+
+`ACCORD_GO_ORIGIN` — фиксированный оператором literal loopback origin, по
+умолчанию `http://127.0.0.1:3101`. Он задаётся **при build и start/dev**:
+external rewrites фиксируются в Next routes manifest. Смена переменной только
+при запуске уже собранного Next не считается переключением upstream.
+Браузер не выбирает upstream и не передаёт ему универсальный bearer.
+При смене порта Next через `WEB_PORT` Go `--web-origin` должен совпасть.
+
+Next16.4.2 external rewrite клонирует тело в память, включая маршрут без Proxy
+middleware. Установлены clone limit51MiB и timeout130s. Go отдельно сохраняет
+лимит файла50MiB, multipart overhead и deadline120s. Больший Next buffer не
+разрешает больший файл в Go. Это локальный буферизующий адаптер, не доказательство
+пригодности для массовой одновременной загрузки.
+
+Для будущей серверной установки существующий reverse proxy направляет
+`/web/**` прямо в Go, `/app/**` и `/_next/**` — в Node; native REST/MCP остаются
+на Go. Точные production изменения/переключение сервера — отдельное поручение.
+
+## Проверки
+
+`make web-check` выполняет форматирование, TypeScript, клиентские unit и
+production build; полный `make check` включает Go/native/infra/race и новый
+клиент. При нескольких установках Node передайте `NEXT_NODE=/absolute/path/to/node24`.
+Для браузерных тестов используются только отдельные synthetic fixtures,
+реальные Go/Next/Chrome и игнорируемая `.local/`. Источник статусов PASS/FAIL/
+NOT-RUN — TASK и WORK, а не наличие конфигурации или пакета Next.

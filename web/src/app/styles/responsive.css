@@ -1,0 +1,220 @@
+@media (max-width: 1199px) {
+  .agent-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .task-owner {
+    width: 85px;
+  }
+  .task-role {
+    width: 90px;
+  }
+  .dashboard-bottom {
+    grid-template-columns: 1fr;
+  }
+  .asset-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1023px) {
+  .detail-layout {
+    grid-template-columns: minmax(0, 1fr) 210px;
+    gap: 24px;
+  }
+  .properties-panel {
+    padding-left: 16px;
+  }
+  .entity-task {
+    display: none;
+  }
+  .agent-list-head {
+    display: none;
+  }
+  .entity-row > .status {
+    width: auto;
+  }
+  .metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dashboard-charts {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 767px) {
+  .task-row {
+    padding: 12px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .task-title {
+    font-size: 13px;
+  }
+  .task-role,
+  .task-owner {
+    display: none;
+  }
+  .peek-button {
+    width: 44px;
+    height: 44px;
+    margin: -12px -8px -12px 0;
+  }
+  .metrics-grid {
+    gap: 0;
+  }
+  .metric {
+    padding: 12px;
+  }
+  .metric-value {
+    font-size: 28px;
+  }
+  .metric-caption {
+    font-size: 10px;
+  }
+  .agent-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .agent-card {
+    padding: 10px;
+  }
+  .agent-card-head {
+    gap: 6px;
+  }
+  .agent-card-head .avatar {
+    width: 26px;
+    height: 26px;
+    flex-basis: 26px;
+  }
+  .agent-card-copy > span {
+    font-size: 9px;
+  }
+  .agent-card-task {
+    margin-top: 10px;
+  }
+  .agent-card-copy strong {
+    font-size: 11px;
+  }
+  .session-dot {
+    width: 5px;
+    height: 5px;
+  }
+  .chart-panel {
+    padding: 16px;
+  }
+  .state-bar-row {
+    grid-template-columns: 105px 1fr 24px;
+    gap: 8px;
+  }
+  .event-row {
+    padding: 12px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .event-time {
+    width: 100%;
+    padding-left: 14px;
+    font-size: 10px;
+    margin-top: -5px;
+  }
+  .entity-row {
+    padding: 12px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .entity-row .entity-main {
+    min-width: 100px;
+  }
+  .entity-row .entity-date {
+    display: none;
+  }
+  .entity-row > .status {
+    font-size: 10px;
+  }
+  .detail-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .detail-main {
+    width: 100%;
+  }
+  .properties-panel {
+    display: none;
+  }
+  .mobile-properties {
+    display: block;
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .mobile-properties summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    list-style: none;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .mobile-properties .properties {
+    margin-top: 14px;
+  }
+  .pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .asset-grid {
+    grid-template-columns: 1fr;
+  }
+  .asset-preview {
+    height: 210px;
+  }
+  .asset-list .asset-preview {
+    width: 90px;
+  }
+  .asset-list .asset-meta {
+    flex-direction: column;
+    gap: 3px;
+  }
+  .observation {
+    display: none;
+  }
+  .task-peek {
+    width: 100%;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .answer-panel {
+    padding: 16px;
+  }
+  .toolbar-select {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .loading-toast {
+    bottom: 90px;
+    right: 16px;
+    left: 16px;
+  }
+  .task-detail-heading .page-heading {
+    flex-direction: column;
+  }
+  .project-entity {
+    padding: 14px;
+  }
+  .project-entity > .status {
+    display: none;
+  }
+  .agent-identity {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .agent-identity h1 {
+    font-size: 20px;
+  }
+  .check-field {
+    min-height: 44px;
+  }
+  .asset-actions .icon-button {
+    min-height: 32px;
+    height: 32px;
+  }
+}
