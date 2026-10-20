@@ -5,6 +5,26 @@ Go7892/Next7893/nginx/accord-web-backup уже должны работать. О
 независимый source review, synthetic migration/restore rehearsal и Linux stage.
 `docs/multi-project.md` задаёт registry, ACL и неизменные default paths.
 
+## Следующие capable релизы после TASK009
+
+Для уже активированного registry использовать **`upgrade.py`**, а не initial
+`operate.py apply`. Аргументы stage те же immutable Go/Next hashes/revision/
+nginx hash, без owner-identity. Команды stage/apply/resume/finalize сохраняют
+отдельный journal kind=capable-update. Никакого bootstrap-owner повторно.
+
+Перед schema3 writer останавливается под owned inspection marker; создаётся
+полный format2 snapshot registry/default/всех проектов. Новый permanent guard
+требует `agent_profiles:1,board_schema:[3]` вместе с registry/ACL. Старый TASK009
+binary отвергается до запуска. Offline additive migration проверяет прежние
+строки всех таблиц и immutable файлы против snapshot до открытия listener.
+Исторические migration copies schema1/2-64hex.db с checksum сохраняются.
+Ошибка означает stop+marker+roll-forward; старые БД назад не накладываются.
+После независимой HTTPS приёмки finalize запускает новый полный backup и
+повторно сверяет effective systemd argv/guard/backup и owned /proc binary SHA.
+
+Ниже сохранена процедура **первого** TASK009 cutover для истории. Повторять её
+для новых релизов запрещено.
+
 ## Сборка и stage
 
 Собрать clean reviewed commit прежними `build-release.sh` и Next `package.py`.

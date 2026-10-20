@@ -42,7 +42,7 @@ func run(args []string, in io.Reader, out io.Writer) error {
 		if len(args) != 1 && !(len(args) == 2 && args[1] == "--json") {
 			return errors.New("capabilities accepts only --json")
 		}
-		return json.NewEncoder(out).Encode(map[string]any{"project_registry": 1, "project_acl": 1, "registry_schema": []int{1}})
+		return json.NewEncoder(out).Encode(map[string]any{"project_registry": 1, "project_acl": 1, "registry_schema": []int{1}, "agent_profiles": 1, "board_schema": []int{3}})
 	case "projects":
 		return projectCommand(args[1:], out)
 	case "serve":
@@ -114,6 +114,7 @@ agent-board projects token-create --projects-data ROOT --db DEFAULT --web-data W
 agent-board projects token-revoke --projects-data ROOT --db DEFAULT --web-data WEB --identity REGISTRY_ID
 agent-board projects bootstrap-owner --projects-data ROOT --db DEFAULT --web-data WEB --identity LEGACY_TOKEN_ID
 agent-board projects recover-owner --projects-data ROOT --db DEFAULT --web-data WEB --project ID --identity REGISTRY_ID --reason owner-recovery
+agent-board projects migrate-storage --projects-data ROOT --db DEFAULT --web-data WEB
 agent-board projects maintenance-reset --projects-data STAGED_ROOT --db STAGED_DEFAULT --web-data STAGED_WEB --reason restore
 agent-board projects reject-provisioning --projects-data ROOT --db DEFAULT --web-data WEB --project ID --reason provisioning-recovery
 

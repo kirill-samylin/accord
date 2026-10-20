@@ -6,6 +6,7 @@ import re
 import sqlite3
 
 from guard import MARKER, protected_root
+from migration_files import PATTERN, copy_migrations, validate_migrations
 
 PROJECT_ID = re.compile(r'p_[0-9a-f]{32}')
 
@@ -72,6 +73,8 @@ def inventory(root, default_db, default_web):
             for path in folder.iterdir():
                 if path.name == 'web':
                     LEGACY.private(path, True)
+                elif path.name == 'board.db.migrations':
+                    validate_migrations(path, LEGACY)
                 elif path.name in ('board.db', 'board.db-wal', 'board.db-shm', 'board.db-journal'):
                     LEGACY.private(path)
                 else:
@@ -140,7 +143,9 @@ def board_copy(board, web, destination):
             raise RuntimeError('unaccounted web storage entry requires recovery')
     destination.mkdir(mode=0o700)
     (destination / 'web').mkdir(mode=0o700)
-    board_version = copy_database(board, destination / 'board.db', (2,))
+    board_version = copy_database(board, destination / 'board.db', (2, 3))
+    copy_migrations(board.with_name(board.name + '.migrations'),
+                    destination / 'board.db.migrations', LEGACY, copy_file)
     web_version = copy_database(web / 'web.db', destination / 'web/web.db', (1, 2))
     for name in ('blobs', 'staging'):
         source = web / name
@@ -171,7 +176,7 @@ def pending_copy(source, target):
         name = relative.as_posix()
         if path.is_dir() and not path.is_symlink():
             LEGACY.private(path, True)
-            if name not in ('web', 'web/blobs', 'web/staging'):
+            if name not in ('web', 'web/blobs', 'web/staging', 'board.db.migrations'):
                 raise RuntimeError('unexpected provisioning directory')
             (target / relative).mkdir(mode=0o700)
         else:
@@ -188,6 +193,8 @@ def allowed_board_file(relative, pending=False):
     name = relative.as_posix()
     if name in ('board.db', 'web/web.db'):
         return True
+    if len(relative.parts) == 2 and relative.parts[0] == 'board.db.migrations':
+        return bool(PATTERN.fullmatch(relative.name))
     if pending and re.fullmatch(r'(?:board\.db|web/web\.db)-(?:wal|shm|journal)', name):
         return True
     return (len(relative.parts) == 3 and relative.parts[:2] in

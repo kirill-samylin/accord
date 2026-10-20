@@ -50,7 +50,7 @@ func TestCatalogRESTAndNoteResourceShareAuthenticatedState(t *testing.T) {
 	}
 	defer client.Close()
 	templates, err := client.ListResourceTemplates(ctx, nil)
-	if err != nil || len(templates.ResourceTemplates) != 1 {
+	if err != nil || len(templates.ResourceTemplates) != 3 {
 		t.Fatalf("resource catalog: %v %v", templates, err)
 	}
 	uri := "accord://notes?" + url.Values{"session_id": {board.SessionID}, "scope_type": {"role"}, "scope_id": {"coordinator"}}.Encode()

@@ -73,6 +73,12 @@ func ResetOffline(ctx context.Context, root, defaultDB, defaultWeb string) error
 		if _, e := os.Lstat(boardPath); os.IsNotExist(e) && entry.state == "provisioning" {
 			continue
 		}
+		if e := validateProjectStorage(boardPath, webPath); e != nil {
+			return e
+		}
+		if e := store.MigrateExisting(ctx, boardPath); e != nil {
+			return e
+		}
 		board, e := store.OpenExisting(boardPath, core.Config{Project: "restored"}, nil)
 		if e != nil {
 			return e

@@ -28,7 +28,7 @@ func validControlKey(key, prefix string) bool {
 // ValidControlEventType is the current recorded vocabulary, not UI telemetry.
 func ValidControlEventType(value string) bool {
 	switch value {
-	case "token_created", "token_revoked", "tokens_revoked_all", "session_opened", "task_created", "task_updated", "claimed", "released", "commented", "linked", "unlinked", "task_ready", "task_in_progress", "task_done", "task_cancelled", "human_answered", "epic_open", "epic_done", "epic_cancelled", "epic_reopened", "lease_expired", "lease_recovered", "attempt_recovered", "database_recovered", "note_created", "note_deleted", "blocked_changed":
+	case "token_created", "token_revoked", "tokens_revoked_all", "session_opened", "task_created", "task_updated", "claimed", "released", "commented", "linked", "unlinked", "task_ready", "task_in_progress", "task_done", "task_cancelled", "human_answered", "epic_open", "epic_done", "epic_cancelled", "epic_reopened", "lease_expired", "lease_recovered", "attempt_recovered", "database_recovered", "note_created", "note_deleted", "blocked_changed", "profile_created", "profile_updated", "profile_state_changed":
 		return true
 	}
 	return false

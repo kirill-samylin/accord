@@ -49,6 +49,14 @@ def atomic(path, data, mode=0o644):
     if path.exists() or path.is_symlink():
         regular(path)
     temporary = path.with_name('.' + path.name + '.next-new')
+    if temporary.exists() or temporary.is_symlink():
+        info = regular(temporary)
+        if stat.S_IMODE(info.st_mode) != mode or temporary.read_bytes() != data:
+            raise RuntimeError('unowned or incomplete atomic temporary requires inspection')
+        # A killed previous write may leave the fully fsynced expected bytes.
+        # Never discard a different or partial operator artifact on resume.
+        temporary.unlink()
+        sync(path.parent)
     descriptor = os.open(temporary, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, mode)
     try:
         with os.fdopen(descriptor, 'wb') as output:
@@ -98,6 +106,12 @@ def switch(base, target):
         if not valid_target(base, target):
             raise RuntimeError('invalid release pointer')
         temporary = base / '.current.next-new'
+        if temporary.exists() or temporary.is_symlink():
+            info = temporary.lstat()
+            if not stat.S_ISLNK(info.st_mode) or info.st_uid != 0 or os.readlink(temporary) != target:
+                raise RuntimeError('unowned release pointer temporary requires inspection')
+            temporary.unlink()
+            sync(base)
         temporary.symlink_to(target)
         os.replace(temporary, current)
     sync(base)

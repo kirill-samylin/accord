@@ -9,7 +9,7 @@ from host_ops import owned_listener, port_free
 from ingress import render
 
 
-def stage(args):
+def stage(args, upgrading=False):
     host.regular(host.NGINX)
     host.regular(host.UNIT)
     if host.sha(host.NGINX) != args.expected_nginx_sha256:
@@ -29,6 +29,9 @@ def stage(args):
     if host.sha(args.go_binary) != args.go_sha256:
         raise RuntimeError('Go binary hash differs')
     require_capable(args.go_binary, PROJECTS)
+    if upgrading:
+        from upgrade_verify import require_runtime
+        require_runtime()
     host.directory(WORK, 0o700)
     host.sync(WORK.parent)
     work = WORK / args.revision
@@ -52,11 +55,16 @@ def stage(args):
                 'old_go': host.pointer(host.GO), 'old_next': host.pointer(host.BASE),
                 'nginx_sha256': host.sha(host.NGINX), 'go_sha256': args.go_sha256,
                 'manifest_sha256': args.manifest_sha256, 'preserved': preserved(),
-                'owner_identity': args.owner_identity,
                 'helpers': helper_manifest()}
+    if upgrading:
+        from upgrade_verify import baseline_helpers
+        metadata.update(kind='capable-update', installed_helpers=baseline_helpers(metadata['helpers']))
+    else:
+        metadata['owner_identity'] = args.owner_identity
     host.save_json(work / 'state.json', metadata)
     host.atomic(work / 'previous-nginx', host.NGINX.read_bytes(), 0o600)
-    host.atomic(work / 'candidate-nginx', render(host.NGINX.read_text()).encode(), 0o600)
+    candidate = host.NGINX.read_bytes() if upgrading else render(host.NGINX.read_text()).encode()
+    host.atomic(work / 'candidate-nginx', candidate, 0o600)
     nginx_check(work / 'candidate-nginx', work)
     unit = Path('/run/systemd/system/accord-next-project-stage.service')
     if unit.exists() or unit.is_symlink():

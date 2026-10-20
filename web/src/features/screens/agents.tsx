@@ -14,6 +14,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PageData } from "@/lib/types";
 import { date, label } from "@/lib/format";
+import { AgentNavigation } from "../profiles/agent-navigation";
+import { SessionProfile } from "../profiles/session-profile";
 import {
   FilterMenu,
   Pagination,
@@ -37,7 +39,7 @@ export function AgentsScreen({
     <div className="page">
       <PageHeading
         title="Агенты"
-        description="Участники проекта и задачи, которые они удерживают"
+        description="Сессии участников проекта и задачи, которые они удерживают"
         actions={
           <button
             className="button button-secondary button-sm"
@@ -48,6 +50,7 @@ export function AgentsScreen({
           </button>
         }
       />
+      <AgentNavigation current="sessions" />
       <Tabs
         value={
           page.agent_state ||
@@ -239,14 +242,15 @@ export function AgentDetail({ page }: { page: PageData }) {
               <Fact name="Машина" value={agent.machine} />
             </dl>
             <p className="form-help">
-              Сессия создаётся клиентом при подключении к Accord. Изменение
-              модели и запуск процесса требуют профиля исполнения; этот контракт
-              пока не подключён.
+              Сессия создаётся клиентом при подключении к Accord. Она
+              подтверждает участие в проекте; работа процесса здесь не
+              отслеживается.
             </p>
             <Link prefetch={false} className="inline-link" href="/app/settings">
               Правила проекта и сроки аренд
             </Link>
           </div>
+          <SessionProfile profile={agent.profile} />
         </TabsContent>
       </Tabs>
     </div>

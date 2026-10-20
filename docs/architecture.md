@@ -1,5 +1,11 @@
 # Архитектура пилота
 
+> TASK010 добавляет board schema3 (profiles/revisions), immutable snapshot
+> при явном Describe и existing ACL/session guards. Выбранный после WORK140
+> контракт — [agent-profiles.md](agent-profiles.md). Старые unbound sessions не
+> объединяются с профилями. Capable update требует schema3 floor и полного
+> all-project snapshot; TASK009 initial apply повторно не применяется.
+
 > TASK009 по прямому поручению пользователя расширяет single-board ADR-001:
 > Go registry с явными project ID/ACL и изолированными board/web stores,
 > сохранение прежнего default state. Актуальные выбранные границы и wire —

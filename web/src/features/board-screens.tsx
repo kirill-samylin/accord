@@ -9,6 +9,8 @@ import { ProjectsScreen, SettingsScreen } from "./screens/project-settings";
 import { StatsScreen } from "./screens/stats";
 import { DesignsScreen } from "./screens/designs";
 import { SessionControls } from "./mutations/SessionControls";
+import { ProfilesScreen } from "./profiles/profiles-screen";
+import { ProfileDetail } from "./profiles/profile-detail";
 export function BoardScreen({
   page,
   refresh,
@@ -32,6 +34,18 @@ export function BoardScreen({
       </div>
     );
   switch (page.view || page.name) {
+    case "profiles":
+      return (
+        <ProfilesScreen page={page} refresh={refresh} onSuccess={onSuccess} />
+      );
+    case "profile":
+      return (
+        <ProfileDetail
+          key={page.profile?.id}
+          page={page}
+          onSuccess={onSuccess}
+        />
+      );
     case "task":
       return (
         <TaskDetail key={page.task?.key} page={page} onSuccess={onSuccess} />

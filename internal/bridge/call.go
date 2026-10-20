@@ -1,6 +1,7 @@
 package bridge
 
 import (
+	"agent-board/internal/transport"
 	"context"
 	"encoding/json"
 	"time"
@@ -14,6 +15,9 @@ func (b *bridge) call(ctx context.Context, name string, raw json.RawMessage) (*m
 	reading := b.readOnly[name]
 	if b.quarantined && name != "get" && name != "events" {
 		return b.uncertain(), nil
+	}
+	if err := transport.ValidateJSONFields(raw); err != nil {
+		return failure("VALIDATION", "Invalid or duplicate JSON fields"), nil
 	}
 	var fields map[string]json.RawMessage
 	if json.Unmarshal(raw, &fields) != nil || fields == nil {

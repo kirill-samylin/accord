@@ -39,12 +39,24 @@ class ProjectGuard(unittest.TestCase):
         return type('Result', (), {'stdout': json.dumps(value).encode(), 'stderr': stderr})()
 
     def test_guard_requires_capability_before_registry_activation(self):
-        value = {'project_registry': 1, 'project_acl': 1, 'registry_schema': [1]}
+        value = {'project_registry': 1, 'project_acl': 1, 'registry_schema': [1],
+                 'agent_profiles': 1, 'board_schema': [3]}
         with patch.object(guard.subprocess, 'run', return_value=self.response(value)) as run:
             self.assertEqual(guard.require_capable(self.binary, self.root), value)
             self.assertEqual(run.call_args.args[0], [str(self.binary), 'capabilities', '--json'])
             self.assertEqual(run.call_args.kwargs['timeout'], 5)
         self.assertFalse(self.root.exists())
+
+    def test_old_registry_capable_binary_and_invalid_profile_floor_are_denied(self):
+        current = {'project_registry': 1, 'project_acl': 1, 'registry_schema': [1],
+                   'agent_profiles': 1, 'board_schema': [3]}
+        for change in ({'agent_profiles': None}, {'agent_profiles': True},
+                       {'agent_profiles': 0}, {'board_schema': [2]},
+                       {'board_schema': [True]}, {'board_schema': [3, 4]}):
+            with self.subTest(change=change), patch.object(guard.subprocess, 'run',
+                    return_value=self.response(current | change)):
+                with self.assertRaises(RuntimeError):
+                    guard.require_capable(self.binary, self.root)
 
     def test_marker_loss_never_allows_legacy_binary(self):
         self.root.mkdir(mode=0o700)

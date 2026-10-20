@@ -47,6 +47,8 @@ def restore(source, target, binary):
     LEGACY.sync_dir(target.parent)
     marker(target / 'RESTORE_REQUIRES_RESET', 'Offline restored state; no listener until recovery checks and new credentials.')
     copy_file(source / 'default/board.db', target / 'board.db')
+    if (source / 'default/board.db.migrations').exists():
+        copy_tree(source / 'default/board.db.migrations', target / 'board.db.migrations')
     copy_tree(source / 'default/web', target / 'web')
     projects = target / 'projects-data'
     copy_tree(source / 'registry', projects)

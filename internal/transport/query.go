@@ -22,6 +22,23 @@ func readQuery(kind, raw string) ([]byte, error) {
 			return nil, core.Fail("VALIDATION", "query parameters must occur once with a value")
 		}
 		value := values[0]
+		if kind == "profiles" || kind == "profile" {
+			switch {
+			case kind == "profiles" && key == "state":
+				fields[key] = value
+			case kind == "profile" && key == "profile_id":
+				fields[key] = value
+			case kind == "profile" && key == "version":
+				n, e := strconv.ParseInt(value, 10, 64)
+				if e != nil || n < 1 {
+					return nil, core.Fail("validation", "invalid profile version")
+				}
+				fields[key] = n
+			default:
+				return nil, core.Fail("validation", "unknown profile query parameter")
+			}
+			continue
+		}
 		if kind == "stats" {
 			switch key {
 			case "from", "to":

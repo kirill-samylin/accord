@@ -26,7 +26,9 @@ func (b *bridge) mirrorResources(ctx context.Context) error {
 		switch template.URITemplate {
 		case "accord://notes{?session_id,scope_type,scope_id,limit,cursor,include_deleted}",
 			"accord://designs{?session_id,scope,scope_key,design_id,limit,cursor}",
-			"accord://designs/{asset_id}{?session_id}":
+			"accord://designs/{asset_id}{?session_id}",
+			"accord://profiles{?session_id,state}",
+			"accord://profile{?session_id,profile_id,version}":
 		default:
 			continue
 		}
@@ -44,7 +46,7 @@ func (b *bridge) readNotes(ctx context.Context, request *mcp.ReadResourceRequest
 		return nil, errors.New("NO_SESSION: call describe first")
 	}
 	u, err := url.Parse(request.Params.URI)
-	if err != nil || u.Scheme != "accord" || (u.Host != "notes" && u.Host != "designs") || (u.Host == "notes" && u.Path != "") || (u.Host == "designs" && strings.Contains(strings.TrimPrefix(u.Path, "/"), "/")) || u.User != nil || u.Fragment != "" {
+	if err != nil || u.Scheme != "accord" || (u.Host != "notes" && u.Host != "designs" && u.Host != "profiles" && u.Host != "profile") || (u.Host != "designs" && u.Path != "") || (u.Host == "designs" && strings.Contains(strings.TrimPrefix(u.Path, "/"), "/")) || u.User != nil || u.Fragment != "" {
 		return nil, errors.New("invalid notes resource URI")
 	}
 	query, err := url.ParseQuery(u.RawQuery)

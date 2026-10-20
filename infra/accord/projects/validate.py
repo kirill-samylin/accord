@@ -6,6 +6,7 @@ import sqlite3
 
 from guard import MARKER
 from layout import LEGACY, PROJECT_ID, allowed_board_file
+from migration_files import validate_migrations
 
 
 def database(path, version):
@@ -21,9 +22,28 @@ def database(path, version):
 
 
 def board(path, schemas):
-    if schemas.get('board_schema') != 2 or schemas.get('web_schema') not in (1, 2):
+    if schemas.get('board_schema') not in (2, 3) or schemas.get('web_schema') not in (1, 2):
         raise RuntimeError('unknown project snapshot schema')
-    database(path / 'board.db', 2)
+    database(path / 'board.db', schemas['board_schema'])
+    if schemas['board_schema'] == 3:
+        with closing(sqlite3.connect((path / 'board.db').absolute().as_uri() + '?mode=ro&immutable=1', uri=True)) as connection:
+            for query in ('SELECT id,sequence FROM metadata LIMIT 0',
+                          'SELECT key,data FROM tasks LIMIT 0',
+                          'SELECT key,data FROM sessions LIMIT 0',
+                          'SELECT role,generation FROM role_generations LIMIT 0',
+                          'SELECT cursor,data FROM events LIMIT 0',
+                          'SELECT key,hash,response FROM idempotency LIMIT 0',
+                          'SELECT id,hash,owner,machine,expires,revoked FROM tokens LIMIT 0',
+                          'SELECT key,data FROM notes LIMIT 0',
+                          'SELECT id,sequence FROM note_metadata LIMIT 0',
+                          'SELECT key,data FROM agent_profiles LIMIT 0',
+                          'SELECT profile_id,version,data FROM agent_profile_revisions LIMIT 0'):
+                connection.execute(query)
+            for table in ('metadata', 'note_metadata'):
+                if len(connection.execute('SELECT sequence FROM ' + table + ' WHERE id=1').fetchall()) != 1:
+                    raise RuntimeError('snapshot board metadata missing')
+    if (path / 'board.db.migrations').exists():
+        validate_migrations(path / 'board.db.migrations', LEGACY)
     database(path / 'web/web.db', schemas['web_schema'])
     with closing(sqlite3.connect((path / 'web/web.db').absolute().as_uri() + '?mode=ro&immutable=1', uri=True)) as connection:
         for blob, size, digest, preview, preview_size in connection.execute(
@@ -51,7 +71,8 @@ def validate(path):
         raise RuntimeError('unexpected project snapshot inventory')
     identities = set()
     states = {}
-    directories = {'default', 'default/web', 'default/web/blobs', 'default/web/staging', 'registry', 'projects'}
+    directories = {'default', 'default/web', 'default/web/blobs', 'default/web/staging',
+                   'default/board.db.migrations', 'registry', 'projects'}
     for entry in projects:
         identifier = entry['id']
         if (not PROJECT_ID.fullmatch(identifier) or identifier == default_id or
@@ -61,6 +82,7 @@ def validate(path):
         states[identifier] = entry['state']
         prefix = 'projects/' + identifier
         directories.update((prefix, prefix + '/web', prefix + '/web/blobs', prefix + '/web/staging'))
+        directories.add(prefix + '/board.db.migrations')
     quarantined = manifest.get('quarantine', [])
     if not isinstance(quarantined, list) or len(quarantined) > 128 or len(set(quarantined)) != len(quarantined):
         raise RuntimeError('invalid quarantined inventory')
@@ -71,6 +93,7 @@ def validate(path):
             raise RuntimeError('invalid quarantined project identity')
         prefix = 'quarantine/' + identifier
         directories.update((prefix, prefix + '/web', prefix + '/web/blobs', prefix + '/web/staging'))
+        directories.add(prefix + '/board.db.migrations')
     files = set()
     for entry in path.rglob('*'):
         relative = entry.relative_to(path)

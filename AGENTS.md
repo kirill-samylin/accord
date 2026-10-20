@@ -18,6 +18,10 @@
 постоянные профили агентов, затем координация, затем управляемый запуск.
 После TASK009 запрещён старый Go/rollback БД: сохраняй capable guards/ACL и
 полный backup всех проектов; initial TASK009 apply не является updater новых релизов.
+Текущий этап постоянных профилей — `docs/TASK-010-agent-profiles.md`, контракт —
+`docs/agent-profiles.md`. Профиль не identity/session/присутствие/worker; schema3,
+immutable revisions/snapshots и ACL сохраняются. Следующие capable поставки —
+`infra/accord/projects/upgrade.py`, с отдельным review/QA до production.
 
 ## Работа
 

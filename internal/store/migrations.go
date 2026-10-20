@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-const SchemaVersion = 2
+const SchemaVersion = 3
 
 // migrate is the sole DDL owner. A schema1 snapshot is published before any
 // schema2 transaction; unsupported future versions are rejected before DDL.
@@ -21,9 +21,12 @@ func migrate(ctx context.Context, db *sql.DB, path string) error {
 		return fmt.Errorf("database schema is newer than this server")
 	}
 	if version == SchemaVersion {
-		return nil
+		return validateSchema(ctx, db, version)
 	}
-	if version == 1 {
+	if version == 1 || version == 2 {
+		if err := validateSchema(ctx, db, version); err != nil {
+			return err
+		}
 		dir := path + ".migrations"
 		if err := os.Mkdir(dir, 0700); err != nil && !os.IsExist(err) {
 			return err
@@ -42,7 +45,7 @@ func migrate(ctx context.Context, db *sql.DB, path string) error {
 		if err = syncDirectory(filepath.Dir(dir)); err != nil {
 			return fmt.Errorf("persist migration backup directory: %w", err)
 		}
-		if err = migrationBackup(ctx, path, filepath.Join(dir, "schema1-"+id+".db")); err != nil {
+		if err = migrationBackup(ctx, path, filepath.Join(dir, fmt.Sprintf("schema%d-%s.db", version, id))); err != nil {
 			return fmt.Errorf("pre-migration backup: %w", err)
 		}
 	}
@@ -67,21 +70,29 @@ func migrate(ctx context.Context, db *sql.DB, path string) error {
 	if version == SchemaVersion {
 		return nil
 	}
-	if version != 0 && version != 1 {
+	if version != 0 && version != 1 && version != 2 {
 		return fmt.Errorf("unsupported migration source")
 	}
-	for _, q := range []string{
+	queries := []string{
 		`CREATE TABLE IF NOT EXISTS tasks (key TEXT PRIMARY KEY,data TEXT NOT NULL)`,
 		`CREATE TABLE IF NOT EXISTS sessions (key TEXT PRIMARY KEY,data TEXT NOT NULL)`,
 		`CREATE TABLE IF NOT EXISTS role_generations (role TEXT PRIMARY KEY,generation INTEGER NOT NULL)`,
 		`CREATE TABLE IF NOT EXISTS events (cursor INTEGER PRIMARY KEY AUTOINCREMENT,data TEXT NOT NULL)`,
 		`CREATE TABLE IF NOT EXISTS idempotency (key TEXT PRIMARY KEY,hash TEXT NOT NULL,response TEXT NOT NULL)`,
 		`CREATE TABLE IF NOT EXISTS tokens (id TEXT PRIMARY KEY,hash TEXT UNIQUE NOT NULL,owner TEXT NOT NULL,machine TEXT NOT NULL,expires INTEGER NOT NULL,revoked INTEGER NOT NULL DEFAULT 0)`,
-		`CREATE TABLE notes (key TEXT PRIMARY KEY,data TEXT NOT NULL)`,
-		`CREATE TABLE note_metadata (id INTEGER PRIMARY KEY CHECK(id=1),sequence INTEGER NOT NULL)`,
-		`INSERT INTO note_metadata VALUES(1,0)`,
-		`PRAGMA user_version=2`,
-	} {
+	}
+	if version < 2 {
+		queries = append(queries,
+			`CREATE TABLE notes (key TEXT PRIMARY KEY,data TEXT NOT NULL)`,
+			`CREATE TABLE note_metadata (id INTEGER PRIMARY KEY CHECK(id=1),sequence INTEGER NOT NULL)`,
+			`INSERT INTO note_metadata VALUES(1,0)`,
+		)
+	}
+	queries = append(queries,
+		`CREATE TABLE agent_profiles (key TEXT PRIMARY KEY,data TEXT NOT NULL)`,
+		`CREATE TABLE agent_profile_revisions (profile_id TEXT NOT NULL,version INTEGER NOT NULL,data TEXT NOT NULL,PRIMARY KEY(profile_id,version))`,
+		`PRAGMA user_version=3`)
+	for _, q := range queries {
 		if _, err = tx.ExecContext(ctx, q); err != nil {
 			return fmt.Errorf("migrate database: %w", err)
 		}

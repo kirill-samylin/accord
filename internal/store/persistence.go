@@ -8,7 +8,7 @@ import (
 )
 
 func loadBoard(ctx context.Context, tx *sql.Tx) (*board, error) {
-	b := &board{Notes: map[string]*core.Note{}, Tasks: map[string]*core.Task{}, Sessions: map[string]*core.Session{}, Roles: map[string]int64{}, tx: tx}
+	b := &board{Profiles: map[string]*core.AgentProfile{}, Notes: map[string]*core.Note{}, Tasks: map[string]*core.Task{}, Sessions: map[string]*core.Session{}, Roles: map[string]int64{}, tx: tx}
 	if err := tx.QueryRowContext(ctx, `SELECT sequence FROM metadata WHERE id=1`).Scan(&b.Sequence); err != nil {
 		return nil, err
 	}
@@ -30,6 +30,11 @@ func loadBoard(ctx context.Context, tx *sql.Tx) (*board, error) {
 			return nil, err
 		}
 		if err := tx.QueryRowContext(ctx, `SELECT sequence FROM note_metadata WHERE id=1`).Scan(&b.NoteSequence); err != nil {
+			return nil, err
+		}
+	}
+	if schema >= 3 {
+		if err := loadEntities(ctx, tx, "agent_profiles", b.Profiles); err != nil {
 			return nil, err
 		}
 	}
@@ -70,6 +75,18 @@ func loadEntities[T any](ctx context.Context, tx *sql.Tx, table string, target m
 	return rows.Err()
 }
 func saveBoard(ctx context.Context, tx *sql.Tx, b *board) error {
+	if err := saveEntities(ctx, tx, "agent_profiles", b.Profiles); err != nil {
+		return err
+	}
+	for _, v := range b.ProfileRevisions {
+		raw, err := json.Marshal(v)
+		if err != nil {
+			return err
+		}
+		if _, err = tx.ExecContext(ctx, `INSERT INTO agent_profile_revisions(profile_id,version,data) VALUES(?,?,?)`, v.ID, v.Version, string(raw)); err != nil {
+			return err
+		}
+	}
 	if _, err := tx.ExecContext(ctx, `UPDATE metadata SET sequence=? WHERE id=1`, b.Sequence); err != nil {
 		return err
 	}

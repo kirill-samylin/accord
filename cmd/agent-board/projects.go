@@ -19,7 +19,7 @@ func projectCommand(args []string, out io.Writer) error {
 		return errors.New("usage: projects token-create | bootstrap-owner")
 	}
 	operation := args[0]
-	if operation != "token-create" && operation != "bootstrap-owner" && operation != "maintenance-reset" && operation != "recover-owner" && operation != "token-revoke" && operation != "reject-provisioning" {
+	if operation != "token-create" && operation != "bootstrap-owner" && operation != "maintenance-reset" && operation != "recover-owner" && operation != "token-revoke" && operation != "reject-provisioning" && operation != "migrate-storage" {
 		return errors.New("unknown projects operation")
 	}
 	f := flags("projects " + operation)
@@ -38,6 +38,13 @@ func projectCommand(args []string, out io.Writer) error {
 	}
 	if *root == "" || *webData == "" {
 		return errors.New("projects-data and web-data required")
+	}
+	if operation == "migrate-storage" {
+		count, err := projects.MigrateStorage(context.Background(), *root, *db, *webData)
+		if err != nil {
+			return errors.New("offline storage migration failed; keep startup guard and inspect")
+		}
+		return json.NewEncoder(out).Encode(map[string]any{"storage_migrated": true, "boards": count})
 	}
 	if operation == "reject-provisioning" {
 		if *reason != "provisioning-recovery" {

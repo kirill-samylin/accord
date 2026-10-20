@@ -21,7 +21,7 @@ export const navigation = [
     icon: FolderKanban,
     group: "Работа",
   },
-  { href: "/app/agents", title: "Агенты", icon: Bot, group: "Организация" },
+  { href: "/app/profiles", title: "Агенты", icon: Bot, group: "Организация" },
   {
     href: "/app/activity",
     title: "Активность",
@@ -45,6 +45,7 @@ export const navigation = [
 ];
 export function currentSection(path: string) {
   path = screenPath(path);
+  if (path.startsWith("/app/agents")) path = "/app/profiles";
   return (
     navigation.find(
       (item) => item.href !== "/app" && path.startsWith(item.href),

@@ -45,6 +45,9 @@ func call(args []string, in io.Reader, out io.Writer) error {
 	if err != nil || int64(len(data)) > transport.MaxBodyBytes {
 		return errors.New("request JSON exceeds limit or cannot be read")
 	}
+	if err := transport.ValidateJSONFields(data); err != nil {
+		return errors.New("stdin contains invalid or duplicate JSON fields")
+	}
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(data, &fields); err != nil || fields == nil {
 		return errors.New("stdin must contain one JSON object")
@@ -125,6 +128,10 @@ func clientRoute(operation string, fields map[string]json.RawMessage) (string, s
 		path = "/api/v1/heartbeat"
 	case "note":
 		path = "/api/v1/notes"
+	case "profile_create", "profile_update", "profile_archive":
+		path = "/api/v1/" + operation
+	case "profiles", "profile":
+		return profileClientRoute(operation, fields)
 	case "tasks", "epics", "sessions", "notes", "stats":
 		return readClientRoute(operation, fields)
 	case "events":
@@ -171,4 +178,26 @@ func clientRoute(operation string, fields map[string]json.RawMessage) (string, s
 	}
 	body, err := json.Marshal(fields)
 	return method, path, body, err
+}
+
+func profileClientRoute(operation string, fields map[string]json.RawMessage) (string, string, []byte, error) {
+	query := url.Values{}
+	for key, raw := range fields {
+		if operation == "profiles" && key == "state" || operation == "profile" && key == "profile_id" {
+			var value string
+			if json.Unmarshal(raw, &value) != nil {
+				return "", "", nil, errors.New("invalid profile field")
+			}
+			query.Set(key, value)
+		} else if operation == "profile" && key == "version" {
+			var value int64
+			if json.Unmarshal(raw, &value) != nil || value < 1 {
+				return "", "", nil, errors.New("invalid profile version")
+			}
+			query.Set(key, fmt.Sprint(value))
+		} else {
+			return "", "", nil, errors.New("unknown profile field")
+		}
+	}
+	return "GET", "/api/v1/" + operation + "?" + query.Encode(), nil, nil
 }

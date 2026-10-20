@@ -1,0 +1,114 @@
+.agent-navigation {
+  display: flex;
+  gap: 20px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.profile-page .page-heading {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.profile-page .page-heading-copy {
+  flex: 1 1 180px;
+}
+.profile-page .page-heading h1 {
+  overflow-wrap: anywhere;
+}
+.profile-page .heading-actions {
+  max-width: 100%;
+}
+.agent-navigation a {
+  padding: 10px 0;
+  color: var(--muted-foreground);
+  border-bottom: 2px solid transparent;
+}
+.agent-navigation a[aria-current="page"] {
+  color: var(--foreground);
+  border-color: var(--foreground);
+}
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 16px;
+}
+.profile-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.profile-card:hover {
+  background: var(--accent);
+  border-color: var(--ring);
+}
+.profile-card-heading,
+.profile-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.profile-card-heading strong,
+.profile-model,
+.profile-text {
+  overflow-wrap: anywhere;
+}
+.profile-card-meta {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  font-size: 11px;
+}
+.profile-description {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 3em;
+}
+.profile-version,
+.profile-updated,
+.profile-model {
+  font-size: 11px;
+}
+.profile-updated {
+  margin-top: auto;
+}
+.profile-text {
+  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.profile-instructions {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px;
+}
+.profile-dialog {
+  width: min(100% - 32px, 680px);
+}
+.profile-history-row {
+  display: grid;
+  grid-template-columns: 90px 100px 120px minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px 16px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.profile-history-row:last-child {
+  border-bottom: 0;
+}
+@media (max-width: 767px) {
+  .profile-history-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .profile-history-row > :last-child {
+    grid-column: 1 / -1;
+  }
+  .agent-identity:has(.heading-actions) {
+    align-items: flex-start;
+  }
+}

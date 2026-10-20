@@ -22,6 +22,11 @@ type route struct {
 }
 
 var routes = []route{
+	{"GET", "/api/v1/profiles", "profiles", false},
+	{"GET", "/api/v1/profile", "profile", false},
+	{"POST", "/api/v1/profile_create", "profile_create", true},
+	{"POST", "/api/v1/profile_update", "profile_update", true},
+	{"POST", "/api/v1/profile_archive", "profile_archive", true},
 	{"POST", "/api/v1/session", "describe", true},
 	{"POST", "/api/v1/tasks", "create", true},
 	{"GET", "/api/v1/tasks/{key}", "get", false},
@@ -58,6 +63,7 @@ func NewHandlerWithOptions(s Service, ready func(context.Context) error, options
 	admission := newAdmission(options)
 	ops := operations(s)
 	all := append(append([]operation(nil), ops...), readOperations(s)...)
+	all = append(all, profileOperations(s)...)
 	byName := make(map[string]operation, len(all))
 	for _, op := range all {
 		byName[op.name] = op

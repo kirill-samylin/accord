@@ -24,16 +24,17 @@ type ControlOverview struct {
 // ControlSession describes recorded participation, not an OS process.
 // Task is present only for a live lease of the current task generation.
 type ControlSession struct {
-	SessionID      string     `json:"session_id"`
-	Role           string     `json:"role"`
-	RunID          string     `json:"run_id"`
-	Machine        string     `json:"machine"`
-	Owner          string     `json:"owner"`
-	RoleGeneration int64      `json:"role_generation"`
-	ExpiresAt      time.Time  `json:"expires_at"`
-	Status         string     `json:"status"`
-	Task           *Task      `json:"task,omitempty"`
-	LastEventAt    *time.Time `json:"last_event_at,omitempty"`
+	Profile        *ProfileSnapshot `json:"profile,omitempty"`
+	SessionID      string           `json:"session_id"`
+	Role           string           `json:"role"`
+	RunID          string           `json:"run_id"`
+	Machine        string           `json:"machine"`
+	Owner          string           `json:"owner"`
+	RoleGeneration int64            `json:"role_generation"`
+	ExpiresAt      time.Time        `json:"expires_at"`
+	Status         string           `json:"status"`
+	Task           *Task            `json:"task,omitempty"`
+	LastEventAt    *time.Time       `json:"last_event_at,omitempty"`
 }
 type ControlSessionsInput struct {
 	Cursor        string `json:"cursor,omitempty"`

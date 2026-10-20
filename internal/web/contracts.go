@@ -9,6 +9,12 @@ import (
 )
 
 type Board interface {
+	Profiles(context.Context, core.Actor, core.ProfilesInput) (core.ProfilesPage, error)
+	Profile(context.Context, core.Actor, core.ProfileInput) (core.ProfilePage, error)
+	ProfileCreate(context.Context, core.Actor, core.ProfileCreateInput) (core.AgentProfile, error)
+	ProfileUpdate(context.Context, core.Actor, core.ProfileUpdateInput) (core.AgentProfile, error)
+	ProfileArchive(context.Context, core.Actor, core.ProfileArchiveInput) (core.AgentProfile, error)
+
 	ControlOverview(context.Context, core.Actor) (core.ControlOverview, error)
 	ControlSessions(context.Context, core.Actor, core.ControlSessionsInput) (core.ControlSessionsPage, error)
 	ControlTasks(context.Context, core.Actor, core.ControlTasksInput) (core.TasksPage, error)
@@ -48,6 +54,10 @@ type Renderer interface {
 }
 
 type Page struct {
+	Profiles                                              []core.AgentProfile
+	Profile                                               *core.AgentProfile
+	ProfileRevisions                                      []core.ProfileRevision
+	CanManageProfiles                                     bool
 	Project                                               *core.ProjectView
 	Overview                                              *core.ControlOverview
 	Agents                                                []core.ControlSession

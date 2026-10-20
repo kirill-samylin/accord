@@ -1,4 +1,10 @@
 import type { CatalogPage, Project } from "./projects.ts";
+import type {
+  AgentProfile,
+  ProfileRevision,
+  ProfileSnapshot,
+  ProfileSummary,
+} from "./agent-profiles.ts";
 export interface Lease {
   session_id: string;
   generation: number;
@@ -80,6 +86,7 @@ export interface QueueSummary {
   in_progress: number;
 }
 export interface SessionView {
+  profile?: ProfileSnapshot;
   session_id: string;
   role: string;
   role_generation: number;
@@ -94,6 +101,7 @@ export interface SessionView {
   queue: QueueSummary;
 }
 export interface Agent {
+  profile?: ProfileSnapshot;
   session_id: string;
   role: string;
   run_id: string;
@@ -190,6 +198,10 @@ export interface DesignAsset {
   preview_url?: string;
 }
 export interface PageData {
+  profiles?: ProfileSummary[];
+  profile?: AgentProfile;
+  profile_revisions?: ProfileRevision[];
+  can_manage_profiles?: boolean;
   project?: Project;
   name: string;
   view: string;

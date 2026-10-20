@@ -1,5 +1,15 @@
 # API пилота — v1
 
+> TASK010 добавляет постоянные [профили агентов](agent-profiles.md):
+> GET `profiles?state=active|archived|all`, `profile?profile_id=ap_...&version=N`
+> (version необязательна), POST `profile_create/profile_update/profile_archive`.
+> Все scoped aliases/ACL сохраняются. MCP12tools: чтение через resources
+> `accord://profiles{?session_id,state}` и
+> `accord://profile{?session_id,profile_id,version}`, выбор через describe
+> с обязательной парой profile_id/profile_version и совпадающей role.
+> Browser `/web/p/{id}/profiles[/{profileID}]`; полный DTO и mutation/retry
+> контракт — agent-profiles.md. Профиль не token/session/worker execution.
+
 > TASK009 добавляет явные scoped endpoints `/api/v1/p/{projectID}/...`,
 > `/mcp/p/{projectID}`, `/web/p/{projectID}/...` и browser catalog. Legacy paths
 > сохраняют default scope и проверку его ACL. Точный identity/membership,

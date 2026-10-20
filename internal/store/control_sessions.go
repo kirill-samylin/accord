@@ -141,7 +141,13 @@ func (s *Store) ControlSessions(ctx context.Context, a core.Actor, in core.Contr
 				more = true
 				break
 			}
-			page.Sessions = append(page.Sessions, core.ControlSession{SessionID: sess.SessionID, Role: sess.Role, RunID: sess.RunID, Machine: sess.Machine, Owner: owner, RoleGeneration: sess.RoleGeneration, ExpiresAt: sess.ExpiresAt, Status: status, Task: tasks[sess.SessionID], LastEventAt: lastEvents[sess.SessionID]})
+			profile := sess.Profile
+			if profile != nil && in.SessionID == "" {
+				summary := *profile
+				summary.Instructions = ""
+				profile = &summary
+			}
+			page.Sessions = append(page.Sessions, core.ControlSession{Profile: profile, SessionID: sess.SessionID, Role: sess.Role, RunID: sess.RunID, Machine: sess.Machine, Owner: owner, RoleGeneration: sess.RoleGeneration, ExpiresAt: sess.ExpiresAt, Status: status, Task: tasks[sess.SessionID], LastEventAt: lastEvents[sess.SessionID]})
 			last = sess.Order
 		}
 		page.PageInfo = finishPage(c, last, more)
