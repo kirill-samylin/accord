@@ -30,8 +30,21 @@ mkdir -p "$GOTMPDIR"
 GOOS=linux GOARCH=amd64 CGO_ENABLED=0 "$go_bin" build -trimpath -buildvcs=true -o "$release/agent-board" ./cmd/agent-board
 cp infra/accord/*.py infra/accord/*.service infra/accord/*.timer "$release/infra/"
 # Optional web/proxy assets belong to the same reviewed, checksummed release.
-cp -R infra/accord/web "$release/infra/web"
-cp -R infra/accord/public "$release/infra/public"
+python3 - "$release/infra" <<'PY'
+import pathlib, shutil, subprocess, sys
+destination = pathlib.Path(sys.argv[1])
+paths = subprocess.check_output(['git', 'ls-files', '-z', '--',
+    'infra/accord/web', 'infra/accord/public', 'infra/accord/next'])
+for name in paths.decode().split('\0'):
+    if not name:
+        continue
+    source = pathlib.Path(name)
+    if source.is_symlink() or not source.is_file():
+        raise RuntimeError('expected regular tracked deployment asset')
+    target = destination / source.relative_to('infra/accord')
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, target)
+PY
 printf '%s\n' "$revision" > "$release/SOURCE"
 python3 - "$release" <<'PY'
 import hashlib, pathlib, sys

@@ -5,6 +5,7 @@ const origin = validateGoOrigin(
 );
 const config: NextConfig = {
   distDir: ".local/next",
+  output: "standalone",
   poweredByHeader: false,
   // Go owns /web/ canonical paths; Next normalization otherwise redirects JSON
   // reads before the fixed rewrite and conflicts with redirect:error clients.
