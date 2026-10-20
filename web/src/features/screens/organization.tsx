@@ -17,7 +17,7 @@ import {
 } from "@/components/common";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { MutationResult, PageData } from "@/lib/types";
-import { date, duration, label, number } from "@/lib/format";
+import { date, duration, eventLabels, number } from "@/lib/format";
 import {
   FilterMenu,
   Pagination,
@@ -85,21 +85,9 @@ export function ActivityScreen({
                 Тип события
                 <select name="type" defaultValue={page.draft.type ?? ""}>
                   <option value="">Все события</option>
-                  {[
-                    "task_created",
-                    "claimed",
-                    "task_ready",
-                    "task_in_progress",
-                    "task_done",
-                    "released",
-                    "human_answered",
-                    "lease_expired",
-                    "session_opened",
-                    "task_updated",
-                    "commented",
-                  ].map((type) => (
+                  {Object.entries(eventLabels).map(([type, title]) => (
                     <option key={type} value={type}>
-                      {label(type)}
+                      {title}
                     </option>
                   ))}
                 </select>

@@ -4,6 +4,7 @@
   overflow: hidden;
 }
 .sidebar {
+  height: 100%;
   flex: 0 0 240px;
   width: 240px;
   display: flex;

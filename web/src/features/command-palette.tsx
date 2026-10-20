@@ -54,7 +54,6 @@ export function CommandPalette({
               placeholder="Найти задачу или перейти к разделу…"
               value={query}
               onValueChange={setQuery}
-              autoFocus
             />
             <kbd className="kbd">Esc</kbd>
           </div>

@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Dialog as Primitive } from "radix-ui";
 import {
   Check,
@@ -15,6 +15,7 @@ import {
   SquarePen,
   Sun,
 } from "lucide-react";
+import { restoreDialogFocus } from "@/components/ui/dialog-focus";
 import { Avatar } from "@/components/common";
 import {
   DropdownMenu,
@@ -40,6 +41,7 @@ export function Shell({
 }) {
   const path = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
+  const menuTrigger = useRef<HTMLButtonElement | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [dark, setDark] = useState(false);
   const section = currentSection(path);
@@ -120,6 +122,7 @@ export function Shell({
             </button>
             <button
               className="nav-row"
+              data-command-trigger
               onClick={() => {
                 setDrawerOpen(false);
                 setSearchOpen(true);
@@ -187,6 +190,10 @@ export function Shell({
           <Primitive.Content
             className="drawer-content"
             aria-describedby={undefined}
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              restoreDialogFocus(menuTrigger.current);
+            }}
           >
             <Primitive.Title className="sr-only">
               Навигация Accord
@@ -200,6 +207,7 @@ export function Shell({
           <button
             className="icon-button mobile-only"
             aria-label="Открыть навигацию"
+            ref={menuTrigger}
             onClick={() => setDrawerOpen(true)}
           >
             <Menu size={19} />
@@ -221,6 +229,7 @@ export function Shell({
             <button
               className="icon-button mobile-only"
               aria-label="Поиск"
+              data-command-trigger
               onClick={() => setSearchOpen(true)}
             >
               <Search size={18} />

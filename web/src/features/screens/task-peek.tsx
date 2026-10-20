@@ -5,6 +5,7 @@ import { Dialog as Primitive } from "radix-ui";
 import { X } from "lucide-react";
 import type { Task, MutationResult } from "@/lib/types";
 import { readPage } from "@/lib/api";
+import { useDialogFocusHandlers } from "@/components/ui/dialog-focus";
 import { TaskDetail } from "./task-detail";
 export function TaskPeek({
   task,
@@ -15,6 +16,7 @@ export function TaskPeek({
   onClose: () => void;
   onSuccess: (result: MutationResult) => void;
 }) {
+  const focus = useDialogFocusHandlers();
   const result = useQuery({
     queryKey: ["peek", task?.key],
     queryFn: ({ signal }) => readPage(`/app/tasks/${task!.key}`, signal),
@@ -31,7 +33,11 @@ export function TaskPeek({
     >
       <Primitive.Portal>
         <Primitive.Overlay className="dialog-overlay" />
-        <Primitive.Content className="task-peek" aria-describedby={undefined}>
+        <Primitive.Content
+          className="task-peek"
+          aria-describedby={undefined}
+          {...focus}
+        >
           <Primitive.Title className="sr-only">
             Быстрый просмотр {task?.key}
           </Primitive.Title>
