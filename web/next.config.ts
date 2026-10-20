@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import { validateGoOrigin } from "./src/lib/upstream";
+import { browserRewrites, validateGoOrigin } from "./src/lib/upstream";
 const origin = validateGoOrigin(
   process.env.ACCORD_GO_ORIGIN ?? "http://127.0.0.1:3101",
 );
@@ -17,7 +17,7 @@ const config: NextConfig = {
     proxyClientMaxBodySize: 51 * 1024 * 1024,
   },
   async rewrites() {
-    return [{ source: "/web/:path*", destination: `${origin}/web/:path*` }];
+    return browserRewrites(origin);
   },
 };
 export default config;

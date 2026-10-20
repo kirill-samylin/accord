@@ -17,3 +17,13 @@ export function validateGoOrigin(value: string): string {
   }
   return url.origin;
 }
+
+export function browserRewrites(origin: string) {
+  const upstream = validateGoOrigin(origin);
+  // Next removes the slash before an empty wildcard. A literal first rule
+  // preserves Go's /web/ root and its existing view/query validation.
+  return [
+    { source: "/web/", destination: `${upstream}/web/` },
+    { source: "/web/:path*", destination: `${upstream}/web/:path*` },
+  ];
+}

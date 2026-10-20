@@ -135,3 +135,18 @@ agent role/status, строковые owner/machine/run ID, действител
 `/web/`; unit проверяет login/tasks/agents/designs и сохранение query.
 TypeScript и unit40/40 PASS; formatter и diff-check PASS. Build по-прежнему
 NOT-RUN автором; финальный артефакт собирает координатор после approve127.
+
+### Исправление реального root404 из artifact2
+
+Сохранён API root `/app`→`/web/` и прежний Go `view=tasks|questions` контракт.
+Next16.4.2 `prepareDestination` компилирует пустой wildcard destination
+`/web/:path*` в `/web` без завершающего slash; одного отключения308 было
+недостаточно. Литеральный destination `/web/` сохраняет slash. В `browserRewrites`
+добавлено правило source `/web/` → fixed upstream `/web/` **перед** wildcard.
+Next config использует этот helper. Дополнительного `/web/overview` mapper нет.
+
+Два regression unit вызывают фактический установленный Next prepareDestination:
+проверяют literal `/web/`, прежнее stripping wildcard, неизменные task segments
+и query (включая valid/unknown/duplicate view, чтобы Go продолжал валидацию).
+Все42 unit PASS; TypeScript/formatter PASS. Runtime root login smoke выполняет
+координатор после build; автор по поручению build не запускал.
