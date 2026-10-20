@@ -54,6 +54,23 @@ Finalize требует прежние окружение/units/timers, пост
 активные capable pointers и новый формат2 backup всех проектов. Статус
 `pending-https-smoke` не означает законченное обновление.
 
+## Проверка фактического режима запуска
+
+Capability binary и HTTP200 сами по себе не доказывают включённую изоляцию.
+Собственный `zz-accord-projects.conf` должен действовать после прежнего web.conf.
+Оператор проверяет resolved systemd ExecStart/ExecStartPre: точные executable и
+argv, обязательный projects-data и guard `--unit accord.service`; отдельно —
+полный project backup ExecStart. Permanent ExecStartPre повторяет config check
+при каждом старте. После owned readiness сверяются actual /proc/MainPID argv,
+ELF SHA и стабильность PID; после backup restart проверки повторяются.
+Неизвестный own override не перезаписывается, прежний web.conf сохраняется.
+
+До install/cutover ставится fsynced owned START_REQUIRES_INSPECTION; он блокирует
+cold boot через существующий base guard во всём recovery окне. Снять его можно
+только после capability/effective config проверки и offline bootstrap перед
+защищённым запуском. Unknown/manual marker не удаляется. При ошибке marker
+возвращается перед stop; journal остаётся blocked-roll-forward.
+
 ## Восстановление после ошибки
 
 После начала активации старый Go не умеет ACL и не допускается. Ошибка apply

@@ -14,7 +14,8 @@ WORK = Path('/var/backups/accord-projects')
 STATE = Path('/var/lib/accord')
 PROJECTS = STATE / 'projects-data'
 ADMIN = Path('/opt/accord/admin')
-DROPIN = Path('/etc/systemd/system/accord.service.d/90-projects.conf')
+DROPIN = Path('/etc/systemd/system/accord.service.d/zz-accord-projects.conf')
+LEGACY_DROPIN = Path('/etc/systemd/system/accord.service.d/90-projects.conf')
 BACKUP_DROPIN = Path('/etc/systemd/system/accord-web-backup.service.d/90-projects.conf')
 
 
@@ -50,7 +51,8 @@ def preserved():
     paths.extend(sorted(Path('/etc/systemd/system/accord.service.d').glob('*.conf')))
     paths.extend(sorted(Path('/etc/systemd/system').glob('accord*.timer')))
     paths.extend(sorted(Path('/etc/systemd/system').glob('accord*.service')))
-    return {str(path): host.sha(path) for path in set(paths) if path.is_file() and path != DROPIN}
+    return {str(path): host.sha(path) for path in set(paths)
+            if path.is_file() and path not in (DROPIN, LEGACY_DROPIN)}
 
 
 def nginx_check(candidate, work):
@@ -64,6 +66,15 @@ def nginx_check(candidate, work):
 
 
 def install_helpers(expected):
+    if DROPIN.exists() or DROPIN.is_symlink():
+        host.regular(DROPIN)
+        if DROPIN.read_bytes() != (HERE / 'accord-projects.conf').read_bytes():
+            raise RuntimeError('unknown project startup override; inspect without replacing')
+    if LEGACY_DROPIN.exists() or LEGACY_DROPIN.is_symlink():
+        host.regular(LEGACY_DROPIN)
+        prior = (HERE / 'accord-projects.conf').read_bytes().replace(b' --unit accord.service', b'')
+        if LEGACY_DROPIN.read_bytes() != prior:
+            raise RuntimeError('unexpected legacy project drop-in; inspect without replacing')
     for relative, digest in expected.items():
         source = HERE.parent / relative
         host.regular(source)
@@ -77,6 +88,9 @@ def install_helpers(expected):
     host.directory(DROPIN.parent)
     host.directory(BACKUP_DROPIN.parent)
     host.atomic(DROPIN, (HERE / 'accord-projects.conf').read_bytes())
+    if LEGACY_DROPIN.exists():
+        LEGACY_DROPIN.unlink()
+        host.sync(LEGACY_DROPIN.parent)
     host.atomic(BACKUP_DROPIN, (HERE / 'accord-projects-backup.conf').read_bytes())
 
 

@@ -54,8 +54,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--binary', required=True, type=Path)
     parser.add_argument('--projects-data', required=True, type=Path)
+    parser.add_argument('--unit', choices=('accord.service',))
     args = parser.parse_args()
     require_capable(args.binary, args.projects_data)
+    if args.unit:
+        from launch import BINARY, PROJECTS, require_backup, require_launch
+        if str(args.binary) != BINARY or str(args.projects_data) != PROJECTS:
+            raise RuntimeError('systemd guard requires canonical service paths')
+        require_launch()
+        require_backup()
     print('Project registry and ACL executable capability verified.')
 
 

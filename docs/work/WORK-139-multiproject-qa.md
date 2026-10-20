@@ -161,3 +161,41 @@ product PASS. Subsequent полные25 и process-only16 прошли.
 На окончательном freeze оба owned ports3100/3101 **FREE**, Go/Next/MCP остановлены,
 Chrome закрыт. Root может использовать binary/dist для выпуска. Независимое
 окончательное test/evidence review136 запрошено; product source tester не менял.
+
+## Narrow production harness correction after root HTTPS run01
+
+Root сообщил о harness FAIL после успешного login: исходный error потерян,
+cleanup создал orphan `waitForResponse` при ошибке click/navigation, отчёт не
+сохранился. Tester не читал production credentials, config, screenshots или данные,
+не подключался к VPS. Product Go/Next/infra и прежние acceptance cases не менялись.
+
+`production-readonly.cjs` теперь сохраняет allowlisted stage/code/error.name и
+numeric HTTP status без error.message/stack/URL/body/идентификаторов. LOGIN_REDIRECT,
+AUTH_CATALOG, AUTH_DEFAULT_METADATA, AUTH_COOKIE и остальные этапы различимы.
+Wire `legacy.page.project.id/session.session_id` подтверждён по product source;
+assertions сохранены. Catalog UI ожидается явно перед switch; global logout button
+используется с обоих допустимых shell. `production-support.cjs` владеет observation
+response/timer/listener: при click error ожидание отменяется без rejecting orphan.
+Login cleanup отмечается до отправки, включая partial login или accepted response
+с ошибкой navigation. Cleanup получает свежую own catalog CSRF/logout capability;
+401 означает уже закрытый вход. Nested finally пытается logout, закрывает Chrome,
+сохраняет первоначальный failure и затем пишет private report даже при cleanup error.
+До проверки безопасного NEW private output путь не используется для записи.
+
+Фактические synthetic checks **PASS10/10**, syntax **PASS4**. Проверены matching POST,
+early click throw с истечением прежнего timer, timeout, wrong response, redaction,
+cleanup/logout/close failures и normal cleanup. Два отдельных запуска полного
+production script проверили отсутствующий private input и реальный Chrome со
+сбоем HTTPS transport только к synthetic localhost: оба штатно exit1 с report600,
+без секретов/URL в report; Chrome закрыт. Фактический Chrome155.0.8059.85.
+Артефакты `.local/task009-qa/production-fix-X0zBak/`; browser transport report SHA
+`15e5715b703f0d8b4741a7c3dd0322b2220287f0c85d4b4b81ba4215d19f4465`.
+Команда: Node24 `--test tests/browser/task009/production-support.test.cjs
+ tests/browser/task009/production-failure.test.cjs` с synthetic Chrome/Playwright env.
+
+Freeze четырёх test files `.local/task009-qa/production-fix-freeze.json`, aggregate
+`c33400c9e406405bccf9f1750f18869474162156f8b70473ece8b59513451165`.
+Независимое review136 запрошено до root HTTPS повторного запуска. Production HTTPS
+повтор и его результат **NOT-RUN у tester**. Root использует свой supplied valid
+private token path; tester не меняет отсутствующий legacy token_file и не ослабляет
+editor/default ACL. Собственных Go/Next/MCP процессов не запускалось.

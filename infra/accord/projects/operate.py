@@ -9,10 +9,12 @@ import signal
 import sys
 
 from guard import require_capable
-from host_ops import BACKUP_DROPIN, DROPIN, HERE, PROJECTS, STATE, WORK, host
+from host_ops import BACKUP_DROPIN, DROPIN, LEGACY_DROPIN, HERE, PROJECTS, STATE, WORK, host
 from host_ops import helper_manifest, install_helpers, lock, preserved
 from host_ops import owned_listener, port_free
 from staging import stage
+from launch import require_backup, require_launch, require_process
+from startup_hold import hold_startup, owned_marker, release_startup
 
 
 def owner_identity(value):
@@ -45,12 +47,16 @@ def validate(work, state, before=False):
         raise RuntimeError('existing environment, timers, units or drop-ins changed')
     for marker in ('RESTORE_REQUIRES_RESET', 'START_REQUIRES_INSPECTION'):
         if (STATE / marker).exists() or (STATE / marker).is_symlink():
+            if (marker == 'START_REQUIRES_INSPECTION' and
+                    state['phase'] in ('blocked-roll-forward', 'activation-started') and
+                    owned_marker(STATE, revision)):
+                continue
             raise RuntimeError('unresolved existing recovery guard')
     if before:
         if (host.sha(host.NGINX) != state['nginx_sha256'] or
                 host.pointer(host.GO) != state['old_go'] or host.pointer(host.BASE) != state['old_next']):
             raise RuntimeError('active pointers or nginx changed since staging')
-        if DROPIN.exists() or BACKUP_DROPIN.exists() or PROJECTS.exists():
+        if DROPIN.exists() or LEGACY_DROPIN.exists() or BACKUP_DROPIN.exists() or PROJECTS.exists():
             raise RuntimeError('initial project cutover expects no prior registry activation')
 
 
@@ -58,6 +64,10 @@ def fail_closed(work, state):
     # Never select the previous Go: it cannot enforce the new registry ACL.
     # Do not replace DBs, remove guards or pretend an old backup is current data.
     failures = []
+    try:
+        hold_startup(STATE, state['revision'])
+    except Exception:
+        failures.append('startup-inspection-marker')
     for service in ('accord.service', 'accord-next.service'):
         try:
             host.run('systemctl', 'stop', service)
@@ -81,6 +91,7 @@ def apply(work, state, resume=False):
         state['phase'] = 'activation-started'
         host.save_json(work / 'state.json', state)
         try:
+            hold_startup(STATE, state['revision'])
             host.run('systemctl', 'stop', 'accord-next.service')
             host.run('systemctl', 'stop', 'accord.service')
             port_free(7892)
@@ -91,6 +102,8 @@ def apply(work, state, resume=False):
             host.run('systemctl', 'daemon-reload')
             host.run('systemd-analyze', 'verify', '/etc/systemd/system/accord.service',
                      '/etc/systemd/system/accord-web-backup.service')
+            require_launch()
+            require_backup()
             require_capable(Path('/opt/accord/current/agent-board'), PROJECTS)
             # Explicit bootstrap is an offline local administrator operation.
             # Same-identity replay must be idempotent across power-loss resume.
@@ -98,9 +111,10 @@ def apply(work, state, resume=False):
                      'projects', 'bootstrap-owner', '--projects-data', str(PROJECTS),
                      '--db', str(STATE / 'board.db'), '--web-data', str(STATE / 'web'),
                      '--identity', state['owner_identity'])
+            release_startup(STATE, state['revision'])
             host.run('systemctl', 'start', 'accord.service')
             host.ready(7892)
-            owned_listener(7892, 'accord.service')
+            require_process(owned_listener(7892, 'accord.service'), state['go_sha256'])
             host.run('systemctl', 'start', 'accord-next.service')
             host.ready(7893, '/app/login', nonce=True)
             owned_listener(7893, 'accord-next.service')
@@ -120,6 +134,10 @@ def finalize(work, state):
     if state['phase'] != 'pending-https-smoke':
         raise RuntimeError('active candidate awaiting explicit operator and independent smoke required')
     validate(work, state)
+    require_launch()
+    require_backup()
+    if LEGACY_DROPIN.exists() or LEGACY_DROPIN.is_symlink():
+        raise RuntimeError('superseded startup override still present')
     if (host.pointer(host.GO) != 'releases/' + state['revision'] or
             host.pointer(host.BASE) != 'releases/' + state['revision'] or
             host.sha(host.NGINX) != state['candidate_sha256']):
@@ -132,7 +150,7 @@ def finalize(work, state):
     host.run('systemctl', 'start', 'accord-web-backup.service')
     host.ready(7892)
     host.ready(7893, '/app/login', nonce=True)
-    owned_listener(7892, 'accord.service')
+    require_process(owned_listener(7892, 'accord.service'), state['go_sha256'])
     owned_listener(7893, 'accord-next.service')
     validate(work, state)
     state['phase'] = 'complete'

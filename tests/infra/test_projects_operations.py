@@ -18,6 +18,10 @@ host_ops = sys.modules['host_ops']
 
 class ProjectsOperations(unittest.TestCase):
     def setUp(self):
+        for name in ('hold_startup', 'release_startup'):
+            mocked = patch.object(operator, name)
+            mocked.start()
+            self.addCleanup(mocked.stop)
         self.work = Path('/synthetic/private-journal')
         self.state = {'revision': 'a' * 40, 'phase': 'staged', 'helpers': {}, 'owner_identity': 'synthetic-public-id'}
 
@@ -33,6 +37,8 @@ class ProjectsOperations(unittest.TestCase):
         with patch.object(operator, 'validate'), patch.object(operator, 'lock', return_value=nullcontext()), \
                 patch.object(operator, 'install_helpers'), patch.object(operator, 'require_capable'), \
                 patch.object(operator, 'port_free'), patch.object(operator, 'owned_listener'), \
+                patch.object(operator, 'require_launch'), patch.object(operator, 'require_backup'), \
+                patch.object(operator, 'require_process'), \
                 patch.object(operator.host, 'run', side_effect=run), patch.object(operator.host, 'ready'), \
                 patch.object(operator.host, 'save_json'), \
                 patch.object(operator.host, 'switch', side_effect=lambda base, target: switched.append(target)):
@@ -70,6 +76,15 @@ class ProjectsOperations(unittest.TestCase):
         self.assertEqual(self.state['stop_failures'], ['accord.service'])
         self.assertEqual(len(calls), 2)
         self.assertEqual(self.state['phase'], 'blocked-roll-forward')
+
+    def test_failed_cutover_holds_cold_boot_before_stopping_processes(self):
+        calls = []
+        with patch.object(operator, 'hold_startup', side_effect=lambda *_: calls.append('guard')), \
+                patch.object(operator.host, 'run', side_effect=lambda *args: calls.append(args)), \
+                patch.object(operator.host, 'save_json'):
+            operator.fail_closed(self.work, self.state)
+        self.assertEqual(calls[0], 'guard')
+        self.assertEqual(len(calls), 3)
 
     def test_non_staged_apply_and_non_failed_resume_are_refused(self):
         for phase in ('complete', 'pending-https-smoke', 'staging'):

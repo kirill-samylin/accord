@@ -5,61 +5,78 @@ const path = require('node:path');
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const required = name => {assert(process.env[name], 'missing ' + name); return process.env[name];};
-const {chromium} = require(required('ACCORD_QA_PLAYWRIGHT'));
-const out = path.resolve(required('ACCORD_QA_DIR'));
-assert(out.includes(path.sep + '.local' + path.sep), 'private output directory required');
-for (let parent = out; ; parent = path.dirname(parent)) {
-  try {const info = fs.lstatSync(parent); assert(info.isDirectory() && !info.isSymbolicLink() && !(info.mode & 0o022), 'unsafe output ancestry');} catch (error) {if (error.code !== 'ENOENT') throw error;}
-  if (parent === path.dirname(parent)) break;
-}
-assert(!fs.existsSync(out), 'NEW private output directory required'); fs.mkdirSync(out, {recursive: true, mode: 0o700});
-const configFile = required('ACCORD_QA_CLIENT_FILE');
-const tokenFile = required('ACCORD_QA_TOKEN_FILE');
-for (const file of [configFile, tokenFile]) {
-  const info = fs.lstatSync(file); assert(info.isFile() && !info.isSymbolicLink() && info.uid === process.getuid() && (info.mode & 0o777) === 0o600, 'private owned input file required');
-}
-const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
-const url = new URL(config.origin);
-assert(url.protocol === 'https:' && url.pathname === '/' && !url.username && !url.password && !url.search && !url.hash, 'canonical HTTPS origin required');
-const base = url.origin;
-const token = fs.readFileSync(tokenFile, 'utf8').trim(); assert(token.length && token.length <= 4096);
-const revision = required('ACCORD_QA_REVISION'); assert.match(revision, /^[a-f0-9]{40}$/);
-const report = {schema: 1, revision, started_at: new Date().toISOString(), result: 'FAIL', checks: [], screenshots: [],
+const {actionResponse, diagnostic, finish} = require('./production-support.cjs');
+let stage = 'INPUT', base, token, tokenFile, out, chromium;
+const report = {schema: 2, started_at: new Date().toISOString(), result: 'FAIL', checks: [], screenshots: [],
   page_errors: [], severe_console_errors: [], failed_assets: [], response_status_counts: {}, prefetch_count: 0,
-  browser_mutation_kinds: [], limitations: ['One macOS host; mobile is a Chrome viewport.', 'Read-only production data; no task/repository/ACL/upload/lease changes.']};
+  browser_mutation_kinds: [], limitations: ['One ' + process.platform + ' host; mobile is a Chrome viewport.', 'Read-only production data; no task/repository/ACL/upload/lease changes.']};
 const sha = data => crypto.createHash('sha256').update(data).digest('hex');
 const pass = (id, data = {}) => {report.checks.push({id, result: 'PASS', ...data}); console.log(id + ' PASS');};
-let browser, context, page, loggedIn = false, project;
+let browser, context, page, authCleanupNeeded = false, project;
 const assets = new Map();
 const allowedMutations = new Set(['/web/login', '/web/logout', '/web/catalog/switch']);
 async function json(route, headers = {}) {
   const response = await context.request.get(base + route, {timeout: 15000, headers: {Accept: 'application/json', ...headers}});
-  assert.equal(response.status(), 200, 'authorized JSON inspection rejected'); return response.json();
+  expectStatus(response, 200); return response.json();
 }
 async function app(route) {
-  const response = await page.goto(base + route); assert.equal(response.status(), 200, 'app HTML rejected');
+  const response = await page.goto(base + route); expectStatus(response, 200);
   await page.locator('h1').first().waitFor(); await page.locator('.app-loading').waitFor({state: 'detached'});
   await page.waitForFunction(() => !document.querySelector('.refresh-indicator'));
   return response;
 }
 async function logout() {
   await page.setViewportSize({width: 1440, height: 900}); await app('/app/projects');
-  const pending = page.waitForResponse(response => new URL(response.url()).pathname === '/web/logout' && response.request().method() === 'POST');
-  await page.getByRole('button', {name: 'Выйти', exact: true}).click();
-  assert.equal((await pending).status(), 200, 'own logout rejected');
-  await page.waitForURL(base + '/app/login'); loggedIn = false;
+  // The global button is available in either the catalog or a redirected control shell.
+  const response = await actionResponse(page, '/web/logout', () => page.getByRole('button', {name: 'Выйти', exact: true}).click());
+  expectStatus(response, 200); authCleanupNeeded = false;
+  await page.waitForURL(base + '/app/login');
+}
+async function cleanupLogout() {
+  // Fresh catalog capability works even if the UI failed before its logout button rendered.
+  const response = await context.request.get(base + '/web/projects', {timeout: 15000, headers: {Accept: 'application/json'}});
+  if (response.status() === 401) {authCleanupNeeded = false; return;}
+  expectStatus(response, 200);
+  const registry = (await response.json()).page.registry;
+  assert(registry.csrf && registry.actions.logout);
+  const ended = await context.request.post(base + '/web/logout', {timeout: 15000, headers: {Accept: 'application/json', Origin: base},
+    form: {csrf: registry.csrf, action_id: registry.actions.logout}});
+  expectStatus(ended, 200); authCleanupNeeded = false;
+}
+function expectStatus(response, expected) {
+  if (response.status() !== expected) {const error = new Error(); error.status = response.status(); throw error;}
 }
 async function rpc(method, params, id) {
   assert(['initialize', 'notifications/initialized', 'tools/list', 'resources/templates/list', 'resources/read'].includes(method));
   const payload = {jsonrpc: '2.0', method, params}; if (id) payload.id = id;
   const response = await context.request.post(base + '/mcp/p/' + project, {timeout: 15000,
     headers: {Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream', 'MCP-Protocol-Version': '2025-11-25'}, data: payload});
-  assert.equal(response.status(), id ? 200 : 202, 'scoped MCP inspection rejected');
+  expectStatus(response, id ? 200 : 202);
   if (!id) return;
   const text = await response.text(); const body = response.headers()['content-type']?.includes('text/event-stream') ? JSON.parse(text.split('\n').find(line => line.startsWith('data:')).slice(5)) : JSON.parse(text);
   assert(!body.error, 'scoped MCP server error'); return body.result;
 }
 async function main() {
+  const candidateOut = path.resolve(required('ACCORD_QA_DIR'));
+  assert(candidateOut.includes(path.sep + '.local' + path.sep), 'private output directory required');
+  for (let parent = candidateOut; ; parent = path.dirname(parent)) {
+    try {const info = fs.lstatSync(parent); assert(info.isDirectory() && !info.isSymbolicLink() && !(info.mode & 0o022), 'unsafe output ancestry');} catch (error) {if (error.code !== 'ENOENT') throw error;}
+    if (parent === path.dirname(parent)) break;
+  }
+  assert(!fs.existsSync(candidateOut), 'NEW private output directory required'); fs.mkdirSync(candidateOut, {recursive: true, mode: 0o700}); out = candidateOut;
+  ({chromium} = require(required('ACCORD_QA_PLAYWRIGHT')));
+  const configFile = required('ACCORD_QA_CLIENT_FILE');
+  tokenFile = required('ACCORD_QA_TOKEN_FILE');
+  for (const file of [configFile, tokenFile]) {
+    const info = fs.lstatSync(file); assert(info.isFile() && !info.isSymbolicLink() && info.uid === process.getuid() && (info.mode & 0o777) === 0o600, 'private owned input file required');
+  }
+  const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+  const url = new URL(config.origin);
+  assert(url.protocol === 'https:' && url.pathname === '/' && !url.username && !url.password && !url.search && !url.hash, 'canonical HTTPS origin required');
+  base = url.origin;
+  token = fs.readFileSync(tokenFile, 'utf8').trim(); assert(token.length && token.length <= 4096);
+  report.revision = required('ACCORD_QA_REVISION'); assert.match(report.revision, /^[a-f0-9]{40}$/);
+  stage = 'BROWSER_START';
   browser = await chromium.launch({executablePath: required('ACCORD_QA_CHROME'), headless: true});
   report.browser = browser.version(); report.node = process.version;
   context = await browser.newContext({viewport: {width: 1440, height: 900}, colorScheme: 'light'});
@@ -83,11 +100,13 @@ async function main() {
     const status = String(response.status()); report.response_status_counts[status] = (report.response_status_counts[status] || 0) + 1;
     if (/^(\/_next\/static\/|\/fonts\/)/.test(target.pathname)) {assets.set(target.pathname, response.status()); if (response.status() >= 400) report.failed_assets.push({kind: target.pathname.startsWith('/fonts/') ? 'font' : 'static', status: response.status()});}
   });
+  stage = 'PUBLIC_ROOT';
   const root = await context.request.get(base + '/', {maxRedirects: 0, timeout: 15000});
   assert([301, 302, 307, 308].includes(root.status())); assert.equal(new URL(root.headers().location, base).pathname, '/app');
   assert.equal((await context.request.get(base + '/api/v1/tasks', {timeout: 15000})).status(), 401);
   assert.equal((await context.request.get(base + '/metrics', {timeout: 15000})).status(), 404);
   pass('HTTPS-root-native401-private-metrics404');
+  stage = 'LOGIN_PAGE_CSP';
   const loginPage = await app('/app/login');
   const headers = loginPage.headers(), csp = headers['content-security-policy'] || '';
   const script = csp.split(';').find(value => value.trim().startsWith('script-src')) || '';
@@ -95,26 +114,36 @@ async function main() {
   assert((await loginPage.text()).includes('nonce="' + nonce[1] + '"')); assert.match(headers['cache-control'], /no-store/);
   await page.getByRole('button', {name: 'Файл токена', exact: true}).click();
   await page.locator('input[name=token_file]').setInputFiles(tokenFile);
-  const login = page.waitForResponse(response => new URL(response.url()).pathname === '/web/login' && response.request().method() === 'POST');
-  await page.getByRole('button', {name: 'Войти в Accord', exact: true}).click(); assert.equal((await login).status(), 200); loggedIn = true;
+  stage = 'LOGIN_SUBMIT'; authCleanupNeeded = true;
+  const login = await actionResponse(page, '/web/login', () => page.getByRole('button', {name: 'Войти в Accord', exact: true}).click());
+  expectStatus(login, 200);
+  stage = 'LOGIN_REDIRECT';
   await page.waitForURL(/\/app\/(?:p\/p_[a-f0-9]{32}|projects)/);
+  stage = 'AUTH_CATALOG';
   const catalog = (await json('/web/projects')).page; assert(catalog.registry.projects.length, 'own accessible project required');
+  stage = 'AUTH_DEFAULT_METADATA';
   const legacy = (await json('/web/')).page; assert(legacy.project?.id && legacy.session?.session_id, 'this inspection requires authorized default access');
   project = legacy.project.id; assert(catalog.registry.projects.some(entry => entry.id === project));
   assert.equal(legacy.project.can_archive, false, 'default project offered archival');
+  stage = 'AUTH_COOKIE';
   const cookie = (await context.cookies()).filter(value => value.name === '__Host-accord_session'); assert.equal(cookie.length, 1);
   assert(cookie[0].secure && cookie[0].httpOnly && cookie[0].sameSite === 'Strict' && cookie[0].path === '/');
+  stage = 'AUTH_LOCAL_STORAGE';
   assert.equal(await page.evaluate(secret => Object.values(localStorage).some(value => value.includes(secret)), token), false);
   pass('HTTPS-existing-token-scoped-login-default-preserved-secure-cookie-CSP');
+  stage = 'PROJECT_CATALOG_UI';
   await app('/app/projects');
+  await page.locator('.catalog-workspace').waitFor();
   const card = page.locator('article.project-card').filter({has: page.locator(`a[href="/app/projects/${project}"]`)});
-  const switched = page.waitForResponse(response => new URL(response.url()).pathname === '/web/catalog/switch' && response.request().method() === 'POST');
-  await card.getByRole('button', {name: 'Открыть проект', exact: true}).click(); assert.equal((await switched).status(), 200);
+  stage = 'PROJECT_SWITCH';
+  const switched = await actionResponse(page, '/web/catalog/switch', () => card.getByRole('button', {name: 'Открыть проект', exact: true}).click()); expectStatus(switched, 200);
   await page.waitForURL(new RegExp('/app/p/' + project)); await page.locator('.control-shell').waitFor();
+  stage = 'NATIVE_READS';
   const before = (await json('/web/p/' + project + '/')).page;
   const nativeHeaders = {Authorization: 'Bearer ' + token, 'X-Session': before.session.session_id};
   const native = await json('/api/v1/p/' + project + '/tasks?limit=1', nativeHeaders); assert(Array.isArray(native.tasks));
   for (const origin of ['', 'null', base]) assert.equal((await context.request.get(base + '/api/v1/p/' + project + '/tasks', {timeout: 15000, headers: {...nativeHeaders, Origin: origin}})).status(), 403);
+  stage = 'MCP_READS';
   await rpc('initialize', {protocolVersion: '2025-11-25', capabilities: {}, clientInfo: {name: 'accord-projects-readonly-inspection', version: '1'}}, 1);
   await rpc('notifications/initialized', {});
   assert.equal((await rpc('tools/list', {}, 2)).tools.length, 12);
@@ -131,6 +160,7 @@ async function main() {
     for (const width of [1440, 390]) {
       await page.setViewportSize({width, height: width === 390 ? 844 : 900});
       for (const [name, route] of Object.entries(screens)) {
+        stage = 'UI_' + name.toUpperCase() + '_' + width + '_' + theme.toUpperCase();
         await app(route); await page.evaluate(() => document.fonts.ready);
         const measured = await page.evaluate(() => ({width: innerWidth, document: document.documentElement.scrollWidth, theme: document.documentElement.dataset.theme, scale: visualViewport.scale}));
         assert(measured.document <= width + 1 && measured.scale === 1 && measured.theme === theme, 'responsive UI inspection failed');
@@ -140,6 +170,7 @@ async function main() {
     }
   }
   await page.setViewportSize({width: 1440, height: 900}); await app(prefix);
+  stage = 'READONLY_NAVIGATION';
   const tasks = page.locator(`.desktop-sidebar a[href="${prefix}/tasks"]`); await tasks.hover(); await page.waitForTimeout(500);
   assert.equal(report.prefetch_count, 0);
   await tasks.click(); await page.waitForURL(base + prefix + '/tasks'); await page.locator('h1').first().waitFor();
@@ -153,11 +184,19 @@ async function main() {
   assert(!report.unexpected_mutation_blocked, 'unexpected production mutation was blocked');
   assert(!Object.keys(report.response_status_counts).some(status => Number(status) >= 400), 'unexpected browser request failures');
   pass('HTTPS-all11screens-1440-390-light-dark-no-errors-overflow-prefetch-renew', {screenshots: report.screenshots.length, assets: assets.size});
+  stage = 'LOGOUT_UI';
   await logout(); assert.equal((await context.request.get(base + '/web/projects', {timeout: 15000, headers: {Accept: 'application/json'}})).status(), 401);
   assert(report.browser_mutation_kinds.every(value => allowedMutations.has(value))); pass('HTTPS-own-browser-global-logout'); report.result = 'PASS';
 }
-main().catch(async () => {report.failure = 'Read-only production inspection failed; private screenshot retained.'; if (page) await page.screenshot({path: path.join(out, 'failure.png'), fullPage: true}).catch(() => {}); process.exitCode = 1;}).finally(async () => {
-  if (loggedIn) try {await logout(); report.cleanup_logout = 'PASS';} catch {report.cleanup_logout = 'FAIL'; report.result = 'FAIL'; process.exitCode = 1;}
-  await browser?.close(); report.finished_at = new Date().toISOString(); report.script_sha256 = sha(fs.readFileSync(__filename));
-  fs.writeFileSync(path.join(out, 'production-readonly-results.json'), JSON.stringify(report, null, 2), {mode: 0o600});
-});
+main().catch(async error => {
+  report.failure = diagnostic(error, stage); report.result = 'FAIL';
+  if (page) await page.screenshot({path: path.join(out, 'failure.png'), fullPage: true, animations: 'disabled'}).catch(() => {});
+}).finally(async () => {
+  await finish(report, {logout: authCleanupNeeded ? cleanupLogout : null, close: () => browser?.close(), write: value => {
+    value.script_sha256 = sha(fs.readFileSync(__filename));
+    value.support_sha256 = sha(fs.readFileSync(path.join(__dirname, 'production-support.cjs')));
+    if (out) fs.writeFileSync(path.join(out, 'production-readonly-results.json'), JSON.stringify(value, null, 2), {mode: 0o600});
+    else console.error('Production inspection failed before private output validation.');
+  }});
+  if (report.result !== 'PASS') process.exitCode = 1;
+}).catch(() => {console.error('Production inspection report could not be persisted.'); process.exitCode = 1;});

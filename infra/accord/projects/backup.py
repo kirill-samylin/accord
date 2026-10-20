@@ -10,6 +10,7 @@ import subprocess
 from guard import require_capable
 from layout import LEGACY
 from snapshot import snapshot
+from launch import require_backup, require_launch
 
 
 def interrupted(_signal, _frame):
@@ -26,6 +27,8 @@ def run():
     LEGACY.private(state, True)
     LEGACY.private(backups, True)
     require_capable(Path('/opt/accord/current/agent-board'), projects)
+    require_launch()
+    require_backup()
     descriptor = os.open(state / '.maintenance.lock', os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
     with os.fdopen(descriptor, 'w') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)

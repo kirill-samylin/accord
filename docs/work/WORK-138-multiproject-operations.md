@@ -42,3 +42,52 @@ stage ещё впереди. Offline bootstrap того же owner при resume
 
 Все новые файлы менее 300 строк. Snapshot fixtures только synthetic;
 реальные данные остаются на VPS, артефакты под `.local/`.
+
+## Actual delivery checkpoint5454eb5
+
+Source/test review APPROVE136; local25process+Chrome и16process-only PASS139.
+Root clean Linux release/buildvcs, pinned Node/SRI package, manifests/transfer
+PASS. На реальном VPS reviewed synthetic Linux process-only16/16 PASS,
+startup loss/default preservation/full snapshot/restore/reset/reject/old guard±.
+Root wrapper final plain bind встретил только closed TCP TIME_WAIT: actual
+report PASS, ss empty + SO_REUSEADDR bind3100/3101 PASS; product не менялся.
+
+Historical stage/apply returned success; effective mode later FAIL: owned listeners, hardened Linux Node/sharp, nginx
+syntax, previous format1 snapshot, explicit offline selected owner, capability
+drop-in и capable Go/Next5454 active. Actual executable hashes/Node cwd
+подтверждены; restart0. Сравнение pre-upgrade snapshot с live state подтвердило
+все прежние строки9 board tables, design rows и blob bytes/default paths.
+Реальные данные не скачивались, generated fixtures отдельные private на VPS.
+
+Phase pending-https-smoke: первый generic readonly run harness FAIL, оригинальная
+ошибка скрыта dangling cleanup wait, report отсутствует. Product fix пока не
+установлен; только tester-owned diagnostics/wait fix и новое review. Полный
+HTTPS inspection/finalize-format2 backup ещё NOT-RUN. Root не выдаёт active
+version за completion, не вызывает old rollback и не заменяет БД.
+
+## Открыт P1 effective startup mode
+
+Actual systemd90-projects.conf был перекрыт web.conf: новый6950 binary работал
+без --projects-data. Прежний apply/readiness/hash PASS относится только к этим
+проверкам; production ACL activation FAIL. Go/Next stopped через reviewed
+fail_closed; root поставил durable owned START_REQUIRES_INSPECTION0600+fsync.
+Root исправляет порядок own override и проверки resolved executable+argv,
+permanent guard и actual owned process args, backup command. Новый helper
+recovery держит cold-boot guard во всём install/amend окне и сохраняет manual
+markers. Source Go/Next и реальные DB frozen, никакого rollback.
+
+Авторские project infra41 unit PASS, общая suite125 PASS, source review136
+открыт. Новые operators — отдельный immutable source release; старый5454
+app не переписывается. Trusted offline helper amendment допустим только после
+review с exact old/new journal+helper hashes, stopped units/ports/owned guard,
+O_EXCL/fsync original journal и unchanged revision/Go/Next/baseline/owner.
+
+Root amendment freeze11files `.local/task009/deploy/launch-amendment-freeze.json`.
+Новый helper startup_hold.py назван уникально: первая общая suite выявила
+collision с прежним recovery.py; scoped+полная suite после rename PASS125.
+Permanentguard сопоставляет и executable path guard (защита отsystemd @argv),
+и effective backup path. One-off adoption source отдельно reviewed136,
+исполняется только non-optimized root/Linux через python3 -I, архивируется
+в private serverjournal по своемуSHA. В audit включён егоSHA; old/new helper
+maps иполный immutableoperator manifest pinned. Операторapplication5454 не
+переписывается; recovery hold ивсе реальные DB остаются до guardedresume.
