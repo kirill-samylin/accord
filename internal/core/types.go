@@ -16,10 +16,11 @@ type Actor struct {
 	SessionID string
 }
 type Config struct {
-	SessionTTL time.Duration
-	LeaseTTL   time.Duration
-	Project    string
-	Notes      NoteLimits
+	SessionTTL      time.Duration
+	LeaseTTL        time.Duration
+	Project         string
+	CursorNamespace string
+	Notes           NoteLimits
 }
 type Clock func() time.Time
 

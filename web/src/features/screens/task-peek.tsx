@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import { ProjectLink as Link } from "@/components/project-link";
 import { useQuery } from "@tanstack/react-query";
 import { Dialog as Primitive } from "radix-ui";
 import { X } from "lucide-react";
@@ -7,6 +7,7 @@ import type { Task, MutationResult } from "@/lib/types";
 import { readPage } from "@/lib/api";
 import { useDialogFocusHandlers } from "@/components/ui/dialog-focus";
 import { TaskDetail } from "./task-detail";
+import { useProjectScope } from "../projects/project-context";
 export function TaskPeek({
   task,
   onClose,
@@ -16,10 +17,12 @@ export function TaskPeek({
   onClose: () => void;
   onSuccess: (result: MutationResult) => void;
 }) {
+  const scope = useProjectScope();
   const focus = useDialogFocusHandlers();
   const result = useQuery({
-    queryKey: ["peek", task?.key],
-    queryFn: ({ signal }) => readPage(`/app/tasks/${task!.key}`, signal),
+    queryKey: ["peek", task?.key, scope.key],
+    queryFn: ({ signal }) =>
+      readPage(scope.app(`/app/tasks/${task!.key}`), signal),
     enabled: Boolean(task),
     retry: false,
     gcTime: 0,

@@ -10,7 +10,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"agent-board/internal/core"
 )
@@ -59,17 +58,6 @@ func designHTTPError(w http.ResponseWriter, err error) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(map[string]any{"error": map[string]string{"code": code, "message": message}})
-}
-func designDeadline(w http.ResponseWriter) error {
-	controller := http.NewResponseController(w)
-	deadline := time.Now().Add(120 * time.Second)
-	if err := controller.SetReadDeadline(deadline); err != nil {
-		return designFail(503, "DEADLINE", "Загрузка файлов временно недоступна")
-	}
-	if err := controller.SetWriteDeadline(deadline); err != nil {
-		return designFail(503, "DEADLINE", "Передача файлов временно недоступна")
-	}
-	return nil
 }
 func designFilter(r *http.Request) (DesignFilter, error) {
 	q := r.URL.Query()
@@ -162,6 +150,11 @@ func (s *Server) designPageError(w http.ResponseWriter, r *http.Request, b *brow
 	s.renderDesignPage(w, r, b, Page{Title: "Дизайн", Error: message, Draft: draft(r), ActionID: action}, status)
 }
 func (s *Server) renderDesignPage(w http.ResponseWriter, r *http.Request, b *browserSession, page Page, status int) {
+	if s.options.ProjectInfo != nil {
+		if project, err := s.options.ProjectInfo(r.Context()); err == nil {
+			page.Project = project
+		}
+	}
 	page.Principal = b.Principal
 	page.Session = b.Session
 	page.CSRF = b.CSRF
@@ -254,7 +247,9 @@ func (s *Server) handleDesignsAPI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	if r.Method != http.MethodHead {
-		_ = json.NewEncoder(w).Encode(designMetadata(v, false))
+		asset := designMetadata(v, false)
+		asset.DownloadURL = scopedURL(r.Context(), asset.DownloadURL)
+		_ = json.NewEncoder(w).Encode(asset)
 	}
 }
 

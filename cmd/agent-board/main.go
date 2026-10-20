@@ -15,10 +15,12 @@ import (
 	"time"
 
 	"agent-board/internal/core"
+	"agent-board/internal/projects"
 	"agent-board/internal/store"
 	"agent-board/internal/transport"
 	"agent-board/internal/web"
 	"agent-board/internal/webui"
+	"encoding/json"
 )
 
 func main() {
@@ -36,6 +38,13 @@ func run(args []string, in io.Reader, out io.Writer) error {
 		return errors.New("usage: agent-board serve | token | sessions list | backup | maintenance reset | mcp | call <operation>")
 	}
 	switch args[0] {
+	case "capabilities":
+		if len(args) != 1 && !(len(args) == 2 && args[1] == "--json") {
+			return errors.New("capabilities accepts only --json")
+		}
+		return json.NewEncoder(out).Encode(map[string]any{"project_registry": 1, "project_acl": 1, "registry_schema": []int{1}})
+	case "projects":
+		return projectCommand(args[1:], out)
 	case "serve":
 		return serve(args[1:], out)
 	case "mcp":
@@ -91,8 +100,8 @@ func helpRequested(args []string) bool {
 const commandHelp = `Accord — authenticated coordination server and native client
 
 agent-board serve --db PATH --listen 127.0.0.1:8080 [--external-host DNS:PORT] [--task-ttl 15m --session-ttl 15m]
-agent-board mcp --server ORIGIN --token-file PRIVATE [--heartbeat-interval 1m]
-agent-board call OPERATION --server ORIGIN --token-file PRIVATE < request.json
+agent-board mcp --server ORIGIN --token-file PRIVATE [--project ID] [--heartbeat-interval 1m]
+agent-board call OPERATION --server ORIGIN --token-file PRIVATE [--project ID] < request.json
 agent-board token create --db PATH --owner NAME --machine NAME --output NEW_PRIVATE [--days 30]
 agent-board token list --db PATH
 agent-board token revoke --db PATH --id TOKEN_ID
@@ -100,6 +109,13 @@ agent-board token revoke-all --db PATH --reason REASON
 agent-board sessions list --db PATH
 agent-board backup --db PATH --output NEW_PRIVATE
 agent-board maintenance reset --db PATH --reason REASON
+agent-board capabilities --json
+agent-board projects token-create --projects-data ROOT --db DEFAULT --web-data WEB --owner NAME --machine NAME --output NEW_PRIVATE
+agent-board projects token-revoke --projects-data ROOT --db DEFAULT --web-data WEB --identity REGISTRY_ID
+agent-board projects bootstrap-owner --projects-data ROOT --db DEFAULT --web-data WEB --identity LEGACY_TOKEN_ID
+agent-board projects recover-owner --projects-data ROOT --db DEFAULT --web-data WEB --project ID --identity REGISTRY_ID --reason owner-recovery
+agent-board projects maintenance-reset --projects-data STAGED_ROOT --db STAGED_DEFAULT --web-data STAGED_WEB --reason restore
+agent-board projects reject-provisioning --projects-data ROOT --db DEFAULT --web-data WEB --project ID --reason provisioning-recovery
 
 Remote origins require HTTPS; HTTP accepts literal loopback only. No redirects.
 Tokens are read from a private file or AGENT_BOARD_TOKEN, never a secret argument.
@@ -137,6 +153,7 @@ func serve(args []string, out io.Writer) error {
 	externalHost := f.String("external-host", os.Getenv("ACCORD_EXTERNAL_HOST"), "exact advertised DNS:port; defaults to ACCORD_EXTERNAL_HOST")
 	webOrigin := f.String("web-origin", os.Getenv("ACCORD_WEB_ORIGIN"), "canonical HTTPS browser origin; enables web UI")
 	webData := f.String("web-data", os.Getenv("ACCORD_WEB_DATA"), "private web state directory")
+	projectsData := f.String("projects-data", os.Getenv("ACCORD_PROJECTS_DATA"), "private project registry root")
 	trustedProxy := f.Bool("web-trusted-proxy", false, "trust loopback proxy overwritten client IP")
 	taskTTL := f.Duration("task-ttl", 15*time.Minute, "task lease TTL")
 	sessionTTL := f.Duration("session-ttl", 15*time.Minute, "session and singleton role TTL")
@@ -177,15 +194,31 @@ func serve(args []string, out io.Writer) error {
 			return fmt.Errorf("cannot initialize web: %w", err)
 		}
 		defer browser.Close()
+		if *projectsData != "" {
+			registry, err := projects.Open(projects.Options{DataDir: *projectsData, DefaultDB: *db, DefaultWeb: *webData, Default: s, Browser: browser, Renderer: renderer, Static: renderer.Static(), Origin: *webOrigin, TrustedProxy: *trustedProxy, Config: core.Config{Project: "agent-board", LeaseTTL: *taskTTL, SessionTTL: *sessionTTL}})
+			if err != nil {
+				return fmt.Errorf("cannot initialize project registry: %w", err)
+			}
+			defer registry.Close()
+			options.ProjectRouter = registry
+			ready = func(ctx context.Context) error {
+				if err := registry.Ready(ctx); err != nil {
+					return err
+				}
+				return browser.Ready(ctx)
+			}
+		}
 		options.Extra = browser
 		options.Designs = browser
-		ready = func(ctx context.Context) error {
-			if err := s.Ready(ctx); err != nil {
-				return err
+		if options.ProjectRouter == nil {
+			ready = func(ctx context.Context) error {
+				if err := s.Ready(ctx); err != nil {
+					return err
+				}
+				return browser.Ready(ctx)
 			}
-			return browser.Ready(ctx)
 		}
-	} else if *webData != "" || *trustedProxy {
+	} else if *webData != "" || *trustedProxy || *projectsData != "" {
 		return errors.New("web-origin required for web options")
 	}
 	server := &http.Server{Handler: transport.NewHandlerWithOptions(s, ready, options), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: time.Minute, MaxHeaderBytes: 16 << 10}

@@ -63,6 +63,7 @@ export function stoppedBy(result: MutationResult): boolean {
     "LEASE_LOST",
     "NO_SESSION",
     "UNAUTHORIZED",
+    "FORBIDDEN",
     "UNAUTHENTICATED",
     "AUTH_REQUIRED",
     "TOKEN_EXPIRED",

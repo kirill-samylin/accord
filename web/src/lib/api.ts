@@ -1,25 +1,34 @@
 import { withReadDeadline } from "./read-deadline.ts";
-import type { MutationResult, PageData } from "./types.ts";
-const screen =
-  /^(?:\/(?:overview|tasks(?:\/[A-Za-z0-9_-]+)?|questions|agents(?:\/[A-Za-z0-9_-]+)?|projects|designs|history|activity|stats|settings|login))?\/?$/;
-export function webToApp(path: string): string {
-  if (!path.startsWith("/web") || path.includes("\\") || /[\r\n]/.test(path))
-    throw new Error("Недопустимый адрес перехода");
-  const url = new URL(path, "https://accord.invalid");
-  const tail = url.pathname.slice(4);
-  if (url.origin !== "https://accord.invalid" || !screen.test(tail))
-    throw new Error("Недопустимый адрес перехода");
-  return `/app${tail === "/" ? "" : tail}${url.search}${url.hash}`;
-}
-export function appToWeb(path: string): string {
-  if (!path.startsWith("/app") || path.includes("\\"))
-    throw new Error("Недопустимый адрес страницы");
-  const url = new URL(path, "https://accord.invalid");
-  const tail = url.pathname.slice(4);
-  if (url.origin !== "https://accord.invalid" || !screen.test(tail))
-    throw new Error("Недопустимый адрес страницы");
-  const canonical = tail.replace(/\/$/, "");
-  return `/web${canonical || "/"}${url.search}`;
+import type {
+  CatalogMutationResult,
+  MutationResult,
+  PageData,
+} from "./types.ts";
+import type { CatalogPage } from "./projects.ts";
+import {
+  appToWebRoute,
+  expectedProjectID,
+  projectRoute,
+  routeScope,
+  webToAppRoute,
+} from "./project-routes.ts";
+export const webToApp = webToAppRoute;
+export const appToWeb = appToWebRoute;
+function unauthorized(
+  path: string,
+  signal?: AbortSignal,
+  originScope?: string,
+) {
+  if (typeof window === "undefined" || signal?.aborted) return;
+  const event = new Event("accord:unauthorized");
+  Object.assign(event, {
+    projectScope:
+      originScope ??
+      (path.startsWith("/web/catalog/")
+        ? "catalog"
+        : routeScope(path.replace(/^\/web/, "/app"))),
+  });
+  window.dispatchEvent(event);
 }
 export class APIError extends Error {
   status: number;
@@ -31,10 +40,11 @@ export class APIError extends Error {
     this.result = result;
   }
 }
-export async function readPage(
+export async function readPage<T extends PageData | CatalogPage = PageData>(
   path: string,
   signal?: AbortSignal,
-): Promise<PageData> {
+  originScope?: string,
+): Promise<T> {
   return withReadDeadline(signal, async (signal) => {
     const response = await fetch(appToWeb(path), {
       headers: { Accept: "application/json" },
@@ -48,7 +58,7 @@ export async function readPage(
       path !== "/app/login" &&
       typeof window !== "undefined"
     )
-      window.dispatchEvent(new Event("accord:unauthorized"));
+      unauthorized(path, signal, originScope);
     let result: MutationResult;
     try {
       result = await response.json();
@@ -63,16 +73,38 @@ export async function readPage(
     }
     if (!response.ok || !result.ok || !result.page)
       throw new APIError(response.status, result);
-    return result.page;
+    signal.throwIfAborted();
+    const expected = expectedProjectID(path);
+    if (expected && result.page.project?.id !== expected)
+      throw new APIError(409, {
+        ok: false,
+        error: {
+          code: "PROJECT_SCOPE_MISMATCH",
+          message: "Ответ относится к другому проекту",
+        },
+      });
+    const page =
+      "session" in result.page && result.page.project?.can_write === false
+        ? { ...result.page, can_edit: false, can_update: false }
+        : result.page;
+    return page as T;
   });
 }
-export async function submitAction(
+export async function submitAction<
+  T extends MutationResult | CatalogMutationResult = MutationResult,
+>(
   path: string,
   body: FormData | URLSearchParams,
   signal?: AbortSignal,
-): Promise<MutationResult> {
+  originScope?: string,
+): Promise<T> {
+  if (/^\/web\/p\/[^/]+\/login$/.test(path))
+    throw new Error("Вход выполняется через общий адрес");
   if (
-    !/^\/web\/(?:login|logout|heartbeat|session\/continue|tasks(?:\/[A-Za-z0-9_-]+\/(?:claim|answer|release|update))?|designs)$/.test(
+    !/^\/web\/(?:p\/p_[a-f0-9]{32}\/)?(?:login|logout|heartbeat|session\/continue|tasks(?:\/[A-Za-z0-9_-]+\/(?:claim|answer|release|update))?|designs)$/.test(
+      path,
+    ) &&
+    !/^\/web\/catalog\/(?:switch|projects(?:\/p_[a-f0-9]{32}\/(?:update|members|repositories(?:\/[A-Za-z0-9_-]+)?))?)$/.test(
       path,
     )
   )
@@ -99,9 +131,52 @@ export async function submitAction(
       },
     });
   }
-  if (result.redirect) webToApp(result.redirect);
+  const expected = path.startsWith("/web/p/") ? routeScope(path) : undefined;
+  if (
+    result.page &&
+    expected &&
+    (result.page.project?.id !== undefined || result.ok) &&
+    result.page.project?.id !== expected
+  )
+    throw new APIError(409, {
+      ok: false,
+      retry_same_action: true,
+      error: {
+        code: "PROJECT_SCOPE_MISMATCH",
+        message:
+          "Ответ относится к другому проекту. Проверьте исходную отправку.",
+      },
+    });
+  if (expected && result.page && !result.page.project && !result.ok) {
+    // A definitive rejection can omit board metadata. Retain its form errors
+    // and capabilities, never merge an unqualified page into the board view.
+    result = {
+      ...result,
+      field_errors: result.field_errors ?? result.page.field_errors,
+      actions: result.actions ?? result.page.actions,
+      page: undefined,
+    };
+  }
+  if (result.redirect) {
+    const target = webToApp(result.redirect);
+    if (
+      expected &&
+      target !== "/app/login" &&
+      projectRoute(target)?.id !== expected
+    )
+      throw new APIError(409, {
+        ok: false,
+        retry_same_action: true,
+        error: {
+          code: "PROJECT_SCOPE_MISMATCH",
+          message:
+            "Недопустимый переход в другой проект. Проверьте исходную отправку.",
+        },
+      });
+  }
   if (response.status === 401 && path !== "/web/login")
-    window.dispatchEvent(new Event("accord:unauthorized"));
-  return result;
+    unauthorized(path, signal, originScope);
+  return result as T;
 }
-export const pageQueryKey = (path: string) => ["page", path] as const;
+export const pageQueryKey = (path: string) =>
+  ["page", path, routeScope(path)] as const;

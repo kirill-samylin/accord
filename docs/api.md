@@ -1,5 +1,11 @@
 # API пилота — v1
 
+> TASK009 добавляет явные scoped endpoints `/api/v1/p/{projectID}/...`,
+> `/mcp/p/{projectID}`, `/web/p/{projectID}/...` и browser catalog. Legacy paths
+> сохраняют default scope и проверку его ACL. Точный identity/membership,
+> cookie/CSRF/action/epoch и миграционный контракт —
+> [multi-project.md](multi-project.md); фактические проверки — TASK009.
+
 Дата: 18.10.2026. Контракт TASK-001. Типы Go: `internal/core/types.go`;
 правила — [requirements.md](requirements.md). Новые поля не отменяют инварианты.
 На wire используется `state` и единое `outcome`; это нормализация вариантов

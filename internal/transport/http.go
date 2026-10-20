@@ -138,6 +138,10 @@ func NewHandlerWithOptions(s Service, ready func(context.Context) error, options
 			}{"ok"})
 			return
 		}
+		if options.ProjectRouter != nil && r.URL.Path != "/metrics" {
+			options.ProjectRouter.ServeHTTP(w, r)
+			return
+		}
 		if options.Extra != nil && extraPath(r.URL.Path) {
 			options.Extra.ServeHTTP(w, r)
 			return

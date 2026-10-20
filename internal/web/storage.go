@@ -68,17 +68,20 @@ func openWebDB(dir string) (*sql.DB, error) {
 		db.Close()
 		return nil, err
 	}
-	if schema != 0 && schema != 1 {
+	if schema != 0 && schema != 1 && schema != 2 {
 		db.Close()
 		return nil, fmt.Errorf("unsupported web database schema")
 	}
-	_, err = db.Exec(`PRAGMA busy_timeout=5000; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;
+	_, err = db.Exec(`PRAGMA busy_timeout=5000; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; BEGIN IMMEDIATE;
  CREATE TABLE IF NOT EXISTS browser_sessions(hash TEXT PRIMARY KEY,token_id TEXT NOT NULL,csrf TEXT NOT NULL,expires INTEGER NOT NULL,board_session TEXT NOT NULL,pending_describe TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS preauth(hash TEXT PRIMARY KEY,csrf TEXT NOT NULL,expires INTEGER NOT NULL);
  CREATE TABLE IF NOT EXISTS web_actions(id TEXT PRIMARY KEY,session_hash TEXT NOT NULL,operation TEXT NOT NULL,payload TEXT NOT NULL DEFAULT '',session_id TEXT NOT NULL DEFAULT '',result TEXT NOT NULL DEFAULT '',created INTEGER NOT NULL);
+ CREATE TABLE IF NOT EXISTS web_action_epochs(id TEXT PRIMARY KEY,epoch INTEGER NOT NULL);
+ CREATE TRIGGER IF NOT EXISTS web_action_epoch_cleanup AFTER DELETE ON web_actions BEGIN DELETE FROM web_action_epochs WHERE id=OLD.id; END;
+ DELETE FROM web_action_epochs WHERE id NOT IN (SELECT id FROM web_actions);
  CREATE INDEX IF NOT EXISTS web_actions_session ON web_actions(session_hash);
  CREATE TABLE IF NOT EXISTS web_audit(id INTEGER PRIMARY KEY,event TEXT NOT NULL,principal TEXT NOT NULL,at INTEGER NOT NULL);
- PRAGMA user_version=1;`)
+ PRAGMA user_version=2; COMMIT;`)
 	if err != nil {
 		db.Close()
 		return nil, err

@@ -25,6 +25,7 @@ export function TasksScreen({
   onSuccess: (result: MutationResult) => void;
 }) {
   const filters = useFilters();
+  const canCreate = page.project?.can_write !== false && !page.can_continue;
   const [peek, setPeek] = useState<Task | null>(null);
   const questions = page.view === "questions";
   const [view, setView] = useState("all");
@@ -93,7 +94,11 @@ export function TasksScreen({
           filtered ? (
             <ClearFilters />
           ) : (
-            <button className="button button-secondary" onClick={onCreate}>
+            <button
+              className="button button-secondary"
+              onClick={onCreate}
+              disabled={!canCreate}
+            >
               <Plus size={14} />
               Новая задача
             </button>
@@ -115,6 +120,7 @@ export function TasksScreen({
           <button
             className="button"
             onClick={onCreate}
+            disabled={!canCreate}
             aria-label="Новая задача"
           >
             <Plus size={14} />

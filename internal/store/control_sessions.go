@@ -106,7 +106,7 @@ func (s *Store) ControlSessions(ctx context.Context, a core.Actor, in core.Contr
 		filter := in
 		filter.Cursor = ""
 		filter.Limit = 0
-		c, limit, err := pageCursor("control_sessions", filter, in.Cursor, in.Limit, high)
+		c, limit, err := pageCursor(cursorKindForBoard(b, "control_sessions"), filter, in.Cursor, in.Limit, high)
 		if err != nil {
 			return page, err
 		}

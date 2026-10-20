@@ -10,13 +10,14 @@ import {
   ListTodo,
   Settings2,
 } from "lucide-react";
+import { screenPath } from "@/lib/project-routes";
 export const navigation = [
   { href: "/app", title: "Обзор", icon: House, group: "Работа" },
   { href: "/app/tasks", title: "Задачи", icon: ListTodo, group: "Работа" },
   { href: "/app/questions", title: "Вопросы", icon: Inbox, group: "Работа" },
   {
     href: "/app/projects",
-    title: "Проект",
+    title: "Проекты",
     icon: FolderKanban,
     group: "Работа",
   },
@@ -43,6 +44,7 @@ export const navigation = [
   },
 ];
 export function currentSection(path: string) {
+  path = screenPath(path);
   return (
     navigation.find(
       (item) => item.href !== "/app" && path.startsWith(item.href),

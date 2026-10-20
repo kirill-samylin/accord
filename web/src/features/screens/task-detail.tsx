@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import { ProjectLink as Link } from "@/components/project-link";
 import { useState } from "react";
 import { ChevronDown, FileText, Pencil } from "lucide-react";
 import {

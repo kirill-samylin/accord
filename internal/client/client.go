@@ -89,3 +89,19 @@ func (t *bearerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	response.Body = &boundedBody{ReadCloser: response.Body, remaining: MaxResponseBytes}
 	return response, nil
 }
+
+// Project validates an opaque registry ID separately from the credential origin.
+func Project(id string) error {
+	if id == "" {
+		return nil
+	}
+	if len(id) != 34 || !strings.HasPrefix(id, "p_") {
+		return errors.New("invalid project ID")
+	}
+	for _, c := range id[2:] {
+		if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'f') {
+			return errors.New("invalid project ID")
+		}
+	}
+	return nil
+}

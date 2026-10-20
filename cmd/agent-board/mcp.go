@@ -16,6 +16,7 @@ import (
 func runMCP(args []string, in io.Reader, out io.Writer) error {
 	f := flags("mcp")
 	server := f.String("server", "http://127.0.0.1:8080", "server origin")
+	project := f.String("project", "", "opaque project ID")
 	tokenFile := f.String("token-file", "", "private token file; otherwise AGENT_BOARD_TOKEN")
 	interval := f.Duration("heartbeat-interval", 0, "optional interval, may only reduce server-selected interval")
 	if err := parse(f, args); err != nil {
@@ -30,7 +31,7 @@ func runMCP(args []string, in io.Reader, out io.Writer) error {
 	if !ok {
 		reader = io.NopCloser(in)
 	}
-	return bridge.Serve(ctx, bridge.Options{Server: *server, TokenFile: *tokenFile, HeartbeatInterval: *interval, Stderr: os.Stderr}, &mcp.IOTransport{Reader: reader, Writer: writerNoClose{out}, MaxLineLength: 64 << 10})
+	return bridge.Serve(ctx, bridge.Options{Server: *server, ProjectID: *project, TokenFile: *tokenFile, HeartbeatInterval: *interval, Stderr: os.Stderr}, &mcp.IOTransport{Reader: reader, Writer: writerNoClose{out}, MaxLineLength: 64 << 10})
 }
 
 type writerNoClose struct{ io.Writer }

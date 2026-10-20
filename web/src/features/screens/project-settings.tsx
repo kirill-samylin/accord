@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import { ProjectLink as Link } from "@/components/project-link";
 import {
   ArrowUpRight,
   FolderKanban,
@@ -43,7 +43,7 @@ export function ProjectsScreen({ page }: { page: PageData }) {
             <div className="project-entity">
               <span className="project-mark">A</span>
               <div className="entity-main">
-                <h2>{page.session.project}</h2>
+                <h2>{page.project?.name ?? page.session.project}</h2>
                 <span className="muted">Текущий проект Accord</span>
               </div>
               <Status value="active" />
@@ -176,7 +176,10 @@ export function SettingsScreen({
           <div className="settings-section">
             <h2>Проект</h2>
             <dl>
-              <Fact name="Название" value={page.session.project} />
+              <Fact
+                name="Название"
+                value={page.project?.name ?? page.session.project}
+              />
               <Fact name="Владелец доступа" value={page.principal.owner} />
               <Fact name="Машина" value={page.principal.machine} />
               <Fact name="Роль" value={label(page.session.role)} />

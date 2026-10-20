@@ -1,6 +1,7 @@
 "use client";
-import Link from "next/link";
+import { ProjectLink as Link } from "@/components/project-link";
 import { useQuery } from "@tanstack/react-query";
+import { useProjectScope } from "../projects/project-context";
 import { ArrowUpRight, Bot, RefreshCw } from "lucide-react";
 import {
   AgentRow,
@@ -24,10 +25,12 @@ export function OverviewScreen({
   page: PageData;
   onSessionExpired: () => void;
 }) {
+  const scope = useProjectScope();
   const live = useDashboard(page, onSessionExpired);
   const recent = useQuery({
-    queryKey: ["recent-tasks"],
-    queryFn: ({ signal }) => readPage("/app/tasks?include_closed=true", signal),
+    queryKey: ["recent-tasks", scope.key],
+    queryFn: ({ signal }) =>
+      readPage(scope.app("/app/tasks?include_closed=true"), signal),
     retry: false,
     gcTime: 0,
   });

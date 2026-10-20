@@ -82,6 +82,10 @@ def run():
     if args.check_only:
         print('Accord snapshot checksum and SQLite integrity verified.')
         return
+    projects = STATE / 'projects-data'
+    if any((projects / name).exists() or (projects / name).is_symlink()
+           for name in ('registry.sqlite', 'MULTIPROJECT_REQUIRES_CAPABILITY')):
+        raise RuntimeError('registry requires full all-project recovery; board-only restore refused')
     fd = os.open('/run/lock/accord-admin.lock', os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
     with os.fdopen(fd, 'w') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)

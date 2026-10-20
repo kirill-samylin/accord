@@ -118,7 +118,13 @@ export function CreateTaskDialog({
           <DialogTitle>{isTask ? "Новая задача" : "Новый эпик"}</DialogTitle>
         </DialogHeader>
         <form className="mutation-form" onSubmit={submit}>
-          <fieldset disabled={action.locked}>
+          <fieldset
+            disabled={
+              action.locked ||
+              action.page.can_continue ||
+              action.page.project?.can_write === false
+            }
+          >
             <div className="form-grid">
               <label className="form-field">
                 Что создать

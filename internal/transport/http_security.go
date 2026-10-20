@@ -18,8 +18,9 @@ import (
 type HandlerOptions struct {
 	// Extra serves browser routes and authenticated design REST endpoints under
 	// the same admission/Host/native-Origin perimeter. It handles its own auth.
-	Extra   http.Handler
-	Designs DesignReader
+	ProjectRouter http.Handler
+	Extra         http.Handler
+	Designs       DesignReader
 
 	// ExternalHost allows exactly this validated DNS:port in addition to
 	// loopback authorities. Invalid values make the entire handler fail closed.

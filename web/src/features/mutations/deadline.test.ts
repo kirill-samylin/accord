@@ -54,6 +54,25 @@ test("successful action clears its deadline before the next request", async (t) 
   assert.equal(result.next_action_id, "fresh");
 });
 
+test("project-qualified uploads retain the complete file deadline", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let signal: AbortSignal;
+  const result = withMutationDeadline(
+    `/web/p/p_${"a".repeat(32)}/designs`,
+    (incoming) => {
+      signal = incoming;
+      return new Promise((_, reject) =>
+        incoming.addEventListener("abort", () => reject(new Error("aborted"))),
+      );
+    },
+  );
+  const rejected = assert.rejects(result, /aborted/);
+  t.mock.timers.tick(129_999);
+  assert.equal(signal!.aborted, false);
+  t.mock.timers.tick(1);
+  await rejected;
+});
+
 test("received headers cannot bypass the body deadline or replace the pending action", async (t) => {
   t.mock.timers.enable({ apis: ["setTimeout"] });
   const original = globalThis.fetch;

@@ -1,5 +1,6 @@
 "use client";
 import { Suspense, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   QueryClient,
@@ -8,21 +9,35 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { APIError, pageQueryKey, readPage, webToApp } from "@/lib/api";
+import {
+  projectRoute,
+  routeScope,
+  safeLoginReturn,
+} from "@/lib/project-routes";
+import { isCatalogPage, type CatalogPage } from "@/lib/projects";
 import type { MutationResult, PageData } from "@/lib/types";
 import { Shell } from "./shell";
+import { BoardScreen } from "./board-screens";
 import { useRouteHeadingFocus } from "./hooks/use-route-heading-focus";
 import { LoginForm } from "./mutations/LoginForm";
 import { CreateTaskDialog } from "./mutations/CreateTaskDialog";
-import { SessionControls } from "./mutations/SessionControls";
-import { OverviewScreen } from "./screens/overview";
-import { TasksScreen } from "./screens/tasks";
-import { TaskDetail } from "./screens/task-detail";
-import { AgentDetail, AgentsScreen } from "./screens/agents";
-import { ActivityScreen, HistoryScreen } from "./screens/organization";
-import { ProjectsScreen, SettingsScreen } from "./screens/project-settings";
-import { StatsScreen } from "./screens/stats";
-import { DesignsScreen } from "./screens/designs";
+import { ProjectProvider, useProjectScope } from "./projects/project-context";
+import { ProjectOpening } from "./projects/project-opening";
+const CatalogWorkspace = dynamic(() => import("./projects/catalog-workspace"), {
+  loading: () => <Loading />,
+});
 export function ControlApp() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <ScopedApp />
+    </Suspense>
+  );
+}
+function ScopedApp() {
+  const path = usePathname();
+  return <QueryBoundary key={routeScope(path)} />;
+}
+function QueryBoundary() {
   const [client] = useState(
     () =>
       new QueryClient({
@@ -37,11 +52,18 @@ export function ControlApp() {
         },
       }),
   );
+  useEffect(
+    () => () => {
+      void client.cancelQueries();
+      client.clear();
+    },
+    [client],
+  );
   return (
     <QueryClientProvider client={client}>
-      <Suspense fallback={<Loading />}>
+      <ProjectProvider>
         <ControlContent />
-      </Suspense>
+      </ProjectProvider>
     </QueryClientProvider>
   );
 }
@@ -61,13 +83,13 @@ function ControlContent() {
   const path = usePathname();
   const search = useSearchParams();
   const router = useRouter();
+  const scope = useProjectScope();
   const client = useQueryClient();
   const location = `${path}${search.size ? `?${search}` : ""}`;
   const [create, setCreate] = useState(false);
   const result = useQuery({
     queryKey: pageQueryKey(location),
-    queryFn: ({ signal }) => readPage(location, signal),
-    // Keep local tabs and drafts during filter reads within the same screen.
+    queryFn: ({ signal }) => readPage<PageData | CatalogPage>(location, signal),
     placeholderData: (previous, previousQuery) =>
       String(previousQuery?.queryKey[1] ?? "").split("?")[0] === path
         ? previous
@@ -81,14 +103,25 @@ function ControlContent() {
       path !== "/app/login",
   );
   const createOptions = useQuery({
-    queryKey: ["create-options"],
-    queryFn: ({ signal }) => readPage("/app/tasks?include_closed=true", signal),
-    enabled: create && Boolean(result.data) && !result.data?.can_continue,
+    queryKey: ["create-options", scope.key],
+    queryFn: ({ signal }) =>
+      readPage(scope.app("/app/tasks?include_closed=true"), signal),
+    enabled:
+      create &&
+      Boolean(result.data) &&
+      !isCatalogPage(result.data) &&
+      !(result.data as PageData)?.can_continue &&
+      (result.data as PageData)?.project?.can_write !== false,
   });
-  function unauthorized() {
+  function unauthorized(event?: Event) {
+    if (event && "projectScope" in event && event.projectScope !== scope.key)
+      return;
     setCreate(false);
     client.clear();
-    router.replace("/app/login");
+    const target = safeLoginReturn(location);
+    router.replace(
+      `/app/login${target ? `?next=${encodeURIComponent(target)}` : ""}`,
+    );
   }
   useEffect(() => {
     window.addEventListener("accord:unauthorized", unauthorized);
@@ -102,12 +135,13 @@ function ControlContent() {
       path !== "/app/login"
     )
       unauthorized();
-  }, [result.error, path]); // Revocation clears every person's cached body.
+  }, [result.error, path]);
   async function success(action: MutationResult) {
     if (!action.ok) return;
     setCreate(false);
-    const target = action.redirect ? webToApp(action.redirect) : location;
-    // Login/logout can change identity. Clearing also removes old capabilities and private drafts.
+    let target = action.redirect ? webToApp(action.redirect) : location;
+    if (path === "/app/login")
+      target = safeLoginReturn(search.get("next")) ?? target;
     if (path === "/app/login" || target === "/app/login") {
       client.clear();
       router.replace(target);
@@ -117,7 +151,24 @@ function ControlContent() {
     if (target !== location) router.push(target);
   }
   if (result.isPending) return <Loading />;
-  if (!result.data)
+  if (
+    result.error instanceof APIError &&
+    result.error.result.error?.code === "PROJECT_SESSION_REQUIRED"
+  ) {
+    const expected = projectRoute(path)?.id;
+    if (expected && result.error.result.project?.id === expected)
+      return (
+        <ProjectOpening
+          project={result.error.result.project}
+          target={location}
+        />
+      );
+  }
+  if (
+    !result.data ||
+    (result.error instanceof APIError &&
+      [403, 404].includes(result.error.status))
+  )
     return (
       <main className="welcome">
         <div className="project-mark">A</div>
@@ -134,9 +185,11 @@ function ControlContent() {
         <button className="button" onClick={() => result.refetch()}>
           Повторить
         </button>
-        <a href="/web/">Базовый интерфейс</a>
+        <a href="/app/projects">Все проекты</a>
       </main>
     );
+  if (isCatalogPage(result.data))
+    return <CatalogWorkspace page={result.data} />;
   const page = result.data;
   if (path === "/app/login" || page.name === "login")
     return (
@@ -154,63 +207,6 @@ function ControlContent() {
         </section>
       </main>
     );
-  function screen() {
-    if (page.can_continue)
-      return (
-        <div className="page">
-          <h1>Продолжить работу</h1>
-          <div className="notice">
-            Срок рабочей сессии истёк. Продолжите её, чтобы снова видеть проект
-            и выполнять действия.
-          </div>
-          <SessionControls page={page} onSuccess={success} />
-        </div>
-      );
-    const refresh = () => {
-      void result.refetch();
-    };
-    switch (page.view || page.name) {
-      case "task":
-        return (
-          <TaskDetail key={page.task?.key} page={page} onSuccess={success} />
-        );
-      case "tasks":
-      case "questions":
-        return (
-          <TasksScreen
-            key={page.view}
-            page={page}
-            onCreate={() => setCreate(true)}
-            onSuccess={success}
-          />
-        );
-      case "agents":
-        return <AgentsScreen page={page} refresh={refresh} />;
-      case "agent":
-        return <AgentDetail key={page.agent?.session_id} page={page} />;
-      case "projects":
-        return <ProjectsScreen page={page} />;
-      case "activity":
-        return <ActivityScreen page={page} refresh={refresh} />;
-      case "stats":
-        return <StatsScreen page={page} />;
-      case "designs":
-        return <DesignsScreen page={page} onSuccess={success} />;
-      case "history":
-        return <HistoryScreen page={page} />;
-      case "settings":
-        return <SettingsScreen page={page} onSuccess={success} />;
-      default:
-        return (
-          <OverviewScreen
-            page={page}
-            onSessionExpired={() => {
-              void result.refetch();
-            }}
-          />
-        );
-    }
-  }
   return (
     <Shell page={page} onCreate={() => setCreate(true)} onSuccess={success}>
       {page.notice ? (
@@ -235,7 +231,12 @@ function ControlContent() {
           Обновляем данные…
         </div>
       ) : null}
-      {screen()}
+      <BoardScreen
+        page={page}
+        refresh={() => void result.refetch()}
+        onCreate={() => setCreate(true)}
+        onSuccess={success}
+      />
       {create ? (
         createOptions.isPending ? (
           <div className="loading-toast" role="status">

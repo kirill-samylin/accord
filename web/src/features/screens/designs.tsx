@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
+import { ProjectLink as Link } from "@/components/project-link";
 import { Download, File, Grid2X2, History, List, Plus, X } from "lucide-react";
 import {
   Dialog,
@@ -14,11 +14,8 @@ import type { DesignAsset, MutationResult, PageData } from "@/lib/types";
 import { bytes, date } from "@/lib/format";
 import { DesignUpload } from "../mutations/DesignUpload";
 import { FilterMenu, Pagination, useFilters } from "../query-controls";
-function safeAssetURL(url: string, kind: "download" | "preview") {
-  return new RegExp(`^/web/designs/[A-Za-z0-9_-]+/${kind}$`).test(url)
-    ? url
-    : undefined;
-}
+import { safeAssetURL } from "@/lib/project-assets";
+import { useProjectScope } from "../projects/project-context";
 export function DesignsScreen({
   page,
   onSuccess,
@@ -26,6 +23,7 @@ export function DesignsScreen({
   page: PageData;
   onSuccess: (result: MutationResult) => void;
 }) {
+  const scope = useProjectScope();
   const filters = useFilters();
   const [upload, setUpload] = useState(false);
   const [uploadLocked, setUploadLocked] = useState(false);
@@ -46,6 +44,7 @@ export function DesignsScreen({
             className="button"
             onClick={() => setUpload(true)}
             aria-label="Загрузить"
+            disabled={page.project?.can_write === false || scope.locked}
           >
             <Plus size={14} />
             <span className="desktop-label">Загрузить</span>
@@ -136,7 +135,7 @@ export function DesignsScreen({
               >
                 {asset.preview_url &&
                 asset.media_type.startsWith("image/") &&
-                safeAssetURL(asset.preview_url, "preview") ? (
+                safeAssetURL(asset.preview_url, "preview", scope.id) ? (
                   <img
                     src={asset.preview_url}
                     alt={asset.title}
@@ -171,7 +170,11 @@ export function DesignsScreen({
                   </Link>
                   <a
                     className="icon-button"
-                    href={safeAssetURL(asset.download_url, "download")}
+                    href={safeAssetURL(
+                      asset.download_url,
+                      "download",
+                      scope.id,
+                    )}
                     aria-label={`Скачать ${asset.filename}`}
                   >
                     <Download size={14} />
@@ -247,7 +250,7 @@ export function DesignsScreen({
             <>
               <div className="asset-detail-preview">
                 {selected.preview_url &&
-                safeAssetURL(selected.preview_url, "preview") ? (
+                safeAssetURL(selected.preview_url, "preview", scope.id) ? (
                   selected.media_type.startsWith("image/") ? (
                     <img src={selected.preview_url} alt={selected.title} />
                   ) : (
@@ -285,7 +288,11 @@ export function DesignsScreen({
                 </Link>
                 <a
                   className="button"
-                  href={safeAssetURL(selected.download_url, "download")}
+                  href={safeAssetURL(
+                    selected.download_url,
+                    "download",
+                    scope.id,
+                  )}
                 >
                   <Download size={14} />
                   Скачать

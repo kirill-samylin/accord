@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ProjectLink as Link } from "@/components/project-link";
 export default function Home() {
   return (
     <main className="welcome">

@@ -54,7 +54,7 @@ func (w *browserJSONWriter) finish() {
 		status = http.StatusOK
 	}
 	if status >= 300 && status < 400 && strings.HasPrefix(w.Header().Get("Location"), "/web/") {
-		w.respond(http.StatusOK, map[string]any{"ok": true, "redirect": w.Header().Get("Location")})
+		w.respond(http.StatusOK, map[string]any{"ok": true, "redirect": scopedURL(w.request.Context(), w.Header().Get("Location"))})
 		return
 	}
 	// Raw HTTP errors are deliberately generic. Storage paths, database errors,
@@ -135,6 +135,7 @@ func renderBrowserJSON(w http.ResponseWriter, status int, name string, p Page) b
 		return false
 	}
 	page := projectBrowserPage(name, p)
+	scopePage(out.request.Context(), &page)
 	if status < 400 {
 		out.respond(status, map[string]any{"ok": true, "page": page})
 		return true

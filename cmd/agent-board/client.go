@@ -25,8 +25,12 @@ func call(args []string, in io.Reader, out io.Writer) error {
 	operation := args[0]
 	f := flags("call")
 	server := f.String("server", "http://127.0.0.1:8080", "server origin")
+	project := f.String("project", "", "opaque project ID; omitted pins the legacy default")
 	tokenFile := f.String("token-file", "", "private token file; otherwise AGENT_BOARD_TOKEN")
 	if err := parse(f, args[1:]); err != nil {
+		return err
+	}
+	if err := client.Project(*project); err != nil {
 		return err
 	}
 	base, err := client.Origin(*server)
@@ -52,6 +56,9 @@ func call(args []string, in io.Reader, out io.Writer) error {
 	method, path, body, err := clientRoute(operation, fields)
 	if err != nil {
 		return err
+	}
+	if *project != "" {
+		path = "/api/v1/p/" + *project + strings.TrimPrefix(path, "/api/v1")
 	}
 	target := *base
 	target.Path = strings.TrimSuffix(base.Path, "/") + path

@@ -1,6 +1,7 @@
 import { APIError } from "./api.ts";
 import type { DashboardData } from "./types.ts";
 import { withReadDeadline } from "./read-deadline.ts";
+import { projectID } from "./projects.ts";
 export const POLL_BASE_MS = 15000;
 export const POLL_CAP_MS = 120000;
 export function retryDelay(
@@ -149,15 +150,21 @@ export function validDashboard(value: unknown): value is ValidatedDashboard {
 }
 export async function readDashboard(
   parent: AbortSignal,
+  project?: string,
 ): Promise<DashboardData> {
+  if (project && !projectID.test(project))
+    throw new Error("Недопустимый проект");
   return withReadDeadline(parent, async (signal) => {
-    const response = await fetch("/web/data/dashboard", {
-      headers: { Accept: "application/json" },
-      credentials: "same-origin",
-      cache: "no-store",
-      redirect: "error",
-      signal,
-    });
+    const response = await fetch(
+      project ? `/web/p/${project}/data/dashboard` : "/web/data/dashboard",
+      {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        redirect: "error",
+        signal,
+      },
+    );
     const retryAfter = response.headers.get("Retry-After");
     if (response.status === 401)
       throw new DashboardReadError(401, "AUTH_REQUIRED", "Войдите снова", null);

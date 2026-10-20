@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { navigation } from "./navigation";
 import { readPage } from "@/lib/api";
+import { useProjectScope } from "./projects/project-context";
 export function CommandPalette({
   open,
   onOpenChange,
@@ -19,6 +20,7 @@ export function CommandPalette({
   open: boolean;
   onOpenChange: (value: boolean) => void;
 }) {
+  const scope = useProjectScope();
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
   const router = useRouter();
@@ -27,18 +29,19 @@ export function CommandPalette({
     return () => clearTimeout(timer);
   }, [query]);
   const result = useQuery({
-    queryKey: ["command", search],
+    queryKey: ["command", search, scope.key],
     queryFn: ({ signal }) =>
-      readPage(`/app/tasks?q=${encodeURIComponent(search)}`, signal),
-    enabled: open && search.length >= 2,
+      readPage(scope.app(`/app/tasks?q=${encodeURIComponent(search)}`), signal),
+    enabled: open && search.length >= 2 && !scope.locked,
     retry: false,
     staleTime: 0,
     gcTime: 0,
   });
   function navigate(href: string) {
+    if (scope.locked) return;
     onOpenChange(false);
     setQuery("");
-    router.push(href);
+    router.push(scope.app(href));
   }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

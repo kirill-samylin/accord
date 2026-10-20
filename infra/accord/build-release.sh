@@ -34,7 +34,7 @@ python3 - "$release/infra" <<'PY'
 import pathlib, shutil, subprocess, sys
 destination = pathlib.Path(sys.argv[1])
 paths = subprocess.check_output(['git', 'ls-files', '-z', '--',
-    'infra/accord/web', 'infra/accord/public', 'infra/accord/next'])
+    'infra/accord/web', 'infra/accord/public', 'infra/accord/next', 'infra/accord/projects'])
 for name in paths.decode().split('\0'):
     if not name:
         continue

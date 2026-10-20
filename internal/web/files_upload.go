@@ -71,7 +71,8 @@ func (s *Server) uploadDesign(w http.ResponseWriter, r *http.Request, b *browser
 	}
 	sum := sha256.Sum256(metadata)
 	v := storedDesign{DesignAsset: DesignAsset{Title: in.Title, Scope: in.Scope, ScopeKey: in.ScopeKey, DesignID: in.DesignID, Filename: in.Filename, UploaderPrincipal: b.Principal.ID, UploaderOwner: b.Principal.Owner}, RequestID: request, MetadataHash: hex.EncodeToString(sum[:])}
-	v, replay, err := d.reserve(r.Context(), v)
+	var replay bool
+	err = s.guarded(r.Context(), true, b.Session.SessionID, func() error { var e error; v, replay, e = d.reserve(r.Context(), v); return e })
 	if err != nil {
 		return DesignAsset{}, err
 	}
@@ -108,6 +109,9 @@ func (s *Server) uploadDesign(w http.ResponseWriter, r *http.Request, b *browser
 		return DesignAsset{}, err
 	}
 	if replay {
+		if err = s.guarded(r.Context(), true, b.Session.SessionID, func() error { return nil }); err != nil {
+			return DesignAsset{}, err
+		}
 		if v.SHA256 != digest || v.Size != size {
 			return DesignAsset{}, designFail(409, "CONFLICT", "Повтор запроса содержит другой файл")
 		}
@@ -139,7 +143,7 @@ func (s *Server) uploadDesign(w http.ResponseWriter, r *http.Request, b *browser
 	if err = s.designActor(r.Context(), b.actor()); err != nil {
 		return DesignAsset{}, err
 	}
-	v, err = d.finish(r.Context(), v)
+	err = s.guarded(r.Context(), true, b.Session.SessionID, func() error { var e error; v, e = d.finish(r.Context(), v); return e })
 	if err != nil {
 		return DesignAsset{}, err
 	}

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ProjectLink as Link } from "@/components/project-link";
 import { Fact, Status } from "@/components/common";
 import { date, label } from "@/lib/format";
 import type { Task } from "@/lib/types";

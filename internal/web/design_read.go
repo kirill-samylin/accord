@@ -51,7 +51,11 @@ func (s *Server) ListDesigns(ctx context.Context, a core.Actor, f DesignFilter) 
 		return DesignPage{}, designFail(400, "VALIDATION", "Неверный размер страницы")
 	}
 	d := s.designs
-	hash := sha256.Sum256([]byte(strings.Join([]string{f.Scope, f.ScopeKey, f.DesignID, strconv.Itoa(f.Limit)}, "\x00")))
+	parts := []string{f.Scope, f.ScopeKey, f.DesignID, strconv.Itoa(f.Limit)}
+	if s.options.ProjectID != "" {
+		parts = append([]string{s.options.ProjectID}, parts...)
+	}
+	hash := sha256.Sum256([]byte(strings.Join(parts, "\x00")))
 	filter := hex.EncodeToString(hash[:])
 	var c designCursor
 	if f.Cursor != "" {
@@ -91,7 +95,9 @@ func (s *Server) ListDesigns(ctx context.Context, a core.Actor, f DesignFilter) 
 			break
 		}
 		last = v.Sequence
-		page.Assets = append(page.Assets, designMetadata(v, false))
+		asset := designMetadata(v, false)
+		asset.DownloadURL = scopedURL(ctx, asset.DownloadURL)
+		page.Assets = append(page.Assets, asset)
 	}
 	return page, rows.Err()
 }
@@ -105,7 +111,9 @@ func (s *Server) GetDesign(ctx context.Context, a core.Actor, id string) (Design
 	if err != nil {
 		return DesignAsset{}, err
 	}
-	return designMetadata(v, false), nil
+	asset := designMetadata(v, false)
+	asset.DownloadURL = scopedURL(ctx, asset.DownloadURL)
+	return asset, nil
 }
 
 func designMetadata(v storedDesign, browser bool) DesignAsset {

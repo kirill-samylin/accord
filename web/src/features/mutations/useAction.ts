@@ -7,6 +7,7 @@ import { snapshotPayload, type Payload, type PendingAction } from "./contracts";
 
 import { applyActionResult, applyRefreshedPage } from "./actionState";
 import { withMutationDeadline } from "./deadline";
+import { useProjectScope } from "../projects/project-context";
 
 type Phase = "idle" | "sending" | "uncertain" | "blocked" | "settled";
 
@@ -16,6 +17,8 @@ export function useAction(
   mode: "action" | "login" = "action",
   onLockChange?: (locked: boolean) => void,
 ) {
+  const scope = useProjectScope();
+  const lockOwner = useRef({});
   const [page, setPage] = useState(initialPage);
   const [phase, setPhase] = useState<Phase>("idle");
   const [message, setMessage] = useState("");
@@ -29,8 +32,9 @@ export function useAction(
     mounted.current = true;
     return () => {
       mounted.current = false;
+      scope.lock(lockOwner.current, false);
     };
-  }, []);
+  }, [scope.lock]);
   useEffect(() => {
     // Background read results may refresh capabilities, never an uncertain body.
     if (!pending.current && !sending.current) {
@@ -43,13 +47,14 @@ export function useAction(
     if (sending.current) return;
     sending.current = true;
     onLockChange?.(true);
+    scope.lock(lockOwner.current, true);
     pending.current = action;
     setPhase("sending");
     setMessage("");
     let result: MutationResult;
     try {
       result = await withMutationDeadline(action.path, (signal) =>
-        submitAction(action.path, action.body, signal),
+        submitAction(action.path, action.body, signal, scope.key),
       );
     } catch {
       sending.current = false;
@@ -67,6 +72,7 @@ export function useAction(
     if (!state.keepPending) {
       pending.current = null;
       onLockChange?.(false);
+      scope.lock(lockOwner.current, false);
     }
     setPage(state.page);
     setPhase(state.phase);
@@ -81,13 +87,19 @@ export function useAction(
 
   function send(path: string, body: Payload) {
     if (
+      page.project?.can_write === false &&
+      !["/web/logout", "/web/session/continue"].includes(path)
+    )
+      return;
+    if (
       pending.current ||
       sending.current ||
       phase === "blocked" ||
-      phase === "settled"
+      phase === "settled" ||
+      scope.locked
     )
       return;
-    return dispatch({ path, body: snapshotPayload(body) });
+    return dispatch({ path: scope.web(path), body: snapshotPayload(body) });
   }
   function retry() {
     if (pending.current) return dispatch(pending.current);
@@ -97,7 +109,7 @@ export function useAction(
     sending.current = true;
     setPhase("sending");
     try {
-      const fresh = await readPage(path);
+      const fresh = await readPage(scope.app(path));
       if (mounted.current) {
         const state = applyRefreshedPage(fresh, mode);
         setPage(state.page);

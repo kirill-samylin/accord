@@ -8,6 +8,7 @@ import (
 // This allowlist is intentionally separate from browserSession and persisted
 // actions: browser hashes, bearer/token IDs, and pending payloads are private.
 type browserPage struct {
+	Project            *core.ProjectView     `json:"project,omitempty"`
 	Name               string                `json:"name"`
 	Title              string                `json:"title"`
 	View               string                `json:"view"`
@@ -63,7 +64,7 @@ func projectBrowserPage(name string, p Page) browserPage {
 		}
 	}
 	return browserPage{
-		Name: name, Title: p.Title, View: p.View, Notice: p.Notice, CSRF: p.CSRF,
+		Project: p.Project, Name: name, Title: p.Title, View: p.View, Notice: p.Notice, CSRF: p.CSRF,
 		ActionID: p.ActionID, Actions: p.Actions, Draft: draft, FieldErrors: p.FieldErrors,
 		Principal: browserPrincipal{Owner: p.Principal.Owner, Machine: p.Principal.Machine},
 		Session:   p.Session, CanContinue: p.CanContinue, CanEdit: p.CanEdit, CanUpdate: p.CanUpdate,

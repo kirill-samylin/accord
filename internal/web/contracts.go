@@ -33,6 +33,11 @@ type Board interface {
 
 type Options struct {
 	Origin, DataDir string
+	ProjectID       string
+	ProjectInfo     func(context.Context) (*core.ProjectView, error)
+	AccessGuard     func(context.Context, bool, string, func() error) error
+	ActionEpoch     func(context.Context) (int64, error)
+	SessionAllowed  func(context.Context, string) error
 	Renderer        Renderer
 	StaticHandler   http.Handler
 	// TrustedProxy permits only a loopback peer's overwritten X-Accord-Client-IP.
@@ -43,6 +48,7 @@ type Renderer interface {
 }
 
 type Page struct {
+	Project                                               *core.ProjectView
 	Overview                                              *core.ControlOverview
 	Agents                                                []core.ControlSession
 	Agent                                                 *core.ControlSession

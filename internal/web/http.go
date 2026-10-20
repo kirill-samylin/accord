@@ -153,6 +153,11 @@ func draft(r *http.Request) map[string]string {
 	return d
 }
 func (s *Server) render(w http.ResponseWriter, status int, name string, p Page) {
+	if s.options.ProjectInfo != nil {
+		if current, err := s.options.ProjectInfo(projectResponseContext(w)); err == nil {
+			p.Project = current
+		}
+	}
 	if renderBrowserJSON(w, status, name, p) {
 		return
 	}

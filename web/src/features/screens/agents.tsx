@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import { ProjectLink as Link } from "@/components/project-link";
 import { Bot, RefreshCw } from "lucide-react";
 import {
   AgentRow,

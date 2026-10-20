@@ -24,7 +24,8 @@ export function EditTaskDialog({
     onOpenChange(false);
   });
   const task = action.page.task;
-  if (!task || !page.can_update) return null;
+  if (!task || !page.can_update || page.project?.can_write === false)
+    return null;
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!task) return;

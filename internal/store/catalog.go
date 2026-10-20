@@ -76,7 +76,7 @@ func (s *Store) Sessions(ctx context.Context, a core.Actor, in core.ListInput) (
 		filter := in
 		filter.Cursor = ""
 		filter.Limit = 0
-		c, limit, err := pageCursor("sessions", filter, in.Cursor, in.Limit, high)
+		c, limit, err := pageCursor(cursorKindForBoard(b, "sessions"), filter, in.Cursor, in.Limit, high)
 		if err != nil {
 			return page, err
 		}
@@ -127,7 +127,7 @@ func (s *Store) ListNotes(ctx context.Context, a core.Actor, in core.NotesInput)
 		filter := in
 		filter.Cursor = ""
 		filter.Limit = 0
-		c, limit, err := pageCursor("notes", filter, in.Cursor, in.Limit, b.NoteSequence)
+		c, limit, err := pageCursor(cursorKindForBoard(b, "notes"), filter, in.Cursor, in.Limit, b.NoteSequence)
 		if err != nil {
 			return page, err
 		}
@@ -158,7 +158,7 @@ func (s *Store) ListNotes(ctx context.Context, a core.Actor, in core.NotesInput)
 // taskListPage shares native filters with whole-project browser search.
 func taskListPage(b *board, in core.ListInput, kind, cursorKind string, filter any, query string) (core.TasksPage, error) {
 	page := core.TasksPage{Tasks: []core.Task{}}
-	c, limit, err := pageCursor(cursorKind, filter, in.Cursor, in.Limit, b.Sequence)
+	c, limit, err := pageCursor(cursorKindForBoard(b, cursorKind), filter, in.Cursor, in.Limit, b.Sequence)
 	if err != nil {
 		return page, err
 	}

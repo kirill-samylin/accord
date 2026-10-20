@@ -1,11 +1,9 @@
 "use client";
-import Link from "next/link";
+import { ProjectLink as Link } from "@/components/project-link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Dialog as Primitive } from "radix-ui";
 import {
-  Check,
-  ChevronDown,
   ChevronRight,
   CircleHelp,
   ExternalLink,
@@ -28,6 +26,9 @@ import { label } from "@/lib/format";
 import { CommandPalette } from "./command-palette";
 import { currentSection, navigation } from "./navigation";
 import { SessionControls } from "./mutations/SessionControls";
+import { ProjectSwitcher } from "./projects/project-switcher";
+import { useProjectScope } from "./projects/project-context";
+import { useAppearance } from "./hooks/use-appearance";
 export function Shell({
   page,
   children,
@@ -43,21 +44,9 @@ export function Shell({
   const [searchOpen, setSearchOpen] = useState(false);
   const menuTrigger = useRef<HTMLButtonElement | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [dark, setDark] = useState(false);
+  const { dark, toggle: toggleTheme } = useAppearance();
+  const scope = useProjectScope();
   const section = currentSection(path);
-  useEffect(() => {
-    let selected: string | null = null;
-    try {
-      selected = localStorage.getItem("accord.appearance.v1");
-    } catch {
-      /* Appearance is optional when browser storage is blocked. */
-    }
-    const value =
-      selected === "dark" ||
-      (!selected && matchMedia("(prefers-color-scheme: dark)").matches);
-    setDark(value);
-    document.documentElement.dataset.theme = value ? "dark" : "light";
-  }, []);
   useEffect(() => {
     function key(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
@@ -71,49 +60,19 @@ export function Shell({
   useEffect(() => {
     setDrawerOpen(false);
   }, [path]);
-  function toggleTheme() {
-    const value = !dark;
-    setDark(value);
-    document.documentElement.dataset.theme = value ? "dark" : "light";
-    try {
-      localStorage.setItem("accord.appearance.v1", value ? "dark" : "light");
-    } catch {
-      /* Optional preference. */
-    }
-  }
   function sidebar() {
     return (
       <aside className="sidebar" aria-label="Основная навигация">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="project-switch" title={page.session.project}>
-              <span className="project-mark">A</span>
-              <strong className="truncate">
-                {page.session.project || "Accord"}
-              </strong>
-              <ChevronDown size={14} />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem asChild>
-              <Link prefetch={false} href="/app/projects">
-                <span className="project-mark">A</span>
-                <span className="truncate">{page.session.project}</span>
-                <Check size={14} />
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link prefetch={false} href="/app/settings">
-                Настройки проекта
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <ProjectSwitcher page={page} />
         <nav className="sidebar-nav">
           <div className="nav-group">
             <button
               className="nav-row"
-              disabled={page.can_continue}
+              disabled={
+                page.can_continue ||
+                page.project?.can_write === false ||
+                scope.locked
+              }
               onClick={() => {
                 setDrawerOpen(false);
                 onCreate();
@@ -217,7 +176,7 @@ export function Shell({
           </button>
           <div className="breadcrumb">
             <Link prefetch={false} href="/app">
-              {page.session.project || "Accord"}
+              {page.project?.name || page.session.project || "Accord"}
             </Link>
             <ChevronRight size={13} />
             <Link prefetch={false} href={section.href}>
@@ -252,11 +211,13 @@ export function Shell({
                   <p className="muted">{label(page.session.role)}</p>
                   <SessionControls page={page} onSuccess={onSuccess} />
                 </div>
-                <DropdownMenuItem asChild>
-                  <a href="/web/">
-                    Базовый интерфейс <ExternalLink size={13} />
-                  </a>
-                </DropdownMenuItem>
+                {!scope.id ? (
+                  <DropdownMenuItem asChild>
+                    <a href={scope.web("/web/")}>
+                      Базовый интерфейс <ExternalLink size={13} />
+                    </a>
+                  </DropdownMenuItem>
+                ) : null}
                 <DropdownMenuItem asChild>
                   <a
                     href="/PAPERCLIP-LICENSE.txt"
@@ -271,11 +232,19 @@ export function Shell({
           </div>
         </header>
         <main id="main-content" className="main-scroll">
+          {scope.locked ? (
+            <div className="page-notice notice" role="status">
+              Сначала проверьте результат отправки. Переходы между проектами
+              пока недоступны.
+            </div>
+          ) : null}
           {children}
           <noscript>
             <p className="notice">
               Для панели нужен JavaScript.{" "}
-              <a href="/web/">Откройте базовый интерфейс</a>.
+              {!scope.id ? (
+                <a href="/web/">Откройте базовый интерфейс</a>
+              ) : null}
             </p>
           </noscript>
         </main>

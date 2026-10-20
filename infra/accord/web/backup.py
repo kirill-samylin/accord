@@ -58,9 +58,10 @@ def db_copy(source, target, version):
     # The sole writer has stopped and closed SQLite. Refuse an uncheckpointed
     # WAL rather than ignoring committed frames. Immutable reads avoid creating
     # root-owned sidecars in the service account's source directory.
-    wal = source.with_name(source.name + "-wal")
-    if wal.exists() and private(wal) != 0:
-        raise RuntimeError("offline source still has uncheckpointed WAL")
+    for suffix in ("-wal", "-journal"):
+        journal = source.with_name(source.name + suffix)
+        if (journal.exists() or journal.is_symlink()) and private(journal) != 0:
+            raise RuntimeError("offline source still has an unresolved transaction journal")
     with closing(sqlite3.connect(source.as_uri() + "?mode=ro&immutable=1", uri=True)) as src, src:
         with closing(sqlite3.connect(target)) as dst, dst:
             src.backup(dst)
@@ -140,6 +141,10 @@ def validate_snapshot(path):
 
 def snapshot(state, backups):
     """Caller holds maintenance lock and has stopped the only writer."""
+    projects = state / "projects-data"
+    if any((projects / name).exists() or (projects / name).is_symlink()
+           for name in ("registry.sqlite", "MULTIPROJECT_REQUIRES_CAPABILITY")):
+        raise RuntimeError("registry requires the all-project snapshot operator")
     private(state, True)
     private(state / "web", True)
     private(backups, True)

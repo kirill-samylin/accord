@@ -18,6 +18,7 @@ import (
 // Options describes a native client; TokenFile's contents are never protocol output.
 type Options struct {
 	Server            string
+	ProjectID         string
 	TokenFile         string
 	HeartbeatInterval time.Duration
 	Stderr            io.Writer
@@ -49,6 +50,9 @@ func Serve(ctx context.Context, options Options, transport mcp.Transport) error 
 	if options.HeartbeatInterval < 0 {
 		return errors.New("heartbeat interval must be positive")
 	}
+	if err := client.Project(options.ProjectID); err != nil {
+		return err
+	}
 	origin, err := client.Origin(options.Server)
 	if err != nil {
 		return err
@@ -63,7 +67,11 @@ func Serve(ctx context.Context, options Options, transport mcp.Transport) error 
 	silent := slog.New(slog.NewTextHandler(io.Discard, nil))
 	upstream := mcp.NewClient(&mcp.Implementation{Name: "accord-bridge", Version: "0.2.0"}, &mcp.ClientOptions{Logger: silent})
 	connecting, cancel := context.WithTimeout(ctx, 10*time.Second)
-	remote, err := upstream.Connect(connecting, &mcp.StreamableClientTransport{Endpoint: origin.String() + "/mcp", HTTPClient: client.HTTP(origin, token, 30*time.Second), MaxRetries: -1, DisableStandaloneSSE: true, MaxEventSize: 1 << 20}, nil)
+	endpoint := origin.String() + "/mcp"
+	if options.ProjectID != "" {
+		endpoint += "/p/" + options.ProjectID
+	}
+	remote, err := upstream.Connect(connecting, &mcp.StreamableClientTransport{Endpoint: endpoint, HTTPClient: client.HTTP(origin, token, 30*time.Second), MaxRetries: -1, DisableStandaloneSSE: true, MaxEventSize: 1 << 20}, nil)
 	cancel()
 	if err != nil {
 		return errors.New("cannot connect to Accord; check HTTPS origin and private token")

@@ -32,12 +32,14 @@ export function QuestionActions({
   );
   const expired = now > 0 && Number.isFinite(deadline) && deadline <= now;
   const canEdit =
+    action.page.project?.can_write !== false &&
     action.phase !== "blocked" &&
     action.page.can_edit &&
     !action.page.can_continue &&
     lease?.session_id === action.page.session.session_id &&
     !expired;
   const canClaim =
+    action.page.project?.can_write !== false &&
     task.state === "ready" &&
     !task.blocked &&
     !action.page.can_continue &&

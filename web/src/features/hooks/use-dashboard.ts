@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { PageData } from "@/lib/types";
+import { useProjectScope } from "../projects/project-context";
 import {
   DashboardReadError,
   POLL_BASE_MS,
@@ -9,6 +10,7 @@ import {
   retryDelay,
 } from "@/lib/dashboard-polling";
 export function useDashboard(page: PageData, onSessionExpired: () => void) {
+  const scope = useProjectScope();
   const client = useQueryClient();
   const failures = useRef(0);
   const delay = useRef(POLL_BASE_MS);
@@ -16,10 +18,10 @@ export function useDashboard(page: PageData, onSessionExpired: () => void) {
   const eligible = useRef(false);
   const [enabled, setEnabled] = useState(false);
   const live = useQuery({
-    queryKey: ["dashboard"],
+    queryKey: ["dashboard", scope.key],
     queryFn: async ({ signal }) => {
       try {
-        const data = await readDashboard(signal);
+        const data = await readDashboard(signal, scope.id);
         failures.current = 0;
         delay.current = POLL_BASE_MS;
         return data;
@@ -27,12 +29,14 @@ export function useDashboard(page: PageData, onSessionExpired: () => void) {
         if (signal.aborted || !eligible.current) throw error;
         if (
           error instanceof DashboardReadError &&
-          [401, 409].includes(error.status)
+          [401, 403, 404, 409].includes(error.status)
         ) {
           stopped.current = true;
-          if (error.status === 401)
-            window.dispatchEvent(new Event("accord:unauthorized"));
-          else onSessionExpired();
+          if (error.status === 401) {
+            const event = new Event("accord:unauthorized");
+            Object.assign(event, { projectScope: scope.key });
+            window.dispatchEvent(event);
+          } else onSessionExpired();
         } else {
           failures.current++;
           delay.current = retryDelay(
@@ -74,7 +78,10 @@ export function useDashboard(page: PageData, onSessionExpired: () => void) {
         navigator.onLine &&
         !stopped.current;
       if (!eligible.current)
-        void client.cancelQueries({ queryKey: ["dashboard"], exact: true });
+        void client.cancelQueries({
+          queryKey: ["dashboard", scope.key],
+          exact: true,
+        });
       setEnabled(eligible.current);
     };
     const hide = () => {
@@ -93,14 +100,17 @@ export function useDashboard(page: PageData, onSessionExpired: () => void) {
     update();
     return () => {
       eligible.current = false;
-      void client.cancelQueries({ queryKey: ["dashboard"], exact: true });
+      void client.cancelQueries({
+        queryKey: ["dashboard", scope.key],
+        exact: true,
+      });
       document.removeEventListener("visibilitychange", update);
       window.removeEventListener("offline", update);
       window.removeEventListener("online", update);
       window.removeEventListener("pagehide", hide);
       window.removeEventListener("pageshow", show);
     };
-  }, [client]);
+  }, [client, scope.key]);
   return {
     ...live,
     refetch: () => {

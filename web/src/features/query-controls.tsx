@@ -8,11 +8,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { label } from "@/lib/format";
+import { useProjectScope } from "./projects/project-context";
 export function useFilters() {
+  const scope = useProjectScope();
   const params = useSearchParams();
   const path = usePathname();
   const router = useRouter();
   function set(values: Record<string, string | undefined>, reset = true) {
+    if (scope.locked) return;
     const next = new URLSearchParams(params.toString());
     if (reset) {
       next.delete("cursor");
@@ -24,7 +27,14 @@ export function useFilters() {
     }
     router.push(`${path}${next.size ? `?${next}` : ""}`);
   }
-  return { params, path, set, reset: () => router.push(path) };
+  return {
+    params,
+    path,
+    set,
+    reset: () => {
+      if (!scope.locked) router.push(path);
+    },
+  };
 }
 export function SearchField({
   value = "",

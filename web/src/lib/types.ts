@@ -1,3 +1,4 @@
+import type { CatalogPage, Project } from "./projects.ts";
 export interface Lease {
   session_id: string;
   generation: number;
@@ -189,6 +190,7 @@ export interface DesignAsset {
   preview_url?: string;
 }
 export interface PageData {
+  project?: Project;
   name: string;
   view: string;
   title: string;
@@ -244,6 +246,11 @@ export interface MutationResult {
   retry_same_action?: boolean;
   session?: SessionView;
   next_action_id?: string;
+  project?: Project;
+  target?: string;
+}
+export interface CatalogMutationResult extends Omit<MutationResult, "page"> {
+  page?: CatalogPage;
 }
 export interface DashboardData {
   overview: Overview;

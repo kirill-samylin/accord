@@ -7,7 +7,7 @@ export async function withMutationDeadline<T>(
   const controller = new AbortController();
   const timeout = setTimeout(
     () => controller.abort(),
-    path === "/web/designs" ? 130_000 : 15_000,
+    /^\/web\/(?:p\/p_[a-f0-9]{32}\/)?designs$/.test(path) ? 130_000 : 15_000,
   );
   try {
     return await operation(controller.signal);

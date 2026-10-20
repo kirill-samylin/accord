@@ -20,11 +20,29 @@ func (s *Server) issueAction(ctx context.Context, b *browserSession, operation s
 		return "", err
 	}
 	// Bound unused form capabilities while retaining all bound native replay IDs.
-	_, err = s.db.ExecContext(ctx, `DELETE FROM web_actions WHERE id IN (SELECT id FROM web_actions WHERE session_hash=? AND payload='' ORDER BY created DESC LIMIT -1 OFFSET 2048)`, b.Hash)
+	_, err = s.db.ExecContext(ctx, `DELETE FROM web_actions WHERE id IN (SELECT id FROM web_actions WHERE session_hash=? AND payload='' ORDER BY created DESC LIMIT -1 OFFSET 2047)`, b.Hash)
 	if err != nil {
 		return "", err
 	}
-	_, err = s.db.ExecContext(ctx, `INSERT INTO web_actions(id,session_hash,operation,created) VALUES(?,?,?,?)`, id, b.Hash, operation, time.Now().UnixNano())
+	epoch := int64(0)
+	if s.options.ActionEpoch != nil {
+		epoch, err = s.options.ActionEpoch(ctx)
+		if err != nil {
+			return "", err
+		}
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", err
+	}
+	defer tx.Rollback()
+	_, err = tx.ExecContext(ctx, `INSERT INTO web_actions(id,session_hash,operation,created) VALUES(?,?,?,?)`, id, b.Hash, operation, time.Now().UnixNano())
+	if err == nil {
+		_, err = tx.ExecContext(ctx, `INSERT INTO web_action_epochs VALUES(?,?)`, id, epoch)
+	}
+	if err == nil {
+		err = tx.Commit()
+	}
 	return id, err
 }
 func (s *Server) checkAction(ctx context.Context, b *browserSession, id, operation string) error {
@@ -41,6 +59,29 @@ func (s *Server) checkAction(ctx context.Context, b *browserSession, id, operati
 	}
 	if owner != b.Hash || op != operation {
 		return core.Fail("idempotency_conflict", "Действие принадлежит другой форме")
+	}
+	if s.options.ActionEpoch != nil {
+		current, e := s.options.ActionEpoch(ctx)
+		if e != nil {
+			return e
+		}
+		var issued int64
+		e = s.db.QueryRowContext(ctx, `SELECT epoch FROM web_action_epochs WHERE id=?`, id).Scan(&issued)
+		if e != nil && !(errors.Is(e, sql.ErrNoRows) && current == 0) {
+			return core.Fail("unauthorized", "reopen project")
+		}
+		if issued != current {
+			return core.Fail("unauthorized", "reopen project")
+		}
+		var original string
+		if e = s.db.QueryRowContext(ctx, `SELECT session_id FROM web_actions WHERE id=?`, id).Scan(&original); e != nil {
+			return e
+		}
+		if original != "" && s.options.SessionAllowed != nil {
+			if e = s.options.SessionAllowed(ctx, original); e != nil {
+				return e
+			}
+		}
 	}
 	return nil
 }
@@ -79,6 +120,13 @@ type actionResult struct {
 
 func (s *Server) runAction(ctx context.Context, b *browserSession, a *webAction) (actionResult, error) {
 	var out actionResult
+	if err := s.checkAction(ctx, b, a.ID, a.Operation); err != nil {
+		return out, err
+	}
+	// Cached results require the same current write permission as a new action.
+	if err := s.guarded(ctx, true, a.SessionID, func() error { return nil }); err != nil {
+		return out, err
+	}
 	if a.Result != "" {
 		err := json.Unmarshal([]byte(a.Result), &out)
 		if err != nil {

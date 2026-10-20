@@ -49,7 +49,13 @@ export function DesignUpload({
         </h2>
       </div>
       <form ref={form} className="mutation-form" onSubmit={submit}>
-        <fieldset disabled={action.locked || action.page.can_continue}>
+        <fieldset
+          disabled={
+            action.locked ||
+            action.page.can_continue ||
+            action.page.project?.can_write === false
+          }
+        >
           <label className="form-field">
             Название
             <input

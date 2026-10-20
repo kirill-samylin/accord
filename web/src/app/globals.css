@@ -11,6 +11,7 @@
 @import "./styles/reports.css";
 @import "./styles/assets.css";
 @import "./styles/responsive.css";
+@import "./styles/projects.css";
 @font-face {
   font-family: Inter;
   src: url("/fonts/InterVariable.woff2") format("woff2");

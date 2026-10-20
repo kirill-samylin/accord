@@ -65,3 +65,10 @@ func finishPage(c listCursor, last int64, more bool) core.PageInfo {
 	}
 	return p
 }
+
+func cursorKindForBoard(b *board, kind string) string {
+	if b.Config.CursorNamespace != "" {
+		return b.Config.CursorNamespace + "\x00" + kind
+	}
+	return kind
+}
