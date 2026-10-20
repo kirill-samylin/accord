@@ -48,7 +48,9 @@ def require_capable(binary, root):
             type(capabilities['registry_schema'][0]) is not int or
             type(capabilities.get('agent_profiles')) is not int or
             capabilities['agent_profiles'] != 1 or
-            capabilities.get('board_schema') != [3] or
+            type(capabilities.get('coordination')) is not int or
+            capabilities['coordination'] != 1 or
+            capabilities.get('board_schema') != [4] or
             type(capabilities['board_schema'][0]) is not int):
         raise RuntimeError('selected executable cannot enforce project isolation')
     return capabilities

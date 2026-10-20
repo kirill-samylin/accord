@@ -141,6 +141,8 @@ func (s *Server) runAction(ctx context.Context, b *browserSession, a *webAction)
 	actor := core.Actor{Principal: b.Principal, SessionID: a.SessionID}
 	var err error
 	switch a.Operation {
+	case "coord:assign", "coord:link", "coord:transition", "coord:checks":
+		out.Redirect, err = s.runCoordinationAction(ctx, actor, a)
 	case "profile:create", "profile:update", "profile:archive":
 		out.Redirect, err = s.runProfileAction(ctx, actor, a)
 	case "update":
@@ -251,7 +253,7 @@ func (s *Server) runAction(ctx context.Context, b *browserSession, a *webAction)
 // Resolve uncertain native calls before opening another native session. Stored
 // payload and the original session are replayed even after that session expires.
 func (s *Server) recoverActions(ctx context.Context, b *browserSession) error {
-	rows, err := s.db.QueryContext(ctx, `SELECT id,operation,payload,session_id,result FROM web_actions WHERE session_hash=? AND payload<>'' AND result='' AND operation IN ('create','claim','answer','release','heartbeat','update','profile:create','profile:update','profile:archive') ORDER BY created`, b.Hash)
+	rows, err := s.db.QueryContext(ctx, `SELECT id,operation,payload,session_id,result FROM web_actions WHERE session_hash=? AND payload<>'' AND result='' AND operation IN ('create','claim','answer','release','heartbeat','update','profile:create','profile:update','profile:archive','coord:assign','coord:link','coord:transition','coord:checks') ORDER BY created`, b.Hash)
 	if err != nil {
 		return err
 	}

@@ -132,7 +132,31 @@ func queueSummary(b *board, role string) core.QueueSummary {
 			q.Waiting++
 		case "ready":
 			epic := b.Tasks[t.EpicKey]
-			if blocked(b, t) || epic == nil || epic.State != "open" {
+			if blocked(b, t) || epic == nil || epic.State != "open" || !assignmentAvailable(b, t) {
+				q.Waiting++
+			} else {
+				q.Ready++
+			}
+		}
+	}
+	return q
+}
+
+// Session queue counts only tasks routable to the caller's pinned snapshot.
+func sessionQueueSummary(b *board, sess *core.Session) core.QueueSummary {
+	var q core.QueueSummary
+	for _, t := range b.Tasks {
+		if t.Type != "task" || t.Role != sess.Role {
+			continue
+		}
+		switch t.State {
+		case "in_progress":
+			q.InProgress++
+		case "created":
+			q.Waiting++
+		case "ready":
+			epic := b.Tasks[t.EpicKey]
+			if blocked(b, t) || epic == nil || epic.State != "open" || !assignmentMatches(b, t, sess) {
 				q.Waiting++
 			} else {
 				q.Ready++

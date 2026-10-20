@@ -143,7 +143,7 @@ def board_copy(board, web, destination):
             raise RuntimeError('unaccounted web storage entry requires recovery')
     destination.mkdir(mode=0o700)
     (destination / 'web').mkdir(mode=0o700)
-    board_version = copy_database(board, destination / 'board.db', (2, 3))
+    board_version = copy_database(board, destination / 'board.db', (2, 3, 4))
     copy_migrations(board.with_name(board.name + '.migrations'),
                     destination / 'board.db.migrations', LEGACY, copy_file)
     web_version = copy_database(web / 'web.db', destination / 'web/web.db', (1, 2))

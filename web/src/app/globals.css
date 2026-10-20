@@ -13,6 +13,7 @@
 @import "./styles/responsive.css";
 @import "./styles/projects.css";
 @import "./styles/profiles.css";
+@import "./styles/coordination.css";
 @font-face {
   font-family: Inter;
   src: url("/fonts/InterVariable.woff2") format("woff2");

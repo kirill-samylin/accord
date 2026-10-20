@@ -26,6 +26,8 @@ export const eventLabels: Record<string, string> = {
   session_opened: "Сессия открыта",
   task_created: "Задача создана",
   task_updated: "Задача обновлена",
+  task_assigned: "Назначение задачи изменено",
+  check_created: "Проверка назначена",
   claimed: "Задача взята",
   released: "Задача возвращена",
   commented: "Комментарий добавлен",
@@ -48,9 +50,21 @@ export const eventLabels: Record<string, string> = {
   note_deleted: "Заметка удалена",
   blocked_changed: "Блокировка изменена",
 };
+export const outcomeLabels: Record<string, string> = {
+  approve: "Одобрено",
+  changes_requested: "Нужны исправления",
+  passed: "Пройдено",
+  failed: "Не пройдено",
+  not_run: "Не запускалось",
+  not_applicable: "Не применимо",
+};
 export function label(value?: string) {
   return value
-    ? (stateLabels[value] ?? roleLabels[value] ?? eventLabels[value] ?? value)
+    ? (stateLabels[value] ??
+        roleLabels[value] ??
+        eventLabels[value] ??
+        outcomeLabels[value] ??
+        value)
     : "—";
 }
 export function date(value?: string, time = true): string {

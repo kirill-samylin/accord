@@ -48,7 +48,7 @@ def migrate_storage(binary, snapshot, manifest):
     for path, web in paths:
         with closing(readonly(web / 'web.db')) as db:
             version = db.execute('PRAGMA user_version').fetchone()[0]
-        board(path.parent, {'board_schema': 3, 'web_schema': version}, live=True)
+        board(path.parent, {'board_schema': 4, 'web_schema': version}, live=True)
     for before, after in sets(snapshot, manifest):
         old, current = facts(before), facts(after)
         if any(current.get(table) != digest for table, digest in old.items()):
@@ -66,4 +66,4 @@ def migrate_storage(binary, snapshot, manifest):
         if host.sha(target) != digest:
             raise RuntimeError('historical private content changed during migration')
     return {'databases_preserved': sum(1 for _ in sets(snapshot, manifest)),
-            'published_boards_schema': 3, 'logical_rows_preserved': True}
+            'published_boards_schema': 4, 'logical_rows_preserved': True}

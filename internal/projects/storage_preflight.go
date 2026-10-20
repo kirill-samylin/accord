@@ -174,15 +174,25 @@ func validateBoardStorage(path string) error {
 	}
 	defer db.Close()
 	var version int
-	if err = db.QueryRow(`PRAGMA user_version`).Scan(&version); err != nil || version != 2 && version != 3 {
+	if err = db.QueryRow(`PRAGMA user_version`).Scan(&version); err != nil || version != 2 && version != 3 && version != 4 {
 		return errors.New("published board schema unsupported")
 	}
 	if err = requireColumns(db, []string{`SELECT id,sequence FROM metadata LIMIT 0`, `SELECT key,data FROM tasks LIMIT 0`, `SELECT key,data FROM sessions LIMIT 0`, `SELECT role,generation FROM role_generations LIMIT 0`, `SELECT cursor,data FROM events LIMIT 0`, `SELECT key,hash,response FROM idempotency LIMIT 0`, `SELECT id,hash,owner,machine,expires,revoked FROM tokens LIMIT 0`, `SELECT key,data FROM notes LIMIT 0`, `SELECT id,sequence FROM note_metadata LIMIT 0`}); err != nil {
 		return err
 	}
-	if version == 3 {
+	if version >= 3 {
 		if err = requireColumns(db, []string{`SELECT key,data FROM agent_profiles LIMIT 0`, `SELECT profile_id,version,data FROM agent_profile_revisions LIMIT 0`}); err != nil {
 			return err
+		}
+	}
+	if version >= 4 {
+		var count int
+		if err = db.QueryRow(`SELECT count(*) FROM coordination_metadata`).Scan(&count); err != nil || count != 1 {
+			return errors.New("published coordination metadata incomplete")
+		}
+		var v int
+		if err = db.QueryRow(`SELECT version FROM coordination_metadata WHERE id=1`).Scan(&v); err != nil || v != 1 {
+			return errors.New("published coordination metadata incomplete")
 		}
 	}
 	var sequence int64

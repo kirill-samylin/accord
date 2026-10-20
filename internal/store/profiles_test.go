@@ -139,11 +139,12 @@ func TestProfileDescribeStrictPairRoleAndNoIdentityAuthority(t *testing.T) {
 		t.Fatal("credential ID exposed")
 	}
 }
-func TestProfileMigrationSchema2PreservesRowsAndRejectsDamaged3(t *testing.T) {
+func TestProfileMigrationSchema2PreservesRowsAndRejectsDamagedCurrent(t *testing.T) {
 	f := newFixture(t)
 	task := f.task(t, "developer")
 	var before string
 	f.s.db.QueryRow(`SELECT data FROM tasks WHERE key=?`, task.Key).Scan(&before)
+	f.s.db.Exec(`DROP TABLE coordination_metadata`)
 	f.s.db.Exec(`DROP TABLE agent_profiles`)
 	f.s.db.Exec(`DROP TABLE agent_profile_revisions`)
 	f.s.db.Exec(`PRAGMA user_version=2`)
@@ -169,7 +170,7 @@ func TestProfileMigrationSchema2PreservesRowsAndRejectsDamaged3(t *testing.T) {
 	f.s.Close()
 	if s, e := Open(f.path, core.Config{}, nil); e == nil {
 		s.Close()
-		t.Fatal("damaged schema3 repaired")
+		t.Fatal("damaged current schema repaired")
 	}
 	db, err := sql.Open("sqlite", f.path)
 	if err != nil {

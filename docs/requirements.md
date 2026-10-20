@@ -1,5 +1,9 @@
 # agent-board — требования 1.1
 
+> TASK011: назначения задач pinned профилям, объяснимые gates и ручной цикл
+> review → QA описаны в [coordination.md](coordination.md). Schema4/coordination1
+> floor защищает новые task semantics; фактическая готовность — TASK011.
+
 > Дополнение20.10.2026 TASK010: постоянные профили — отдельные project-local
 > сущности с versioned инструкциями/предпочтениями и явной привязкой новой
 > сессии к snapshot. Права/identity/leases не выводятся из профиля; provider

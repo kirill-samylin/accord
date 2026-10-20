@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { currentProfileChoice, profilePair } from "@/lib/coordination";
+import { ProfileChoice } from "../coordination/profile-choice";
 import { actionBody, actionID, type MutationProps } from "./contracts";
 import { createDraft } from "./createDraft";
 import { useAction } from "./useAction";
@@ -44,7 +46,13 @@ export function CreateTaskDialog({
   const [draft, setDraft] = useState<Record<string, string>>(() =>
     createDraft(page.draft, page.roles),
   );
+  const [profile, setProfile] = useState(() =>
+    page.draft.profile_id && page.draft.profile_version
+      ? `${page.draft.profile_id}@${page.draft.profile_version}`
+      : "",
+  );
   const action = useAction(page, (result) => {
+    setProfile("");
     setDraft(createDraft({}, page.roles));
     onSuccess(result);
     onOpenChange(false);
@@ -52,11 +60,24 @@ export function CreateTaskDialog({
   const isTask = draft.type !== "epic";
   const isReview = isTask && ["reviewer", "tester"].includes(draft.role);
   function change(name: string, value: string) {
+    if (name === "role") setProfile("");
     setDraft((previous) => ({ ...previous, [name]: value }));
   }
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const fields: Record<string, string> = {};
+    const useProfile = isTask && draft.role !== "human";
+    if (
+      useProfile &&
+      !currentProfileChoice(
+        profile,
+        draft.role,
+        action.page.assignment_profiles,
+      )
+    )
+      return;
+    const fields: Record<string, string> = useProfile
+      ? profilePair(profile)
+      : {};
     for (const name of [
       "type",
       "title",
@@ -213,8 +234,17 @@ export function CreateTaskDialog({
                 </label>
               </div>
             ) : null}
+            {isTask && draft.role !== "human" ? (
+              <ProfileChoice
+                value={profile}
+                role={draft.role}
+                profiles={action.page.assignment_profiles}
+                onChange={setProfile}
+                id="create-profile"
+              />
+            ) : null}
             <div className="form-grid">
-              {field("owner", "Ответственный")}
+              {!isTask ? field("owner", "Ответственный") : null}
               {field("areas", "Области работы", {
                 placeholder: "Через запятую",
               })}
@@ -234,7 +264,16 @@ export function CreateTaskDialog({
               <button
                 className="button"
                 type="submit"
-                disabled={!actionID(action.page, "create")}
+                disabled={
+                  !actionID(action.page, "create") ||
+                  (isTask &&
+                    draft.role !== "human" &&
+                    !currentProfileChoice(
+                      profile,
+                      draft.role,
+                      action.page.assignment_profiles,
+                    ))
+                }
               >
                 {action.busy ? "Создаём…" : "Создать"}
               </button>

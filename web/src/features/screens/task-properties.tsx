@@ -10,7 +10,27 @@ export function TaskProperties({ task }: { task: Task }) {
         value={<Status value={task.state} blocked={task.blocked} />}
       />
       <Fact name="Роль" value={label(task.role)} />
-      <Fact name="Исполнитель" value={task.owner || "Не назначен"} />
+      <Fact
+        name="Назначение"
+        value={
+          task.assignment ? (
+            <Link
+              prefetch={false}
+              className="inline-link"
+              href={`/app/profiles/${task.assignment.profile_id}?version=${task.assignment.profile_version}`}
+            >
+              {task.assignment.profile_name} · версия{" "}
+              {task.assignment.profile_version}
+            </Link>
+          ) : task.type === "epic" ? (
+            task.owner || "Без ответственного"
+          ) : task.role === "human" ? (
+            "Человек"
+          ) : (
+            "Общая очередь роли"
+          )
+        }
+      />
       <Fact name="Приоритет" value={`P${task.priority}`} />
       <Fact name="Тип" value={task.type === "epic" ? "Эпик" : "Задача"} />
       <Fact

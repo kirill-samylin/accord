@@ -15,6 +15,7 @@ import { date, label } from "@/lib/format";
 import { QuestionActions } from "../mutations/QuestionActions";
 import { TaskProperties } from "./task-properties";
 import { EditTaskDialog } from "../mutations/EditTaskDialog";
+import { CoordinationPanel } from "../coordination/coordination-panel";
 export function TaskDetail({
   page,
   onSuccess,
@@ -60,6 +61,7 @@ export function TaskDetail({
           <Tabs defaultValue="description">
             <TabsList>
               <TabsTrigger value="description">Описание</TabsTrigger>
+              <TabsTrigger value="coordination">Координация</TabsTrigger>
               <TabsTrigger value="activity">Активность</TabsTrigger>
               <TabsTrigger value="attempts">
                 Попытки
@@ -130,6 +132,13 @@ export function TaskDetail({
                   </section>
                 ) : null}
               </div>
+            </TabsContent>
+            <TabsContent value="coordination">
+              <CoordinationPanel
+                page={page}
+                onSuccess={onSuccess}
+                readOnly={compact}
+              />
             </TabsContent>
             <TabsContent value="activity">
               <EventRows events={page.activity ?? []} />

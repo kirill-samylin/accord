@@ -1,0 +1,80 @@
+.coordination-section {
+  display: grid;
+  gap: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  min-width: 0;
+}
+.coordination-section > dl {
+  margin: 0;
+}
+.coordination-section > .section-heading {
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.coordination-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+.coordination-list > li {
+  display: grid;
+  gap: 6px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  min-width: 0;
+}
+.coordination-list > li:first-child {
+  border-top: 0;
+}
+.coordination-line,
+.coordination-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.coordination-reasons {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+.coordination-positive {
+  color: var(--green);
+}
+.coordination-dialog {
+  max-width: 560px;
+}
+.coord-target {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+.coord-target dt {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.coord-target dd {
+  margin: 0;
+}
+.task-assignment {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.task-owner .task-assignment {
+  width: 100%;
+}
+@media (max-width: 640px) {
+  .coordination-section {
+    padding: 14px;
+  }
+  .coordination-section > .section-heading {
+    align-items: flex-start;
+  }
+}

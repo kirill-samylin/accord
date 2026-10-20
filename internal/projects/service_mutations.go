@@ -32,3 +32,13 @@ func (s *service) Heartbeat(ctx context.Context, a core.Actor, in core.Heartbeat
 func (s *service) Note(ctx context.Context, a core.Actor, in core.NoteInput) (core.Note, error) {
 	return actorCall(s, ctx, a, in, true, s.board.Note)
 }
+
+func (s *service) Assign(ctx context.Context, a core.Actor, in core.AssignInput) (core.Task, error) {
+	return actorCall(s, ctx, a, in, true, s.board.Assign)
+}
+func (s *service) CheckCreate(ctx context.Context, a core.Actor, in core.CheckCreateInput) (core.Task, error) {
+	return actorCall(s, ctx, a, in, true, s.board.CheckCreate)
+}
+func (s *service) Coordination(ctx context.Context, a core.Actor, in core.CoordinationInput) (core.TaskCoordination, error) {
+	return actorCall(s, ctx, a, in, false, s.board.Coordination)
+}

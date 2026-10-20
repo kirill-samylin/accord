@@ -14,6 +14,7 @@ import {
   useFilters,
 } from "../query-controls";
 import { TaskPeek } from "./task-peek";
+import { AssignmentLabel } from "../coordination/assignment-label";
 import { groupTasks } from "@/lib/task-groups";
 export function TasksScreen({
   page,
@@ -278,7 +279,7 @@ export function TasksScreen({
                             <div className="kanban-card-meta">
                               <span>{label(task.role)}</span>
                               <span className="truncate">
-                                {task.owner || "Не назначена"}
+                                <AssignmentLabel task={task} />
                               </span>
                             </div>
                             {task.blocked ? <Status value="blocked" /> : null}

@@ -121,6 +121,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == "POST" {
+		if key, op, ok := coordinationRoute(r.URL.Path); ok {
+			s.handleCoordination(w, r, b, key, op)
+			return
+		}
 		s.mutate(w, r, b)
 		return
 	}

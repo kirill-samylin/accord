@@ -14,6 +14,7 @@ import {
 import type { ReactNode } from "react";
 import type { Agent, BoardEvent, Task } from "@/lib/types";
 import { date, initial, label } from "@/lib/format";
+import { AssignmentLabel } from "@/features/coordination/assignment-label";
 import { cn } from "@/lib/utils";
 export function Status({
   value,
@@ -154,13 +155,9 @@ export function TaskRow({
         {task.title}
       </Link>
       <span className="task-role muted truncate">{label(task.role)}</span>
-      {task.owner ? (
-        <span className="task-owner truncate muted" title={task.owner}>
-          {task.owner}
-        </span>
-      ) : (
-        <span className="task-owner muted">Не назначена</span>
-      )}
+      <span className="task-owner muted">
+        <AssignmentLabel task={task} />
+      </span>
       {onPeek ? (
         <button
           className="peek-button icon-button"

@@ -41,7 +41,7 @@ func (s *Store) Describe(ctx context.Context, p core.Principal, in core.OpenSess
 		v.Notes = scopeNotes(b, "role", in.Role)
 		v.Rules = map[string]string{"independent_review": "block", "one_task_per_agent": "block", "cycle_check": "block", "singleton_role": "block"}
 		v.MyTasks = []core.Task{}
-		v.Queue = queueSummary(b, in.Role)
+		v.Queue = sessionQueueSummary(b, sess)
 		return v, nil
 	})
 }
@@ -68,7 +68,9 @@ func (s *Store) Heartbeat(ctx context.Context, a core.Actor, in core.HeartbeatIn
 		}
 		sess.ExpiresAt = now.Add(s.cfg.SessionTTL)
 		s.sessionTiming(&sess.SessionView)
-		return sess.SessionView, nil
+		view := sess.SessionView
+		view.Queue = sessionQueueSummary(b, sess)
+		return view, nil
 	})
 }
 

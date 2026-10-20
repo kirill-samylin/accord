@@ -114,7 +114,16 @@ func (s *Server) mutate(w http.ResponseWriter, r *http.Request, b *browserSessio
 				areas = append(areas, v)
 			}
 		}
-		input = core.CreateInput{RequestID: id, Type: r.PostForm.Get("type"), EpicKey: r.PostForm.Get("epic_key"), Role: r.PostForm.Get("role"), Title: r.PostForm.Get("title"), Description: r.PostForm.Get("description"), Priority: priority, Owner: r.PostForm.Get("owner"), Areas: areas, TargetKey: r.PostForm.Get("target_key"), TargetCommit: r.PostForm.Get("target_commit"), Category: r.PostForm.Get("category"), Complexity: r.PostForm.Get("complexity"), ExternalID: r.PostForm.Get("external_id")}
+		profileVersion := int64(0)
+		if raw := r.PostForm.Get("profile_version"); raw != "" {
+			var e error
+			profileVersion, e = strconv.ParseInt(raw, 10, 64)
+			if e != nil || profileVersion < 1 {
+				s.mutationError(w, r, b, core.Fail("validation", "Неверная версия профиля"))
+				return
+			}
+		}
+		input = core.CreateInput{ProfileID: r.PostForm.Get("profile_id"), ProfileVersion: profileVersion, RequestID: id, Type: r.PostForm.Get("type"), EpicKey: r.PostForm.Get("epic_key"), Role: r.PostForm.Get("role"), Title: r.PostForm.Get("title"), Description: r.PostForm.Get("description"), Priority: priority, Owner: r.PostForm.Get("owner"), Areas: areas, TargetKey: r.PostForm.Get("target_key"), TargetCommit: r.PostForm.Get("target_commit"), Category: r.PostForm.Get("category"), Complexity: r.PostForm.Get("complexity"), ExternalID: r.PostForm.Get("external_id")}
 	case "claim":
 		input = core.NextInput{RequestID: id, TaskKey: key}
 	case "answer", "release", "heartbeat":

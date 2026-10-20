@@ -48,6 +48,8 @@ func enrichEvents(b *board, before map[string]taskFact, now time.Time) {
 			}
 		}
 		if previous := e.Data; previous != nil {
+			d.AssignmentChange = previous.AssignmentChange
+			d.CheckCreated = previous.CheckCreated
 			d.NoteKey = previous.NoteKey
 			d.ScopeType = previous.ScopeType
 			d.ScopeID = previous.ScopeID

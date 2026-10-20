@@ -46,11 +46,11 @@ func (s *Store) Link(ctx context.Context, a core.Actor, in core.LinkInput) (core
 			if _, err = owned(b, a, target.Key, in.Generation); err != nil {
 				return core.Task{}, err
 			}
-		} else if sess.Role != "coordinator" && target.Requester != a.Principal.ID {
+		} else if !administrative(sess, target, a) {
 			return core.Task{}, core.Fail("forbidden", "only coordinator or requester may link ready work")
 		}
 		if in.Unlink {
-			if sess.Role != "coordinator" && target.Requester != a.Principal.ID && (target.Lease == nil || target.Lease.SessionID != a.SessionID) {
+			if !administrative(sess, target, a) && (target.Lease == nil || target.Lease.SessionID != a.SessionID) {
 				return core.Task{}, core.Fail("forbidden", "only coordinator, consumer requester or holder may unlink")
 			}
 			for i, l := range target.Links {

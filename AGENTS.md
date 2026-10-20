@@ -21,7 +21,10 @@
 Актуальный checkpoint постоянных профилей — `docs/TASK-010-agent-profiles.md`, контракт —
 `docs/agent-profiles.md`. Профиль не identity/session/присутствие/worker; schema3,
 immutable revisions/snapshots и ACL сохраняются. Следующие capable поставки —
-`infra/accord/projects/upgrade.py`, с отдельным review/QA до production.
+`infra/accord/projects/upgrade.py`, с отдельным review/QA до production. Текущий этап координации —
+`docs/TASK-011-coordination.md`, контракт `docs/coordination.md`; pinned assignment
+не lease/identity, schema4/coordination floor обязательны. Управляемый запуск
+остаётся следующим отдельным чатом после реального closure TASK011.
 
 ## Работа
 

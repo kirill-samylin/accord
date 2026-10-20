@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-const SchemaVersion = 3
+const SchemaVersion = 4
 
 // migrate is the sole DDL owner. A schema1 snapshot is published before any
 // schema2 transaction; unsupported future versions are rejected before DDL.
@@ -23,7 +23,7 @@ func migrate(ctx context.Context, db *sql.DB, path string) error {
 	if version == SchemaVersion {
 		return validateSchema(ctx, db, version)
 	}
-	if version == 1 || version == 2 {
+	if version >= 1 && version <= 3 {
 		if err := validateSchema(ctx, db, version); err != nil {
 			return err
 		}
@@ -70,7 +70,7 @@ func migrate(ctx context.Context, db *sql.DB, path string) error {
 	if version == SchemaVersion {
 		return nil
 	}
-	if version != 0 && version != 1 && version != 2 {
+	if version < 0 || version > 3 {
 		return fmt.Errorf("unsupported migration source")
 	}
 	queries := []string{
@@ -88,10 +88,13 @@ func migrate(ctx context.Context, db *sql.DB, path string) error {
 			`INSERT INTO note_metadata VALUES(1,0)`,
 		)
 	}
-	queries = append(queries,
-		`CREATE TABLE agent_profiles (key TEXT PRIMARY KEY,data TEXT NOT NULL)`,
-		`CREATE TABLE agent_profile_revisions (profile_id TEXT NOT NULL,version INTEGER NOT NULL,data TEXT NOT NULL,PRIMARY KEY(profile_id,version))`,
-		`PRAGMA user_version=3`)
+	if version < 3 {
+		queries = append(queries,
+			`CREATE TABLE agent_profiles (key TEXT PRIMARY KEY,data TEXT NOT NULL)`,
+			`CREATE TABLE agent_profile_revisions (profile_id TEXT NOT NULL,version INTEGER NOT NULL,data TEXT NOT NULL,PRIMARY KEY(profile_id,version))`,
+		)
+	}
+	queries = append(queries, `CREATE TABLE coordination_metadata (id INTEGER PRIMARY KEY CHECK(id=1),version INTEGER NOT NULL CHECK(version=1))`, `INSERT INTO coordination_metadata VALUES(1,1)`, `PRAGMA user_version=4`)
 	for _, q := range queries {
 		if _, err = tx.ExecContext(ctx, q); err != nil {
 			return fmt.Errorf("migrate database: %w", err)

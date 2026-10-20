@@ -5,6 +5,7 @@ import type {
   ProfileSnapshot,
   ProfileSummary,
 } from "./agent-profiles.ts";
+import type { TaskAssignment, TaskCoordination } from "./coordination.ts";
 export interface Lease {
   session_id: string;
   generation: number;
@@ -34,6 +35,7 @@ export interface Evidence {
   findings?: string;
 }
 export interface Task {
+  assignment?: TaskAssignment;
   key: string;
   type: string;
   title: string;
@@ -198,6 +200,9 @@ export interface DesignAsset {
   preview_url?: string;
 }
 export interface PageData {
+  coordination?: TaskCoordination;
+  assignment_profiles?: ProfileSummary[];
+  can_coordinate?: boolean;
   profiles?: ProfileSummary[];
   profile?: AgentProfile;
   profile_revisions?: ProfileRevision[];

@@ -8,6 +8,9 @@ import (
 // This allowlist is intentionally separate from browserSession and persisted
 // actions: browser hashes, bearer/token IDs, and pending payloads are private.
 type browserPage struct {
+	Coordination       *core.TaskCoordination `json:"coordination,omitempty"`
+	AssignmentProfiles []core.AgentProfile    `json:"assignment_profiles,omitempty"`
+	CanCoordinate      bool                   `json:"can_coordinate"`
 	Profiles           []core.AgentProfile    `json:"profiles,omitempty"`
 	Profile            *core.AgentProfile     `json:"profile,omitempty"`
 	ProfileRevisions   []core.ProfileRevision `json:"profile_revisions,omitempty"`
@@ -68,6 +71,7 @@ func projectBrowserPage(name string, p Page) browserPage {
 		}
 	}
 	return browserPage{
+		Coordination: p.Coordination, AssignmentProfiles: p.AssignmentProfiles, CanCoordinate: p.CanCoordinate,
 		Profiles: p.Profiles, Profile: p.Profile, ProfileRevisions: p.ProfileRevisions, CanManageProfiles: p.CanManageProfiles,
 		Project: p.Project, Name: name, Title: p.Title, View: p.View, Notice: p.Notice, CSRF: p.CSRF,
 		ActionID: p.ActionID, Actions: p.Actions, Draft: draft, FieldErrors: p.FieldErrors,

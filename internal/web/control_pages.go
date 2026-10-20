@@ -80,7 +80,10 @@ func (s *Server) read(w http.ResponseWriter, r *http.Request, b *browserSession)
 		if err == nil {
 			p.Task = &task
 			p.CanEdit = canEdit(b, &task)
-			err = s.taskActions(r.Context(), b, &p, []core.Task{task})
+			err = s.coordinationPage(r, b, &p)
+			if err == nil {
+				err = s.taskActions(r.Context(), b, &p, []core.Task{task})
+			}
 			if err == nil && task.Type == "task" {
 				var events core.RecentEventsPage
 				events, err = s.board.RecentEvents(r.Context(), b.actor(), core.RecentEventsInput{TaskKey: task.Key, Limit: 10})

@@ -1,5 +1,9 @@
 # Архитектура пилота
 
+> TASK011: назначения задач pinned профилям, объяснимые gates и ручной цикл
+> review → QA описаны в [coordination.md](coordination.md). Schema4/coordination1
+> floor защищает новые task semantics; фактическая готовность — TASK011.
+
 > TASK010 добавляет board schema3 (profiles/revisions), immutable snapshot
 > при явном Describe и existing ACL/session guards. Выбранный после WORK140
 > контракт — [agent-profiles.md](agent-profiles.md). Старые unbound sessions не

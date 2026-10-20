@@ -154,21 +154,30 @@ func clientRoute(operation string, fields map[string]json.RawMessage) (string, s
 			query.Set("task_key", input.TaskKey)
 		}
 		return "GET", "/api/v1/events?" + query.Encode(), nil, nil
-	case "get", "update", "transition", "release", "comment":
-		key, err := takeString(fields, "task_key")
+	case "get", "update", "transition", "release", "comment", "coordination", "assign", "check_create":
+		field := "task_key"
+		if operation == "check_create" {
+			field = "target_key"
+		}
+		key, err := takeString(fields, field)
 		if err != nil || key == "" || strings.ContainsAny(key, "/?#%") {
 			return "", "", nil, errors.New("canonical task_key is required")
 		}
 		path = "/api/v1/tasks/" + key
 		switch operation {
-		case "get":
+		case "get", "coordination":
 			if len(fields) != 0 {
 				return "", "", nil, errors.New("unknown get fields")
+			}
+			if operation == "coordination" {
+				path += "/coordination"
 			}
 			return "GET", path, nil, nil
 		case "update":
 			method = "PATCH"
-		case "transition", "release":
+		case "check_create":
+			path += "/checks"
+		case "assign", "transition", "release":
 			path += "/" + operation
 		case "comment":
 			path += "/comments"

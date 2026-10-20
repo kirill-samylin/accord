@@ -12,12 +12,12 @@ Go7892/Next7893/nginx/accord-web-backup уже должны работать. О
 nginx hash, без owner-identity. Команды stage/apply/resume/finalize сохраняют
 отдельный journal kind=capable-update. Никакого bootstrap-owner повторно.
 
-Перед schema3 writer останавливается под owned inspection marker; создаётся
+Перед schema4 writer останавливается под owned inspection marker; создаётся
 полный format2 snapshot registry/default/всех проектов. Новый permanent guard
-требует `agent_profiles:1,board_schema:[3]` вместе с registry/ACL. Старый TASK009
+требует `coordination:1,agent_profiles:1,board_schema:[4]` вместе с registry/ACL. Старый TASK009
 binary отвергается до запуска. Offline additive migration проверяет прежние
 строки всех таблиц и immutable файлы против snapshot до открытия listener.
-Исторические migration copies schema1/2-64hex.db с checksum сохраняются.
+Исторические migration copies schema1/2/3-64hex.db с checksum сохраняются.
 Ошибка означает stop+marker+roll-forward; старые БД назад не накладываются.
 После независимой HTTPS приёмки finalize запускает новый полный backup и
 повторно сверяет effective systemd argv/guard/backup и owned /proc binary SHA.
@@ -152,3 +152,7 @@ Boot guard остаётся и после auth reset. Новые credentials, п
 данных и isolated runtime обязательны до снятия guard/публикации.
 Этот helper не заменяет production paths и не запускает сеть.
 Фактическая процедура и synthetic evidence фиксируются в WORK138/TASK009.
+
+TASK011: schema4 содержит обязательную coordination_metadata(1,1). Snapshot/restore
+принимает полные board2/3/4 и сохраняет исторические migration snapshots schema1/2/3
+побайтно с checksum. Старые capable schema3 binary новым guard отвергаются до DDL.

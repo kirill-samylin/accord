@@ -50,7 +50,7 @@ func closedSchema2(t *testing.T, path string) map[string]string {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	for _, q := range []string{`DROP TABLE agent_profiles`, `DROP TABLE agent_profile_revisions`, `PRAGMA user_version=2`} {
+	for _, q := range []string{`DROP TABLE coordination_metadata`, `DROP TABLE agent_profiles`, `DROP TABLE agent_profile_revisions`, `PRAGMA user_version=2`} {
 		if _, err = db.Exec(q); err != nil {
 			t.Fatal(err)
 		}
@@ -97,7 +97,7 @@ func TestOfflineStorageMigrationAllBoardsPreservesEveryLegacyRow(t *testing.T) {
 		var version int
 		db.QueryRow(`PRAGMA user_version`).Scan(&version)
 		db.Close()
-		if version != 3 || !reflect.DeepEqual(after, before[path]) {
+		if version != 4 || !reflect.DeepEqual(after, before[path]) {
 			t.Fatal("legacy rows changed")
 		}
 		backups, _ := filepath.Glob(path + ".migrations/schema2-*.db")
@@ -188,6 +188,12 @@ func TestOfflineResetRetainsProfileRevisionsAndMigratesSchema2(t *testing.T) {
 					t.Fatal(err)
 				}
 				before = rowsSnapshot(t, db, []string{"agent_profiles", "agent_profile_revisions"})
+				if _, err = db.Exec(`DROP TABLE coordination_metadata`); err != nil {
+					t.Fatal(err)
+				}
+				if _, err = db.Exec(`PRAGMA user_version=3`); err != nil {
+					t.Fatal(err)
+				}
 				db.Close()
 			}
 			if err := ResetOffline(context.Background(), root, f.db, f.webDir); err != nil {
@@ -201,7 +207,7 @@ func TestOfflineResetRetainsProfileRevisionsAndMigratesSchema2(t *testing.T) {
 			var version, revoked int
 			db.QueryRow(`PRAGMA user_version`).Scan(&version)
 			db.QueryRow(`SELECT revoked FROM tokens WHERE id=?`, f.token.ID).Scan(&revoked)
-			if version != 3 || revoked != 1 {
+			if version != 4 || revoked != 1 {
 				t.Fatal("reset/migration did not complete")
 			}
 			after := rowsSnapshot(t, db, []string{"agent_profiles", "agent_profile_revisions"})

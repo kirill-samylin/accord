@@ -1,7 +1,7 @@
 """Strict historical migration snapshots; preserve bytes without opening them."""
 import re
 
-PATTERN = re.compile(r'schema[12]-[0-9a-f]{64}\.db(?:\.sha256)?')
+PATTERN = re.compile(r'schema[123]-[0-9a-f]{64}\.db(?:\.sha256)?')
 
 
 def validate_migrations(folder, legacy):

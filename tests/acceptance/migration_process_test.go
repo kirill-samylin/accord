@@ -93,11 +93,11 @@ func TestCatalogLegacySchemaProcessMigrationBackupRestart(t *testing.T) {
 	b.start() // This actual server process performs schema migration.
 	snapshot := migrationSnapshot(t, b)
 	db := inspectDatabase(t, b.db)
-	if sqlString(t, db, "PRAGMA user_version") != "3" || sqlString(t, db, "SELECT data FROM tasks WHERE key='T-2'") != taskRow || sqlString(t, db, "SELECT data FROM events WHERE cursor=1") != eventRow || sqlString(t, db, "SELECT response FROM idempotency WHERE key='synthetic-legacy-replay'") != replayRow {
+	if sqlString(t, db, "PRAGMA user_version") != "4" || sqlString(t, db, "SELECT data FROM tasks WHERE key='T-2'") != taskRow || sqlString(t, db, "SELECT data FROM events WHERE cursor=1") != eventRow || sqlString(t, db, "SELECT response FROM idempotency WHERE key='synthetic-legacy-replay'") != replayRow {
 		t.Fatal("migration rewrote historical rows or exact replay payload")
 	}
 	if sqlString(t, db, "SELECT count(*) FROM sqlite_schema WHERE name IN ('agent_profiles','agent_profile_revisions')") != "2" {
-		t.Fatal("schema3 migration omitted profile authority tables")
+		t.Fatal("schema4 migration omitted profile authority tables")
 	}
 	backupDB := inspectDatabase(t, snapshot)
 	if sqlString(t, backupDB, "SELECT count(*) FROM sqlite_schema WHERE name='notes'") != "0" {

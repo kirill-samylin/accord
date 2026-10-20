@@ -1,5 +1,9 @@
 # Next UI: поставка на существующий Accord VPS
 
+> После активации TASK009/010/011 этот исторический TASK008 оператор и rollback
+> не применяются. Следующие capable обновления — только
+> [projects/upgrade.py](../projects/README.md), с all-project snapshot и roll-forward.
+
 Это узкий оператор TASK008, не первоначальный установщик. Требует root/Linux,
 существующие Go7892, nginx public include и reviewed web backup service. До
 stage/apply нужны независимый review и реальные значения из приватного inventory.

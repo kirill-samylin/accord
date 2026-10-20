@@ -16,6 +16,9 @@ import (
 // Service is the shared authenticated domain API; transports never accept a
 // client-provided Principal or bypass its session and lease checks.
 type Service interface {
+	Assign(context.Context, core.Actor, core.AssignInput) (core.Task, error)
+	CheckCreate(context.Context, core.Actor, core.CheckCreateInput) (core.Task, error)
+	Coordination(context.Context, core.Actor, core.CoordinationInput) (core.TaskCoordination, error)
 	Profiles(context.Context, core.Actor, core.ProfilesInput) (core.ProfilesPage, error)
 	Profile(context.Context, core.Actor, core.ProfileInput) (core.ProfilePage, error)
 	ProfileCreate(context.Context, core.Actor, core.ProfileCreateInput) (core.AgentProfile, error)
@@ -97,7 +100,7 @@ func operations(s Service) []operation {
 	}
 	return []operation{
 		bind("comment", "Record a short report on your current leased attempt.", false, s.Comment),
-		bind("create", "Create an epic or a ready task.", false, s.Create), describe,
+		strictCoordination(bind("create", "Create an epic or a ready task.", false, s.Create)), describe,
 		bind("events", "Read one page; persist next_cursor, never high_water.", true, s.Events),
 		bind("get", "Read an epic or task, including attempts and evidence.", true, s.Get),
 		bind("heartbeat", "Renew only live leases using their exact generations.", false, s.Heartbeat),

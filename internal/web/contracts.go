@@ -9,6 +9,10 @@ import (
 )
 
 type Board interface {
+	Assign(context.Context, core.Actor, core.AssignInput) (core.Task, error)
+	CheckCreate(context.Context, core.Actor, core.CheckCreateInput) (core.Task, error)
+	Coordination(context.Context, core.Actor, core.CoordinationInput) (core.TaskCoordination, error)
+	Link(context.Context, core.Actor, core.LinkInput) (core.Task, error)
 	Profiles(context.Context, core.Actor, core.ProfilesInput) (core.ProfilesPage, error)
 	Profile(context.Context, core.Actor, core.ProfileInput) (core.ProfilePage, error)
 	ProfileCreate(context.Context, core.Actor, core.ProfileCreateInput) (core.AgentProfile, error)
@@ -54,6 +58,9 @@ type Renderer interface {
 }
 
 type Page struct {
+	Coordination                                          *core.TaskCoordination
+	AssignmentProfiles                                    []core.AgentProfile
+	CanCoordinate                                         bool
 	Profiles                                              []core.AgentProfile
 	Profile                                               *core.AgentProfile
 	ProfileRevisions                                      []core.ProfileRevision

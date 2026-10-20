@@ -1,5 +1,9 @@
 # API пилота — v1
 
+> TASK011: назначения задач pinned профилям, объяснимые gates и ручной цикл
+> review → QA описаны в [coordination.md](coordination.md). Schema4/coordination1
+> floor защищает новые task semantics; фактическая готовность — TASK011.
+
 > TASK010 добавляет постоянные [профили агентов](agent-profiles.md):
 > GET `profiles?state=active|archived|all`, `profile?profile_id=ap_...&version=N`
 > (version необязательна), POST `profile_create/profile_update/profile_archive`.

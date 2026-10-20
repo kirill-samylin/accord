@@ -21,6 +21,11 @@ func (s *Store) Transition(ctx context.Context, a core.Actor, in core.Transition
 		if t.Type == "epic" {
 			return transitionEpic(b, t, sess, in, now)
 		}
+		if in.Generation != 0 {
+			if _, err = owned(b, a, t.Key, in.Generation); err != nil {
+				return core.Task{}, err
+			}
+		}
 		switch {
 		case in.State == "done" && t.State == "in_progress":
 			if _, err = owned(b, a, t.Key, in.Generation); err != nil {
@@ -57,7 +62,7 @@ func (s *Store) Transition(ctx context.Context, a core.Actor, in core.Transition
 			t.State = "ready"
 			t.ReadyAt = now
 		case in.State == "cancelled" && (t.State == "ready" || t.State == "created"):
-			if sess.Role != "coordinator" && t.Requester != a.Principal.ID {
+			if !administrative(sess, t, a) {
 				return core.Task{}, core.Fail("forbidden", "only requester or coordinator may cancel")
 			}
 			if !bounded(in.Reason, 4096) {
@@ -65,7 +70,7 @@ func (s *Store) Transition(ctx context.Context, a core.Actor, in core.Transition
 			}
 			t.State = "cancelled"
 		case in.State == "ready" && (t.State == "created" || t.State == "cancelled"):
-			if sess.Role != "coordinator" && t.Requester != a.Principal.ID {
+			if !administrative(sess, t, a) {
 				return core.Task{}, core.Fail("forbidden", "only requester or coordinator may make ready")
 			}
 			if t.State == "cancelled" && !bounded(in.Reason, 4096) {

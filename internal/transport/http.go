@@ -22,6 +22,9 @@ type route struct {
 }
 
 var routes = []route{
+	{"GET", "/api/v1/tasks/{key}/coordination", "coordination", false},
+	{"POST", "/api/v1/tasks/{key}/assign", "assign", true},
+	{"POST", "/api/v1/tasks/{key}/checks", "check_create", true},
 	{"GET", "/api/v1/profiles", "profiles", false},
 	{"GET", "/api/v1/profile", "profile", false},
 	{"POST", "/api/v1/profile_create", "profile_create", true},
@@ -64,6 +67,7 @@ func NewHandlerWithOptions(s Service, ready func(context.Context) error, options
 	ops := operations(s)
 	all := append(append([]operation(nil), ops...), readOperations(s)...)
 	all = append(all, profileOperations(s)...)
+	all = append(all, coordinationOperations(s)...)
 	byName := make(map[string]operation, len(all))
 	for _, op := range all {
 		byName[op.name] = op
@@ -176,7 +180,7 @@ func requestBody(w http.ResponseWriter, r *http.Request, route route) ([]byte, e
 		if r.ContentLength > 0 || len(r.TransferEncoding) > 0 {
 			return nil, core.Fail("VALIDATION", "GET body is not supported")
 		}
-		if route.name == "get" {
+		if route.name == "get" || route.name == "coordination" {
 			if r.URL.RawQuery != "" {
 				return nil, core.Fail("VALIDATION", "unexpected query parameters")
 			}
@@ -186,6 +190,9 @@ func requestBody(w http.ResponseWriter, r *http.Request, route route) ([]byte, e
 			return eventsQuery(r)
 		}
 		return readQuery(route.name, r.URL.RawQuery)
+	}
+	if (route.name == "assign" || route.name == "check_create") && r.URL.RawQuery != "" {
+		return nil, core.Fail("validation", "unexpected query parameters")
 	}
 	media, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil || media != "application/json" {
@@ -200,13 +207,17 @@ func requestBody(w http.ResponseWriter, r *http.Request, route route) ([]byte, e
 		if err := decodeObject(data, &fields); err != nil {
 			return nil, err
 		}
-		if raw, exists := fields["task_key"]; exists {
+		field := "task_key"
+		if route.name == "check_create" {
+			field = "target_key"
+		}
+		if raw, exists := fields[field]; exists {
 			var provided string
 			if json.Unmarshal(raw, &provided) != nil || provided != key {
 				return nil, core.Fail("VALIDATION", "task_key must match route")
 			}
 		}
-		fields["task_key"], _ = json.Marshal(key)
+		fields[field], _ = json.Marshal(key)
 		return json.Marshal(fields)
 	}
 	return data, nil

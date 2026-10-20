@@ -18,6 +18,13 @@ func (s *Server) page(r *http.Request, b *browserSession) (Page, error) {
 	}
 	p.Query = r.URL.Query().Get("q")
 	p.AgentState = r.URL.Query().Get("state")
+	if !p.CanContinue {
+		profiles, err := s.board.Profiles(r.Context(), b.actor(), core.ProfilesInput{})
+		if err != nil {
+			return p, err
+		}
+		p.AssignmentProfiles = profiles.Profiles
+	}
 	for _, op := range []string{"logout", "continue", "create", "upload"} {
 		id, err := s.issueAction(r.Context(), b, op)
 		if err != nil {
