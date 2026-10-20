@@ -3,6 +3,8 @@ import importlib.util
 from pathlib import Path
 import fcntl
 import os
+import re
+import socket
 
 HERE = Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location('accord_next_host_primitives', HERE.parent / 'next/host.py')
@@ -14,6 +16,24 @@ PROJECTS = STATE / 'projects-data'
 ADMIN = Path('/opt/accord/admin')
 DROPIN = Path('/etc/systemd/system/accord.service.d/90-projects.conf')
 BACKUP_DROPIN = Path('/etc/systemd/system/accord-web-backup.service.d/90-projects.conf')
+
+
+def port_free(port):
+    with socket.socket() as probe:
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        probe.bind(('127.0.0.1', port))
+
+
+def owned_listener(port, unit):
+    pid = host.run('systemctl', 'show', unit, '-p', 'MainPID', '--value').strip()
+    if not pid.isdecimal() or int(pid) <= 1:
+        raise RuntimeError('expected live owned service process')
+    lines = host.run('ss', '-H', '-ltnp', 'sport = :' + str(port)).splitlines()
+    if (len(lines) != 1 or len(lines[0].split()) < 6 or
+            lines[0].split()[3] != '127.0.0.1:' + str(port) or
+            set(re.findall(r'\bpid=([0-9]+)(?:,|\))', lines[0])) != {pid}):
+        raise RuntimeError('readiness listener does not belong to the selected service')
+    return int(pid)
 
 
 def lock(path):

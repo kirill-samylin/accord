@@ -174,6 +174,11 @@ func serve(args []string, out io.Writer) error {
 		return errors.New("cannot listen on requested loopback address")
 	}
 	defer listener.Close()
+	if *projectsData != "" {
+		if err := projects.Preflight(*projectsData, *db, *webData); err != nil {
+			return fmt.Errorf("project storage preflight failed: %w", err)
+		}
+	}
 	s, err := openDB(*db, *taskTTL, *sessionTTL)
 	if err != nil {
 		return err

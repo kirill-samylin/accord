@@ -4,6 +4,7 @@ import argparse
 import importlib.util
 from pathlib import Path
 import sys
+import socket
 import unittest
 from unittest.mock import patch
 
@@ -12,6 +13,7 @@ sys.path.insert(0, str(ROOT / 'infra/accord/projects'))
 spec = importlib.util.spec_from_file_location('project_cutover', ROOT / 'infra/accord/projects/operate.py')
 operator = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(operator)
+host_ops = sys.modules['host_ops']
 
 
 class ProjectsOperations(unittest.TestCase):
@@ -30,6 +32,7 @@ class ProjectsOperations(unittest.TestCase):
 
         with patch.object(operator, 'validate'), patch.object(operator, 'lock', return_value=nullcontext()), \
                 patch.object(operator, 'install_helpers'), patch.object(operator, 'require_capable'), \
+                patch.object(operator, 'port_free'), patch.object(operator, 'owned_listener'), \
                 patch.object(operator.host, 'run', side_effect=run), patch.object(operator.host, 'ready'), \
                 patch.object(operator.host, 'save_json'), \
                 patch.object(operator.host, 'switch', side_effect=lambda base, target: switched.append(target)):
@@ -45,7 +48,7 @@ class ProjectsOperations(unittest.TestCase):
         for phase in ('activation-started', 'blocked-roll-forward'):
             self.state['phase'] = phase
             with self.subTest(phase=phase), patch.object(operator, 'validate'), \
-                    patch.object(operator, 'lock', return_value=nullcontext()), \
+                    patch.object(operator, 'lock', return_value=nullcontext()), patch.object(operator, 'port_free'), \
                     patch.object(operator, 'install_helpers', side_effect=RuntimeError('synthetic stop after validate')), \
                     patch.object(operator.host, 'run') as run, patch.object(operator.host, 'save_json'):
                 with self.assertRaisesRegex(RuntimeError, 'synthetic'):
@@ -82,3 +85,25 @@ class ProjectsOperations(unittest.TestCase):
         for invalid in ('ab_' + 'a' * 64, 'owner', '', 'A' * 64):
             with self.subTest(invalid=invalid[:3]), self.assertRaises(argparse.ArgumentTypeError):
                 operator.owner_identity(invalid)
+
+    def test_ready_port_must_belong_to_owned_main_pid(self):
+        good = 'LISTEN 0 128 127.0.0.1:7894 0.0.0.0:* users:(("node",pid=321,fd=1))'
+        with patch.object(host_ops.host, 'run', side_effect=['321\n', good]):
+            self.assertEqual(host_ops.owned_listener(7894, 'synthetic.service'), 321)
+        for pid, lines in [('0', good), ('321', good.replace('pid=321,', 'pid=999,')),
+                           ('321', good + '\n' + good), ('321', ''),
+                           ('321', good + ',("other",pid=999,fd=2)'),
+                           ('321', good.replace('127.0.0.1:', '0.0.0.0:'))]:
+            with self.subTest(pid=pid, listeners=len(lines)), patch.object(host_ops.host, 'run', side_effect=[pid, lines]):
+                with self.assertRaises(RuntimeError):
+                    host_ops.owned_listener(7894, 'synthetic.service')
+
+    def test_occupied_port_rejected_before_starting_candidate(self):
+        with socket.socket() as existing:
+            existing.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            existing.bind(('127.0.0.1', 0))
+            existing.listen()
+            port = existing.getsockname()[1]
+            with self.assertRaises(OSError):
+                host_ops.port_free(port)
+        host_ops.port_free(port)

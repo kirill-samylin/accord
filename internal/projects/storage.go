@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	_ "modernc.org/sqlite"
-	"net/url"
 	"os"
 	"path/filepath"
 )
@@ -58,42 +57,6 @@ func privateRoot(path string) (string, error) {
 		}
 	}
 	return absolute, nil
-}
-func openRegistry(root string) (*sql.DB, error) {
-	path := filepath.Join(root, "registry.sqlite")
-	for _, suffix := range []string{"", "-wal", "-shm", "-journal"} {
-		info, err := os.Lstat(path + suffix)
-		if err == nil && (!info.Mode().IsRegular() || info.Mode().Perm() != 0600) {
-			return nil, errors.New("unsafe registry database")
-		}
-		if err != nil && !os.IsNotExist(err) {
-			return nil, err
-		}
-	}
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_RDWR, 0600)
-	if err == nil {
-		err = f.Close()
-	}
-	if err != nil && !os.IsExist(err) {
-		return nil, err
-	}
-	db, err := sql.Open("sqlite", (&url.URL{Scheme: "file", Path: path}).String())
-	if err != nil {
-		return nil, err
-	}
-	db.SetMaxOpenConns(1)
-	var version int
-	if err = db.QueryRow(`PRAGMA user_version`).Scan(&version); err == nil && version != 0 && version != 1 {
-		err = errors.New("unsupported project registry schema")
-	}
-	if err == nil {
-		_, err = db.Exec(`PRAGMA busy_timeout=5000; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;` + schema)
-	}
-	if err != nil {
-		db.Close()
-		return nil, err
-	}
-	return db, nil
 }
 func transaction[T any](r *Registry, ctx context.Context, fn func(*sql.Tx) (T, error)) (T, error) {
 	var zero T

@@ -45,9 +45,14 @@ func (r *Registry) runtime(id string) (*runtime, error) {
 	if _, err = os.Stat(db); err != nil {
 		return nil, notFound()
 	}
-	return r.openRuntime(id, db, dir)
+	return r.openRuntime(id, db, dir, true)
 }
-func (r *Registry) openRuntime(id, db, dir string) (*runtime, error) {
+func (r *Registry) openRuntime(id, db, dir string, published bool) (*runtime, error) {
+	if published {
+		if err := validateProjectStorage(db, dir); err != nil {
+			return nil, err
+		}
+	}
 	cfg := r.options.Config
 	cfg.Project = id
 	cfg.CursorNamespace = id
@@ -83,7 +88,7 @@ func (r *Registry) provision(id string) (*runtime, error) {
 	if _, err = privateRoot(filepath.Dir(db)); err != nil {
 		return nil, err
 	}
-	return r.openRuntime(id, db, dir)
+	return r.openRuntime(id, db, dir, false)
 }
 func (r *Registry) localPrincipal(ctx context.Context, v *runtime, who Identity) (core.Principal, error) {
 	var authority *core.Principal

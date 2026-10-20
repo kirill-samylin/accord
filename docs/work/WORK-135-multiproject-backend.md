@@ -284,8 +284,16 @@ session import без Describe + tasks/live lease/generation/evidence/native rep
 offline reset/quarantine/recover-owner/bootstrap idempotency; pending rejection
 capacity/bytes/missing-folder/rename-before-SQL crash; metadata expiry lifecycle.
 
-Developer validation log: `.local/task009/backend-check.log`; source manifest будет
-зафиксирован после последнего bounded review fix. Новые process/E2E пишет отдельный
+Developer validation logs: `.local/task009/backend-check.log` и последующий
+`backend-authority-check.log` (fmt/vet/test/race, без bin rebuild по root).
+Новые process/E2E пишет отдельный
 QA после независимого source APPROVE. До этого TASK009 не объявляется завершённой.
 Все новые Go files ≤300 строк; большой существующий design_http сохранён ниже300
 выносом неизменного deadline adapter в files_deadline.go.
+
+Post-APPROVE bounded amendment: marker/existing authority не инициализируется
+заново при missing/empty/corrupt DB/meta/critical tables. Fresh init — только
+пустой root; read-only preflight проверяет authority и published board/web metadata
+до default constructors и published runtime, сохраняя blobs при потере web.db/
+design_assets. Regression проверяет startup/runtime отказ без recreate/delete,
+revoked default membership, incomplete activation; singleboard path не меняется.

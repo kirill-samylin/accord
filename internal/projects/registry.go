@@ -14,6 +14,9 @@ func Open(options Options) (*Registry, error) {
 	if options.Default == nil || !options.Offline && (options.Browser == nil || options.Renderer == nil || options.Origin == "") {
 		return nil, errors.New("default board and browser required")
 	}
+	if err := Preflight(options.DataDir, options.DefaultDB, options.DefaultWeb); err != nil {
+		return nil, err
+	}
 	root, err := privateRoot(options.DataDir)
 	if err != nil {
 		return nil, err
@@ -27,41 +30,23 @@ func Open(options Options) (*Registry, error) {
 	if err != nil {
 		return nil, err
 	}
-	marker := filepath.Join(root, "MULTIPROJECT_REQUIRES_CAPABILITY")
-	file, err := os.OpenFile(marker, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
-	if err == nil {
-		_, err = file.WriteString("registry=1 acl=1\n")
-		if err == nil {
-			err = file.Sync()
-		}
-		file.Close()
-	} else if os.IsExist(err) {
-		info, e := os.Lstat(marker)
-		if e != nil || !info.Mode().IsRegular() || info.Mode().Perm() != 0600 {
-			return nil, errors.New("unsafe projects capability marker")
-		}
-		err = nil
-	}
+	fresh, err := activateRegistryRoot(root)
 	if err != nil {
 		return nil, err
 	}
-	parent, e := os.Open(root)
-	if e != nil {
-		return nil, e
+	var db *sql.DB
+	if fresh {
+		db, err = createRegistry(root)
+	} else {
+		db, err = openRegistry(root)
 	}
-	err = parent.Sync()
-	parent.Close()
-	if err != nil {
-		return nil, err
-	}
-	db, err := openRegistry(root)
 	if err != nil {
 		return nil, err
 	}
 	r := &Registry{db: db, options: options, runtimes: make(map[string]*runtime)}
 	var id, dbPath, webPath, key string
 	err = db.QueryRow(`SELECT default_id,default_db,default_web,signing_key FROM registry_meta WHERE id=1`).Scan(&id, &dbPath, &webPath, &key)
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) && fresh {
 		id, err = random("p_", 16)
 		if err != nil {
 			db.Close()
@@ -90,6 +75,10 @@ func Open(options Options) (*Registry, error) {
 		err = errors.New("registry default board paths changed")
 	}
 	if err != nil {
+		db.Close()
+		return nil, err
+	}
+	if err = syncRegistryDirectory(root); err != nil {
 		db.Close()
 		return nil, err
 	}
@@ -148,4 +137,58 @@ func (r *Registry) identity(ctx context.Context, tx *sql.Tx, id string) (Identit
 		}
 	}
 	return who, err
+}
+
+// A durable marker is a one-way activation barrier. Interrupted initialization
+// requires operator inspection; it never authorizes guessing a fresh identity DB.
+func activateRegistryRoot(root string) (bool, error) {
+	marker := filepath.Join(root, "MULTIPROJECT_REQUIRES_CAPABILITY")
+	info, err := os.Lstat(marker)
+	if err == nil {
+		if !info.Mode().IsRegular() || info.Mode().Perm() != 0600 {
+			return false, errors.New("unsafe projects capability marker")
+		}
+		return false, nil
+	}
+	if !os.IsNotExist(err) {
+		return false, err
+	}
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		return false, err
+	}
+	if len(entries) != 0 {
+		return false, errors.New("unmarked registry state requires inspection")
+	}
+	file, err := os.OpenFile(marker, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+	if err != nil {
+		return false, err
+	}
+	_, err = file.WriteString("registry=1 acl=1\n")
+	if err == nil {
+		err = file.Sync()
+	}
+	closeErr := file.Close()
+	if err == nil {
+		err = closeErr
+	}
+	if err != nil {
+		return false, err
+	}
+	if err = syncRegistryDirectory(root); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+func syncRegistryDirectory(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	err = file.Sync()
+	closeErr := file.Close()
+	if err == nil {
+		err = closeErr
+	}
+	return err
 }

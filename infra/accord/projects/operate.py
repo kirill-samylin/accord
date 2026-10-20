@@ -11,6 +11,7 @@ import sys
 from guard import require_capable
 from host_ops import BACKUP_DROPIN, DROPIN, HERE, PROJECTS, STATE, WORK, host
 from host_ops import helper_manifest, install_helpers, lock, preserved
+from host_ops import owned_listener, port_free
 from staging import stage
 
 
@@ -82,6 +83,8 @@ def apply(work, state, resume=False):
         try:
             host.run('systemctl', 'stop', 'accord-next.service')
             host.run('systemctl', 'stop', 'accord.service')
+            port_free(7892)
+            port_free(7893)
             install_helpers(state['helpers'])
             host.switch(host.GO, 'releases/' + state['revision'])
             host.switch(host.BASE, 'releases/' + state['revision'])
@@ -97,8 +100,10 @@ def apply(work, state, resume=False):
                      '--identity', state['owner_identity'])
             host.run('systemctl', 'start', 'accord.service')
             host.ready(7892)
+            owned_listener(7892, 'accord.service')
             host.run('systemctl', 'start', 'accord-next.service')
             host.ready(7893, '/app/login', nonce=True)
+            owned_listener(7893, 'accord-next.service')
             host.atomic(host.NGINX, (work / 'candidate-nginx').read_bytes())
             host.run('nginx', '-t')
             host.run('systemctl', 'reload', 'nginx')
@@ -127,6 +132,8 @@ def finalize(work, state):
     host.run('systemctl', 'start', 'accord-web-backup.service')
     host.ready(7892)
     host.ready(7893, '/app/login', nonce=True)
+    owned_listener(7892, 'accord.service')
+    owned_listener(7893, 'accord-next.service')
     validate(work, state)
     state['phase'] = 'complete'
     host.save_json(work / 'state.json', state)

@@ -11,6 +11,14 @@ core/API сохраняются. Это расширение прежнего si
 registry. Без этой настройки прежний single-board режим сохраняется. Registry
 `PRIVATE_ROOT/registry.sqlite`, schema1; board schema2 сохраняется. Web schema2
 добавляет epoch действий миграцией с schema1 без сброса прежних строк и сессий.
+Fresh registry создаётся только в действительно новом пустом private root.
+Существующий marker/DB/sidecars не являются разрешением инициализировать новую
+identity authority: missing/empty/corrupt schema/meta/key/memberships дают отказ.
+До default Store/web constructors в multi-project режиме проверяются прежние
+bound DB, а published managed DB — до открытия runtime. Missing/empty board/web
+или обязательные таблицы не заменяются пустыми хранилищами; orphan cleanup не
+должен удалять прежние blobs из-за потери web metadata. Новое unpublished
+provisioning создаётся отдельно; single-board bootstrap этим не подменяется.
 `registry_meta(id=1,default_id,default_db,default_web)` фиксирует прежние пути.
 Несовпадение default binding при повторном старте отклоняется, а не создаёт
 пустую замену. Default DB, web/blobs и их содержимое не перемещаются.

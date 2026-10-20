@@ -26,18 +26,19 @@ Host/Origin, bearer, request body и старые native/browser маршрут�
 
 ## Проверки
 
-Авторские units:29 новых PASS, все113 infra PASS (Python3.14; ранее существующие
+Авторские units:31 новых PASS, все115 infra PASS (Python3.14; ранее существующие
 ResourceWarning SQLite handles не превращены в runtime PASS). Проверены разные
 T-1/blobs в A/B, schema1/2, pending journals/quarantine, unknown files/symlinks,
 unresolved WAL/rollback journals, guard без marker, ingress byte preservation,
 NEW offline staging/reset-failure boot guard, interrupted cutover/resume и
 отсутствие выбора старого Go. Последние4 orchestration units — только mocks.
 Новые process/E2E, реальная миграция, restore rehearsal, nginx/systemd на Linux,
-VPS backup/update и runtime ACL — NOT-RUN. WORK136 дал scoped infra source/unit
-APPROVE (28 новых до последнего параметрического unit); последняя добавленная
-проверка отвергает bearer вместо публичного owner ID. Общий product APPROVE
-ожидает backend freeze. Offline bootstrap того же owner при resume должен быть
-идемпотентным; иной существующий owner остаётся conflict (author135 regression).
+VPS backup/update и runtime ACL — NOT-RUN. WORK136 подтвердил scoped infra
+source/unit APPROVE31/31. Readiness теперь доказывается exact127 endpoint и всеми
+PID socket owner == systemd MainPID выбранного unit, свободные порты до запуска;
+occupied/foreign/multiple PID отвергаются. Это unit source proof, actual Linux
+stage ещё впереди. Offline bootstrap того же owner при resume идемпотентен;
+иной существующий owner остаётся conflict (author135 regression).
 
 Все новые файлы менее 300 строк. Snapshot fixtures только synthetic;
 реальные данные остаются на VPS, артефакты под `.local/`.

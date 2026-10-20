@@ -5,6 +5,7 @@ import shutil
 
 from guard import require_capable
 from host_ops import HERE, PROJECTS, WORK, host, helper_manifest, nginx_check, preserved
+from host_ops import owned_listener, port_free
 from ingress import render
 
 
@@ -20,6 +21,9 @@ def stage(args):
         raise RuntimeError('existing Go and Next release required')
     host.ready(7892)
     host.ready(7893, '/app/login', nonce=True)
+    owned_listener(7892, 'accord.service')
+    owned_listener(7893, 'accord-next.service')
+    port_free(args.stage_port)
     host.verify_bundle(args.bundle, args.manifest_sha256, args.revision)
     host.regular(args.go_binary)
     if host.sha(args.go_binary) != args.go_sha256:
@@ -70,6 +74,7 @@ def stage(args):
         host.run('systemctl', 'daemon-reload')
         host.run('systemctl', 'start', unit.name)
         host.ready(args.stage_port, '/app/login', nonce=True)
+        metadata['stage_pid'] = owned_listener(args.stage_port, unit.name)
         metadata['stage_runtime'] = host.run('systemctl', 'show', unit.name,
                                             '-p', 'MemoryCurrent', '-p', 'MemoryPeak', '-p', 'NRestarts')
     finally:

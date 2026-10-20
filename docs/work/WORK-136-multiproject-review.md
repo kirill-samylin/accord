@@ -359,3 +359,91 @@ ACL/HTTPS, Linux/systemd/nginx/VPS preservation/deployment evidence остают
 обязательными. До их PASS этап TASK009 не завершён. Reviewer process/E2E не писал,
 SSH/реальные данные/Git/source не изменял; для новых QA tests требуется отдельное
 независимое test review после предоставления автором.
+
+## Post-approval startup authority audit
+
+Root сообщил новый P1, independently confirmed на freeze defe01033 / checkpoint
+42f02c7: existing activation marker + missing/empty registry/meta принимаются
+как fresh initialization. `Open`/`openRegistry` создают новый default ID и
+authority, что теряет ACL/tombstones и разрешает legacy default auto-import.
+Для этого bounded bug backend source disposition временно **REQUEST CHANGES**
+до fail-closed fix + regression + нового freeze. Frontend/infra approvals
+сохраняются. Первая часть root audit про root-entry fsync уже исправлена до
+freeze: `storage.go:20-58` синхронизирует created directories и их parents,
+включая `/var/lib/accord`; повторная правка этого пути не нужна.
+
+QA139 получил read-only WIP feedback по новым helpers: occupied-port readiness
+не доказывает owned process; private root должен отвергать symlink ancestry;
+Native.http не должен терять auth headers при custom headers; HTTP/spawn/MCP
+ошибки должны иметь deadlines и проходить через owned-PID cleanup. Final new-test
+review пока NOT-RUN. Тесты139 reviewer не изменяет, runtime final evidence ждёт
+исправленного binary/source approval, sourcefreeze не расширяется без bugs.
+
+Related root audit подтвердил фактический destructive path: missing published
+web.db создаётся заново, `initDesigns` создаёт empty design_assets, затем
+files_recovery `keep={}` удаляет сохранённые blobs/staging как orphan. Default
+web.New вызывается раньше Registry.Open, поэтому registry-only guard опаздывает.
+Bounded mp preflight требуется до default Store/web constructors и для published
+runtime; fresh/unpublished initialization остаётся разрешённой. Missing existing
+authority tables (особенно memberships) также нельзя молча CREATE IF NOT EXISTS:
+это восстанавливает lazy legacy editor grant и теряет tombstone. Root/135 получили
+точные source traces и regression expectations. Singleboard не переписывается;
+это часть текущего REQUEST CHANGES по missing storage/authority, не новый feature.
+
+Root добавил bounded infra readiness ownership: до stage/cutover starts порт
+должен быть свободен, после HTTP readiness `ss` listener обязан иметь exact
+127.0.0.1 endpoint и множество всех PID ровно `{systemd MainPID}` выбранного
+unit. Multiple rows, wildcard адрес, чужой/дополнительный PID отвергаются;
+SO_REUSEADDR разрешает только закрытые TIME_WAIT. Изменения host_ops/staging/
+operate и новые negative units прочитаны, reviewer **31/31 новых infra unit
+PASS**. **Infra source/unit APPROVE подтверждён**; actual Linux listener/systemd
+proof по-прежнему NOT-RUN. Go preflight delta пока WIP/re-review отдельно.
+
+## Startup authority/storage amendment — final review
+
+Bounded amendment source/author-test **APPROVE**. Reopened P1 закрыт:
+activated marker требует existing initialized registry schema1 с critical auth
+tables/meta/key/default binding; missing/empty/corrupt authority не создаётся
+заново. Fresh initialization разрешена только на empty root; interrupted initial
+activation требует inspection. Registry opener mode=rw не создаёт пропавший DB.
+Preflight вызывается до default Store/web constructors, проверяет все published
+active/archived board2/web1|2 DB и design metadata; published runtime повторяет
+проверку до web orphan recovery. Потеря metadata не удаляет сохранённые blobs.
+
+Авторские missing/empty/corrupt/meta/membership/marker regressions и preservation
+прочитаны; destructive-blob fixtures исправлены на допустимые48hex имена, поэтому
+они покрывают реальный old orphan-recovery path. Frozen215 Go aggregate SHA256:
+`20b896df6eaee22e39410b2ca54eec35a5e9ffe1f720afb38145ee0904662cf5`.
+Независимо совпали author log SHA256
+`3eb6ece0df1c3a173d5bdaefcddc9779bac18b9fa1404d4c95bb4f046fd329f5`
+и WORK135 SHA256
+`5c9e598f0c70d111fcccf48d2b76e322c321332bf938d2f8c1187523afa4748b`.
+Author fmt/vet/test/race **PASS**. Reviewer uncached `go test -race -count=1`
+projects + cmd **PASS** (8.870s/2.417s), private log
+`.local/task009-review/authority-final-race.log`. Build/bin/dist не обновлялись
+этим review: для QA необходим новый binary от владельца build.
+
+Overall product source/author-test **APPROVE восстановлен** на этом Go freeze
+с ранее одобренными frontend/infra. Новые process/browser tests проходят
+отдельное review, actual runtime/production/VPS по-прежнему **NOT-RUN**.
+Reviewer не менял product/test source, Git, SSH или реальные данные.
+
+## New QA test source — initial independent review
+
+Прочитаны WIP real-process harness/run/catalog/data/stream/startup/lifecycle,
+Python capture/pending/restore helpers, browser/settings/tabs и generic
+production-readonly. Test source reviewer не меняет. Финальный test/evidence
+вердикт **NOT-RUN** до авторского frozen source + actual run results.
+
+Production readonly inspection ограничен собственными login/open/logout, GET
+и allowlisted MCP initialize/list/resource reads; Describe/tools-call отсутствуют.
+Native Origin-denial requests не путаются с browser asset errors. Private report
+содержит aggregate checks/hashes, не IDs/body/token; screenshots остаются private.
+Actual запуск этого сценария принадлежит root после поставки, не tester/reviewer.
+
+Переданы139 bounded review findings: late-A test должен дождаться intercepted
+response completion/cancellation до assertion и reload (иначе reload маскирует
+загрязнение); actual old-binary migration нужен old default blob + byte equality
+(новые A/B uploads этого не доказывают); pending raw board/journal hashes нужны
+до/после restore/reject; MCP stdin EPIPE должен reject pending и пройти owned
+cleanup. Общий test APPROVE до исправления/evidence не выдавался.

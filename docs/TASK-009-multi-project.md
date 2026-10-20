@@ -3,7 +3,7 @@
 20.10.2026. Прямое поручение: полноценные проекты, подключение репозиториев,
 переключение, изоляция данных и прав; текущий проект и данные сохранить.
 База `64e534b`, установленный TASK008 release `490bf55`.
-Ветка `codex/multi-project`. Статус: SOURCE APPROVE, независимая runtime QA.
+Ветка `codex/multi-project`. Статус: SOURCE APPROVE, actual runtime QA139.
 Контракт [multi-project.md](multi-project.md), независимое направление APPROVE136.
 
 ## Результат для пользователя
@@ -108,6 +108,7 @@ Describe namespace при epoch>0 использует приватный HMAC, 
 Frontend137: format/typecheck,53 unit и production build PASS.
 Backend135: fmt/vet/all tests/race/build PASS; frozen211 Go files aggregate
 `defe01033eb21ce219f7e16cb90736567bfa935c289b257089f01854e983aeeb`.
+Это первый checkpoint; актуальный215-file amendment aggregate ниже.
 Root infra:113 unit PASS (84 прежних+29 новых; mock orchestration не runtime),
 scoped source/unit APPROVE136. Frontend также scoped APPROVE136.
 Независимый WORK136: overall source+author unit/integration APPROVE, повторный
@@ -115,3 +116,21 @@ uncached race на projects/web/transport/cmd PASS. Root полный `make chec
 (Go/SSR/infra/race/build/Next format/type/unit/build) завершён EXIT0.
 Новые process/E2E, browser и migration/backup/restore rehearsal поручены139,
 результатов ещё нет. VPS TASK009 — NOT-RUN. Source APPROVE не runtime готовность.
+
+После checkpoint `42f02c7` root/136 подтвердили ещё один класс startup failure:
+existing registry нельзя пересоздавать при потере authority DB/meta/tables;
+missing published web metadata нельзя создавать пустой до orphan cleanup blobs.
+Backend135 выполняет bounded preflight fix до Store/web constructors. До нового
+source APPROVE и бинаря QA139 пишет/ревьюит test source, app runtime не запускал.
+Root также усилил проверку владельца readiness port в операторе;115 infra unit
+PASS, повторный scoped review136. VPS только read-only inventory:490bf55,
+Go/Next200, board2/web1, projects-data отсутствует; изменяющих действий TASK0090.
+
+Amendment135/136 завершён:215 Go files aggregate
+`20b896df6eaee22e39410b2ca54eec35a5e9ffe1f720afb38145ee0904662cf5`,
+независимый source+author tests APPROVE восстановлен. Root fmt/vet/allGo/
+115infra/race/build EXIT0; новый macOS QA binary SHA256
+`3946080cacf567a8dc2456cfe1f240e05d42846f4cac72993766c4b77cabd396`.
+Next BuildID `_BtTvE7AHru0IDFWVC3t0`,53 frontend unit/build ранее PASS,
+UI source не менялся. QA139 получил новый runtime GO; результаты ещё ожидаются.
+Это локальные проверки, Linux release и production версия пока прежние.
