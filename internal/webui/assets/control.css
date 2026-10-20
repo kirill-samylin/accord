@@ -63,6 +63,18 @@ a.metric:hover {
   gap: 16px;
 }
 
+.dashboard-grid {
+  align-items: start;
+}
+
+.dashboard-grid [data-dashboard-activity] {
+  max-height: 520px;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  padding-right: 8px;
+}
+
 .dashboard-grid > .panel {
   margin-bottom: 0;
   padding: 18px;
@@ -243,7 +255,6 @@ a.metric:hover {
 .overview { padding-bottom: 16px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
 .overview > .section-heading { margin-top: 0; }
 .dashboard-grid .event-row .prose { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.task-timeline .dashboard-grid .event-row .prose { display: block; }
 .agent-row > time { font-variant-numeric: tabular-nums; }
 
 .live-options { display: flex; align-items: center; gap: 8px; font-size: 11px; margin-top: 12px; }
@@ -257,6 +268,7 @@ a.metric:hover {
  .roster .table-heading > span:last-child { display: none; }
 }
 @media (max-width: 767px) {
+ .dashboard-grid [data-dashboard-activity] { max-height: min(440px, 65svh); }
  .metric { padding: 12px; }
  .metric strong { font-size: 25px; }
  .metric > span { font-size: 11px; }

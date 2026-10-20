@@ -94,7 +94,7 @@
 <h2>Последние события</h2>
 <a href="/web/activity">Вся активность →</a>
 </div>
-<div data-dashboard-activity>{{range .Activity}}{{template "event-row" .}}{{else}}
+<div data-dashboard-activity role="region" tabindex="0" aria-label="Последние события проекта">{{range .Activity}}{{template "event-row" .}}{{else}}
 <div class="empty">В журнале пока нет событий.</div>
 {{end}}</div>
 <p class="hint panel-caption">События на <time data-dashboard-activity-time datetime="{{.ActivityObservedAt.Format "2006-01-02T15:04:05Z07:00"}}">{{date .ActivityObservedAt}}</time> · до 20 последних событий</p>
