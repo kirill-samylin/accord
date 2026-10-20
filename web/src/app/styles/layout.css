@@ -1,3 +1,10 @@
+/* Base visibility must precede the mobile overrides in this same file. */
+.mobile-only {
+  display: none;
+}
+.mobile-nav {
+  display: none;
+}
 .main-shell {
   flex: 1;
   min-width: 0;

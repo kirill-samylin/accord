@@ -150,3 +150,19 @@ Next config использует этот helper. Дополнительного
 и query (включая valid/unknown/duplicate view, чтобы Go продолжал валидацию).
 Все42 unit PASS; TypeScript/formatter PASS. Runtime root login smoke выполняет
 координатор после build; автор по поручению build не запускал.
+
+### Исправление мобильной навигации из artifact3
+
+QA128 и координатор подтвердили реальный CSS cascade defect: поздний импорт
+`overlays.css` повторно скрывал `.mobile-only` и `.mobile-nav` после мобильного
+media query из layout.css. Перенесены только две базовые hidden declarations
+в начало layout.css перед его media query. Теперь обе стороны breakpoint
+в одном файле: desktop по умолчанию скрывает burger/search/bottom nav;
+при width≤767px показываются burger/search/bottom nav, desktop sidebar скрыт.
+Bottom nav остаётся fixed с safe-area, а main-scroll резервирует60px+safe-area.
+На768px и шире действует desktop navigation; later hidden overrides отсутствуют.
+
+Изменены только layout.css/overlays.css и эта запись. Форматирование/diff-check
+PASS. Новый зеркальный unit для CSS не добавлялся: reversible visual correction;
+browser breakpoint regression выполняет QA128 после пересборки координатором.
+Build этой delta автором NOT-RUN по прямому поручению координатора.
