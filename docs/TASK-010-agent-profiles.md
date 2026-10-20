@@ -72,3 +72,10 @@ Final source/author-test/tester-test review143: APPROVE, включая повт
 8/8 самим reviewer и exact43source/testhash. Root полный `make check` после
 liveWALfix: PASS (146infra,60client, Go/all/race/vet/build/format/types).
 Исходный код и тесты заморожены для нового immutable Linux release.
+
+Следующий e923273 exact Linux12+8 PASS, но actualstage выявил rootops UIDошибку:
+service-created registry marker ошибочно считался root-owned helper. Stage
+остановился до journal/data/pointer изменений. Исправление сохраняет прежнюю
+private regular0600 authority policy, не меняет владельцев/права; independent143
+APPROVE, unit8/8 и actual updater8/8, полные infra148 PASS. E923 также остаётся
+inactive; production5454 сохранён. Новый immutable+Linux+actualstage обязательны.

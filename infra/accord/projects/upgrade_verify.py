@@ -3,6 +3,8 @@ import json
 import re
 
 from host_ops import ADMIN, BACKUP_DROPIN, DROPIN, HERE, LEGACY_DROPIN, PROJECTS, WORK, host
+from guard import MARKER, protected_root
+from layout import LEGACY
 from launch import require_backup, require_launch
 
 
@@ -54,7 +56,10 @@ def require_runtime():
         host.regular(installed)
         if installed.read_bytes() != (HERE / name).read_bytes():
             raise RuntimeError('known project runtime and backup overrides required')
-    host.regular(PROJECTS / 'MULTIPROJECT_REQUIRES_CAPABILITY')
+    # This authority marker is created by the service UID, unlike root-owned
+    # operator/configuration files. Preserve the existing private-store policy.
+    protected_root(PROJECTS)
+    LEGACY.private(PROJECTS / MARKER)
 
 
 def require_helpers(state, after=False):

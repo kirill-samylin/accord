@@ -16,7 +16,7 @@ class UpdateHelpers(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        self.root = Path(temporary.name)
+        self.root = Path(temporary.name).resolve()
         self.admin, self.work = self.root / 'admin', self.root / 'work'
         (self.admin / 'web').mkdir(parents=True)
         (self.admin / 'projects').mkdir()
@@ -78,3 +78,35 @@ class UpdateHelpers(unittest.TestCase):
         (cache / 'guard.cpython-fixture.pyc').write_bytes(b'synthetic compiled')
         with self.assertRaisesRegex(RuntimeError, 'compiled'):
             self.baseline()
+
+    def runtime(self, marker_kind='regular'):
+        projects = self.root / 'projects'
+        projects.mkdir(mode=0o700)
+        marker = projects / 'MULTIPROJECT_REQUIRES_CAPABILITY'
+        if marker_kind == 'symlink':
+            marker.symlink_to(self.admin / 'web/backup.py')
+        elif marker_kind != 'missing':
+            marker.write_bytes(b'service-created registry marker\n')
+            marker.chmod(0o644 if marker_kind == 'unsafe-mode' else 0o600)
+        dropin, backup = self.root / 'go.conf', self.root / 'backup.conf'
+        dropin.write_bytes((verify.HERE / 'accord-projects.conf').read_bytes())
+        backup.write_bytes((verify.HERE / 'accord-projects-backup.conf').read_bytes())
+        with patch.object(verify, 'PROJECTS', projects), patch.object(verify, 'DROPIN', dropin), \
+                patch.object(verify, 'BACKUP_DROPIN', backup), \
+                patch.object(verify, 'LEGACY_DROPIN', self.root / 'absent.conf'), \
+                patch.object(verify, 'require_launch'), patch.object(verify, 'require_backup'), \
+                patch.object(verify.host, 'regular') as root_owned:
+            verify.require_runtime()
+            # Registry authority follows the service-store privacy contract;
+            # only the two systemd configuration files require root ownership.
+            self.assertEqual([call.args[0] for call in root_owned.call_args_list], [dropin, backup])
+
+    def test_private_service_marker_is_not_mistaken_for_root_configuration(self):
+        self.runtime()
+
+    def test_missing_symlink_and_public_authority_markers_are_rejected(self):
+        for kind in ('missing', 'symlink', 'unsafe-mode'):
+            with self.subTest(kind=kind), self.assertRaises((OSError, RuntimeError)):
+                self.runtime(kind)
+            import shutil
+            shutil.rmtree(self.root / 'projects')

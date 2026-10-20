@@ -63,3 +63,21 @@ EADDRINUSE из-за TIME_WAIT после успешного отчёта; эт�
 самого wrapper. Независимая проверка ss показала отсутствие listeners,
 повтор bind с SO_REUSEADDR прошёл; private launcher исправлен. Финальный новый
 release будет прогнан с исправленной probe, exact hashes сохраняются отдельно.
+
+## Staging ownership finding
+
+Clean e923273 прошёл exact Linux product12/12 и updater8/8 с actual/proc proof;
+Go clean build,1256Next members и источники независимо проверены143. Первый
+actual staging дал **FAIL до создания work/journal**: `require_runtime` применял
+root-owned operator-file проверку к service-created authority marker. На VPS
+маркер regular0600/UIDaccord999; обе systemd конфигурации root0/0644. Остальные
+10preflight checks PASS, старые Go/Next5454 active, recovery markers отсутствуют.
+Никаких chown/chmod/удалений authority не выполнялось.
+
+Fix: root-only проверки остаются для конфигурации/helper code; marker следует
+существующей guard/GoPreflight policy через protected_root+LEGACY.private с
+обязательной regular0600 existence. Missing/symlink/public mode отвергаются.
+Independent143 fix APPROVE,8/8helpersunits и actual updater8/8 повтор PASS;
+полные infra148/148 PASS. Реальный readonly marker-policy recheck на VPS PASS.
+E923 не активируется; следующий immutable релиз включает исправление и опять
+проходит Linux/stage перед apply. Исходный код Go/Next не менялся.

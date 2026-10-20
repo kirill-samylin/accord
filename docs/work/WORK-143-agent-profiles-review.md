@@ -296,3 +296,55 @@ current10test hashes, clean revision и no-listeners/reusable-bind post-check.
 исправленная probe обязательна для окончательного нового release run.
 9599 остаётся inactive из-за заменённого ops source. Реальный Linux updater
 replay/production systemd/Next/HTTPS/full backup ещё требуют отдельного evidence.
+
+## Evidence audit окончательного immutable e923
+
+Review проверил clean Go buildinfo revision
+`e92327397ed6b12f13c712ba08969f694fbe209f`, linux/amd64/Go1.27.2,
+vcs.modified=false. Local ELF SHA самостоятельно совпал с release и обоими
+Linux reports: `7d36117844e4c80cd01733c710cdcaf0c45b09660ed2befeebba6e8ec9e9411d`.
+Next1256manifest members самостоятельно пересчитаны, manifest
+`f9a3d42238d1189e79d7140318ca7f948d6f72bddf6d2bb3f467116cbf980408`,
+BuildID `OwIdNIqrN5qMRLq-Tz2S6`, pinned Node24.19.0/upstream7892 совпали.
+
+Root exact Linux product12/12 и updater8/8 reports прочитаны; все их test/operator/
+fixture source hashes пересчитаны и совпали с текущими файлами. Exact old ELF6950,
+new7d36/revisione923, exit0 и cleanup PASS сохранены. Updater actual Linux /proc
+ветка остаётся отдельно от честно указанных simulated systemd/Next/UID adapters.
+Root full final check Goall/race/vet/infra146/client60/Nextbuild PASS прочитан.
+По этим доказательствам findings нет: **APPROVE pre-stage evidence**.
+
+Hardened staging пока не подтверждён: текущий stage-final.log содержит operator
+FAIL. До diagnosis и нового корректного stage evidence apply gate остаётся
+закрытым. Production5454 не объявляется обновлённым по inactive transfer или
+synthetic PASS. Дальнейшее фактическое state фиксирует координатор отдельно.
+
+WORK превышает300строк ради сохранения независимой истории обнаруженных FAIL,
+исправлений и последовательных exact-source evidence, без переписывания старых
+заключений задним числом. Это audit record, не монолитный product module.
+
+## Stage ownership FAIL и исправление
+
+Stage e923 остановлен до создания журнала и любого cutover:10preflight steps
+PASS, require_runtime FAIL. Private marker proof показывает service-owned
+authority marker UID999/mode600; systemd configs root0/mode644 корректны.
+`require_runtime` ошибочно применял root-only helper policy к authority marker.
+Это подтверждённый root ops defect, не повреждение старого production authority.
+e923 не активируется; новый immutable release обязателен.
+
+Fix независимо прочитан и **APPROVE**: systemd configs/helpers сохраняют root-only
+host.regular; для authority используются protected_root и LEGACY.private(marker).
+Последняя проверка обязательна для missing-marker отказа. Regular600/non-symlink
+policy совпадает с прежними Go Preflight и guard, где marker создаётся service
+UID. Чужие marker bytes/UID/modes не исправляются chmod/chown/recreate. Это
+устранение неверного UID требования, без изменения accepted storage policy.
+
+Независимые update_helpers8/8 PASS; missing/symlink/public mode отказ и отсутствие
+marker среди root-only regular calls проверены. Reviewer также повторил actual
+updater harness на новом fixture `.local/task010-update-qa/run-1792506191088358000`:
+8/8PASS, без product source changes. Новый39ops aggregate
+`caa92e607bb2bf1bfbe8416d8668493c79024c12b4a146781dd2ccb3fd04613c`,
+21infra-test aggregate
+`0cfadbcb9acf0ead7849522fbdfc13a408e3f1ec8ccbd9f9163c606ac7956809`.
+Новые immutable build/Linux/staging evidence ещё должны быть получены; stage
+gate остаётся отдельным от этого source-fix APPROVE.
