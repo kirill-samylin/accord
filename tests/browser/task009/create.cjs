@@ -1,0 +1,34 @@
+'use strict';
+const {assert, origin} = require('../../process/task009/harness.cjs');
+async function run(f, owner, pass) {
+  const p = owner.page;
+  await p.goto(origin + '/app/projects');
+  await p.getByRole('button', {name: 'Создать проект', exact: true}).click();
+  const dialog = p.getByRole('dialog');
+  await dialog.locator('input[name=name]').fill('QA UI created');
+  await dialog.locator('input[name=repository_url]').fill('https://github.com/example/ui-created.git');
+  await dialog.locator('input[name=branch]').fill('main');
+  const posted = p.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname === '/web/catalog/projects');
+  await dialog.getByRole('button', {name: 'Создать проект', exact: true}).click();
+  assert.equal((await posted).status(), 200);
+  await p.waitForURL(/\/app\/projects\/p_[a-f0-9]{32}$/);
+  f.uiProject = new URL(p.url()).pathname.split('/').at(-1);
+  await p.locator('input[name=name]').first().waitFor();
+  assert.equal(await p.locator('input[name=name]').first().inputValue(), 'QA UI created');
+  assert((await f.owner.catalog()).registry.projects.some(project => project.id === f.uiProject && project.role === 'owner' && project.repositories.length === 1));
+  p.once('dialog', confirmation => confirmation.accept());
+  const archived = p.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/update'));
+  await p.getByRole('button', {name: 'Архивировать проект', exact: true}).click();
+  assert.equal((await archived).status(), 200);
+  await p.getByRole('button', {name: 'Восстановить проект', exact: true}).waitFor();
+  await p.getByRole('button', {name: 'Открыть проект', exact: true}).click();
+  await p.locator('.control-shell').waitFor();
+  assert(await p.getByRole('button', {name: 'Новая задача', exact: true}).first().isDisabled(), 'archived owner UI offered write');
+  await p.goto(origin + '/app/projects/' + f.uiProject);
+  const restored = p.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/update'));
+  await p.getByRole('button', {name: 'Восстановить проект', exact: true}).click();
+  assert.equal((await restored).status(), 200);
+  await p.getByRole('button', {name: 'Архивировать проект', exact: true}).waitFor();
+  pass('Chrome-create-project-repository-archive-owner-readonly-and-restore-UI');
+}
+module.exports = {run};

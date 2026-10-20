@@ -447,3 +447,88 @@ response completion/cancellation до assertion и reload (иначе reload м�
 (новые A/B uploads этого не доказывают); pending raw board/journal hashes нужны
 до/после restore/reject; MCP stdin EPIPE должен reject pending и пройти owned
 cleanup. Общий test APPROVE до исправления/evidence не выдавался.
+
+## New QA source/results — completed substantive review
+
+Все15 current CJS/Python файлов независимо прочитаны; reviewer syntax parse
+**15/15 PASS** без запуска fixture и записи чужих файлов. Blocking test findings
+закрыты: explicit route+network completion/cancellation и два RAF перед final B
+assert/reload; synthetic design создан настоящим old binary до migration, старые
+rows/blobs и download bytes сравниваются после; pending board/journal hashes
+равны restored и ordinary rejection quarantine; MCP stdin errors reject pending,
+forced cleanup дожидается actual exit. Negative CLI/MCP tests требуют конкретные
+domain/server codes, transport timeout не считается ACL PASS.
+
+Actual tester full run3 `.local/task009-qa/run-1792499933671/results.json` —
+**25/25 PASS**, report SHA256
+`da02bd4d1ecceec79cbc7da2a117b7d07c09383a51f1be2f0606388b6eba4da6`.
+Все15 tests SHA совпали с current source при чтении; binary SHA
+`3946080cacf567a8dc2456cfe1f240e05d42846f4cac72993766c4b77cabd396`
+и actual old binary SHA
+`151929bea531faf0ef3b7b5da9ee1c0fb605714f08b06ba92829290dfe55dd64`
+совпали с файлами. Product Go215 aggregate20b896df неизменён. Это actual tester
+execution, reviewer не присваивает его собственному запуску.
+
+Покрыты old-token/cookie/session/lease/data migration; repository CRUD/validation/
+concurrent replay; A/B/native/MCP/cursor/assets isolation; current ACL/revoke/
+regrant/action epochs; incomplete-upload downgrade до publication; archive/live
+lease; restart; Chrome project create/open/tabs/back/drafts/immutable retry/late
+response/viewer/archive/restore; actual Next1MiB upload; full4-board snapshot/
+restore/reset/quarantine/recovery; old binary capability denial marker±; startup
+missing/empty authority failclosed. Process negative fixtures synthetic only.
+
+Reviewer просмотрел actual desktop light catalog, mobile dark catalog и mobile
+light designs screenshots: видимых overflow/перекрытий нет. Шесть screenshots
+проверяют ограниченный UI набор, не все экраны продукта и не physical mobile.
+Production readonly source отдельно прочитан, scoped GET/list/resource + own
+auth/open/logout flow допустим; actual production inspection пока NOT-RUN.
+
+Содержательная часть independent test review завершена без новых blockers.
+Формальный final freeze/portability-only OLD_BINARY env delta и supplemental
+provenance от139 ещё ожидаются; Linux/systemd/production HTTPS/VPS evidence этим
+локальным PASS не подменяются.
+
+## Final new-test/evidence disposition — APPROVE
+
+139 передал final freeze:15 code files + README. Каждый file SHA независимо
+совпал с `.local/task009-qa/final-freeze.json`; aggregate sorted compact JSON
+`{relative_path:sha256}` независимо воспроизведён:
+`e9df458b0733cc430b1b021d7d3cf5748f1d822d3826cb08c35a31a3b8307590`.
+Independent syntax **15/15 PASS** на final source. WORK139 SHA256
+`38dc7accf91deda194f3df6ec0ff58368b9dec8f8eb354c80458a1c09b1f670e`
+прочитан: historical FAIL и последующий PASS различены, runtime/platform
+ограничения и ownership сохранены, README не разрешает live data rehearsal.
+
+Финальный full process+Chrome run **25/25 PASS**, actual report
+`.local/task009-qa/run-1792500343500/results.json` SHA256
+`9452466964fdbb014480f503db0de0165757434cdeaf6a381e78690f9c18adc1`.
+Фактическая среда report: darwin/arm64, Node24.19.0, Chrome155.0.8059.85,
+Go1.27.2 via actual `go version -m`, Next BuildID `_BtTvE7AHru0IDFWVC3t0`.
+Source Go21520b896df и binary3946080c соответствуют approved product; root
+supplemental provenance подтверждает full product commit
+`d9030abe560856c2c6b8dedac124b97a64211496`, clean cmd/internal/web/infra.
+Embedded binary buildinfo честно фиксирует build до этого commit; это не
+приписывается последующей release build. Дополнительный process-only **16/16
+PASS** на macOS также не считается Linux run. Final dark catalog screenshot
+с disabled animations просмотрен: settled тема, видимых layout defects нет.
+
+После full run изменён только platform-aware текст limitations в run.cjs:
+`one <process.platform> host` вместо hardcoded macOS. Это metadata-only delta,
+сценарии/requests/assertions не меняются; повторный Chrome для этого не нужен.
+OLD_BINARY override/optional Go provenance, manifest before+after equality,
+README и screenshot animations disabled уже входили в reviewed final run.
+Root/139 подтвердили owned children stopped и TCP3100/3101 FREE.
+
+**New tests + local synthetic process/browser/migration/restore evidence:
+APPROVE.** Незакрытых blocking review findings нет. Source gate снят для root
+commit/release build, exact reviewed process-only Linux rehearsal и затем
+exact reviewed production-readonly inspection. Production script SHA256
+`4cba125394b8f434895e89f6f5b19143686a68b549ba90f7f34d732bc41fb26c`
+прочитан полностью, запрещённые business mutations отсутствуют. Root остаётся
+единственным владельцем реальных credentials, SSH и production operations.
+
+Это **не TASK009 completion и не production PASS**: Linux synthetic run,
+Linux/systemd/nginx owned listeners, actual guarded activation/full backup и
+preservation, final HTTPS read-only inspection обязательны у root перед
+закрытием. Physical second PC **NOT-RUN**. Reviewer не менял source/tests/
+Git/SSH/реальные данные и не выполнял тесты139 за tester.

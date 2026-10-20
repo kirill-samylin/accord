@@ -72,3 +72,92 @@ Process/browser/migration/backup/restore/downgrade — **NOT-RUN** до GO.
 Production HTTPS, Linux systemd/nginx/VPS и физический второй ПК здесь NOT-RUN;
 это отдельные проверки владельца поставки. Paperclip feature parity не заявляется.
 Новые тесты и evidence после реализации передаются независимому reviewer.
+
+## Разрешение и подготовленные сценарии
+
+Root выдал GO после независимого product source/author-test APPROVE136.
+Созданы новые `tests/process/task009/**` и `tests/browser/task009/**`;
+syntax всех12 CJS/Python файлов PASS. Runtime пока не запускался: последующий
+узкий startup authority-loss P1 повторно открыт владельцами135/136, tester
+ждёт исправленный binary и отдельный root freeze. Ни одного app PID не создано.
+
+Дополнительно по прямому поручению root подготовлен generic
+`production-readonly.cjs`. Он получает только пути приватных config/token/output
+через env; не запускается tester на VPS и не получает реальные credentials.
+Разрешены лишь собственные login/logout/explicit project-open, GET и MCP
+inspection без Describe/lease/task/repository/ACL/upload. Неожиданные browser
+мутации блокируются до сети. Отчёт агрегированный, screenshots private.
+
+WIP review136 уже исправил корректность harness: preflight3100/3101 до HTTP,
+readiness по stdout своего child, private root ancestry/UID, HTTP deadlines,
+native merged headers и явное различение MCP server denial от timeout/parser
+failure. Negative проверки не засчитывают transport errors как ACL PASS.
+Fixture SSH URLs используют explicit `ssh://git@host/path` по принятому контракту.
+Все новые файлы менее300строк. Полный test/evidence APPROVE ещё NOT-RUN.
+
+## Итог actual local QA — freeze
+
+Полный run **PASS25/25**, exit0: private
+`.local/task009-qa/run-1792500343500/results.json`, SHA256
+`9452466964fdbb014480f503db0de0165757434cdeaf6a381e78690f9c18adc1`.
+Фактическая среда: darwin/arm64, Go1.27.2 (`go version -m`), Node24.19.0,
+Chrome155.0.8059.85, Next BuildID `_BtTvE7AHru0IDFWVC3t0` с upstream3101.
+Binary SHA256 `3946080cacf567a8dc2456cfe1f240e05d42846f4cac72993766c4b77cabd396`;
+реально запущенный legacy binary из490bf55 SHA256
+`151929bea531faf0ef3b7b5da9ee1c0fb605714f08b06ba92829290dfe55dd64`.
+
+Root подтвердил product commit `d9030ab`, неизменённый approved Go215 aggregate
+`20b896df6eaee22e39410b2ca54eec35a5e9ffe1f720afb38145ee0904662cf5`.
+На момент run dirty только QA/docs; full revision/build source manifest
+фиксирует root отдельно. Binary собран до этого commit; фактический embedded
+buildinfo сохранён в private `go-buildinfo.txt` SHA256
+`4be76574b91ba987b8218d1edc812df001cac856f8fbbeec02ad3b8d541957b6`.
+Tester Git не выполнял и не заменяет root provenance догадками.
+
+Проверены реальные legacy web1→2, token/cookie/native human session/live lease,
+точные task/event/replay/session строки и старый default blob/upload/download;
+новые isolated projects, repoCRUD/URL validation/version/conflicting payload и
+concurrent same-action replay; A-only/B-only/shared/viewer, last owner,
+глобальный logout/tombstone, Origin/CSRF; REST и stdio MCP, collisions task keys,
+чужие session/cursor/resource/file; downgrade/revoke/regrant для native и
+unused/cached browser/catalog capabilities; незавершённый настоящий upload не
+держит ACL guard, viewer downgrade блокирует final publish и убирает reservation.
+
+Chrome покрывает вход/deep explicit POST/two tabs/reload/switch/back/cache,
+создание проекта с репозиторием, archive/read-only owner/restore, catalog drafts
+A→B, validation400→correction, фактически committed lost response→exact retry,
+actual held A dashboard read с явным network completion/cancellation до assert B,
+scoped Next upload1MiB с native size/SHA, viewer UI, desktop/mobile/light/dark.
+Шесть финальных screenshots сняты с `animations: 'disabled'`; overflow, page
+errors и unsolicited prefetch отсутствуют. Historical первый dark screenshot
+попал в100ms transition; readonly computed-style diagnostic подтвердил enabled
+buttons opacity1 и правильные settled цвета. Продуктовый CSS не изменялся.
+
+Actual process отказался стартовать при marker+missing/empty registry, сохранив
+default. Полный format2 snapshot восстановлен только в новый offline staging:
+registry+4published boards+unpublished raw pending; credentials/browser/native
+sessions/actions/leases reset; old cookie/token rejected, explicit fresh owner
+recovery читает старые tasks/blob bytes. Pending board.db+journal hashes
+сохранены в restored и ordinary reject quarantine; partial rename не оживляет
+старую HMAC create capability. Настоящий legacy executable отвергнут capability
+guard и при потерянном marker. Live production paths не затрагивались.
+
+Process-only override отдельно **PASS16/16** на macOS без Next/Chrome:
+`.local/task009-qa/run-1792500278083/results.json`. Linux/VPS/HTTPS остаются
+**NOT-RUN у tester**; root выполнит точный process-only код на Linux.
+Инструкция в `tests/process/task009/README.md`, включая OLD_BINARY override,
+необязательный Go tool и явно помеченный operator-build-provenance fallback.
+
+Два ранних запуска завершились harness/fixture FAIL: NextCLI штатный143 на
+SIGTERM и asynchronous deep-open button race; затем неверное ожидание сохранения
+stale journal после запроса SQLite recovery. Исправлены в tests; это не скрытые
+product PASS. Subsequent полные25 и process-only16 прошли.
+
+После полного run единственная CJS delta — platform-aware текст limitations
+для Linux вместо hardcoded macOS. Продуктовые сценарии не меняются; root/136
+согласовали metadata-only review без повторного Chrome. Final source manifest
+в `.local/task009-qa/final-freeze.json`, aggregate всех15 code files+README:
+`e9df458b0733cc430b1b021d7d3cf5748f1d822d3826cb08c35a31a3b8307590`.
+На окончательном freeze оба owned ports3100/3101 **FREE**, Go/Next/MCP остановлены,
+Chrome закрыт. Root может использовать binary/dist для выпуска. Независимое
+окончательное test/evidence review136 запрошено; product source tester не менял.

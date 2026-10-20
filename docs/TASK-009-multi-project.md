@@ -3,7 +3,7 @@
 20.10.2026. Прямое поручение: полноценные проекты, подключение репозиториев,
 переключение, изоляция данных и прав; текущий проект и данные сохранить.
 База `64e534b`, установленный TASK008 release `490bf55`.
-Ветка `codex/multi-project`. Статус: SOURCE APPROVE, actual runtime QA139.
+Ветка `codex/multi-project`. Статус: SOURCE APPROVE, local runtime PASS; final test review и VPS впереди.
 Контракт [multi-project.md](multi-project.md), независимое направление APPROVE136.
 
 ## Результат для пользователя
@@ -105,32 +105,40 @@ Describe namespace при epoch>0 использует приватный HMAC, 
 
 ## Фактические проверки
 
-Frontend137: format/typecheck,53 unit и production build PASS.
-Backend135: fmt/vet/all tests/race/build PASS; frozen211 Go files aggregate
-`defe01033eb21ce219f7e16cb90736567bfa935c289b257089f01854e983aeeb`.
-Это первый checkpoint; актуальный215-file amendment aggregate ниже.
-Root infra:113 unit PASS (84 прежних+29 новых; mock orchestration не runtime),
-scoped source/unit APPROVE136. Frontend также scoped APPROVE136.
-Независимый WORK136: overall source+author unit/integration APPROVE, повторный
-uncached race на projects/web/transport/cmd PASS. Root полный `make check`
-(Go/SSR/infra/race/build/Next format/type/unit/build) завершён EXIT0.
-Новые process/E2E, browser и migration/backup/restore rehearsal поручены139,
-результатов ещё нет. VPS TASK009 — NOT-RUN. Source APPROVE не runtime готовность.
+Product source и авторские unit/integration — независимый APPROVE136.
+Frontend: format/typecheck,53 unit и Next production build PASS. Go: fmt/vet,
+все tests, race и build PASS. Root infra:31 новых/115 всего unit PASS;
+mock orchestration не считается Linux runtime. Полный `make check` EXIT0.
 
-После checkpoint `42f02c7` root/136 подтвердили ещё один класс startup failure:
-existing registry нельзя пересоздавать при потере authority DB/meta/tables;
-missing published web metadata нельзя создавать пустой до orphan cleanup blobs.
-Backend135 выполняет bounded preflight fix до Store/web constructors. До нового
-source APPROVE и бинаря QA139 пишет/ревьюит test source, app runtime не запускал.
-Root также усилил проверку владельца readiness port в операторе;115 infra unit
-PASS, повторный scoped review136. VPS только read-only inventory:490bf55,
-Go/Next200, board2/web1, projects-data отсутствует; изменяющих действий TASK0090.
-
-Amendment135/136 завершён:215 Go files aggregate
-`20b896df6eaee22e39410b2ca54eec35a5e9ffe1f720afb38145ee0904662cf5`,
-независимый source+author tests APPROVE восстановлен. Root fmt/vet/allGo/
-115infra/race/build EXIT0; новый macOS QA binary SHA256
+Актуальный Go amendment после `42f02c7`:215 файлов, aggregate SHA256
+`20b896df6eaee22e39410b2ca54eec35a5e9ffe1f720afb38145ee0904662cf5`.
+Он не допускает пересоздание утраченного registry authority или пустого web
+metadata опубликованного проекта: preflight идёт до Store/web constructors,
+данные и blobs остаются на месте. Проверенный macOS binary SHA256
 `3946080cacf567a8dc2456cfe1f240e05d42846f4cac72993766c4b77cabd396`.
-Next BuildID `_BtTvE7AHru0IDFWVC3t0`,53 frontend unit/build ранее PASS,
-UI source не менялся. QA139 получил новый runtime GO; результаты ещё ожидаются.
-Это локальные проверки, Linux release и production версия пока прежние.
+Root повторный fmt/vet/allGo/115infra/race/build EXIT0.
+
+Отдельный QA139 actual run3:25/25 PASS. Реальный старый binary490bf55 создал
+synthetic web1/tasks/cookie/live lease/blob; новый сохранил строки и bytes при
+web2 migration. Проверены A-only/B-only/shared/viewer, scoped REST/MCP/files,
+revoke/regrant epochs, concurrent durable replay, прерванный upload, архив,
+restart, startup authority-loss отказ, full snapshot/NEW offline restore/reset,
+pending quarantine и запрет старого binary с marker/без marker.
+Chrome проверил две вкладки, cache/drafts/back/deep explicit open, поздний ответ,
+реально committed lost response и точный retry,1MiB upload через Next/SHA,
+viewer UI, mobile/light/dark;6 screenshots/315 responses, page errors0.
+Final evidence private `.local/task009-qa/run-1792500343500/results.json`, SHA256
+`9452466964fdbb014480f503db0de0165757434cdeaf6a381e78690f9c18adc1`.
+Chrome155.0.8059.85/Node24.19.0/Go1.27.2; дополнительный process-only16/16
+PASS. Final test freeze15 code files+README aggregate
+`e9df458b0733cc430b1b021d7d3cf5748f1d822d3826cb08c35a31a3b8307590`;
+после full run только platform-aware metadata text, не сценарии. Owned ports
+3100/3101 FREE, дочерние Go/Next/MCP/Chrome завершены.
+Next QA BuildID `_BtTvE7AHru0IDFWVC3t0`. Final test/evidence review идёт;
+стабильный контраст dark buttons подтверждён, screenshot transition исправлен.
+
+VPS TASK009 пока NOT-RUN; только read-only inventory490bf55, Go/Next200,
+board2/web1, projects-data отсутствует. Linux release/stage, фактическая
+миграция production, внешний HTTPS/native/browser smoke и полный backup
+остаются обязательными до закрытия. Физический второй ПК NOT-RUN;
+сохранённая Git-ссылка не означает clone или проверенный удалённый доступ.
