@@ -135,3 +135,12 @@ Format/TypeScript/unit42/build log прочитан — PASS, свежий Build
 **APPROVE product delta**, разрешены новые отдельные regression WORK132 после
 этого verdict. Нужны fresh Next artifact и новый Linux/HTTPS прогон; reuse
 старого Next bundle для этой дельты неприемлем. Runtime пока NOT-RUN.
+
+Новый meaningful browser regression WORK132 review **APPROVE**: script SHA256
+`88f749f7ceff6a13a93bd8c8c2f6539a3af30d1347c3f26b04d93cafc2700266`.
+Actual request prefetch markers count0 при viewport1000ms и hover500ms,
+явный click должен получить `/web/tasks`200; затем40screen matrix и отсутствие
+prefetch до конца. Только path/count в отчёте, без значений headers/credentials.
+Диагностика также сохраняется private. Это тест поведения, не имитация Go ответов.
+Rollback02 proof независимо сравнен с baseline: все защищённые hashes/pointer
+совпадают, старый Go/nginx active, новые Next unit/current отсутствуют.
