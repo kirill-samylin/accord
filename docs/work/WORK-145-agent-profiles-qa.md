@@ -44,8 +44,10 @@ private ignored .local. Tandem/соседний проект не использ
 Local17checks actual process+Chrome: PASS, после внесённых reviewer усилений.
 Финальный report: `.local/task010-qa/run-1792505088641/results.json`,
 SHA256 `0f1a21f57728245c5e877a1776fb143fd690c24568cf0df13c04381b14db02e5`.
-17/17 PASS;16screens. Все10 test-source hashes совпадают с final sources,
-changes-during-run отсутствует. Независимый final review143: APPROVE new test sources, local evidence и
+17/17 PASS;16screens. Все10 test-source hashes совпали с проверенным тогда
+snapshot, changes-during-run отсутствует. Последующая test-only коррекция
+production script отдельно зафиксирована ниже; сам local process/Chrome code
+остался прежним. Независимый final review143: APPROVE new test sources, local evidence и
 production readonly test safety; reviewer пересчитал report и все10source hashes. Node24.19.0, Chrome155; darwin/arm64. Это локальный build из approved
 product source, source_revision:null честно сохранён — clean release provenance
 и фактический Linux SHA даёт отдельно координатор при Linux rehearsal.
@@ -75,3 +77,31 @@ Reuse reviewed TASK009 production-support с guaranteed cleanup/report; diagnost
 Linux actual release process-only, updater146, production HTTPS/full backup и
 физический второй ПК: этим tester NOT-RUN; результаты координатор фиксирует
 после фактического исполнения. Полный V1/provider/worker execution не заявляется.
+
+## Первый HTTPS run cbf и узкая корректировка теста
+
+Root выполнил approved readonly script на production revision
+`cbf202086431335d4657c722a0f75328a09dc4ea`. Report
+`.local/task010/deploy/https-cbf-01/production-readonly-results.json`: **FAIL**
+после3успешных checks, до screenshots; cleanup logout PASS, browser closed.
+36browser responses200, page/CSP/asset errors0. Ошибка отмечена прежним stage
+MCP_READS, хотя предыдущие MCP checks уже прошли.
+
+Причина — ожидание теста для пустого browser списка. Фактический
+`internal/web/browser_page.go` использует `profiles,omitempty`: пустой список
+законно отсутствует, Next отображает `page.profiles ?? []`. Тест требовал массив
+без проверки отсутствующего поля. Исправление только в readonly script:
+отсутствующее поле нормализуется в[], иное значение по-прежнему обязано быть
+массивом; null/string/object не превращаются в успешную проверку. Native MCP
+resource остаётся строго массивом: core.ProfilesPage имеет `json:profiles` без
+omitempty, Store создаёт пустой[], поэтому native assertion не ослаблен.
+
+Добавлены отдельные stages PROFILE_BROWSER_READ/PROFILE_RESOURCE_READ/
+PROFILE_OWNER_CONTROLS. Read-only allowlists, Origin/auth/cookie/ACL checks,
+обязательные cleanup и приватность не изменены; production profiles не создаются.
+Product source/data не исправлялись. Это test-only correction после прежнего
+approved script SHA1d0801; старые reports/hashes сохраняются как история своего
+snapshot, не объявляются совпадающими с исправленным production test файлом.
+Независимый review143: APPROVE readonly HTTPS rerun, corrected script SHA256
+`04360016413b57b5e7ef7596da917f68812516d2de5c00202e0f4d30d7ee359f`.
+Product/operator immutable cbf не менялся; actual HTTPS повтор выполняет root.

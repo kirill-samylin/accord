@@ -155,15 +155,20 @@ async function main() {
   pass('HTTPS-explicit-project-open-native-reads-Origin-denied-scoped-MCP12-resource');
   const prefix = '/app/p/' + project;
   const screens = {profiles: prefix + '/profiles', ownSession: prefix + '/agents/' + before.session.session_id, overview: prefix, tasks: prefix + '/tasks', questions: prefix + '/questions', agents: prefix + '/agents', activity: prefix + '/activity', stats: prefix + '/stats', designs: prefix + '/designs', history: prefix + '/history', settings: prefix + '/settings', catalog: '/app/projects', repositories: '/app/projects/' + project};
+  stage = 'PROFILE_BROWSER_READ';
   const profiles = (await json('/web/p/' + project + '/profiles')).page;
-  assert(Array.isArray(profiles.profiles)); assert.equal(profiles.project.id, project);
-  assert(profiles.profiles.every(profile => !Object.hasOwn(profile, 'instructions')));
+  // Browser DTO omits an empty collection; native ProfilesPage keeps its array.
+  const profileList = profiles.profiles === undefined ? [] : profiles.profiles;
+  assert(Array.isArray(profileList)); assert.equal(profiles.project.id, project);
+  assert(profileList.every(profile => !Object.hasOwn(profile, 'instructions')));
   assert.equal(profiles.can_manage_profiles, profiles.project.can_write && !profiles.can_continue);
+  stage = 'PROFILE_RESOURCE_READ';
   const profileResource = await rpc('resources/read', {uri: 'accord://profiles?session_id=' + before.session.session_id + '&state=all'}, 5);
   assert(Array.isArray(JSON.parse(profileResource.contents[0].text).profiles));
+  stage = 'PROFILE_OWNER_CONTROLS';
   await app(prefix + '/profiles');
   if (profiles.can_manage_profiles) assert.equal(await page.getByRole('button', {name: 'Новый профиль', exact: true}).count(), 1);
-  if (profiles.profiles.length) screens.profileDetail = prefix + '/profiles/' + profiles.profiles[0].id;
+  if (profileList.length) screens.profileDetail = prefix + '/profiles/' + profileList[0].id;
   pass('HTTPS-profile-storage-scoped-resource-ownercontrols-without-data-mutation');
   for (const theme of ['light', 'dark']) {
     await page.setViewportSize({width: 1440, height: 900}); await app(prefix);

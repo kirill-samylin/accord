@@ -81,3 +81,29 @@ Independent143 fix APPROVE,8/8helpersunits и actual updater8/8 повтор PAS
 полные infra148/148 PASS. Реальный readonly marker-policy recheck на VPS PASS.
 E923 не активируется; следующий immutable релиз включает исправление и опять
 проходит Linux/stage перед apply. Исходный код Go/Next не менялся.
+
+## Фактическая финальная поставка cbf
+
+Clean cbf202086431335d4657c722a0f75328a09dc4ea: ELF SHA66f949aa6022ade9cf4881c1a8cd65201b35d94c6635db942fcd6f73d42546aa,
+Next manifest94186245b3d7ff02546f592343ef32ec44cf9b48a3e00f99ce07d6bec1651d06,
+BuildIDhI1Cu6Lg4v0sMm34KPKnO,1256members. Exact Linux product12/12 и updater8/8
+PASS; source hashes и actual/proc binding сохранены privateproof. Independent143
+APPROVE actualstage/apply после hardened stage (0restarts/7894free).
+
+Actual capable apply PASS: полный pre-snapshot доDDL, owned startup hold,
+новые floor/helpers, offline schema3 migration и exact logical preservation
+3productionDB. На VPS только default;2дополнительных проекта/7DB проверены
+только synthetic, не выдаются за production. Старые pointers/Go не выбирались.
+
+Readonly HTTPS-cbf-01 FAIL был ошибкой тестового empty browser array assertion;
+tester145 исправил absent-only и отдельные stage labels, independent143 APPROVE.
+Production source не менялся. Повтор cbf-02 PASS6/6:52screens,805browser200,
+errors0, prefetch0, только own login/project open/logout. Root visually проверил
+profile1440light/390light; hashes всех52screens совпали с report.
+
+Finalize PASS, actual journal complete; full final format2 backup validated на
+VPS. Finalproof подтверждает GoPID260083/argv/ELF66f9, NextPID259513/BuildIDhI1,
+helper/effective launch/backup PASS, service-UID guard PASS, services/timers active,
+NRestarts0, recovery markers0. Pre-snapshot validated и checksum preserved.
+Пути/полные hashes и точные evidence refs — в итоговой TASK010; private SQLite
+не скачивался. Итоговая независимая evidence приёмка WORK143: FINAL APPROVE.

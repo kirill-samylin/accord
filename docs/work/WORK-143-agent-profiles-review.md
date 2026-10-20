@@ -348,3 +348,83 @@ updater harness на новом fixture `.local/task010-update-qa/run-1792506191
 `0cfadbcb9acf0ead7849522fbdfc13a408e3f1ec8ccbd9f9163c606ac7956809`.
 Новые immutable build/Linux/staging evidence ещё должны быть получены; stage
 gate остаётся отдельным от этого source-fix APPROVE.
+
+## Окончательный cbf: stage и apply gate
+
+Clean immutable `cbf202086431335d4657c722a0f75328a09dc4ea` проверен независимо:
+Go buildinfo vcs.modified=false/revisioncbf/linuxamd64; local ELF SHA
+`66f949aa6022ade9cf4881c1a8cd65201b35d94c6635db942fcd6f73d42546aa`.
+Next manifest `94186245b3d7ff02546f592343ef32ec44cf9b48a3e00f99ce07d6bec1651d06`,
+все1256members пересчитаны, SOURCE revisioncbf/BuildID`hI1Cu6Lg4v0sMm34KPKnO`
+и pinned Node/upstream7892 совпали. Go229/web102 aggregates прежние, ops39caa92;
+tracked product/operator/tests source совпадает с clean commit.
+
+Exact Linux cbf product12/12 и updater8/8 PASS/exit0, old6950/new66f9 и все
+test/fixture/operator file hashes сверены с текущим source. Product cleanup
+probe PASS с SO_REUSEADDR. Updater simulation границы явно сохранены.
+Actual hardened Next staging подтверждён root journal/runtime proof: stagedcbf,
+stagePID258960/NRestarts0,7894free после cleanup, helper/runtime guards PASS;
+Go/Next active pointers ещё5454, public services/timers active, recovery markers0.
+
+**APPROVE apply cbf** существующим reviewed capable updater после полного
+snapshot под owned hold. Предыдущие9599/e923 не активируются. Это не итоговый
+production PASS: необходимы actual apply/HTTPS/finalbackup и проверка owned
+PID/argv/ELF/NextBuildID/helper hashes/full preservation.
+
+Private final collector safety прочитан: только remote reads/validation, реальные
+DB не скачиваются. Найден stale BUILD_ID path `.next`; root исправил на actual
+manifest `app/.local/next/BUILD_ID`, без product/operator изменения. Final collector
+результат ещё ожидается. Прежние stage/runtime FAIL остаются в истории выше.
+
+## Первая actual HTTPS приёмка и narrow test correction
+
+Reviewed apply cbf сообщил full pre-snapshot/preservation success и pending smoke.
+Первый HTTPS readonly run остановился после3checks до screenshots: ошибочно
+требовал array у browser DTO, который штатно omits empty profiles. Это ошибка
+теста, не production profile/storage defect: UI использует optional collection,
+native ProfilesPage сохраняет обязательный array. Initial FAIL сохраняется
+отдельно; cleanup own logout PASS по root evidence/WORK145.
+
+Отдельный tester145 исправил только test: absent browser key→[], present
+null/string/object всё ещё отвергаются; native strict array, project ID,
+instructions omission и owner controls checks сохранены. Добавлены три точных
+diagnostic stage labels. Diff независимо прочитан, Node syntax check PASS.
+**APPROVE readonly HTTPS rerun**, script SHA256
+`04360016413b57b5e7ef7596da917f68812516d2de5c00202e0f4d30d7ee359f`.
+Product/operator immutable cbf не менялся. Итоговые HTTPS/full backup/runtime
+proof и финальное closing review ещё обязательны.
+
+## Итоговая production evidence и closing review
+
+**FINAL APPROVE TASK010** для immutable production
+`cbf202086431335d4657c722a0f75328a09dc4ea`. Обязательных findings не осталось.
+Tracked cmd/internal/web/infra и process/infra tests совпадают с cbf; последующая
+production test-only correction имеет отдельно проверенный SHA043600 выше.
+Apply и finalize operator outputs PASS; journal phase complete. Final collector
+повторно прочитан: remote reads/validation, canonical upgrade.check, actual
+owned Go PID/argv/ELF66f9, Next PID/BuildIDhI1, helpers/effective runtime,
+service-UID guard PASS; markers0, services/timers active и Go/Next0restarts.
+Final runtime report SHA256
+`10b271f302891615ae4638dde2692172fe1aae36e208c9fab059f12d25e2e1b9`.
+
+HTTPS cbf-02 report SHA256 независимо пересчитан:
+`de89a71dbac0f4f4db77a40e61f7be650d9c73dcdf2dee9212efb1bb1e403017`.
+6/6PASS,52screens и все52SHA совпали;805responses200, page/console/asset errors0,
+prefetch0, own logout PASS. Current script/support hashes совпали с report.
+Reviewer визуально проверил profiles1440light/390dark: корректные responsive
+views, без фиктивного execution. Empty production profiles штатны.
+
+Pre-snapshot manifest f045cef6 и final format2 manifest a4e06648 повторно
+validated на VPS. Finalbackup включает default board3/web2, registry и migration
+history; actual preservation3DB/oldrows подтверждена. Это только default и
+0дополнительных production проектов; synthetic default+2projects/7DB evidence
+остаётся отдельным. Reviewer не выполнял production mutations и не скачивал БД.
+
+Финальные TASK010 и WORK144 прочитаны вместе с private proof: версии, проверки,
+история FAIL, source/runtime границы и NOT-RUN ограничения изложены корректно.
+AGENTS diff только актуализирует checkpoint на TASK010; accepted guards и scope
+сохранены. **APPROVE closing docs**: координатор может заменить FINAL REVIEW на
+COMPLETE и pending approval формулировки на состоявшееся APPROVE, затем сохранить
+итоговый документационный checkpoint. Общую TASK reviewer не изменял.
+Physical second PC, provider execution и полный V1 остаются NOT-RUN; следующий
+отдельный этап — контракт координации, затем управляемый запуск.

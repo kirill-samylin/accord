@@ -12,13 +12,13 @@
 масштабирования — `docs/control-web-architecture.md`. Прежний локальный этап после
 уточнения пользователя — `docs/TASK-007-next-paperclip.md`: полноценный Next.js
 клиент и фактический перенос Paperclip UI, поверх прежнего Go backend.
-Развёртывание Next — `docs/TASK-008-next-vps.md`; мультипроектность и
-актуальный checkpoint — `docs/TASK-009-multi-project.md`, контракт —
+Развёртывание Next — `docs/TASK-008-next-vps.md`; мультипроектность —
+`docs/TASK-009-multi-project.md`, контракт —
 `docs/multi-project.md`. Очередь следующих отдельных чатов прямо поручена:
 постоянные профили агентов, затем координация, затем управляемый запуск.
 После TASK009 запрещён старый Go/rollback БД: сохраняй capable guards/ACL и
 полный backup всех проектов; initial TASK009 apply не является updater новых релизов.
-Текущий этап постоянных профилей — `docs/TASK-010-agent-profiles.md`, контракт —
+Актуальный checkpoint постоянных профилей — `docs/TASK-010-agent-profiles.md`, контракт —
 `docs/agent-profiles.md`. Профиль не identity/session/присутствие/worker; schema3,
 immutable revisions/snapshots и ACL сохраняются. Следующие capable поставки —
 `infra/accord/projects/upgrade.py`, с отдельным review/QA до production.
