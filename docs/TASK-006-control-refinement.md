@@ -3,7 +3,8 @@
 Дата: 20.10.2026. Источник: прямое поручение пользователя продолжить веб по
 Paperclip, исправить визуальные дефекты, улучшить возможности и архитектуру.
 База: `d542a09648d183034e8cedb6e0ddd05336082fd6`, ветка
-`codex/control-refinement`. Статус: **в работе**.
+`codex/control-refinement`. Статус: **локальный этап завершён**.
+Установка на сервер не выполнялась.
 
 ## Объём и границы
 
@@ -34,6 +35,8 @@ OS-процессов. Multi-project пользователь отнёс к бу
 | 116 | Архитектор | Своя WORK, аудит только чтением | Контракты и source |
 | 117 | Frontend-разработчик | `internal/webui/**`, своя WORK | Контракты TASK-005/006 |
 | 118 | Backend-разработчик | `internal/web/**`, своя WORK | Контракты TASK-005/006 |
+| 119 | Независимый code/security reviewer | Своя WORK, source только чтение | Реализация 117/118 |
+| 120 | Отдельный tester/visual QA | `tests/web/refinement*.cjs`, своя WORK, `.local/` | APPROVE 119 |
 | root | Координатор | Общие TASK/архитектура/индексы | Интеграция и приёмка |
 
 Независимый reviewer назначается после реализации. Только после APPROVE новый
@@ -77,4 +80,51 @@ overview. Без параллельных циклов и дополнитель
 
 ## Результат
 
-Будет заполнен после реализации и независимой проверки.
+Финальный application source: `7ca7c9ec613856db104a69a602f3990a88c9f1c7`.
+Первое [независимое ревью](work/WORK-119-refinement-review.md) — APPROVE на
+`a2a48ad`; дельты компактного обзора `0874203` и отступа формы `7ca7c9e`
+прошли отдельное [source/test/evidence review](work/WORK-121-refinement-qa-review.md).
+Итоговый WORK121 — **APPROVE**, открытых замечаний нет; новые четыре process/E2E
+модуля и принятые доказательства проверены независимо от автора тестов.
+
+Реализованы команды/поиск, мобильный и noJS поиск, быстрые представления,
+исправления total/role-kind, компактные списки/эпики, task timeline и opt-in
+dashboard refresh. Две проблемы, найденные actual pixel review, исправлены:
+растягивание пустой панели агентов длинной лентой и перекрытие anchor формы.
+Основные файлы: `internal/web/control_dashboard.go`, `control_data.go`,
+`control_pages.go`, `contracts.go`; `internal/webui/templates/`, модульные
+`assets/{commands,dashboard,drawer,theme,control}.js` и тематические CSS.
+Полные списки — [frontend WORK117](work/WORK-117-frontend-refine.md) и
+[backend WORK118](work/WORK-118-backend-refine.md). `Makefile` включает JS tests
+в общий check; guide/API/индекс документов и архитектура актуализированы.
+
+**PASS:** root final `make check` на `7ca7c9e`: fmt/vet/Go/native acceptance,
+JS16/16, infra76, race, build. Runtime Go1.27.2 macOS arm64; Node20.20.0 для
+unit, Node24.19.0/Chrome155.0.8059.82 для browser acceptance.
+
+**PASS:** отдельный [WORK120](work/WORK-120-refinement-qa.md): frozen refinement
+7/7 на `7ca7c9e`, 39 captures; отдельная actual anchor геометрия 4/4
+(1440/768/390 и noJS390), независимый visual APPROVE. На `0874203` приняты
+affected control5/5 и browser-core4/4. Это отдельные scoped запуски с явными
+версиями, не выдуманный монолитный прогон. Reviewer121 самостоятельно повторял
+новые тесты. Первый FAIL неправильного тестового ожидания release reason и
+сбой подготовительного manual helper сохранены; продукт ради них не менялся.
+
+Source manifest: `.local/task006-freeze/source-anchor.json`, 204 файла,
+SHA256 `f99cde8360ba72280d0359c46e5a3d2c3421ca169423aae932d135e96a606088`.
+Binary SHA256 `45605611fffeef33b971616c44ba862812da6a68ad18b96004c757ba81d0f4df`.
+`vcs.modified=true` из-за документации/review при сборке: это локальный QA
+binary, не clean release. Соответствие 204 application source файлов manifest
+проверено независимо; разные сборки не объявлены побайтово одинаковыми.
+Acceptance summary `.local/task006-qa/acceptance-summary-final.json`, SHA256
+`482802cc1127f92961d1e0bae2e70118203248b70398bbc416b11ec7e7be581b`.
+
+## Оставшиеся границы
+
+- Production/push/merge/release не выполнялись; установленный сервер остаётся
+  на прежней версии TASK-005. Обновление сервера не входит в этот локальный этап.
+- Несколько изолированных проектов и постоянные agent profiles пока описаны
+  архитектурно; execution/provider/model/budget возможности не симулируются.
+- Два физических ПК, load/SLA, полный a11y/contrast audit, полный legacy14
+  upload/rollback в этой итерации — NOT-RUN. Два процесса на одном Mac не
+  заменяют вторую машину. Весь V1 и полная Paperclip parity не объявлены готовыми.

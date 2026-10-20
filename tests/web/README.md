@@ -113,3 +113,31 @@ continue остаётся protected POST.
 Неизменённые `upload-process.cjs`120s/50MiB проверены в QA095/097; их прежний
 результат отделён от текущего control/browser прогона. Full makecheck/race,
 production HTTPS/deployment и второй физический ПК здесь не проверяются.
+
+## Доработка панели TASK-006
+
+После независимого approve приложения, с теми же `ACCORD_QA_BINARY`,
+`ACCORD_QA_DIR`, `ACCORD_QA_PLAYWRIGHT`, `ACCORD_QA_CHROME`:
+
+```sh
+export ACCORD_QA_SOURCE_MANIFEST=/absolute/private/source-manifest.json
+node tests/web/refinement.cjs
+```
+
+Каждый запуск требует нового приватного QA_DIR. Manifest содержит revision и
+SHA256 исходников; runner записывает SHA самого manifest, binary и тестов.
+Соответствие исходников manifest проверяется отдельно до запуска, оно не
+выводится из одного наличия этого файла.
+
+Четыре модуля `refinement*.cjs` проверяют реальный поиск/команды и focus,
+мобильный/noJS поиск, фильтры kind/role, closed tasks, точный журнал задачи,
+ограниченную прокручиваемую ленту и обновление overview/agents/activity одним
+циклом. Native claim/release, offline, SIGSTOP timeout, no-renew и revoke401
+проверяются без подмены HTTP/БД. Clock ускоряет только браузерные таймеры.
+Есть 39 снимков overview/agents/agent detail/task/form в light/dark и
+desktop/tablet/mobile; наличие снимков не является их визуальным approve.
+
+Фактические результаты, независимый pixel осмотр, отдельная проверка anchor
+формы и точные ограничения — [WORK-120](../../docs/work/WORK-120-refinement-qa.md);
+независимое ревью новых тестов и доказательств —
+[WORK-121](../../docs/work/WORK-121-refinement-qa-review.md).

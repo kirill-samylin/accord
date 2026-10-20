@@ -251,3 +251,12 @@ legacy timing/attribution помечается incomplete.
 group_by=owner означает участника фактической попытки/серверной сессии
 (token.owner), а не владельца эпика. Для текущей очереди owner известен только
 при живой аренде; незахваченная работа относится к группе с пустым ключом.
+
+## Browser read API TASK-006
+
+`GET|HEAD /web/data/dashboard` — browser cookie и действующая сессия доски,
+не bearer/native API. Параметры URL не принимаются. Ответ содержит `overview`,
+`agents` (до 6 активных agent sessions), `activity` (до 20 последних событий).
+DTO и отдельные времена чтения — [контракт TASK-006](TASK-006-control-refinement.md).
+Ошибка любой коллекции возвращает ошибку всего запроса; GET не продлевает сессию
+или аренду. Прежний `/web/data/overview` сохраняет контракт TASK-005.
