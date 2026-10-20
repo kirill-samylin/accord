@@ -45,3 +45,27 @@ WORK150 общий SOURCE APPROVE; root independently matches74files manifest
 Next67/types/format/build), log `.local/task011/full-check-source.log`.
 Tester152 теперь разрешено писать/запускать новые process/E2E. Source сохраняется
 до QA findings; релиз/production пока NOT-RUN.
+
+## Диагностический cache incident
+
+Первый readonly remote inventory использовал прежний transport.py без remote -B
+и создал10 root-owned CPython caches в admin/{projects,next,web}/__pycache__
+в одном окне19:56:52UTC. Это операционная ошибка root, не изменение product/DB.
+До stage обнаружено отдельным audit. Каждый файл сверён по exact timestamp/UID/
+regular mode/SHA, CPython magic и compiled code against installed source; каждый
+source SHA совпал с completedcbf journal. Только эти известные caches перемещены
+с сохранением bytes+audit в root-only
+`/root/accord-task011-preflight-python-cache-20261020T195652Z`. Unknown recovery/
+temp artifacts не трогались. После перемещения reject_compiled_helpers,
+previous release require_helpers(after=True) и require_runtime PASS.
+Private cache-audit-private.json/cache-remediation-proof.json сохранены в deploy.
+Все task-local transport wrappers теперь запускают remote Python -B. Общий
+исторический transport и product/infra source не редактировались.
+
+Detailed readonly archive proof `cache-archive-detailed-proof.json` включает для
+каждого10files исходный/архивный SHA+mtime/UID/mode/regular, installedsource SHA
+vscompletedcbf helperhash и runtime magic/header/compiled-code equivalence. Archive
+root0700/exact10+audit inventory и canonical cache absence проверены. Independent150
+сам сверил10source SHA через git showcbf и exactbefore/afterset: incident evidence
+APPROVE. Detailed proof SHA256
+`f649652a1e6c490d7e2c20d80b6baf7c1f80346040dfbde50a7ededc275a1fac`.
