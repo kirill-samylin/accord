@@ -78,6 +78,9 @@ skills/routines/integrations требуют своих backend-контракт�
 | 124 | Backend developer | `internal/web/**`, своя WORK |
 | 125 | Next frontend developer | `web/**` кроме mutations, своя WORK |
 | 126 | Forms developer | `web/src/features/mutations/**`, своя WORK |
+| 127 | Независимый code/security reviewer | Своя WORK, продукт только чтение |
+| 128 | Независимый tester/designer | `tests/web/next*.cjs`, своя WORK, `.local/task007-qa` |
+| 129/root | Автор исправления network deadline | `mutations/deadline*`, подключение `useAction`, своя WORK |
 | root | Coordinator | Общая TASK, docs/индексы, root Make/ignore/Git |
 
 Все используют наследованную модель. Независимое code/security и design review
@@ -98,5 +101,14 @@ skills/routines/integrations требуют своих backend-контракт�
 
 ## Результат
 
-Будет заполнен после реализации и независимой приёмки. Ни новый runtime,
-ни наличие Next package.json сами по себе не являются готовым продуктом.
+Реализован клиент и JSON bridge; базовая application-версия `72be3f4` прошла
+полный `make check` и независимый source review. Browser QA затем обнаружил
+конфликт canonical redirect `/web/` между Next и Go. Дополнительный review
+обнаружил отсутствующие read/mutation deadlines и потерю редактора после
+ошибки фонового refetch. Это обязательные исправления текущего этапа;
+первый APPROVE не распространяется на ещё не проверенную финальную дельту.
+
+Приёмка продолжается. Неудачные exploratory runs и их причины сохраняются
+в `.local/task007-qa`; они не превращаются в PASS удалением отчётов.
+Итоговую проверенную версию, результаты и ограничения координатор добавит
+после повторного независимого review и браузерного/визуального прогона.

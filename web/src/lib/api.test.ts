@@ -49,7 +49,9 @@ test("page reads explicitly negotiate JSON with same-origin cookie and no cache"
     assert.equal(init?.cache, "no-store");
     assert.equal(init?.credentials, "same-origin");
     assert.equal(init?.redirect, "error");
-    assert.equal(init?.signal, controller.signal);
+    assert.ok(init?.signal instanceof AbortSignal);
+    assert.notEqual(init?.signal, controller.signal);
+    assert.equal(init?.signal.aborted, false);
     assert.equal(new Headers(init?.headers).get("Accept"), "application/json");
     return Response.json({ ok: true, page: { view: "tasks", tasks: [] } });
   };
@@ -154,4 +156,25 @@ test("revoked background page reads notify the identity cache boundary", async (
     if (descriptor) Object.defineProperty(globalThis, "window", descriptor);
     else Reflect.deleteProperty(globalThis, "window");
   }
+});
+test("root dashboard JSON goes directly to canonical Go /web/ without accepting HTTP redirects", async () => {
+  globalThis.fetch = async (input, init) => {
+    assert.equal(input, "/web/");
+    assert.equal(init?.redirect, "error");
+    return Response.json({ ok: true, page: { view: "overview" } });
+  };
+  assert.equal((await readPage("/app")).view, "overview");
+});
+test("nonroot trailing slashes preserve the canonical Go screen routes", () => {
+  assert.equal(appToWeb("/app/"), "/web/");
+  assert.equal(appToWeb("/app/login/"), "/web/login");
+  assert.equal(
+    appToWeb("/app/tasks/T-1/?tab=description"),
+    "/web/tasks/T-1?tab=description",
+  );
+  assert.equal(appToWeb("/app/agents/abc/"), "/web/agents/abc");
+  assert.equal(
+    appToWeb("/app/designs/?design_id=fixture"),
+    "/web/designs?design_id=fixture",
+  );
 });

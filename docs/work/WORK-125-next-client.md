@@ -90,3 +90,48 @@ profiles/runner/adapters, start/stop/chat, provider accounting/budgets,
 org/goals/routines/integrations остаются отдельными backend этапами TASK-007.
 Текущая миграция не закрывает весь Paperclip feature parity или полный V1.
 Никаких Git commit/push, deploy, VPS/Tandem либо изменений соседнего проекта.
+
+## Обязательная регрессия надёжности чтения после первого ревью
+
+По находкам127 и браузерной QA128 добавлены только следующие исправления:
+
+- `read-deadline.ts`:8секунд на весь GET, включая body/JSON parsing, объединение
+  query AbortSignal и timeout, очистка timer/listener в finally. Обычные screen
+  GET используют этот же deadline. `submitAction` принимает optional AbortSignal;
+  deadline мутаций реализует координатор в отдельно принадлежащих ему файлах.
+- `dashboard-polling.ts` и `use-dashboard.ts`: последовательное чтение через
+  TanStack Query, manual refetch с cancelRefetch:false, фоновые обновления только
+  при visible+online+active page. Visibility/offline/pagehide немедленно вызывают
+  cancelQueries и прерывают fetch/body. Возобновление возможно при возвращении.
+  Последний хороший snapshot сохраняется; неполный snapshot отклоняется.
+  После ошибок задержки30/60/120секунд с base15; Retry-After429/503 учитывается
+  как нижняя граница в диапазоне15..120секунд. Успех сбрасывает backoff.
+  401/409 останавливают polling;409 предлагает явное перечитывание shell.
+- ControlContent показывает fatal state только без cached PageData. Ошибка
+  refetch при сохранённом page отображает notice и сохраняет тот же TaskDetail,
+  answer draft и состояние pending action вместо unmount.
+- `skipTrailingSlashRedirect:true` в Next config сохраняет Go canonical `/web/`.
+  Поддержка подтверждена Next16.4.2 config-shared.d.ts1696 и config-schema.js832.
+  Это устраняет конфликт Next `/web/`→`/web` с Go `/web`→`/web/` при redirect:error.
+
+Авторские проверки текущей delta: TypeScript PASS, formatter PASS, unit37/37
+PASS вместе с координаторскими mutation deadline tests. Новые unit проверяют
+8секунд на зависшее body, parent cancellation, отсутствие start после abort,
+снятие timer/listener после успеха, backoff/Retry-After/domain errors и canonical
+root JSON URL. Production build этой delta и process/browser recheck автором
+**NOT-RUN** по прямому запрету координатора на изменение frozen artifact;
+координатор соберёт новую версию после повторного независимого approve.
+
+### Дополнительные два gate127
+
+`validDashboard` теперь сохраняет TASK-006 nested validation: opaque session ID,
+agent role/status, строковые owner/machine/run ID, действительные даты,
+безопасные task key/title и event cursor/type/at/provenance. Коллекции ограничены
+6агентами/20событиями; nil Go collections нормализуются в пустые массивы только
+после валидации. Unit с настоящим QueryClient подтверждает: malformed response
+отклоняется и не заменяет последний хороший snapshot.
+
+`appToWeb` убирает trailing slash у nonroot экранов, сохраняя canonical Go root
+`/web/`; unit проверяет login/tasks/agents/designs и сохранение query.
+TypeScript и unit40/40 PASS; formatter и diff-check PASS. Build по-прежнему
+NOT-RUN автором; финальный артефакт собирает координатор после approve127.

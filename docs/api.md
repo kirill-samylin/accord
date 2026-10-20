@@ -260,3 +260,28 @@ group_by=owner означает участника фактической поп
 DTO и отдельные времена чтения — [контракт TASK-006](TASK-006-control-refinement.md).
 Ошибка любой коллекции возвращает ошибку всего запроса; GET не продлевает сессию
 или аренду. Прежний `/web/data/overview` сохраняет контракт TASK-005.
+
+## Представление страниц для Next.js — TASK-007
+
+Новый клиент `/app` получает страницы и отправляет формы прежним `/web/**`
+с `Accept: application/json`. Это browser API с cookie/Origin/CSRF, не native
+Bearer API. Обычный HTML остаётся доступен без этого Accept. Статика,
+`/web/data/**` и binary download/preview сохраняют прежние представления.
+
+GET возвращает `{ok:true,page:{...}}`; успешная форма —
+`{ok:true,redirect:"/web/..."}`, heartbeat — также `session`/`next_action_id`.
+Ошибки сохраняют HTTP status и возвращают `{ok:false,error:{code,message},
+page,draft,field_errors,action_id,actions,retry_same_action}`. Набор полей зависит
+от страницы/операции. Durable action ID и capability берутся из ответа сервера;
+при неизвестном исходе повторяют прежнее действие, а не создают новое.
+
+`POST /web/tasks/{key}/update` принимает form fields `csrf`, `action_id`,
+`generation`, `title`, `description`. Разрешения проверяет тот же `Store.Update`:
+собственные незахваченные задачи/эпики human-requester либо собственная живая
+аренда с актуальным generation. Чужой lease не обходится. Заголовок обязателен
+и ограничен200символами; описание допускает пустую строку, максимум16КиБ.
+Роль, приоритет и состояние этим действием не меняются.
+
+Полная проекция полей и проверки — [WORK-124](work/WORK-124-next-browser-bridge.md).
+Топология Next/Go, ограничения rewrite/upload и локальный запуск —
+[next-web.md](next-web.md). Native REST/MCP wire contract выше сохраняется.

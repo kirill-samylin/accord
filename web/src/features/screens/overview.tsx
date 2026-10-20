@@ -13,9 +13,10 @@ import {
   Status,
   TaskRow,
 } from "@/components/common";
-import { APIError, readPage } from "@/lib/api";
-import type { DashboardData, PageData } from "@/lib/types";
+import { readPage } from "@/lib/api";
+import type { PageData } from "@/lib/types";
 import { date, label, number } from "@/lib/format";
+import { useDashboard } from "../hooks/use-dashboard";
 export function OverviewScreen({
   page,
   onSessionExpired,
@@ -23,59 +24,7 @@ export function OverviewScreen({
   page: PageData;
   onSessionExpired: () => void;
 }) {
-  const live = useQuery<DashboardData>({
-    queryKey: ["dashboard"],
-    queryFn: async ({ signal }) => {
-      const response = await fetch("/web/data/dashboard", {
-        headers: { Accept: "application/json" },
-        credentials: "same-origin",
-        cache: "no-store",
-        signal,
-      });
-      if (!response.ok) {
-        if (response.status === 401)
-          window.dispatchEvent(new Event("accord:unauthorized"));
-        if (response.status === 409) onSessionExpired();
-        const failure = await response.json().catch(() => ({
-          code: "UNAVAILABLE",
-          error: "Не удалось обновить состояние",
-        }));
-        throw new APIError(response.status, {
-          ok: false,
-          error: {
-            code: failure.code ?? "UNAVAILABLE",
-            message:
-              typeof failure.error === "string"
-                ? failure.error
-                : "Не удалось обновить состояние",
-          },
-        });
-      }
-      return response.json();
-    },
-    initialData: page.overview
-      ? {
-          overview: page.overview,
-          agents: {
-            sessions: page.agents ?? [],
-            observed_at: page.agents_observed_at ?? "",
-          },
-          activity: {
-            events: page.activity ?? [],
-            observed_at: page.activity_observed_at ?? "",
-          },
-        }
-      : undefined,
-    refetchInterval: (query) =>
-      query.state.error instanceof APIError &&
-      [401, 409].includes(query.state.error.status)
-        ? false
-        : 15000,
-    refetchIntervalInBackground: false,
-    networkMode: "online",
-    retry: false,
-    gcTime: 0,
-  });
+  const live = useDashboard(page, onSessionExpired);
   const recent = useQuery({
     queryKey: ["recent-tasks"],
     queryFn: ({ signal }) => readPage("/app/tasks?include_closed=true", signal),
@@ -106,7 +55,7 @@ export function OverviewScreen({
             <button
               className="icon-button"
               aria-label="Обновить состояние"
-              disabled={live.isFetching}
+              disabled={live.isFetching || live.paused}
               onClick={() => live.refetch()}
             >
               <RefreshCw size={15} className={live.isFetching ? "spin" : ""} />

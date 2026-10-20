@@ -6,6 +6,7 @@ import type { MutationResult, PageData } from "@/lib/types";
 import { snapshotPayload, type Payload, type PendingAction } from "./contracts";
 
 import { applyActionResult, applyRefreshedPage } from "./actionState";
+import { withMutationDeadline } from "./deadline";
 
 type Phase = "idle" | "sending" | "uncertain" | "blocked" | "settled";
 
@@ -47,7 +48,9 @@ export function useAction(
     setMessage("");
     let result: MutationResult;
     try {
-      result = await submitAction(action.path, action.body);
+      result = await withMutationDeadline(action.path, (signal) =>
+        submitAction(action.path, action.body, signal),
+      );
     } catch {
       sending.current = false;
       if (mounted.current) {

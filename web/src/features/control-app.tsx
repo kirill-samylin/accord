@@ -109,7 +109,7 @@ function ControlContent() {
     if (target !== location) router.push(target);
   }
   if (result.isPending) return <Loading />;
-  if (result.isError || !result.data)
+  if (!result.data)
     return (
       <main className="welcome">
         <div className="project-mark">A</div>
@@ -208,6 +208,18 @@ function ControlContent() {
       {page.notice ? (
         <div className="page-notice notice" role="status">
           {page.notice}
+        </div>
+      ) : null}
+      {result.isError ? (
+        <div className="page-notice notice error-notice" role="alert">
+          Не удалось обновить страницу. Последние данные и ваш черновик
+          сохранены.{" "}
+          <button
+            className="button button-secondary button-sm"
+            onClick={() => result.refetch()}
+          >
+            Повторить
+          </button>
         </div>
       ) : null}
       {result.isFetching ? (
