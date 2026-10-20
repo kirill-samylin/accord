@@ -15,6 +15,7 @@
     "jsx": "react-jsx",
     "erasableSyntaxOnly": true,
     "incremental": true,
+    "tsBuildInfoFile": ".local/tsconfig.tsbuildinfo",
     "plugins": [{ "name": "next" }],
     "paths": { "@/*": ["./src/*"] }
   },
