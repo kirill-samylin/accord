@@ -13,6 +13,11 @@
 <link rel="stylesheet" href="/web/static/shell.css">
 <link rel="stylesheet" href="/web/static/control.css">
 <link rel="stylesheet" href="/web/static/tasks.css">
+<link rel="stylesheet" href="/web/static/commands.css">
+<script src="/web/static/theme.js" defer></script>
+<script src="/web/static/drawer.js" defer></script>
+<script src="/web/static/commands.js" defer></script>
+<script src="/web/static/dashboard.js" defer></script>
 <script src="/web/static/control.js" defer>
 </script>
 <script src="/web/static/app.js" defer>
@@ -38,6 +43,7 @@
 <small>Текущий проект</small>
 </span>
 </a>
+<a class="button sidebar-create" href="/web/tasks#create">+ Создать задачу</a>
 <p class="nav-label">Рабочее пространство</p>
 <nav class="nav" aria-label="Основные разделы">
 {{range navigation .}}
@@ -65,6 +71,7 @@
 </form>
 </div>
 </aside>
+{{template "command-palette" .}}
 <div class="workspace">
 <header class="topbar">
 <button type="button" class="icon-button drawer-open" data-drawer-open hidden aria-label="Открыть меню" aria-controls="navigation" aria-expanded="false">☰</button>
@@ -82,6 +89,7 @@
 <input id="global-q" name="q" value="{{.Query}}" placeholder="Поиск задач…" maxlength="200">
 <button type="submit" class="text-button">Найти</button>
 </form>
+<button type="button" class="command-trigger" data-command-open hidden aria-label="Поиск задач и переход (Ctrl или ⌘ K)" aria-haspopup="dialog" aria-controls="command-palette">{{template "nav-icon" "search"}}<span>Поиск и переход</span><kbd>⌘ K</kbd></button>
 <button type="button" class="icon-button" data-theme-toggle aria-label="Включить тёмную тему" hidden>◐</button>
 </header>
 {{else}}
@@ -105,7 +113,10 @@
 {{end}}
 </div>
 {{if and .Principal.ID (ne .View "login")}}
+<div class="heading-actions">
+{{if ne .View "tasks"}}<a class="button compact" href="/web/tasks#create">+ Задача</a>{{end}}
 <a class="button secondary compact" href="{{refreshURL .}}">Обновить</a>
+</div>
 {{end}}
 </div>
 {{if .Error}}

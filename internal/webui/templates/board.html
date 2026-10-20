@@ -1,4 +1,10 @@
 {{define "board"}}{{template "head" .}}{{if not .CanContinue}}
+{{if ne .View "questions"}}
+<nav class="quick-views" aria-label="Быстрые представления задач">
+{{range taskViews .}}<a href="{{.URL}}" {{if .Active}}aria-current="page"{{end}}>{{.Label}}</a>{{end}}
+<a href="#create">+ Создать задачу</a>
+</nav>
+{{end}}
 <form class="filters" method="get" action="/web/">
 <input type="hidden" name="view" value="{{.View}}">
 {{if ne .View "questions"}}
@@ -60,10 +66,9 @@
 {{end}}
 </section>
 {{else}}
-<div class="section-heading">
-<h2>Эпики</h2>
-<a href="#create">Создать эпик или задачу ↓</a>
-</div>
+<details class="epic-group">
+<summary>Эпики проекта <span class="micro">{{len .Epics}} на странице</span></summary>
+<div class="section-heading"><h2>Эпики</h2><a href="#create">Создать эпик ↓</a></div>
 <div class="card-grid">
 {{range .Epics}}{{template "task-card" .}}{{else}}
 <div class="empty">Эпиков пока нет. Создайте первый в форме ниже.</div>
@@ -72,6 +77,7 @@
 {{if .EpicsNextCursor}}
 <a class="pagination" href="{{epicsURL .}}" rel="next">Следующие эпики →</a>
 {{end}}
+</details>
 <div class="section-heading">
 <h2>Задачи</h2>
 <nav class="segmented" aria-label="Представление задач">
@@ -127,7 +133,7 @@
 {{end}}
 </div>
 <h3>
-<a href="{{taskURL .Key}}">
+<a href="{{taskURL .Key}}" title="{{.Title}}">
 {{.Title}}
 </a>
 </h3>

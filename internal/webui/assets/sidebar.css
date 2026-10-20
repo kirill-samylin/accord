@@ -149,3 +149,9 @@
   font-size: 11px;
   color: var(--muted-fg);
 }
+
+.sidebar-create {
+  margin: 14px 4px 0;
+  justify-content: center;
+  font-size: 12px;
+}

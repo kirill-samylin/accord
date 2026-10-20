@@ -1,0 +1,18 @@
+{{define "command-palette"}}
+<dialog id="command-palette" class="command-palette" aria-labelledby="command-title">
+<div class="command-heading"><h2 id="command-title">Поиск и переход</h2><button type="button" class="icon-button" data-command-close aria-label="Закрыть поиск">×</button></div>
+<form action="/web/tasks" method="get" role="search" class="command-search">
+<label for="command-query">Найти задачу в проекте</label>
+<div><input id="command-query" name="q" maxlength="200" autocomplete="off" placeholder="Ключ, название или описание…" data-command-query><button type="submit">Найти</button></div>
+</form>
+<p class="nav-label">Быстрый переход</p>
+<nav class="command-links" aria-label="Быстрые действия">
+<a href="/web/tasks#create" data-command-item>+ Создать задачу</a>
+<a href="/web/tasks?state=in_progress" data-command-item>Задачи в работе</a>
+<a href="/web/tasks?role=reviewer" data-command-item>Задачи для ревью</a>
+{{range navigation .}}<a href="{{.URL}}" data-command-item>{{template "nav-icon" .Icon}}<span>{{.Label}}</span></a>{{end}}
+</nav>
+<p class="hint command-empty" data-command-empty hidden>Разделов с таким названием нет. Нажмите «Найти» для поиска по задачам.</p>
+<p class="command-help hint"><kbd>↑</kbd> <kbd>↓</kbd> Переход · <kbd>Esc</kbd> Закрыть</p>
+</dialog>
+{{end}}

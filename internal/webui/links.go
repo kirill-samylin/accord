@@ -95,3 +95,29 @@ func epicsURL(p web.Page) string {
 	values.Set("epic_cursor", p.EpicsNextCursor)
 	return base + "?" + values.Encode()
 }
+
+// Quick views preserve the layout, and start a fresh project-wide filter.
+// Review is a role, never a fabricated task state.
+func taskViews(p web.Page) []navItem {
+	layout := p.Draft["layout"]
+	items := []navItem{
+		{URL: "/web/tasks", Label: "Текущие", Active: p.State == "" && p.Role == "" && p.Draft["include_closed"] != "true"},
+		{URL: "/web/tasks?include_closed=true", Label: "Все задачи", Active: p.State == "" && p.Role == "" && p.Draft["include_closed"] == "true"},
+		{URL: "/web/tasks?state=in_progress", Label: "В работе", Active: p.State == "in_progress" && p.Role == ""},
+		{URL: "/web/tasks?state=ready", Label: "В очереди", Active: p.State == "ready" && p.Role == ""},
+		{URL: "/web/tasks?role=reviewer", Label: "Ревью", Active: p.Role == "reviewer" && p.State == "" && p.Draft["include_closed"] != "true"},
+	}
+	for i := range items {
+		if p.Query != "" || p.EpicKey != "" || p.Draft["owner"] != "" {
+			items[i].Active = false
+		}
+		if layout == "board" {
+			u, _ := url.Parse(items[i].URL)
+			q := u.Query()
+			q.Set("layout", layout)
+			u.RawQuery = q.Encode()
+			items[i].URL = u.String()
+		}
+	}
+	return items
+}

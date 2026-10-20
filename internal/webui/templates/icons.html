@@ -1,6 +1,8 @@
 {{define "nav-icon"}}
 <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-{{if eq . "overview"}}
+{{if eq . "search"}}
+<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>
+{{else if eq . "overview"}}
 <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/>
 {{else if eq . "questions"}}
 <path d="M21 11a9 9 0 0 1-9 9H5l-3 2V11a9 9 0 0 1 18 0Z"/>

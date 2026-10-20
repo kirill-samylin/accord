@@ -183,3 +183,20 @@
 .card-grid > .panel, .card-grid > .task-card {
   margin-bottom: 0;
 }
+
+.task-card h3 a, .assigned-task > a {
+ display: -webkit-box;
+ -webkit-line-clamp: 2;
+ -webkit-box-orient: vertical;
+ overflow: hidden;
+ overflow-wrap: anywhere;
+}
+.meta > span { overflow-wrap: anywhere; }
+
+/* Used by task and participant filters; all links remain native GET navigation. */
+.quick-views { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+.quick-views a { padding: 9px 12px; text-decoration: none; font-size: 12px; border-bottom: 2px solid transparent; color: var(--muted-fg); }
+.quick-views a[aria-current=page] { border-color: var(--foreground); color: var(--foreground); font-weight: 550; }
+@media (max-width: 767px) {
+  .section-heading { flex-wrap: wrap; }
+}

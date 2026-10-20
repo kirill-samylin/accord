@@ -37,6 +37,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	if r.URL.Path == "/web/data/dashboard" {
+		s.controlData(w, r)
+		return
+	}
 	if r.Method != "GET" && r.Method != "HEAD" && r.Method != "POST" {
 		w.Header().Set("Allow", "GET, HEAD, POST")
 		http.Error(w, "Метод недоступен", 405)

@@ -14,10 +14,13 @@
   text-decoration: none;
   min-width: 0;
   background: var(--background);
+  min-height: 132px;
+  justify-content: space-between;
 }
 
 a.metric:hover {
   background: var(--muted);
+  border-color: var(--muted-fg);
 }
 
 .metric > span {
@@ -26,8 +29,10 @@ a.metric:hover {
 }
 
 .metric > strong {
-  font-size: 28px;
-  line-height: 1.5;
+  font-size: 32px;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  margin: 8px 0;
   letter-spacing: -1px;
   font-weight: 600;
 }
@@ -35,6 +40,7 @@ a.metric:hover {
 .metric > small {
   color: var(--muted-fg);
   font-size: 10px;
+  line-height: 1.45;
 }
 
 .overview-strip {
@@ -59,6 +65,7 @@ a.metric:hover {
 
 .dashboard-grid > .panel {
   margin-bottom: 0;
+  padding: 18px;
 }
 
 .dashboard-grid .section-heading {
@@ -66,12 +73,15 @@ a.metric:hover {
 }
 
 .dashboard-grid .agent-row {
+  padding: 14px 0;
   grid-template-columns: minmax(0,1fr) minmax(0,1fr);
 }
 
 .dashboard-grid .agent-row > time {
   grid-column: 1 / -1;
 }
+
+.dashboard-grid .event-row { padding: 12px 0; }
 
 .dashboard-grid .hint {
   font-size: 11px;
@@ -228,4 +238,29 @@ a.metric:hover {
 
 .project-card {
   max-width: 700px;
+}
+
+.overview { padding-bottom: 16px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+.overview > .section-heading { margin-top: 0; }
+.dashboard-grid .event-row .prose { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.task-timeline .dashboard-grid .event-row .prose { display: block; }
+.agent-row > time { font-variant-numeric: tabular-nums; }
+
+.live-options { display: flex; align-items: center; gap: 8px; font-size: 11px; margin-top: 12px; }
+.live-options input { width: auto; margin: 0; }
+.panel-caption { border-top: 1px solid var(--border); padding-top: 10px; }
+@media (max-width: 1100px) {
+ .metrics-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+ .dashboard-grid, .detail-grid, .settings-grid { grid-template-columns: minmax(0,1fr); }
+ .roster .agent-row, .roster .table-heading { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+ .roster .agent-row > time { grid-column: 1 / -1; }
+ .roster .table-heading > span:last-child { display: none; }
+}
+@media (max-width: 767px) {
+ .metric { padding: 12px; }
+ .metric strong { font-size: 25px; }
+ .metric > span { font-size: 11px; }
+ .agent-row, .dashboard-grid .agent-row, .roster .agent-row { grid-template-columns: minmax(0,1fr); gap: 10px; }
+ .table-heading { display: none; }
+ .event-row { gap: 8px; }
 }

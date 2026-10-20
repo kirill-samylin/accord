@@ -81,6 +81,12 @@ func (s *Server) read(w http.ResponseWriter, r *http.Request, b *browserSession)
 			p.Task = &task
 			p.CanEdit = canEdit(b, &task)
 			err = s.taskActions(r.Context(), b, &p, []core.Task{task})
+			if err == nil && task.Type == "task" {
+				var events core.RecentEventsPage
+				events, err = s.board.RecentEvents(r.Context(), b.actor(), core.RecentEventsInput{TaskKey: task.Key, Limit: 10})
+				p.Activity = events.Events
+				p.ActivityObservedAt = events.ObservedAt
+			}
 		}
 	case "history":
 		err = s.historyPage(r, b, &p)
@@ -96,22 +102,16 @@ func (s *Server) read(w http.ResponseWriter, r *http.Request, b *browserSession)
 func (s *Server) controlPage(r *http.Request, b *browserSession, p *Page) error {
 	switch p.View {
 	case "overview":
-		overview, err := s.board.ControlOverview(r.Context(), b.actor())
+		snapshot, err := s.readDashboard(r.Context(), b.actor())
 		if err != nil {
 			return err
 		}
-		p.Overview = &overview
-		p.ObservedAt = overview.ObservedAt
-		agents, err := s.board.ControlSessions(r.Context(), b.actor(), core.ControlSessionsInput{Kind: "agent", State: "active", Limit: 6})
-		if err != nil {
-			return err
-		}
-		p.Agents = agents.Sessions
-		events, err := s.board.RecentEvents(r.Context(), b.actor(), core.RecentEventsInput{Limit: 20})
-		if err != nil {
-			return err
-		}
-		p.Activity = events.Events
+		p.Overview = &snapshot.Overview
+		p.ObservedAt = snapshot.Overview.ObservedAt
+		p.Agents = snapshot.Agents.Sessions
+		p.Activity = snapshot.Activity.Events
+		p.AgentsObservedAt = snapshot.Agents.ObservedAt
+		p.ActivityObservedAt = snapshot.Activity.ObservedAt
 	case "agents":
 		return s.agentsPage(r, b, p)
 	case "agent":
@@ -125,6 +125,7 @@ func (s *Server) controlPage(r *http.Request, b *browserSession, p *Page) error 
 		}
 		p.Agent = &agents.Sessions[0]
 		p.ObservedAt = agents.ObservedAt
+		p.AgentsObservedAt = agents.ObservedAt
 		return s.activityPage(r, b, p, id)
 	case "activity":
 		return s.activityPage(r, b, p, "")
@@ -175,6 +176,7 @@ func (s *Server) agentsPage(r *http.Request, b *browserSession, p *Page) error {
 	p.Agents = page.Sessions
 	p.NextCursor = page.NextCursor
 	p.ObservedAt = page.ObservedAt
+	p.AgentsObservedAt = page.ObservedAt
 	return nil
 }
 func (s *Server) activityPage(r *http.Request, b *browserSession, p *Page, sessionID string) error {
@@ -196,6 +198,7 @@ func (s *Server) activityPage(r *http.Request, b *browserSession, p *Page, sessi
 	}
 	p.Activity = events.Events
 	p.ObservedAt = events.ObservedAt
+	p.ActivityObservedAt = events.ObservedAt
 	if events.HasMore {
 		p.NextCursor = strconv.FormatInt(events.NextCursor, 10)
 	}

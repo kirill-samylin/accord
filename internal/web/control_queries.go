@@ -14,7 +14,7 @@ import (
 func controlQuery(r *http.Request) error {
 	allowed := ""
 	switch {
-	case r.URL.Path == "/web/data/overview", r.URL.Path == "/web/overview", r.URL.Path == "/web/projects", r.URL.Path == "/web/settings":
+	case r.URL.Path == "/web/data/overview", r.URL.Path == "/web/data/dashboard", r.URL.Path == "/web/overview", r.URL.Path == "/web/projects", r.URL.Path == "/web/settings":
 	case r.URL.Path == "/web/":
 		allowed = "view cursor epic_cursor state role epic_key owner include_closed q layout"
 	case r.URL.Path == "/web/tasks", r.URL.Path == "/web/questions":

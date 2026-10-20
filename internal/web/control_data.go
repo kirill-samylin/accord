@@ -12,7 +12,7 @@ import (
 // controlData is deliberately independent of page/action/session continuation.
 func (s *Server) controlData(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	if r.URL.Path != "/web/data/overview" {
+	if r.URL.Path != "/web/data/overview" && r.URL.Path != "/web/data/dashboard" {
 		s.controlJSONError(w, core.Fail("not_found", "Не найдено"))
 		return
 	}
@@ -22,26 +22,39 @@ func (s *Server) controlData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := controlQuery(r); err != nil {
-		s.controlJSONError(w, err)
+		s.controlDataError(w, r, err)
 		return
 	}
 	b, err := s.loadBrowser(r)
 	if err != nil {
-		s.controlJSONError(w, err)
+		s.controlDataError(w, r, err)
 		return
 	}
 	if !b.Session.ExpiresAt.After(time.Now()) {
-		s.controlJSONError(w, core.Fail("session_expired", "Продолжите сессию явно"))
+		s.controlDataError(w, r, core.Fail("session_expired", "Продолжите сессию явно"))
 		return
 	}
-	overview, err := s.board.ControlOverview(r.Context(), b.actor())
+	var payload any
+	if r.URL.Path == "/web/data/dashboard" {
+		payload, err = s.readDashboard(r.Context(), b.actor())
+	} else {
+		payload, err = s.board.ControlOverview(r.Context(), b.actor())
+	}
 	if err != nil {
-		s.controlJSONError(w, err)
+		s.controlDataError(w, r, err)
 		return
 	}
 	if r.Method != "HEAD" {
-		_ = json.NewEncoder(w).Encode(overview)
+		_ = json.NewEncoder(w).Encode(payload)
 	}
+}
+
+func (s *Server) controlDataError(w http.ResponseWriter, r *http.Request, err error) {
+	if r.URL.Path == "/web/data/dashboard" && r.Method == "HEAD" {
+		w.WriteHeader(errorStatus(err))
+		return
+	}
+	s.controlJSONError(w, err)
 }
 func (s *Server) controlJSONError(w http.ResponseWriter, err error) {
 	code := "UNAVAILABLE"

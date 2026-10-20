@@ -164,3 +164,6 @@ section {
 .task-card h3 a:hover {
   text-decoration: underline;
 }
+
+/* Author display rules must not reveal disabled progressive enhancements. */
+[hidden] { display: none !important; }

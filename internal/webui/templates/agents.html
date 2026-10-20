@@ -1,12 +1,12 @@
 {{define "agents"}}{{template "head" .}}{{if not .CanContinue}}
 <p class="muted">Сессии участников проекта, их доступ и текущее владение задачами. Срок сессии не подтверждает работу внешнего процесса.</p>
+<nav class="quick-views" aria-label="Тип участников">
+<a href="/web/agents?kind=agent" {{if and (ne (draft . "kind") "human") (ne (draft . "kind") "all")}}aria-current="page"{{end}}>Агенты</a>
+<a href="/web/agents?kind=human" {{if eq (draft . "kind") "human"}}aria-current="page"{{end}}>Люди</a>
+<a href="/web/agents?kind=all" {{if eq (draft . "kind") "all"}}aria-current="page"{{end}}>Все участники</a>
+</nav>
 <form class="filters" method="get" action="/web/agents">
-<label>Участники<select name="kind">
-<option value="agent" {{if eq (draft . "kind") "agent"}}selected{{end}}>Агенты</option>
-<option value="human" {{if eq (draft . "kind") "human"}}selected{{end}}>Люди</option>
-<option value="all" {{if eq (draft . "kind") "all"}}selected{{end}}>Все</option>
-</select>
-</label>
+<input type="hidden" name="kind" value="{{if eq (draft . "kind") "human"}}human{{else if eq (draft . "kind") "all"}}all{{else}}agent{{end}}">
 <label>Состояние<select name="state">
 <option value="active" {{if eq .AgentState "active"}}selected{{end}}>Активные</option>
 <option value="expired" {{if eq .AgentState "expired"}}selected{{end}}>Срок истёк</option>
@@ -17,7 +17,7 @@
 <input type="hidden" name="include_closed" value="true">
 <label>Роль<select name="role">
 <option value="">Все роли</option>
-{{range .Roles}}
+{{range agentRoles .}}
 <option value="{{.}}" {{if eq $.Role .}}selected{{end}}>
 {{role .}}
 </option>
@@ -67,7 +67,7 @@
 </span>
 {{with .Task}}
 <p class="assigned-task">
-<a href="{{taskURL .Key}}">
+<a href="{{taskURL .Key}}" title="{{.Key}} · {{.Title}}">
 {{.Key}} · {{.Title}}
 </a>
 <small>Задача во владении</small>

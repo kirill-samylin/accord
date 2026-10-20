@@ -19,7 +19,13 @@ var staticAssets = map[string]string{
 	"shell.css":             "text/css; charset=utf-8",
 	"control.css":           "text/css; charset=utf-8",
 	"app.js":                "text/javascript; charset=utf-8",
-	"control.js":            "text/javascript; charset=utf-8", "InterVariable.woff2": "font/woff2",
+	"control.js":            "text/javascript; charset=utf-8",
+	"theme.js":              "text/javascript; charset=utf-8",
+	"drawer.js":             "text/javascript; charset=utf-8",
+	"commands.js":           "text/javascript; charset=utf-8",
+	"dashboard.js":          "text/javascript; charset=utf-8",
+	"commands.css":          "text/css; charset=utf-8",
+	"InterVariable.woff2":   "font/woff2",
 }
 
 type navItem struct {
@@ -58,37 +64,39 @@ func sessionStatus(s string) string {
 	return "Неизвестное состояние"
 }
 func percent(v float64) string { return fmt.Sprintf("%.1f%%", v*100) }
+
+var eventLabels = map[string]string{
+	"token_created":      "Доступ выдан",
+	"token_revoked":      "Доступ отозван",
+	"tokens_revoked_all": "Все доступы отозваны",
+	"session_opened":     "Сессия открыта",
+	"task_created":       "Задача создана",
+	"task_updated":       "Задача обновлена",
+	"claimed":            "Задача взята",
+	"released":           "Задача возвращена",
+	"commented":          "Комментарий добавлен",
+	"linked":             "Связь добавлена",
+	"unlinked":           "Связь удалена",
+	"task_ready":         "Задача возвращена в очередь",
+	"task_in_progress":   "Задача в работе",
+	"task_done":          "Задача завершена",
+	"task_cancelled":     "Задача отменена",
+	"human_answered":     "Получен ответ человека",
+	"epic_open":          "Эпик открыт",
+	"epic_done":          "Эпик завершён",
+	"epic_cancelled":     "Эпик отменён",
+	"epic_reopened":      "Эпик открыт заново",
+	"lease_expired":      "Владение истекло",
+	"lease_recovered":    "Владение восстановлено",
+	"attempt_recovered":  "Попытка восстановлена",
+	"database_recovered": "Хранилище восстановлено",
+	"note_created":       "Заметка создана",
+	"note_deleted":       "Заметка удалена",
+	"blocked_changed":    "Блокировка изменена",
+}
+
 func eventLabel(s string) string {
-	labels := map[string]string{
-		"token_created":      "Доступ выдан",
-		"token_revoked":      "Доступ отозван",
-		"tokens_revoked_all": "Все доступы отозваны",
-		"session_opened":     "Сессия открыта",
-		"task_created":       "Задача создана",
-		"task_updated":       "Задача обновлена",
-		"claimed":            "Задача взята",
-		"released":           "Задача возвращена",
-		"commented":          "Комментарий добавлен",
-		"linked":             "Связь добавлена",
-		"unlinked":           "Связь удалена",
-		"task_ready":         "Задача возвращена в очередь",
-		"task_in_progress":   "Задача в работе",
-		"task_done":          "Задача завершена",
-		"task_cancelled":     "Задача отменена",
-		"human_answered":     "Получен ответ человека",
-		"epic_open":          "Эпик открыт",
-		"epic_done":          "Эпик завершён",
-		"epic_cancelled":     "Эпик отменён",
-		"epic_reopened":      "Эпик открыт заново",
-		"lease_expired":      "Владение истекло",
-		"lease_recovered":    "Владение восстановлено",
-		"attempt_recovered":  "Попытка восстановлена",
-		"database_recovered": "Хранилище восстановлено",
-		"note_created":       "Заметка создана",
-		"note_deleted":       "Заметка удалена",
-		"blocked_changed":    "Блокировка изменена",
-	}
-	if label, ok := labels[s]; ok {
+	if label, ok := eventLabels[s]; ok {
 		return label
 	}
 	return s
@@ -138,4 +146,21 @@ func ruleValue(value string) string {
 		return "Выключено"
 	}
 	return value
+}
+
+// Kind changes use separate links so a no-JavaScript form cannot submit an
+// incompatible human/agent role retained from the previous kind.
+func agentRoles(p web.Page) []string {
+	var roles []string
+	for _, role := range p.Roles {
+		kind := p.Draft["kind"]
+		if kind == "human" && role != "human" {
+			continue
+		}
+		if kind != "all" && kind != "human" && role == "human" {
+			continue
+		}
+		roles = append(roles, role)
+	}
+	return roles
 }

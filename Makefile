@@ -6,8 +6,9 @@ export GOMODCACHE := $(CURDIR)/.local/toolchains/cache/mod
 export GOTMPDIR := $(CURDIR)/.local/toolchains/tmp
 
 PYTHON ?= python3
+NODE ?= node
 
-.PHONY: build test infra-test race vet fmt-check check
+.PHONY: build test frontend-test infra-test race vet fmt-check check
 
 build:
 	@mkdir -p bin "$(GOTMPDIR)"
@@ -19,6 +20,9 @@ test:
 
 infra-test:
 	PYTHONDONTWRITEBYTECODE=1 "$(PYTHON)" -m unittest discover -s tests/infra -p 'test_*.py' -v
+
+frontend-test:
+	"$(NODE)" --test internal/webui/*.test.cjs
 
 race:
 	@mkdir -p "$(GOTMPDIR)"
@@ -35,4 +39,4 @@ fmt-check:
 		if [ -n "$$unformatted" ]; then printf '%s\n' "$$unformatted"; exit 1; fi; \
 	fi
 
-check: fmt-check vet test infra-test race build
+check: fmt-check vet test frontend-test infra-test race build

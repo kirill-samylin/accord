@@ -125,6 +125,14 @@
 </section>
 {{end}}{{end}}{{end}}
 {{template "evidence" .}}
+{{if eq .Type "task"}}
+<section class="panel task-timeline" aria-labelledby="timeline-title">
+<div class="section-heading"><h2 id="timeline-title">Активность задачи</h2><a href="/web/activity?task_key={{.Key}}">Вся история →</a></div>
+<p class="hint">До 10 последних записанных событий · {{date $.ActivityObservedAt}}. История не изменяет владение задачей.</p>
+{{range $.Activity}}{{template "event-row" .}}{{else}}<div class="empty">У задачи пока нет записанных событий.</div>{{end}}
+</section>
+{{end}}
+
 {{if .Attempts}}
 <section class="panel">
 <h2>История попыток</h2>

@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const fs = require('node:fs');
 const source = fs.readFileSync(`${__dirname}/assets/control.js`, 'utf8');
 
-function harness(fetcher, expiry = '2099-01-01T00:00:00Z') {
+function harness(fetcher, expiry = '2099-01-01T00:00:00Z', dashboard = undefined) {
   const timers = new Map();
   const listeners = {};
   const status = { textContent: 'Initial snapshot' };
@@ -26,6 +26,7 @@ function harness(fetcher, expiry = '2099-01-01T00:00:00Z') {
   const navigator = { onLine: true };
   let calls = 0;
   const window = {
+    AccordDashboard: dashboard,
     matchMedia: () => ({ matches: false, addEventListener: () => {} }),
     addEventListener: (name, callback) => { listeners[name] = callback; },
   };
@@ -141,4 +142,42 @@ test('one in-flight request; timeout abort retains counters', async () => {
   assert.equal(activeSignal.aborted, true);
   assert.equal(h.counter.textContent, '42');
   assert.ok([...h.timers.values()].some((t) => t.delay === 30000));
+});
+
+
+test('opt-in panels use a single dashboard request and validated overview', async () => {
+  let applied = 0;
+  let enabled = true;
+  const payload = { overview: snapshot(), agents: { sessions: [] }, activity: { events: [] } };
+  const dashboard = { enabled: () => enabled, validate: (value) => value === payload, apply: () => { applied++; return true; } };
+  const h = harness(async (url) => { assert.equal(url, '/web/data/dashboard'); return response(200, payload); }, undefined, dashboard);
+  await h.fire(15000);
+  assert.equal(h.calls, 1);
+  assert.equal(applied, 1);
+  assert.equal(h.counter.textContent, '98');
+  assert.match(h.status.textContent, /агенты и события обновлены/);
+  enabled = false;
+});
+
+test('invalid dashboard retains counters and panels; 409 remains terminal', async () => {
+  let applied = 0;
+  const dashboard = { enabled: () => true, validate: () => false, apply: () => { applied++; } };
+  const h = harness(async () => response(200, { overview: snapshot() }), undefined, dashboard);
+  await h.fire(15000);
+  assert.equal(h.counter.textContent, '42');
+  assert.equal(applied, 0);
+  assert.match(h.status.textContent, /Последние данные сохранены/);
+  const terminal = harness(async () => response(409, { code: 'LEASE_LOST' }), undefined, dashboard);
+  await terminal.fire(15000);
+  assert.equal(terminal.timers.size, 0);
+});
+
+test('disabling live panels while request is in flight prevents panel replacement', async () => {
+  let enabled = true;
+  let applied = 0;
+  const dashboard = { enabled: () => enabled, validate: () => true, apply: () => { applied++; } };
+  const h = harness(async () => { enabled = false; return response(200, { overview: snapshot() }); }, undefined, dashboard);
+  await h.fire(15000);
+  assert.equal(h.counter.textContent, '98');
+  assert.equal(applied, 0);
 });

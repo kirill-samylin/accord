@@ -137,49 +137,14 @@ tbody th {
   font-size: 10px;
 }
 
-@media (max-width: 1100px) {
-  .metrics-grid {
-    grid-template-columns: repeat(2,minmax(0,1fr));
-  }
-
-  .dashboard-grid {
-    grid-template-columns: minmax(0,1fr);
-  }
-
-}
-
-@media (max-width: 767px) {
-  .settings-grid, .detail-grid {
-    grid-template-columns: minmax(0,1fr);
-  }
-
-  .metric {
-    padding: 12px;
-  }
-
-  .metric strong {
-    font-size: 25px;
-  }
-
-  .metric > span {
-    font-size: 11px;
-  }
-
-  .agent-row {
-    grid-template-columns: minmax(0,1fr);
-    gap: 10px;
-  }
-
-  .dashboard-grid .agent-row {
-    grid-template-columns: minmax(0,1fr);
-  }
-
-  .table-heading {
-    display: none;
-  }
-
-  .event-row {
-    gap: 8px;
-  }
-
+.epic-group { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 20px; }
+.epic-group summary { cursor: pointer; font-size: 12px; font-weight: 550; }
+.epic-group summary .micro { margin-left: 8px; font-weight: 400; }
+.epic-group .card-grid { margin-bottom: 4px; margin-top: 16px; }
+@media (min-width: 1200px) {
+ .task-list .task-card { display: grid; grid-template-columns: 210px minmax(0,1fr) minmax(150px, .65fr); gap: 6px 20px; align-items: center; }
+ .task-list .task-card .card-top { grid-column: 1; grid-row: 1; margin: 0; }
+ .task-list .task-card h3 { grid-column: 2; grid-row: 1; margin: 0; }
+ .task-list .task-card .meta { grid-column: 3; grid-row: 1; }
+ .task-list .task-card > .hint { grid-column: 2 / -1; }
 }

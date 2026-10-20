@@ -17,7 +17,7 @@ Clients do not require Tailscale; see [public HTTPS setup](docs/public-https.md)
 The former private routes remain available for compatibility. It is **not a
 completed V1**; source, deployed revision and external checks are tracked separately.
 See [requirements 1.1](docs/requirements.md), [architecture](docs/architecture.md),
-[wire API](docs/api.md), [current task](docs/TASK-003-working-service.md) and
+[wire API](docs/api.md), [current web task](docs/TASK-006-control-refinement.md) and
 [remaining V1 scope](docs/roadmap.md). The original specification is preserved in
 [docs/source](docs/source/TZ-agent-board-service-v1.0.md).
 
@@ -35,6 +35,11 @@ release from the remaining V1 features and external acceptance checks.
 [Руководство](docs/web-guide.md), [контракт](docs/web-architecture.md),
 [приёмка базового веба](docs/TASK-004-human-web.md),
 [панель управления по Paperclip](docs/TASK-005-control-web.md).
+
+Доработка панели и фактическая локальная приёмка —
+[TASK-006](docs/TASK-006-control-refinement.md); выбранные технологии и границы
+масштабирования — [архитектура веба](docs/control-web-architecture.md).
+Статус локальной ветки не означает обновление установленного сервера.
 
 Сервер включает веб явно: `serve --web-origin HTTPS_ORIGIN --web-data PRIVATE_DIR`;
 подробности [эксплуатации](infra/accord/web/README.md). Новые MCP-клиенты содержат

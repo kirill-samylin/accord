@@ -48,6 +48,7 @@ type Page struct {
 	Activity                                              []core.Event
 	Stats                                                 *core.Stats
 	ObservedAt                                            time.Time
+	AgentsObservedAt, ActivityObservedAt                  time.Time
 	Query, AgentState                                     string
 	Title, Error, Notice, CSRF, ActionID, NextCursor      string
 	EpicsNextCursor                                       string

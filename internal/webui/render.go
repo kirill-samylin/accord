@@ -27,7 +27,7 @@ func New() (*Renderer, error) {
 		"date": date, "state": state, "role": role, "size": size,
 		"agentURL": agentURL, "sessionStatus": sessionStatus, "eventLabel": eventLabel,
 		"percent": percent, "boardColumns": boardColumns, "layoutURL": layoutURL,
-		"navigation": navigation, "refreshURL": refreshURL, "ruleLabel": ruleLabel, "ruleValue": ruleValue,
+		"eventLabels": func() map[string]string { return eventLabels }, "taskViews": taskViews, "agentRoles": agentRoles, "navigation": navigation, "refreshURL": refreshURL, "ruleLabel": ruleLabel, "ruleValue": ruleValue,
 		"draft":  func(p web.Page, key string) string { return p.Draft[key] },
 		"action": action, "fieldError": func(p web.Page, key string) string { return p.FieldErrors[key] },
 		"taskURL":    func(key string) string { return "/web/tasks/" + url.PathEscape(key) },

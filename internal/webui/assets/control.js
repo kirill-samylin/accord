@@ -1,70 +1,7 @@
 'use strict';
 
-// This enhancement never submits forms, renews leases or replaces page content.
+// Read-only polling is isolated from theme, navigation and all mutation forms.
 (() => {
-  const themeButton = document.querySelector('[data-theme-toggle]');
-  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
-  let themePreference = null;
-  try { themePreference = localStorage.getItem('accord-theme'); } catch { /* Preference storage is optional. */ }
-  function applyTheme() {
-    const dark = themePreference === 'dark' || (themePreference !== 'light' && systemTheme.matches);
-    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-    themeButton?.setAttribute('aria-label', dark ? 'Включить светлую тему' : 'Включить тёмную тему');
-  }
-  applyTheme();
-  systemTheme.addEventListener('change', applyTheme);
-  if (themeButton) {
-    themeButton.hidden = false;
-    themeButton.addEventListener('click', () => {
-      themePreference = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-      try { localStorage.setItem('accord-theme', themePreference); } catch { /* Theme still works for this page. */ }
-      applyTheme();
-    });
-  }
-
-  const sidebar = document.querySelector('.sidebar');
-  const drawerOpen = document.querySelector('[data-drawer-open]');
-  const drawerClose = document.querySelector('[data-drawer-close]');
-  const backdrop = document.querySelector('[data-drawer-backdrop]');
-  const workspace = document.querySelector('.workspace');
-  const narrow = window.matchMedia('(max-width: 767px)');
-  document.documentElement.dataset.enhanced = 'true';
-  if (drawerOpen) drawerOpen.hidden = false;
-  if (drawerClose) drawerClose.hidden = false;
-  let previousFocus = null;
-  function closeDrawer() {
-    if (!sidebar || sidebar.dataset.open !== 'true') return;
-    sidebar.dataset.open = 'false';
-    document.body.dataset.drawerOpen = 'false';
-    drawerOpen?.setAttribute('aria-expanded', 'false');
-    if (backdrop) backdrop.hidden = true;
-    if (workspace) workspace.inert = false;
-    if (previousFocus instanceof HTMLElement) previousFocus.focus();
-  }
-  drawerOpen?.addEventListener('click', () => {
-    if (!sidebar || !narrow.matches) return;
-    previousFocus = document.activeElement;
-    sidebar.dataset.open = 'true';
-    document.body.dataset.drawerOpen = 'true';
-    drawerOpen.setAttribute('aria-expanded', 'true');
-    if (backdrop) backdrop.hidden = false;
-    if (workspace) workspace.inert = true;
-    drawerClose?.focus();
-  });
-  drawerClose?.addEventListener('click', closeDrawer);
-  backdrop?.addEventListener('click', closeDrawer);
-  narrow.addEventListener('change', () => { if (!narrow.matches) closeDrawer(); });
-  document.addEventListener('keydown', (event) => {
-    if (sidebar?.dataset.open !== 'true') return;
-    if (event.key === 'Escape') { event.preventDefault(); closeDrawer(); }
-    if (event.key !== 'Tab') return;
-    const focusable = Array.from(sidebar.querySelectorAll('a[href], button, input')).filter((element) => !element.disabled && element.getClientRects().length);
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
-    if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
-  });
-
   const overview = document.querySelector('[data-overview]');
   if (!overview) return;
   const status = overview.querySelector('[data-overview-status]');
@@ -110,7 +47,9 @@
     say('Обновляем счётчики…');
     let retryDelay = 15000;
     try {
-      const response = await fetch('/web/data/overview', {
+      const dashboard = window.AccordDashboard;
+      const livePanels = Boolean(dashboard?.enabled());
+      const response = await fetch(livePanels ? '/web/data/dashboard' : '/web/data/overview', {
         method: 'GET', credentials: 'same-origin', cache: 'no-store',
         redirect: 'error', headers: { Accept: 'application/json' }, signal: controller.signal,
       });
@@ -119,8 +58,9 @@
         return;
       }
       if (!response.headers.get('Content-Type')?.toLowerCase().startsWith('application/json')) throw new Error('Unexpected content type');
-      const snapshot = await response.json();
-      if (response.status === 409 && snapshot?.code === 'LEASE_LOST') {
+      const payload = await response.json();
+      const snapshot = livePanels ? payload?.overview : payload;
+      if (response.status === 409 && payload?.code === 'LEASE_LOST') {
         terminal('Срок рабочей сессии истёк. Обновите страницу и продолжите работу явно.');
         return;
       }
@@ -131,15 +71,16 @@
         }
         throw new Error('Overview unavailable');
       }
-      if (!validSnapshot(snapshot)) throw new Error('Invalid overview');
+      if (!validSnapshot(snapshot) || livePanels && !dashboard.validate(payload)) throw new Error('Invalid overview');
       if (!eligible()) return;
+      const panelsApplied = livePanels && dashboard.enabled() && dashboard.apply(payload);
       for (const counter of counters) counter.textContent = String(snapshot[counter.dataset.overviewValue]);
       if (time) {
         time.dateTime = snapshot.observed_at;
         time.textContent = new Date(snapshot.observed_at).toLocaleString('ru-RU', { timeZoneName: 'short' });
       }
       failures = 0;
-      say('Счётчики обновлены. Следующее обновление через 15 секунд.');
+      say(panelsApplied ? 'Счётчики, агенты и события обновлены. Следующее обновление через 15 секунд.' : livePanels && dashboard.enabled() ? 'Счётчики обновлены. Обновление списка отложено, пока на нём находится фокус.' : 'Счётчики обновлены. Следующее обновление через 15 секунд.');
     } catch {
       if (eligible()) {
         failures += 1;
@@ -176,6 +117,10 @@
       resumeRequested = Boolean(request);
       schedule(0);
     }
+  });
+  document.querySelector('[data-dashboard-live]')?.addEventListener('change', () => {
+    resumeRequested = Boolean(request);
+    schedule(0);
   });
   if (navigator.onLine) schedule();
   else say('Нет сети. Показаны последние данные; обновление приостановлено.');
