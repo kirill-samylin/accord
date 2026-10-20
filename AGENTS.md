@@ -9,9 +9,15 @@
 до рабочего сервиса — `docs/TASK-003-working-service.md`; веб-версия —
 `docs/TASK-004-human-web.md`, текущая панель — `docs/TASK-005-control-web.md`;
 предыдущая доработка — `docs/TASK-006-control-refinement.md`, архитектура веба и
-масштабирования — `docs/control-web-architecture.md`. Принятый локальный этап после
+масштабирования — `docs/control-web-architecture.md`. Прежний локальный этап после
 уточнения пользователя — `docs/TASK-007-next-paperclip.md`: полноценный Next.js
 клиент и фактический перенос Paperclip UI, поверх прежнего Go backend.
+Развёртывание Next — `docs/TASK-008-next-vps.md`; мультипроектность и
+актуальный checkpoint — `docs/TASK-009-multi-project.md`, контракт —
+`docs/multi-project.md`. Очередь следующих отдельных чатов прямо поручена:
+постоянные профили агентов, затем координация, затем управляемый запуск.
+После TASK009 запрещён старый Go/rollback БД: сохраняй capable guards/ACL и
+полный backup всех проектов; initial TASK009 apply не является updater новых релизов.
 
 ## Работа
 

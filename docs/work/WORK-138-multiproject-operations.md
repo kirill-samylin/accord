@@ -91,3 +91,29 @@ Permanentguard сопоставляет и executable path guard (защита �
 в private serverjournal по своемуSHA. В audit включён егоSHA; old/new helper
 maps иполный immutableoperator manifest pinned. Операторapplication5454 не
 переписывается; recovery hold ивсе реальные DB остаются до guardedresume.
+
+## Финальное фактическое разрешение
+
+Immutable operators865f0a4 доставлены отдельно от app5454eb5. Reviewed private
+cleanup048468 удалил только8 unmanifested root-owned paired-source Python caches,
+проверил полный inventory/hashes; код и старые archive scripts сохранены.
+Adoption5d8e381 (-I -B, dont_write_bytecode) изменил только7helpers+audit,
+original journal7dd6c982 сохранён fsync; новыйjournal7084bdb2. Первый отказ
+из-за Nextfailed/MainPID0 разрешён reset-failed только под coldbootguard;
+ни одна из этих неудач не меняла journal/DB/app.
+
+Guarded resume новым source8654 старого immutable app5454 PASS. Actual guard
+как Useraccord PASS; effective Go/guard/backup executables+argv, owned /proc
+PID/argv/ELFSHA6950 PASS, web.conf иzzoverride, старый90 удалён, NRestarts0.
+HTTPS03 PASS:11screens/44screenshots/689x200/errors0/prefetch0, native/MCP,
+securelogin/defaultmetadata/switch/ownlogout иChromeclosed. Затемfinalize
+PASS инастоящий format2backup: manifest2735e200..., default отдельныйот
+спискаmanagedprojects. Послеbackupсноваexactmode/PID/SHA/guards/services
+PASS, прежние3timersactive. Все прежние строки9boardtables/designrows/blob
+bytes повторно сопоставлены сpre-upgradecopy иполностьюсохранены. DBне
+скачивались/неоткатывались; исходныйпрежнийпроектсохранён. Journalcomplete.
+
+Final private evidence .local/task009/deploy/final-proof.json; corrected count
+явно включает отдельнохранимыйdefault (перваяderivedметрика считала только
+managedprojects, сыройproofсохранён). Final source/test/delivery/doc review136 APPROVE, TASK009 COMPLETE.
+Closure не означает fullV1/physicalsecondPC/workerexecution.

@@ -532,3 +532,116 @@ Linux/systemd/nginx owned listeners, actual guarded activation/full backup и
 preservation, final HTTPS read-only inspection обязательны у root перед
 закрытием. Physical second PC **NOT-RUN**. Reviewer не менял source/tests/
 Git/SSH/реальные данные и не выполнял тесты139 за tester.
+
+## Final delivery/evidence audit — TASK009 APPROVE
+
+Root выдал отдельный GO на обновление WORK136 после immutable release freeze.
+Независимый итоговый вердикт: **APPROVE** в объёме TASK009. Blocking source,
+new-test и delivery findings закрыты. Root может отметить TASK009 complete,
+сделать локальный documentation checkpoint и передать следующую порученную
+задачу в отдельный чат. Это не полный V1/worker/provider/load acceptance.
+
+Проверены финальные TASK009, WORK138 и обновлённые AGENTS pointers: фактические
+версии, исходный проект, URL-only repository scope, historical failures и
+roll-forward/recovery, границы QA и очередь следующих чатов отражены корректно.
+Изменён reviewer только этот WORK; Go/Next/test/infra source, Git, SSH и реальные
+данные reviewer не менял. WORK длиннее300 строк намеренно: сохранена история
+нескольких независимых review/amendment и смена вердиктов, не product code.
+
+### Независимая проверка source и тестов
+
+Текущий Go215 aggregate по filename+NUL+bytes+NUL остаётся approved
+`20b896df6eaee22e39410b2ca54eec35a5e9ffe1f720afb38145ee0904662cf5`.
+Текущие cmd/internal/web/infra/tests не имеют source diff относительно
+operator checkpoint865f0a4. Ранее reviewer независимо выполнил uncached Go
+race projects/cmd, frontend53/format/typecheck, финальные project infra41 и
+полную infra suite125 — **PASS**; author полный Go fmt/vet/test/race/build и
+root make check/production builds проверены по freeze/log provenance.
+
+Новые process/browser cases QA139 source-reviewed: actual local full25/25
+и process-only16/16 **PASS**, они не выдаются за reviewer execution. Исправлены
+false-pass риски late response, transport-denial, old blob и raw quarantine
+bytes, owned process readiness/cleanup. Runtime failures проверочного сценария
+после первого HTTPS не засчитаны как production PASS. Narrow helper fix
+source-reviewed: main5db2c196/supportf3c2313e, observed action wait, redacted
+stage/error code, partial-auth logout, nested finally report/browser cleanup.
+Reviewer helper8/8+syntax4 **PASS**; author10/10 включает реальные synthetic
+Chrome failure/report paths. Product assertions не ослаблялись.
+
+### Разрешённые операционные findings
+
+Historical apply5454 возвратил success по binary/PID/HTTP, но web.conf перекрыл
+90-projects.conf: HTTP работал без registry scope. Этот ранний runtime — **FAIL**,
+не ACL activation proof. Root остановил Go/Next и durable owned marker закрыл
+cold boot; DB/Go/UI не менялись для обхода ошибки. Независимо reviewed исправлены
+zz override, exact effective Go/guard/backup path+argv (включая @argv path),
+actual owned PID/proc argv/ELF SHA и повторная permanent guard проверка.
+Startup hold снимается только после durable installation/effective checks и
+offline owner bootstrap; чужой inspection marker сохраняется.
+
+Root operators865f0a4 доставлены отдельно от неизменённого app5454. Reviewed
+one-off adoption сохраняет original journal O_EXCL0600/fsync, под двумя locks
+требует inactive PID0/free ports/owned boot marker, изменяет только7helpers+audit;
+app revision/Go/Next/preservation baseline/owner остаются прежними. Final
+adoption source SHA5d8e3814 (не первоначальный992af3c5) отключает bytecode и
+выполнен -I -B; исходные scripts архивированы по SHA. Созданные при первом import
+8 cache files удалены только reviewed cleanup048468f3 по строгому paired-source/
+manifest списку; restored exact inventory verified. Отказы до adoption не
+меняли journal/DB. Source review этих private scripts не подменяется их
+фактическим исполнением root.
+
+### Фактическая поставка root и проверенные артефакты
+
+VPS actions, backup и HTTPS выполнял **root**, reviewer провёл read-only audit
+их aggregate evidence и reviewed execution contracts; reviewer SSH не выполнял
+и реальные БД не читал/не скачивал. Проверенная app revision
+`5454eb5c98ac088e5ead3daaaad637423112ddad`, clean Go1.27.2 Linux/amd64 binary SHA
+`6950b220cd60b9abf3d295f114c60512ae40334480302c8fcf742ab47d61e0a8`;
+Next BuildID `YYrHpN-gOyr560HLMZaUM`, manifest9f3e3e3d. Исправленные operators
+`865f0a448f99dc1ae4c619184ef396d631f35706`, immutable manifest02a93cd3.
+
+- Actual VPS Linux synthetic old490/new5454 process-only: **16/16 PASS**;
+  native/MCP/ACL/epochs/upload/migration/restore/reset/reject/legacy guard±.
+  Restore выполнен только на generated fixtures, production DB не восстанавливалась.
+- Effective runtime proof **PASS**: exact configured Go/guard/full backup,
+  guard реально как User accord, owned process/proc argv/ELF hash, stable PID,
+  web.conf+zz, old90 отсутствует. После backup проверки выполнены повторно.
+- HTTPS03 actual **5 groups PASS**,11 screens×1440/390×light/dark =44screenshots;
+ 689 browser responses200, page/CSP/React/assets errors0, unsolicited prefetch0;
+  secure cookie/default/switch, native Origin denial, scoped MCP12/resource,
+  unchanged read session expiry, own global logout, Chrome closed. Report SHA
+  `5aacfc92edba90fce12ca8474f48dc2bc7819890ebe0c4722dacbcbfc73fea2b`
+  совпал, все44 screenshot hashes независимо совпали. Source main/support
+  hashes совпадают с approved script; production business writes не выполнялись.
+- Actual finalize **PASS**, journal phase complete; validated format2 snapshot
+  manifest `2735e200aa7662f0bb6b4f95e8ee77cc455d0b4b8a5b07898f601909eb8e46fd`.
+  Default сохранён отдельно и входит в total published1; managed0 не означает
+  empty backup. Ошибка первой derived count исправлена в aggregate metadata
+  по immutable registry snapshot, исходный proof сохранён, snapshot не изменялся.
+- После backup все прежние строки9 board tables, design rows и старые blob
+  bytes повторно сохранены относительно pre-upgrade snapshot. Прежние storage
+  paths, tokens/history/data не сбрасывались; production A/B fixtures не создавались.
+- Go/Next/nginx active, service Result success/ExecMainStatus0/NRestarts0;
+  full backup oneshot завершён success0; прежние3timers active. Guard markers
+  отсутствуют после verified resume; неизвестные/manual guards не удалялись.
+
+Финальный `.local/task009/deploy/final-proof.json` SHA256
+`eed0a67ad7c8d5d67ef15dce7e1ab4e6c78b650e65d3589d2a9ca0cf0d2021ec`.
+Actual runtime proof SHA69267eac; adoption proofSHAe61eedbd, cleanup proofSHAeda6418b
+прочитаны. Никакие реальные row contents, credentials или user identifiers
+не включены в этот WORK или reviewer output.
+
+### Сохраняющиеся границы
+
+Physical second PC **NOT-RUN**. Mobile — Chrome viewport. Remote Git clone/
+provider credentials, постоянные agent profiles, coordination и worker execution
+не входят в реализованный TASK009. Полный restore production не выполнялся;
+actual format2 backup и synthetic restore — разные доказательства. Backup на
+VPS, отдельное внешнее хранилище не настроено; full V1/load/provider/Paperclip
+feature parity не заявляются. Следующий выпуск требует capable updater/
+roll-forward и полного snapshot; старый Go, board-only restore и initial
+TASK009 apply не являются безопасным обновлением поверх active registry.
+
+Очередь пользователя: новый отдельный чат «Постоянные профили агентов», затем
+координация, затем управляемый запуск. Их реализация этим APPROVE не объявляется
+завершённой. Tandem и соседний проект оставались вне работ.
