@@ -53,3 +53,51 @@ infra suite **83/83 PASS** прочитано; это mocked operator/unit, не
 root собрать/перенести immutable inactive release. Финальное переключение
 ожидает review новых тестов, exact artifact provenance и actual Linux staging;
 они пока NOT-RUN. Этот verdict не является live production PASS.
+
+## Immutable artifacts / Linux — PASS; active switch APPROVE
+
+Release **`80486fc472324230a9cda9dbe9906c41998fb19f`**. Independently verified
+Next1250/1250 manifest file hashes, manifest SHA256
+`d1c42019ec0fc86e24b8e7c7d0b292cb9f4de8f0668e1c9d2758bde430ca94f4`;
+Go34/34 release hashes, executable SHA256
+`b6ae1f26955bf74d43056642ea33a95bd0f65a55673bb8ac45fa54273a641f3c`.
+BuildID `8_G-OjVHWfBC6zEaE2O5N`. Darwin native/ignored pyc отсутствуют.
+Official downloaded Node archive matches SHASUMS256, extracted bin SHA256
+`bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12`, LICENSE
+совпадает с archive member. Remote inactive transfer proofs обоих bundles прочитаны.
+
+Новые отдельные process/E2E WORK132 исходники прошли независимое APPROVE:
+`next_vps_go132.py` SHA256 `7f25fcdd234940549efc46e4eb30e7979036189135251184edc156f3a455f17d`,
+`next_vps_smoke.cjs` SHA256 `d55a809c848868dd828fb3bc0ea0db9d7921c4307a984f3dac6d4fff4189e425`.
+Go helper использует только synthetic private `/run` DB/token, один отдельный
+порт7895 и finally cleanup. Browser — собственные login/logout, чтение реальной
+доски и stateless MCP initialize/tools-list без describe/tool calls; outputs private.
+
+Root actual evidence `.local/task008/linux-stage-proof.json` перечитано: phase
+staged, exact candidate nginx SHA `9ca7773d350eec22d49c48a6bee9122bb049c192d8d448af1d72bd9aa765aec0`,
+nginx/systemd проверки и real Linux Node/version/sharp/Next nonce startup прошли.
+Stage peak48,222,208bytes, NRestarts0; прежний Go pointer и readiness сохранены.
+`.local/task008/linux-go-proof.json`: candidate exact binary реально выполнил
+readyz, JSON login, cookie overview; process stopped/fixture removed — PASS.
+Reviewer лично SSH не выполнял: проверены source, artifact hashes и root evidence.
+
+**APPROVE active switch** этого exact release выдан root. После apply обязательны
+WORK132 HTTPS/browser/native smoke и finalize/backup. Они на момент этого
+pre-switch verdict NOT-RUN; production stage ещё не объявлен завершённым.
+
+## Первая HTTPS попытка FAIL и исправление — scope APPROVE
+
+WORK132 `production-01/next-vps-results.json` фактически FAIL до входа:
+7chunk/font429, интерфейс не загрузился; мутаций0. Это сохранённый отказ,
+не PASS. Точная причина расхода общего burst не наблюдалась: request logging
+намеренно выключен. Root выполнил reviewed rollback. Proof
+`.local/task008/rollback-01-proof.json` перечитан: прежний Goac6/ready service,
+nginx hash27ee, env/units/timers прежние; Next unit/current отсутствуют. DB не
+восстанавливалась.
+
+WORK130 narrow fix: отдельная ограниченная per-IP zone50r/s/burst100 только
+static/fonts/license; app/native/web/upload/ACME и connection32 сохраняются.
+Source и новый regression независимо APPROVE, **8/8 unit PASS**. Наследование
+проверено по [официальной документации nginx](https://nginx.org/en/docs/http/ngx_http_limit_req_module.html).
+Это разрешает новую immutable кандидатуру; окончательный PASS зависит от
+нового Linux stage и фактического повторного HTTPS/browser результата.

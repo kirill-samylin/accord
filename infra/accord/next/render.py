@@ -6,6 +6,7 @@ import re
 
 
 MARKER = '# Accord Next UI; native and browser API routes remain on Go.'
+ASSET_ZONE = 'limit_req_zone $binary_remote_addr zone=accord_next_assets:1m rate=50r/s;\n'
 
 
 def port(value):
@@ -19,7 +20,7 @@ def port(value):
 
 def render(content, listen):
     listen = port(listen)
-    if MARKER in content or 'accord-next' in content:
+    if MARKER in content or 'accord-next' in content or 'accord_next_assets' in content:
         raise ValueError('Next routes already present; inspect before replacing')
     marker = '    location = / {'
     if content.count(marker) != 1:
@@ -55,8 +56,12 @@ def render(content, listen):
 '''
     routes = '    ' + MARKER + '\n    location = / { return 302 /app; }\n'
     for route in ('= /app', '^~ /app/', '^~ /_next/static/', '^~ /fonts/', '= /PAPERCLIP-LICENSE.txt'):
-        routes += f'    location {route} {{\n' + proxy + '    }\n'
-    return content[:start] + routes.rstrip() + content[end:]
+        # nginx inherits parent limit_req only if the location declares none.
+        # Separate asset bursts from the unchanged API/login rate bucket.
+        limit = '' if route in ('= /app', '^~ /app/') else (
+            '        limit_req zone=accord_next_assets burst=100 nodelay;\n')
+        routes += f'    location {route} {{\n' + limit + proxy + '    }\n'
+    return ASSET_ZONE + content[:start] + routes.rstrip() + content[end:]
 
 
 def main():

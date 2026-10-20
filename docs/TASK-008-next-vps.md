@@ -57,3 +57,13 @@ Next bundle содержит static/public, Node LICENSE и Linux optional modul
 по фактическому review/stage/deploy/HTTPS smoke; локальный TASK007 PASS не
 является доказательством production запуска. Секреты, БД и пользовательские
 снимки остаются только в игнорируемом runtime или на VPS.
+
+Первый candidate `80486fc`: source/tests/artifact review APPROVE, Linux
+Go/Node stage PASS, backup/apply PASS. Реальный HTTPS browser smoke **FAIL**:
+семь static/font HTTP429 помешали загрузке страницы входа. До board mutations
+тест не дошёл. Выполнен реальный rollback: исходные pointer/config hashes
+восстановлены, прежние Go/nginx здоровы, новый Node unit/pointer удалён;
+БД из backup не восстанавливалась. Отчёт FAIL сохранён в `.local/task008-qa`.
+Исправление: отдельный ограниченный bucket50r/s burst100 только для Next static,
+fonts/license; прежние API/web/login лимиты и connection32 сохраняются.
+Окончательный вывод требует нового независимого review и повторного HTTPS smoke.

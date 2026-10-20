@@ -40,3 +40,19 @@ Root дополнительно сообщил client format/typecheck/unit42 PA
 NOT-RUN автором: Linux/VPS stage/apply/rollback, native/HTTPS/browser acceptance,
 реальное измерение ресурсов. Это выполняют root/tester после independent review.
 Продуктовый UI/DB/auth/domain не изменён. Фактическая публикация не заявлена.
+
+## Исправление фактического smoke: static429
+
+Root сообщил FAIL первой VPS-кандидатуры80486fc: inherited nginx20r/s burst40
+применялся к Next chunks/fonts,7static429 оставили login без hydration. Root
+вернул предыдущий release. Это не клиентский Go/auth дефект и не PASS deploy.
+
+Исправление: отдельная bounded per-IP asset zone50r/s, burst100 только в
+`/_next/static/`, `/fonts/`, exact license. `/app` по-прежнему наследует старый
+20/40; native/web/upload/plaintext/ACME и global32connection-limit сохранены.
+Наследование limit_req проверено по официальной документации nginx:
+https://nginx.org/en/docs/http/ngx_http_limit_req_module.html . Никакие лимиты
+не отключаются. Unit8/8 PASS: новый regression проверяет zone/триlocation,
+отсутствие override у app и byte-identical native/web/upload/ACME. Python
+compile/diffcheck PASS. VPS повторный прогон — NOT-RUN автором; передано root
+и reviewer131. Ни SSH, ни Git, ни active config автор не изменял.

@@ -21,7 +21,7 @@ class NextRoutes(unittest.TestCase):
     def test_only_root_replaced_and_ui_routes_added(self):
         start = self.before.index('    location = / {')
         end = self.before.index('\n    }', start) + len('\n    }')
-        self.assertTrue(self.after.startswith(self.before[:start]))
+        self.assertTrue(self.after.startswith(next_render.ASSET_ZONE + self.before[:start]))
         self.assertTrue(self.after.endswith(self.before[end:]))
         self.assertIn('location = / { return 302 /app; }', self.after)
         self.assertEqual(self.after.count('proxy_pass http://127.0.0.1:7893;'), 5)
@@ -36,6 +36,27 @@ class NextRoutes(unittest.TestCase):
         marker = '    location /web/ {'
         self.assertEqual(self.after[self.after.index(marker):], self.before[self.before.index(marker):])
         self.assertIn('client_max_body_size 52494336;', self.after)
+
+    def test_assets_have_separate_bounded_rate_and_app_preserves_parent_rate(self):
+        self.assertEqual(self.after.count(next_render.ASSET_ZONE), 1)
+        self.assertEqual(self.after.count('limit_req zone=accord_next_assets burst=100 nodelay;'), 3)
+        for route in ('= /app', '^~ /app/'):
+            start = self.after.index('    location ' + route + ' {')
+            end = self.after.index('\n    }', start)
+            self.assertNotIn('limit_req ', self.after[start:end])
+        for route in ('^~ /_next/static/', '^~ /fonts/', '= /PAPERCLIP-LICENSE.txt'):
+            start = self.after.index('    location ' + route + ' {')
+            end = self.after.index('\n    }', start)
+            self.assertIn('limit_req zone=accord_next_assets burst=100 nodelay;', self.after[start:end])
+        self.assertEqual(self.after.count('limit_req zone=accord_public_rate burst=40 nodelay;'),
+                         self.before.count('limit_req zone=accord_public_rate burst=40 nodelay;'))
+        self.assertEqual(self.after.count('limit_conn accord_public_connections 32;'),
+                         self.before.count('limit_conn accord_public_connections 32;'))
+        # The entire plaintext/ACME block and all old HTTP-level definitions
+        # remain byte-identical below the added independent zone declaration.
+        tls = 'map $http_host $accord_https_authority'
+        self.assertEqual(self.after[len(next_render.ASSET_ZONE):self.after.index(tls)],
+                         self.before[:self.before.index(tls)])
 
     def test_repeated_unknown_and_unsafe_ports_rejected(self):
         for value in ('7892', '07893', '80', '65536', '7893; }'):
