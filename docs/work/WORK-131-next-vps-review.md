@@ -101,3 +101,37 @@ Source и новый regression независимо APPROVE, **8/8 unit PASS**.
 проверено по [официальной документации nginx](https://nginx.org/en/docs/http/ngx_http_limit_req_module.html).
 Это разрешает новую immutable кандидатуру; окончательный PASS зависит от
 нового Linux stage и фактического повторного HTTPS/browser результата.
+
+## Новая immutable кандидатура 1518248
+
+Source hotfix commit `15182480dcfd4823db010423f240415bbc94871a`. Web/config,
+cmd/internal/go.mod/go.sum идентичны80486fc; Next artifact1249files идентичен,
+единственная дельта Next bundle — SOURCE.json revision. Сверены1250/1250 hashes,
+manifest SHA256 `01e03bbdd5f648250c74c385625015392209a43ab73f3fd582e7ae80a90b5806`;
+Go34/34 hashes, exact binary
+`cbca6510405869c1611ba5d2141c4daffccd5b46e057f3f917c73e2ad484d95a`.
+Root infra84/84 PASS log прочитан. Actual Linux isolated Go02 exactbinary снова
+PASS JSONlogin/cookieoverview/readyz, fixture removed/process stopped. Next/Node
+build reuse обоснован source/artifact hash equality, не повторной компиляцией UI.
+
+## Повторная HTTPS диагностика / prefetch fix — APPROVE
+
+Production02 FAIL после login200 по timeout sidebar; assets429 исчезли.
+Отдельная reviewed diagnostic test delta сохраняет private response path/status
+и failure screenshot/body без query/headers/secrets. Production03 доказала
+успешные browser login/secure cookie/native own read/MCP12, затем `/app`429.
+Observed browser responses показали фоновые Next RSC запросы видимых links,
+после которых `/web/tasks`/`/app` получали429. Cleanup logout03 PASS. Это
+сохранённые FAIL, а не успешный production этап. Root возвратил старую версию.
+
+WORK130 узкая product delta:28существующих Link в11файлах получили explicit
+`prefetch={false}`, href/handlers/дизайн не изменились. Full diff перечитан,
+независимая enumeration28/28 без пропусков. Native/web/nginx защиты сохранены.
+[Официальный Next App Router Link API](https://nextjs.org/docs/app/api-reference/components/link#prefetch)
+подтверждает отключение viewport и hover prefetch. Применён существующий React
+skill: решение опирается на наблюдаемую лишнюю сеть dynamic nonce UI.
+Format/TypeScript/unit42/build log прочитан — PASS, свежий BuildID
+`FXxaQO59Zj0_bmIx40KNi`. Shell305строк — узкое объяснённое WORK130 исключение.
+**APPROVE product delta**, разрешены новые отдельные regression WORK132 после
+этого verdict. Нужны fresh Next artifact и новый Linux/HTTPS прогон; reuse
+старого Next bundle для этой дельты неприемлем. Runtime пока NOT-RUN.

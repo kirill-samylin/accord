@@ -17,7 +17,11 @@ export function TaskProperties({ task }: { task: Task }) {
         name="Эпик"
         value={
           task.epic_key ? (
-            <Link className="inline-link" href={`/app/tasks/${task.epic_key}`}>
+            <Link
+              prefetch={false}
+              className="inline-link"
+              href={`/app/tasks/${task.epic_key}`}
+            >
               {task.epic_key}
             </Link>
           ) : (
@@ -36,6 +40,7 @@ export function TaskProperties({ task }: { task: Task }) {
             name="Владелец аренды"
             value={
               <Link
+                prefetch={false}
                 className="mono"
                 href={`/app/agents/${task.lease.session_id}`}
               >

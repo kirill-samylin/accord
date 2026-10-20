@@ -41,6 +41,26 @@ native401 и metrics404 PASS. Первый login HTML200 не стал гото�
 page errors/CSP severe errors пусты. Это runtime delivery defect, root/reviewer
 уведомлены сразу. Отчёт сохраняется приватно и не перезаписывается повтором.
 
+`production-02` на `15182480dcfd4823db010423f240415bbc94871a`:
+static delivery/CSP PASS, login POST200 и route `/app` достигнуты, sidebar
+timeout15s, причина этим старым harness точно не локализована. Узкая diagnostic
+delta (private HTTP path/status, failure PNG/body, cleanup message) получила
+independent APPROVE131 до `production-03`.
+
+`production-03`: login/cookie, authenticated own-session native GET и MCP12
+PASS, static errors0. Дальше настоящий nginx429 при быстрых повторных full
+document navigations. Private request statuses показывают RSC viewport prefetch
+десятков `/app` страниц, делящих public rate budget с `/web` API. Фактически
+осмотренный failure PNG — nginx429. Own logout POST200 PASS, прочих browser
+mutations нет. Это не утверждение, что обычный начальный login03 был сломан:
+он прошёл; агрессивные повторные matrix navigations усиливают burst.
+
+После отдельного independent product APPROVE131 для отключения28 автоматических
+Link prefetch добавлена meaningful regression: после settle и hover нет
+запросов с prefetch marker, explicit sidebar click получает настоящий JSON200.
+Отчёт хранит только счётчик/paths, не значения headers. Новые tests переданы131
+на review до очередного runtime; исторические FAIL не перезаписаны.
+
 Отсутствие действий записи не заменяет
 полную функциональную приёмку; synthetic mutations проверены TASK007 отдельно.
 Chrome viewport не равен физическому телефону/второму ПК, external Codex/Claude

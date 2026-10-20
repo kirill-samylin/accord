@@ -43,6 +43,7 @@ export function TaskPeek({
           </Primitive.Title>
           <div className="peek-top">
             <Link
+              prefetch={false}
               className="inline-link mono"
               href={`/app/tasks/${task?.key}`}
               onClick={onClose}

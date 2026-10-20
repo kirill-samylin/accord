@@ -71,6 +71,7 @@ export function TaskDetail({
               <div className="screen-stack">
                 {compact ? (
                   <Link
+                    prefetch={false}
                     className="button button-secondary button-sm"
                     href={`/app/tasks/${task.key}`}
                   >
@@ -88,6 +89,7 @@ export function TaskDetail({
                     <div className="linked-tasks">
                       {task.links.map((link, i) => (
                         <Link
+                          prefetch={false}
                           key={`${link.from}-${link.to}-${i}`}
                           href={`/app/tasks/${link.to === task.key ? link.from : link.to}`}
                         >
@@ -132,6 +134,7 @@ export function TaskDetail({
             <TabsContent value="activity">
               <EventRows events={page.activity ?? []} />
               <Link
+                prefetch={false}
                 className="inline-link"
                 href={`/app/activity?task_key=${task.key}`}
               >
@@ -156,6 +159,7 @@ export function TaskDetail({
                           name="Сессия"
                           value={
                             <Link
+                              prefetch={false}
                               className="mono"
                               href={`/app/agents/${attempt.session_id}`}
                             >
@@ -223,7 +227,10 @@ export function TaskDetail({
                       <Fact
                         name="Проверена задача"
                         value={
-                          <Link href={`/app/tasks/${task.review.target_key}`}>
+                          <Link
+                            prefetch={false}
+                            href={`/app/tasks/${task.review.target_key}`}
+                          >
                             {task.review.target_key}
                           </Link>
                         }

@@ -67,3 +67,15 @@ Go/Node stage PASS, backup/apply PASS. Реальный HTTPS browser smoke **FA
 Исправление: отдельный ограниченный bucket50r/s burst100 только для Next static,
 fonts/license; прежние API/web/login лимиты и connection32 сохраняются.
 Окончательный вывод требует нового независимого review и повторного HTTPS smoke.
+
+Candidate02 `1518248`: отдельная asset zone устранила static429. Linux stage и
+повторный apply PASS; production02/03 дошли до успешного входа, защищённой cookie,
+native authenticated read и MCP12, но **FAIL** при переходах. Diagnostic03 показал
+nginx429 на app/RSC и `/web/tasks` после viewport prefetch и частых full-page
+переходов теста. Это не утверждение о сбое каждого обычного входа: повторные
+переходы усилили нагрузку. До finalize выполнен rollback без восстановления БД.
+
+Следующая узкая UI дельта отключает автоматическую предзагрузку всех28 Next Link;
+разделы открываются явным нажатием. Лимиты native/web/connection не повышаются.
+Авторский format/typecheck/42unit/production build — PASS; далее обязательны
+independent source/test review и реальный HTTPS regression без prefetch burst.

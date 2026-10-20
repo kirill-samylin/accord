@@ -83,6 +83,7 @@ export function OverviewScreen({
           <div className="agent-strip">
             {agents.slice(0, 8).map((agent) => (
               <Link
+                prefetch={false}
                 key={agent.session_id}
                 className="agent-card"
                 href={`/app/agents/${agent.session_id}`}
@@ -195,7 +196,7 @@ export function OverviewScreen({
               <dd>{overview.active_human_sessions}</dd>
             </div>
           </dl>
-          <Link className="inline-link" href="/app/questions">
+          <Link prefetch={false} className="inline-link" href="/app/questions">
             Открыть вопросы
             <ArrowUpRight size={14} />
           </Link>

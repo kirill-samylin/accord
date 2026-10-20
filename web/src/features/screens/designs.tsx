@@ -162,6 +162,7 @@ export function DesignsScreen({
                 </div>
                 <div className="asset-actions">
                   <Link
+                    prefetch={false}
                     className="button button-ghost button-xs"
                     href={`/app/designs?design_id=${asset.design_id}`}
                   >
@@ -275,6 +276,7 @@ export function DesignsScreen({
               </dl>
               <div className="form-actions">
                 <Link
+                  prefetch={false}
                   className="button button-secondary"
                   href={`/app/designs?design_id=${selected.design_id}`}
                   onClick={() => setSelected(null)}

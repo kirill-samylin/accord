@@ -56,3 +56,29 @@ https://nginx.org/en/docs/http/ngx_http_limit_req_module.html . Никакие �
 отсутствие override у app и byte-identical native/web/upload/ACME. Python
 compile/diffcheck PASS. VPS повторный прогон — NOT-RUN автором; передано root
 и reviewer131. Ни SSH, ни Git, ни active config автор не изменял.
+
+## Исправление фоновых RSC prefetch запросов
+
+Root расширил ownership на11Next UI файлов после фактического второго smoke:
+автоматический prefetch видимых Next links создавал дополнительные `/app` RSC
+запросы и расходовал общий прежний bounded API bucket. Это новое отдельное
+наблюдение; первая asset429 причина и её исправление сохраняются.
+
+На всех28существующих Next `<Link>` добавлен explicit `prefetch={false}`.
+Навигация по нажатию, href, обработчики, query/cache и Go контракты не менялись.
+Новых wrapper/абстракций нет. Native/web/asset nginx лимиты не изменены.
+Применён прочитанный vercel-react-best-practices; актуальный App Router Link API
+проверен по https://nextjs.org/docs/app/api-reference/components/link#prefetch :
+false отключает viewport/hover speculative requests. Для динамического
+authenticated UI с nonce это сознательное снижение фоновой сетевой нагрузки.
+
+PASS: `make web-check` с Node24.19.0 и Go7892: формат, TypeScript,42/42unit,
+standalone production build; `.local/task008/no-prefetch-check.log`. Статическая
+сверка28/28links без пропусков. Independentreview и отдельный meaningful browser
+no-prefetch regression — после передачи131/132. VPS автором не менялся.
+
+Исключение размера: `features/shell.tsx` после форматирования explicitprops
+имеет305строк (было297). Это только перенос строк в существующем компактном
+shell; дробление UI в аварийном сетевом исправлении расширило бы scope без
+пользы. Остальные затронутые файлы≤300строк; wrapper ради уменьшения строк
+не вводится.

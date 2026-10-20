@@ -243,7 +243,7 @@ export function AgentDetail({ page }: { page: PageData }) {
               модели и запуск процесса требуют профиля исполнения; этот контракт
               пока не подключён.
             </p>
-            <Link className="inline-link" href="/app/settings">
+            <Link prefetch={false} className="inline-link" href="/app/settings">
               Правила проекта и сроки аренд
             </Link>
           </div>

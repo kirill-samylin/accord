@@ -108,7 +108,12 @@ export function ProjectsScreen({ page }: { page: PageData }) {
                   Icon: ShieldCheck,
                 },
               ].map((item) => (
-                <Link className="entity-row" href={item.href} key={item.href}>
+                <Link
+                  prefetch={false}
+                  className="entity-row"
+                  href={item.href}
+                  key={item.href}
+                >
                   <FolderKanban size={20} />
                   <div className="entity-main">
                     <strong>{item.title}</strong>

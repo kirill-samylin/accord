@@ -96,14 +96,16 @@ export function Shell({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             <DropdownMenuItem asChild>
-              <Link href="/app/projects">
+              <Link prefetch={false} href="/app/projects">
                 <span className="project-mark">A</span>
                 <span className="truncate">{page.session.project}</span>
                 <Check size={14} />
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/app/settings">Настройки проекта</Link>
+              <Link prefetch={false} href="/app/settings">
+                Настройки проекта
+              </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -140,6 +142,7 @@ export function Shell({
                 .filter((item) => item.group === group)
                 .map((item) => (
                   <Link
+                    prefetch={false}
                     key={item.href}
                     className="nav-row"
                     aria-current={
@@ -213,9 +216,13 @@ export function Shell({
             <Menu size={19} />
           </button>
           <div className="breadcrumb">
-            <Link href="/app">{page.session.project || "Accord"}</Link>
+            <Link prefetch={false} href="/app">
+              {page.session.project || "Accord"}
+            </Link>
             <ChevronRight size={13} />
-            <Link href={section.href}>{section.title}</Link>
+            <Link prefetch={false} href={section.href}>
+              {section.title}
+            </Link>
             {page.task || page.agent ? (
               <>
                 <ChevronRight size={13} />
@@ -282,6 +289,7 @@ export function Shell({
           )
           .map((item) => (
             <Link
+              prefetch={false}
               key={item.href}
               href={item.href}
               aria-current={section.href === item.href ? "page" : undefined}

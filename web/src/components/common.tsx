@@ -95,7 +95,7 @@ export function SectionHeading({
     <div className="section-heading">
       <h2>{title}</h2>
       {href ? (
-        <Link href={href}>
+        <Link prefetch={false} href={href}>
           Все <ArrowRight size={13} />
         </Link>
       ) : (
@@ -138,10 +138,15 @@ export function TaskRow({
       >
         <Status value={task.state} blocked={task.blocked} />
       </span>
-      <Link className="mono task-key" href={`/app/tasks/${task.key}`}>
+      <Link
+        prefetch={false}
+        className="mono task-key"
+        href={`/app/tasks/${task.key}`}
+      >
         {task.key}
       </Link>
       <Link
+        prefetch={false}
         className="task-title truncate"
         title={task.title}
         href={`/app/tasks/${task.key}`}
@@ -170,7 +175,11 @@ export function TaskRow({
 }
 export function AgentRow({ agent }: { agent: Agent }) {
   return (
-    <Link className="entity-row" href={`/app/agents/${agent.session_id}`}>
+    <Link
+      prefetch={false}
+      className="entity-row"
+      href={`/app/agents/${agent.session_id}`}
+    >
       <Avatar name={agent.owner} role={agent.role} agent />
       <div className="entity-main">
         <strong className="truncate">{agent.owner || label(agent.role)}</strong>
@@ -217,7 +226,11 @@ export function EventRows({
                   : label(event.type)}
               </span>
               {event.task_key ? (
-                <Link className="mono" href={`/app/tasks/${event.task_key}`}>
+                <Link
+                  prefetch={false}
+                  className="mono"
+                  href={`/app/tasks/${event.task_key}`}
+                >
                   {event.task_key}
                 </Link>
               ) : null}
@@ -273,7 +286,7 @@ export function Metric({
     </>
   );
   return href ? (
-    <Link className="metric" href={href}>
+    <Link prefetch={false} className="metric" href={href}>
       {body}
     </Link>
   ) : (

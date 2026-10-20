@@ -18,7 +18,7 @@ const tokenFile = required('ACCORD_QA_TOKEN_FILE');
 assert.equal(fs.statSync(tokenFile).mode & 0o777, 0o600, 'token permissions');
 const token = fs.readFileSync(tokenFile, 'utf8').trim(); assert(token.length && token.length <= 4096);
 const revision = required('ACCORD_QA_REVISION'); assert.match(revision, /^[a-f0-9]{40}$/);
-const report = {schema:1, revision, started_at:new Date().toISOString(), result:'FAIL', checks:[], measurements:[], screenshots:[], page_errors:[], severe_console_errors:[], failed_assets:[], mutations:[], limitations:['Production HTTPS from one physical macOS host; mobile is a Chrome viewport.', 'Read-only production data; task/upload/lease mutations are outside this smoke.']};
+const report = {schema:1, revision, started_at:new Date().toISOString(), result:'FAIL', checks:[], measurements:[], screenshots:[], page_errors:[], severe_console_errors:[], failed_assets:[], browser_responses:[], unsolicited_prefetch_paths:[], mutations:[], limitations:['Production HTTPS from one physical macOS host; mobile is a Chrome viewport.', 'Read-only production data; task/upload/lease mutations are outside this smoke.']};
 const sha = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 const pass = (id, data={}) => {report.checks.push({id,result:'PASS',...data}); console.log(id+' PASS');};
 let browser, ctx, page, loggedIn=false;
@@ -53,7 +53,9 @@ async function main() {
   page.on('pageerror',error=>report.page_errors.push(String(error.message).slice(0,500)));
   page.on('console',message=>{if(message.type()==='error' && /hydration|Content Security Policy|Refused to|Minified React|react\.dev/i.test(message.text())) report.severe_console_errors.push(message.text().slice(0,500));});
   page.on('request',request=>{if(new URL(request.url()).origin===base && !['GET','HEAD'].includes(request.method())) report.mutations.push({method:request.method(),path:new URL(request.url()).pathname});});
+  page.on('request',request=>{const url=new URL(request.url());if(url.origin===base && /^\/app(\/|$)/.test(url.pathname)){const headers=request.headers();if(headers['next-router-prefetch']==='1' || /prefetch/i.test(headers.purpose||headers['sec-purpose']||''))report.unsolicited_prefetch_paths.push(url.pathname);}});
   page.on('response',response=>{const url=new URL(response.url()); if(url.origin===base && /^(\/_next\/static\/|\/fonts\/)/.test(url.pathname)){assets.set(url.pathname,response.status()); if(response.status()>=400)report.failed_assets.push({path:url.pathname,status:response.status()});}});
+  page.on('response',response=>{const url=new URL(response.url()); if(url.origin===base && /^\/(app|web)(\/|$)/.test(url.pathname))report.browser_responses.push({method:response.request().method(),path:url.pathname,status:response.status()});});
   const root=await ctx.request.get(base+'/',{maxRedirects:0});
   assert([301,302,307,308].includes(root.status()),'root redirect status');
   assert.equal(new URL(root.headers().location,base).pathname,'/app');
@@ -79,6 +81,13 @@ async function main() {
   for(const cookie of cookies){assert(cookie.httpOnly && cookie.secure);assert.equal(cookie.sameSite,'Strict');assert.equal(cookie.path,'/');}
   assert.equal(await page.evaluate(secret=>Object.values(localStorage).some(value=>value.includes(secret)),token),false,'token persisted in localStorage');
   pass('https-existing-token-browser-login-secure-cookie');
+  await page.waitForTimeout(1000);assert.deepEqual(report.unsolicited_prefetch_paths,[],'viewport generated unsolicited RSC prefetch');
+  const tasksLink=page.locator('.desktop-sidebar a[href="/app/tasks"]').first();await tasksLink.hover();
+  await page.waitForTimeout(500);assert.deepEqual(report.unsolicited_prefetch_paths,[],'hover generated unsolicited RSC prefetch');
+  const navigation=page.waitForResponse(response=>new URL(response.url()).pathname==='/web/tasks' && response.request().method()==='GET');
+  await tasksLink.click();await page.waitForURL(base+'/app/tasks');assert.equal((await navigation).status(),200,'explicit navigation JSON status');
+  await page.locator('h1').first().waitFor();await page.locator('.app-loading').waitFor({state:'detached'});
+  pass('https-no-viewport-hover-prefetch-explicit-navigation-works',{unsolicited_prefetch_count:report.unsolicited_prefetch_paths.length});
   const before=(await json('/web/')).page; assert(before?.session?.session_id);
   const native=await json('/api/v1/tasks?limit=1',{Authorization:'Bearer '+token,'X-Session':before.session.session_id});
   assert(Array.isArray(native.tasks));
@@ -119,14 +128,15 @@ async function main() {
   const license=await ctx.request.get(base+'/PAPERCLIP-LICENSE.txt');assert.equal(license.status(),200);assert.match(await license.text(),/MIT License/);
   assert([...assets.keys()].some(name=>name.endsWith('.js')));assert([...assets.keys()].some(name=>name.endsWith('.css')));assert([...assets.keys()].some(name=>name.startsWith('/fonts/')));
   assert.deepEqual(report.page_errors,[]);assert.deepEqual(report.severe_console_errors,[]);assert.deepEqual(report.failed_assets,[]);
+  assert.deepEqual(report.unsolicited_prefetch_paths,[],'later screen generated unsolicited RSC prefetch');
   assert(report.mutations.every(row=>['/web/login','/web/logout'].includes(row.path)),'unexpected board mutation');
   pass('https-direct-go-legacy-assets-no-renew-no-runtime-errors',{assets:assets.size});
   await logout();assert.equal((await ctx.request.get(base+'/web/tasks',{headers:{Accept:'application/json'}})).status(),401);
   assert.deepEqual(report.mutations.map(row=>row.path),['/web/login','/web/logout'],'unexpected browser mutation');
   pass('https-own-browser-logout-cookie-invalid');report.result='PASS';
 }
-main().catch(error=>{report.failure=String(error.stack).slice(0,1600);console.error('production smoke FAIL; private report contains diagnostics');process.exitCode=1;}).finally(async()=>{
-  if(loggedIn){try{await logout();report.cleanup_logout='PASS';}catch{report.cleanup_logout='FAIL';report.result='FAIL';process.exitCode=1;}}
+main().catch(async error=>{report.failure=String(error.stack).slice(0,1600);if(page){await page.screenshot({path:path.join(out,'failure.png'),fullPage:true,animations:'disabled'}).catch(()=>{});fs.writeFileSync(path.join(out,'failure-body.txt'),await page.locator('body').innerText().catch(()=>''),{mode:0o600});}console.error('production smoke FAIL; private report contains diagnostics');process.exitCode=1;}).finally(async()=>{
+  if(loggedIn){try{await logout();report.cleanup_logout='PASS';}catch(error){report.cleanup_logout='FAIL';report.cleanup_failure=String(error.stack).slice(0,1600);report.result='FAIL';process.exitCode=1;}}
   await browser?.close();report.finished_at=new Date().toISOString();report.script_sha256=sha(fs.readFileSync(__filename));report.asset_statuses=Object.fromEntries(assets);
   fs.writeFileSync(path.join(out,'next-vps-results.json'),JSON.stringify(report,null,2),{mode:0o600});
 });

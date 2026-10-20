@@ -156,7 +156,7 @@ export function HistoryScreen({ page }: { page: PageData }) {
           <div className="list-surface">
             {page.legacy_decisions.map((task) => (
               <div className="legacy-decision" key={task.key}>
-                <Link href={`/app/tasks/${task.key}`}>
+                <Link prefetch={false} href={`/app/tasks/${task.key}`}>
                   <span className="mono muted">{task.key}</span> {task.title}
                 </Link>
                 <p className="answer-text">{task.evidence.answer}</p>
