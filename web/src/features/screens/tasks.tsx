@@ -112,7 +112,11 @@ export function TasksScreen({
             : "Вся работа команды в одном месте"
         }
         actions={
-          <button className="button" onClick={onCreate}>
+          <button
+            className="button"
+            onClick={onCreate}
+            aria-label="Новая задача"
+          >
             <Plus size={14} />
             <span className="desktop-label">Новая задача</span>
           </button>

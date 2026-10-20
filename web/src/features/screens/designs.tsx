@@ -42,7 +42,11 @@ export function DesignsScreen({
             : "Материалы проекта, макеты и результаты работы"
         }
         actions={
-          <button className="button" onClick={() => setUpload(true)}>
+          <button
+            className="button"
+            onClick={() => setUpload(true)}
+            aria-label="Загрузить"
+          >
             <Plus size={14} />
             <span className="desktop-label">Загрузить</span>
           </button>

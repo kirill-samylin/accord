@@ -166,3 +166,92 @@ Bottom nav остаётся fixed с safe-area, а main-scroll резервир�
 PASS. Новый зеркальный unit для CSS не добавлялся: reversible visual correction;
 browser breakpoint regression выполняет QA128 после пересборки координатором.
 Build этой delta автором NOT-RUN по прямому поручению координатора.
+
+### Presentation patch: подготовка до frozen QA (историческая запись)
+
+По поручению координатора подготовлен только игнорируемый
+`.local/task007-localization.patch`; `web/**` и production artifact не менялись.
+Patch содержит узкую будущую дельту:
+
+- Карта eventLabels охватывает все27 текущих core.ValidControlEventType с
+  русской семантикой существующего SSR control_helpers.go. Activity select
+  строится из той же карты, без нынешнего неполного subset. design_uploaded
+  исключён как неподдерживаемый сервером filter value. Неизвестные типы
+  по-прежнему отображаются raw диагностическим fallback в label().
+- `.sidebar { height:100% }` заполняет высоту растянутого desktop wrapper;
+  sidebar-nav уже имеет flex:1/min-height:0/overflow-y:auto и остаётся
+  самостоятельной областью прокрутки при низком viewport. Drawer уже задаёт
+  height100%, поэтому его контракт не меняется; body scroll не добавляется.
+
+Предварительно: набор27 ключей сверён с Go allowlist, proposal форматирован
+через Prettier API, `git apply --check` PASS, `git diff --quiet -- web` PASS.
+Это проверка подготовленного patch, **не реализация/не build/не browser PASS**.
+Новый зеркальный unit для строк/стилей не создавался. После завершения fullQA
+координатор применит согласованный patch, выполнит web checks/build и проверит
+реальные overview/activity/sidebar при обычной и низкой высоте. Повторное
+утверждение этой WORK не означает проверки неприменённого patch в runtime.
+
+### Presentation patch: подготовка focus (историческая запись)
+
+В тот же неприменённый `.local/task007-localization.patch` по уточнению
+координатора включён третий presentation finding. Установленный Radix Dialog
+в modal Content сам предотвращает стандартный focus restore и обращается к
+triggerRef; у нынешних controlled диалогов Dialog.Trigger нет. Поэтому одного
+удаления Command.Input autoFocus недостаточно.
+
+Proposal добавляет небольшой `useDialogFocusHandlers` для shared DialogContent
+и отдельного TaskPeek: opener запоминается в onOpenAutoFocus до framework focus,
+пользовательские callbacks вызываются и defaultPrevented уважается. Закрытие
+восстанавливает только подключённый, видимый, не disabled/inert HTMLElement с
+preventScroll. Если opener исчез либо им был BODY, используется видимая кнопка
+поиска. Command.Input autoFocus убран, чтобы не опережать capture. У native
+mobile drawer отдельная ref кнопки меню и явный onCloseAutoFocus. Новых
+контролов, мутаций или auth/runtime правил patch не вводит.
+
+Подготовлено8 будущих файлов, включая новый helper42строки; Shell297строк.
+`git apply --check` PASS, `git diff --quiet -- web` PASS. Full typecheck/build
+patch пока NOT-RUN: production source остаётся frozen для выполняющейся QA.
+После применения нужны реальные focus-return проверки Cmd/Ctrl+K из кнопки и
+input, mobile search, create/edit/upload/asset preview/quick-look и drawer390;
+закрытие с pending mutation по-прежнему контролирует существующий lock guard.
+
+
+### Текущий статус presentation patch — применён координатором
+
+После завершения прежнего runtime и подтверждения, что Go3101 свободен,
+координатор применил `.local/task007-localization.patch` с точным SHA256
+`06acb1bb3be12a698d931a1c797a666edfc66285f96e7cc9f2a4d7ac3af453c0`.
+Подготовка принадлежит автору125; применение и интеграционные web checks/build
+принадлежат координатору. Предшествующие pending записи выше фиксируют состояние
+до применения и больше не описывают текущий код.
+
+Автор125 повторно прочитал applied delta без изменений исходников: все8файлов
+побайтно совпадают с предварительно согласованным proposal. Source review
+подтвердил полноту27labels/Go allowlist, единый источник activity options,
+sidebar height и правильную композицию shared Dialog callbacks. Focus helper
+не обращается к detached/hidden/disabled/inert opener; defaultPrevented
+сохраняется. TaskPeek использует тот же hook, drawer — явную ref кнопки меню.
+Дополнительных source исправлений автором не внесено.
+
+Финальные функциональная и визуальная QA этой интеграции **ожидаются**.
+В том числе нужны реальные Escape/focus-return проверки и переход
+mobile drawer→Поиск→input autofocus→Escape: взаимодействие двух Radix focus
+scopes не объявляется PASS по чтению кода. TypeScript/формат/unit выполняет
+координатор, build — после actual-source approve127. Автор125 runtime и build
+не запускал. Исторические PASS прежних артефактов не перенесены на новую delta.
+
+### Accessible names мобильных primary actions после artifact5/final01
+
+По реальной QA128 исправлены обе найденные кнопки с `.desktop-label`: Task
+header сохраняет accessible name `Новая задача`, Design header — `Загрузить`
+через aria-label, когда mobile CSS скрывает визуальный текст. Desktop текст и
+действия сохранены. Других desktop-label controls в исходниках нет. Правка
+затрагивает только эти два атрибута и форматирование соответствующих тегов.
+TasksScreen стал302строки: небольшое исключение порога300 вызвано читаемым
+форматированием обязательного a11y attribute; новое дробление screen ради
+четырёх строк не входит в узкую проверяемую дельту.
+
+Formatter/diff-check PASS. Новый зеркальный unit для aria строки не добавлялся
+по поручению координатора. Реальные mobile getByRole/focus проверки, web checks
+и build6 выполняют QA128/координатор после approve127. Автор125 сборку и runtime
+не запускал; это исправление ещё не объявляется browser PASS.
