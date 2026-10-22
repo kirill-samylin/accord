@@ -51,12 +51,15 @@ type fixture struct {
 }
 
 func setup(t *testing.T, interval time.Duration) *fixture {
+	return setupConfigured(t, interval, core.Config{SessionTTL: time.Second, LeaseTTL: time.Second})
+}
+func setupConfigured(t *testing.T, interval time.Duration, cfg core.Config) *fixture {
 	t.Helper()
 	dir := t.TempDir()
 	if err := os.Chmod(dir, 0700); err != nil {
 		t.Fatal(err)
 	}
-	s, err := store.Open(filepath.Join(dir, "board.db"), core.Config{SessionTTL: time.Second, LeaseTTL: time.Second}, nil)
+	s, err := store.Open(filepath.Join(dir, "board.db"), cfg, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

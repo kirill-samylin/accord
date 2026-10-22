@@ -12,7 +12,13 @@ func (s *Store) Describe(ctx context.Context, p core.Principal, in core.OpenSess
 		if !core.ValidRole(in.Role) || !bounded(in.RunID, 128) || in.Machine != p.Machine {
 			return zero, core.Fail("invalid_input", "valid role, run_id and token machine required")
 		}
-		profile, err := sessionProfile(b, in)
+		var profile *core.ProfileSnapshot
+		var err error
+		if managedSessionRequested(in) {
+			profile, err = managedSessionProfile(ctx, b, p, in, now)
+		} else {
+			profile, err = sessionProfile(b, in)
+		}
 		if err != nil {
 			return zero, err
 		}
@@ -32,7 +38,7 @@ func (s *Store) Describe(ctx context.Context, p core.Principal, in core.OpenSess
 			b.Roles[in.Role]++
 			generation = b.Roles[in.Role]
 		}
-		v := core.SessionView{Profile: profile, SessionID: id, Role: in.Role, RoleGeneration: generation, ExpiresAt: now.Add(s.cfg.SessionTTL), Project: s.cfg.Project}
+		v := core.SessionView{ManagedRunID: in.ManagedRunID, ManagedGeneration: in.ManagedGeneration, Profile: profile, SessionID: id, Role: in.Role, RoleGeneration: generation, ExpiresAt: now.Add(s.cfg.SessionTTL), Project: s.cfg.Project}
 		s.sessionTiming(&v)
 		b.Sessions[id] = &core.Session{SessionView: v, PrincipalID: p.ID, RunID: in.RunID, Machine: in.Machine, Owner: p.Owner}
 		emit(b, now, "session_opened", "", id)

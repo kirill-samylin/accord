@@ -213,3 +213,59 @@ comment-only delta отдельно APPROVE, поведение не менял�
 Reviewer менял только WORK165. Полный root make check ещё выполняется; отдельные
 child/crash/browser/native CLI/updater tests и их review, физический Windows,
 второй ПК и production остаются NOT-RUN/PENDING. Source approval их не заменяет.
+
+## Повторное review после checkpoint65e1ba0 и первых process наблюдений
+
+Checkpoint `65e1ba0f2b8ccdc9fcd920c31c4af93c64997c89` прошёл root make check.
+Отдельная QA обнаружила реальный Darwin preflight FAIL: zombie-only pinned PGID
+возвращал EPERM на SIGKILL. Новый reap сначала проверяет census+WNOWAIT leader;
+при live0 exit уже доказан, при live>0 ошибки сигнала по-прежнему fail closed.
+Этот узкий runtime fix **SOURCE APPROVE**, фактический повтор QA ещё PENDING.
+
+Закрыт поздний profile-continuity дефект: каждый native turn открывает свежий
+Describe, а pinned revision после edit/archive больше не current. Managed
+Describe теперь требует owner/current epoch, live worker lease, exact run/gen,
+starting/running и accepted/applied execution с matching worker/epoch; возвращает
+только серверный immutable run snapshot. Проверка действует до cached replay.
+Ordinary Describe/current-profile и assignment/next/lease gates не ослаблены.
+Bridge скрывает binding от model schema и фиксирует его в приватных immutable
+attempt-N файлах, поэтому старый bridge не получает binding новой generation.
+Store/registry/MCP interoperability/immutable-file regressions прочитаны.
+
+Закрыт offline reconnect дефект: poll после истёкшей lease отвергал worker раньше
+доставки его локального terminal proof. До нового poll при expired deadline,
+no-active и pending теперь отправляется только durable recovery. Выбирается
+current generation; locally-proven terminal даёт recovered_stopped, uncertain —
+delivery_unknown. Retries сохраняют request/payload в одной worker incarnation;
+новая incarnation меняет request ID. Recovery не Ack/apply accepted launch,
+не продлевает worker authority и не запускает код; transient network остаётся
+waiting, authoritative4xx fail-stop. Отдельное обновление human session не равно
+новой worker lease. Три unit HTTP regressions прочитаны, heartbeat5s проверен.
+
+**SOURCE APPROVE** всех этих late product deltas. Независимый полный Go race:
+store/projects/bridge/worker/transport/web/cmd — **PASS7/7**; diff check PASS.
+Binding36 изменённых/новых product и QA файлов поверх65e1ba0, sorted path+SHA256:
+`8221470c8b415452585a573c5cb450f3928f8615b5e9c0f58e4ed429505b2f29`.
+
+Отдельные новые QA tests также **SOURCE APPROVE**: deterministic native-like
+process harness, lost accepted/started responses, redacted multibyte output,
+owned PGID/forged proof/detached/реальный unrelated heartbeat, crash+checkout
+intent, consent, offline, protocol-only16/256 quotas с257th reserved stop;
+actual stdio bridge после profile edit/archive; Chrome flows/screenshots;
+реальный old/new updater и offline restore. Частные binary copies SHA проверяются
+до/после, source inventory фиксирован; cleanup ждёт принадлежащие процессы,
+native report сохраняется даже при cleanup FAIL. Native Codex test отдельно
+проверяет реальный session UUID, managed MCP Describe, task lease и exact resume,
+без обхода approvals. Он не подменяется fake-provider PASS.
+
+Первые updater evidence3 checks прочитаны: actual schema4→5 всех7DB/3projects,
+old-row preservation/floor-before-DDL и full restore/auth reset PASS; lifecycle
+systemd/Next симулирован явно. Финальный repeat с immutable binary/source pins и
+новой reviewed сборкой ещё PENDING. Process/browser/native фактическая приёмка
+после late fixes, Windows/Claude/второй физический ПК и production — NOT-RUN или
+PENDING. Это разрешение на отдельную QA, а не завершение TASK013.
+
+Последующая однострочная backend delta `recovered_stopped` сохраняет
+`Command.Forced = old || incoming`; прочитана вместе с regression true→false
+без downgrade и дальнейшим resume. **SOURCE APPROVE**; author focused PASS,
+независимый полный race выше был до этой tiny delta. Binding36 выше её не включает.

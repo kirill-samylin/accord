@@ -72,5 +72,23 @@ Next build. Лог хранится в `.local/task013-delivery/check-final.log`
 независимый APPROVE165 с явной PGID boundary. QA168 gate открыт; новые process/
 browser/native проверки ещё выполняются отдельно.
 
+Проверенный source checkpoint локально сохранён commit `65e1ba0`; public candidate
+Mac-arm64/Windows-amd64/Linux-amd64 `-trimpath` cross-build PASS. Никаких push/release.
+После него process QA обнаружил Darwin EPERM при сигнале группе только из zombie:
+root reaper сначала проверяет WNOWAIT+census и не сигналит уже доказанно завершённой
+группе. Для live members ошибки сигнала и обязательная проверка exit сохранены.
+Reviewer165 отдельно APPROVE runtime delta; actual QA повтор ещё обязателен.
+
+Root также исправляет reconnect после deadman: durable terminal recovery report
+отправляется до нового ownership poll, который иначе возвращает expired lease409.
+Только locally proven terminal превращается в recovered_stopped; unknown остаётся
+unknown. Current generation выбирается до dedup, recovery request стабилен в одной
+incarnation, новая incarnation получает новый ID. Recovery ACK не запускает
+accepted plan и не продлевает ownership; transient сеть оставляет pending,4xx
+останавливает исполнение. Human session refresh отдельный, heartbeat5s. Три новых
+unit/HTTP regressions root с race PASS; source/tests APPROVE165 получен. Реальный
+offline process сценарий выполняет QA168. Profile snapshot continuity исправляет
+author163 отдельно; final candidate/manifest будут перестроены после этих fixes.
+
 Статус: implementation готова к source review165; actual process migration и
 полная интеграция пока NOT-RUN. Никакой production поставки не было.

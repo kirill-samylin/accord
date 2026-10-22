@@ -42,7 +42,7 @@ func (s *service) Describe(ctx context.Context, p core.Principal, in core.OpenSe
 			return core.SessionView{}, denied()
 		}
 		in.RequestID = s.registry.describeID(a, in.RequestID)
-		view, err := s.board.Describe(ctx, p, in)
+		view, err := s.board.Describe(store.WithManagedEpoch(ctx, a.member.Epoch), p, in)
 		if err != nil {
 			return view, err
 		}

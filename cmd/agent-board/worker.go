@@ -44,7 +44,7 @@ func workerCommand(args []string, out io.Writer) error {
 		if err = os.Setenv("AGENT_BOARD_TOKEN", token); err != nil {
 			return errors.New("cannot initialize managed bridge credential")
 		}
-		return runMCP([]string{"--server", config.Server, "--project", config.Project}, os.Stdin, out)
+		return runMCPWithBinding([]string{"--server", config.Server, "--project", config.Project}, os.Stdin, out, config.ManagedRunID, config.ManagedGeneration)
 	}
 	config, err := worker.LoadConfig(*path)
 	if err != nil {

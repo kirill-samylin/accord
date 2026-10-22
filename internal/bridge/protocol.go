@@ -42,6 +42,17 @@ func localTool(tool *mcp.Tool) (*mcp.Tool, error) {
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		var properties map[string]json.RawMessage
+		if err = json.Unmarshal(schema["properties"], &properties); err != nil {
+			return nil, err
+		}
+		delete(properties, "managed_run_id")
+		delete(properties, "managed_generation")
+		schema["properties"], err = json.Marshal(properties)
+		if err != nil {
+			return nil, err
+		}
 	}
 	copied.InputSchema = schema
 	return &copied, nil

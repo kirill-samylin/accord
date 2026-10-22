@@ -26,6 +26,19 @@ func (b *bridge) call(ctx context.Context, name string, raw json.RawMessage) (*m
 	requestKey := name + "/" + stringField(fields, "request_id")
 	replay := b.successful[requestKey]
 	if name == "describe" {
+		if b.managedRunID != "" {
+			for key, want := range map[string]any{"managed_run_id": b.managedRunID, "managed_generation": b.managedGeneration, "run_id": b.managedRunID} {
+				expected, _ := json.Marshal(want)
+				if provided, ok := fields[key]; ok {
+					var supplied any
+					var target any
+					if json.Unmarshal(provided, &supplied) != nil || json.Unmarshal(expected, &target) != nil || supplied != target {
+						return failure("MANAGED_BINDING_MISMATCH", "This bridge serves only its fixed managed execution attempt."), nil
+					}
+				}
+				fields[key] = expected
+			}
+		}
 		if b.session.SessionID != "" && !replay {
 			return failure("SESSION_ALREADY_OPEN", "One bridge has one session. Restart to change role or open a fresh session."), nil
 		}

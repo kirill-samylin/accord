@@ -25,17 +25,18 @@ type RunState struct {
 }
 
 type Receipt struct {
-	Forced     bool   `json:"forced,omitempty"`
-	RequestID  string `json:"request_id"`
-	CommandID  string `json:"command_id"`
-	RunID      string `json:"run_id"`
-	DispatchID string `json:"dispatch_id"`
-	Generation int64  `json:"generation"`
-	Phase      string `json:"phase"`
-	State      string `json:"state,omitempty"`
-	SessionID  string `json:"provider_session_id,omitempty"`
-	Error      string `json:"error,omitempty"`
-	Output     string `json:"output,omitempty"`
+	RecoveryWorkerID string `json:"recovery_worker_id,omitempty"`
+	Forced           bool   `json:"forced,omitempty"`
+	RequestID        string `json:"request_id"`
+	CommandID        string `json:"command_id"`
+	RunID            string `json:"run_id"`
+	DispatchID       string `json:"dispatch_id"`
+	Generation       int64  `json:"generation"`
+	Phase            string `json:"phase"`
+	State            string `json:"state,omitempty"`
+	SessionID        string `json:"provider_session_id,omitempty"`
+	Error            string `json:"error,omitempty"`
+	Output           string `json:"output,omitempty"`
 }
 
 type journal struct {

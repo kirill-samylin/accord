@@ -9,7 +9,7 @@ import (
 )
 
 // Run only opens outbound HTTPS requests. A monotonic local watchdog stops the
-// owned tree before the server's 30s ownership lease can expire.
+// owned process group before the server's 30s ownership lease can expire.
 func (e *Engine) Run(ctx context.Context) error {
 	if err := e.probe(e.config); err != nil {
 		return err
@@ -36,6 +36,18 @@ func (e *Engine) Run(ctx context.Context) error {
 	defer ticker.Stop()
 	lastHeartbeat := time.Now()
 	for {
+		blocked, recoveryErr := e.recoverExpiredReports(running, r)
+		if recoveryErr != nil {
+			return recoveryErr
+		}
+		if blocked {
+			select {
+			case <-running.Done():
+				return running.Err()
+			case <-ticker.C:
+				continue
+			}
+		}
 		started := time.Now()
 		input := e.pollInput(randomID("poll_"))
 		var result core.ManagedPollResult
@@ -80,7 +92,7 @@ func (e *Engine) Run(ctx context.Context) error {
 				return err
 			}
 		}
-		if time.Since(lastHeartbeat) > time.Minute {
+		if time.Since(lastHeartbeat) > 5*time.Second {
 			if err = r.heartbeat(running); err == nil {
 				lastHeartbeat = time.Now()
 			}

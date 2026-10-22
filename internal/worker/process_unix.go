@@ -61,10 +61,18 @@ func (p *unixProcess) reap() {
 	p.mu.Lock()
 	var cleanupError error
 	if errno == 0 {
-		if err := syscall.Kill(-p.cmd.Process.Pid, syscall.SIGKILL); err != nil && err != syscall.ESRCH {
+		live, leader, err := groupMembers(p.cmd.Process.Pid)
+		if err != nil || !leader {
 			cleanupError = errOwnership
-		} else {
-			cleanupError = waitGroupExit(p.cmd.Process.Pid)
+		} else if live > 0 {
+			// Darwin can reject a signal to an all-zombie group with EPERM.
+			// WNOWAIT plus the group census already proves that group exited;
+			// only groups with live members need a termination signal.
+			if err = syscall.Kill(-p.cmd.Process.Pid, syscall.SIGKILL); err != nil && err != syscall.ESRCH {
+				cleanupError = errOwnership
+			} else {
+				cleanupError = waitGroupExit(p.cmd.Process.Pid)
+			}
 		}
 	}
 	// If the ownership wait itself fails, do not signal an unverified PID.

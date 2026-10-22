@@ -78,3 +78,25 @@ managed CLI и owned PGID; setsid/double-fork может выйти из гру�
 реальный Windows остаётся NOT-RUN. Workspace mutex кооперативен, фоновым сервисам
 нужна локальная проверка. Отдельному QA обязателен setsid/unrelated probe с честным
 разделением owned scope PASS и full containment NOT-RUN. Implementation не менялась.
+
+Profile continuity follow-up на базе65e1ba0: независимый design APPROVE WORK165.
+Managed Describe narrow binding проверяет current host owner/epoch, живую worker
+lease, run generation/state и matching accepted/applied execution, затем берёт
+immutable run.Profile. Обычный Describe по-прежнему current active; task assignment
+и прочие gates не ослаблены. Guard действует перед managed Describe replay тоже.
+Per-attempt private bridge config immutable/O_EXCL/fsync, путь attempt-N; bridge
+сам инжектирует run/generation и скрывает эти поля модели. Host proof в child не
+передаётся. Разрешённая root область расширена на bridge/cmdworker/worker config.
+Авторские store/worker binding regressions и in-process actual MCP archive snapshot
+interop PASS; registry owner epoch/foreign-owner test и полный7packages прогон
+фиксируются ниже. Это не real provider/Windows/process QA.
+
+Final profile follow-up author run: store/projects/bridge/worker/transport/web/cmd
+PASS, включая registry epoch/foreign host owner и actual in-process MCP binding;
+git diff --check PASS. Независимый source re-approve и отдельный process QA
+остаются обязательными до поставки нового candidate.
+
+Root Forced recovery follow-up: recovered_stopped сохраняет Forced=true даже
+при следующем proof без Forced; managed_recovery_test дополнен assert true→false
+не понижает историю принудительной остановки. Focused store recovery/managed
+Describe PASS, diff check PASS. Source проверяется WORK165 перед rebuild.

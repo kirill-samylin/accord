@@ -37,6 +37,13 @@ func mutate[T any](s *Store, ctx context.Context, a core.Actor, request, method 
 		if err := authenticatePrincipal(ctx, b, a.Principal, now); err != nil {
 			return zero, err
 		}
+		if method == "describe" {
+			if in, ok := input.(core.OpenSession); ok && managedSessionRequested(in) {
+				if _, err := managedSessionProfile(ctx, b, a.Principal, in, now); err != nil {
+					return zero, err
+				}
+			}
+		}
 		key := a.Principal.ID + "/" + a.SessionID + "/" + request
 		var previous replay
 		var savedResponse string

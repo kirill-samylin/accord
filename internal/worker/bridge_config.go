@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"io"
@@ -11,9 +12,11 @@ import (
 )
 
 type BridgeConfig struct {
-	Server    string `json:"server"`
-	Project   string `json:"project"`
-	TokenFile string `json:"token_file"`
+	ManagedRunID      string `json:"managed_run_id"`
+	ManagedGeneration int64  `json:"managed_generation"`
+	Server            string `json:"server"`
+	Project           string `json:"project"`
+	TokenFile         string `json:"token_file"`
 }
 
 // ReadBridgeConfig is used only by a per-run stdio bridge child. The host proof
@@ -29,6 +32,9 @@ func ReadBridgeConfig(path string) (BridgeConfig, string, error) {
 	decoder.DisallowUnknownFields()
 	if err = decoder.Decode(&config); err != nil {
 		return config, "", errors.New("invalid local bridge configuration")
+	}
+	if decoder.Decode(new(any)) != io.EOF || !identifier.MatchString(config.ManagedRunID) || config.ManagedGeneration < 1 {
+		return config, "", errors.New("managed bridge requires an immutable execution binding")
 	}
 	token, err := ReadToken(config.TokenFile)
 	return config, token, err
@@ -52,13 +58,20 @@ func ReadToken(path string) (string, error) {
 }
 
 func (e *Engine) bridgeArgs(run RunState) ([]string, error) {
-	dir := filepath.Join(e.config.StateDir, "runs", run.ID)
+	if !identifier.MatchString(run.ID) || run.Generation < 1 {
+		return nil, errors.New("invalid managed execution binding")
+	}
+	runDir := filepath.Join(e.config.StateDir, "runs", run.ID)
+	if err := privateDirectory(runDir); err != nil {
+		return nil, err
+	}
+	dir := filepath.Join(runDir, "attempt-"+strconv.FormatInt(run.Generation, 10))
 	if err := privateDirectory(dir); err != nil {
 		return nil, err
 	}
 	path := filepath.Join(dir, "bridge.json")
-	data, _ := json.Marshal(BridgeConfig{Server: e.config.Server, Project: e.config.Project, TokenFile: e.config.TokenFile})
-	if err := os.WriteFile(path, data, 0600); err != nil {
+	data, _ := json.Marshal(BridgeConfig{ManagedRunID: run.ID, ManagedGeneration: run.Generation, Server: e.config.Server, Project: e.config.Project, TokenFile: e.config.TokenFile})
+	if err := immutableBridgeFile(path, data); err != nil {
 		return nil, err
 	}
 	self, err := os.Executable()
@@ -85,8 +98,38 @@ func (e *Engine) bridgeArgs(run RunState) ([]string, error) {
 	mcp := map[string]any{"mcpServers": map[string]any{"accord_managed": map[string]any{"command": self, "args": args}}}
 	data, _ = json.Marshal(mcp)
 	path = filepath.Join(dir, "mcp.json")
-	if err = os.WriteFile(path, data, 0600); err != nil {
+	if err = immutableBridgeFile(path, data); err != nil {
 		return nil, err
 	}
 	return []string{"--strict-mcp-config", "--mcp-config", path}, nil
+}
+
+// Attempt-specific immutable files keep a surviving old bridge from observing
+// the next generation's binding after a resume.
+func immutableBridgeFile(path string, data []byte) error {
+	if file, err := privateRead(path); err == nil {
+		defer file.Close()
+		old, e := io.ReadAll(io.LimitReader(file, 65537))
+		if e != nil || !bytes.Equal(old, data) {
+			return errors.New("immutable bridge configuration differs")
+		}
+		return nil
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+	if err != nil {
+		return err
+	}
+	if _, err = file.Write(data); err == nil {
+		err = file.Sync()
+	}
+	closed := file.Close()
+	if err != nil {
+		return err
+	}
+	if closed != nil {
+		return closed
+	}
+	return syncDirectory(filepath.Dir(path))
 }

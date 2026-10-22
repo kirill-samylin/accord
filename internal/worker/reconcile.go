@@ -8,23 +8,37 @@ import (
 	"agent-board/internal/core"
 )
 
-func (e *Engine) reconcile(ctx context.Context, r *remote) error {
+func (e *Engine) prepareReconciliation() error {
 	e.mu.Lock()
+	defer e.mu.Unlock()
 	var reports []*Receipt
 	seen := map[string]bool{}
 	for _, pending := range e.journal.Pending {
 		if seen[pending.RunID] {
 			continue
 		}
-		seen[pending.RunID] = true
 		run := e.journal.Runs[pending.RunID]
 		if run == nil {
-			e.mu.Unlock()
 			return errors.New("orphaned local receipt; manual recovery required")
 		}
+		if pending.Generation != run.Generation {
+			continue
+		}
+		seen[pending.RunID] = true
 		copy := *pending
+		if copy.RecoveryWorkerID == e.journal.WorkerID && recoveryPhase(copy.Phase) {
+			reports = append(reports, &copy)
+			continue
+		}
 		copy.RequestID = randomID("recover_")
+		copy.RecoveryWorkerID = e.journal.WorkerID
 		copy.SessionID = run.SessionID
+		copy.Error = run.Error
+		for _, latest := range e.journal.Receipts {
+			if latest.RunID == run.ID && latest.Generation == run.Generation && latest.Forced {
+				copy.Forced = true
+			}
+		}
 		if run.State == "stopped" || run.State == "completed" || run.State == "failed" {
 			copy.Phase = "recovered_stopped"
 		} else {
@@ -37,22 +51,26 @@ func (e *Engine) reconcile(ctx context.Context, r *remote) error {
 			continue
 		}
 		receipt := e.journal.Receipts[run.CommandID]
-		if receipt == nil {
-			e.mu.Unlock()
+		if receipt == nil || receipt.Generation != run.Generation {
 			return errors.New("missing launch identity; manual local recovery required")
 		}
 		copy := *receipt
 		copy.Phase = "delivery_unknown"
 		copy.RequestID = randomID("recover_")
+		copy.RecoveryWorkerID = e.journal.WorkerID
 		copy.SessionID = run.SessionID
 		reports = append(reports, &copy)
 	}
 	e.journal.Pending = reports
-	if err := e.save(); err != nil {
-		e.mu.Unlock()
+	// Recovery acknowledgments cannot apply an earlier accepted launch plan.
+	e.plans = map[string]plan{}
+	return e.save()
+}
+
+func (e *Engine) reconcile(ctx context.Context, r *remote) error {
+	if err := e.prepareReconciliation(); err != nil {
 		return err
 	}
-	e.mu.Unlock()
 	deadline := time.Now().Add(35 * time.Second)
 	for {
 		receipt := e.Pending()

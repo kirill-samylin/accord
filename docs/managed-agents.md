@@ -190,6 +190,12 @@ Bridge credentials берёт из локального project credential file.
 Profile instructions и run prompt включают правило прекращения записи при lease
 loss; heartbeat мостом не превращается в бессрочное право после потери worker.
 Конкретная native проверка обязательна, SDK/stub не подтверждает Claude/Codex.
+Bridge binding `managed_run_id/managed_generation` фиксирован в immutable
+`runs/ID/attempt-N/bridge.json` и инжектируется bridge, не выбирается моделью.
+Managed Describe требует current host owner/epoch, live worker lease, точный run
+и accepted/applied execution текущего generation; берёт только server run snapshot.
+Edit/archive профиля не меняет этот snapshot. Ordinary Describe требует current
+active профиль, а task assignment/next/SHA/lease gates остаются прежними.
 
 ## API, browser и ограничения
 

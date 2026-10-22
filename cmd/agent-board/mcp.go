@@ -14,6 +14,9 @@ import (
 )
 
 func runMCP(args []string, in io.Reader, out io.Writer) error {
+	return runMCPWithBinding(args, in, out, "", 0)
+}
+func runMCPWithBinding(args []string, in io.Reader, out io.Writer, managedRunID string, managedGeneration int64) error {
 	f := flags("mcp")
 	server := f.String("server", "http://127.0.0.1:8080", "server origin")
 	project := f.String("project", "", "opaque project ID")
@@ -31,7 +34,7 @@ func runMCP(args []string, in io.Reader, out io.Writer) error {
 	if !ok {
 		reader = io.NopCloser(in)
 	}
-	return bridge.Serve(ctx, bridge.Options{Server: *server, ProjectID: *project, TokenFile: *tokenFile, HeartbeatInterval: *interval, Stderr: os.Stderr}, &mcp.IOTransport{Reader: reader, Writer: writerNoClose{out}, MaxLineLength: 64 << 10})
+	return bridge.Serve(ctx, bridge.Options{ManagedRunID: managedRunID, ManagedGeneration: managedGeneration, Server: *server, ProjectID: *project, TokenFile: *tokenFile, HeartbeatInterval: *interval, Stderr: os.Stderr}, &mcp.IOTransport{Reader: reader, Writer: writerNoClose{out}, MaxLineLength: 64 << 10})
 }
 
 type writerNoClose struct{ io.Writer }

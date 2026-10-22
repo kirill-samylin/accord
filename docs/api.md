@@ -6,6 +6,14 @@
 > phases, idempotency и native provider границы — [managed-agents.md](managed-agents.md);
 > фактическая приёмка schema5/managed_agents1 — [TASK013](TASK-013-managed-agents.md).
 
+Managed bridge добавляет в `OpenSession`/`SessionView` необязательную пару
+`managed_run_id`, `managed_generation`. Пара закрепляется приватной конфигурацией
+попытки и подставляется bridge, не выбирается моделью. Только текущий владелец
+active host под действующей worker lease и подтверждённой execution-командой
+может связать точную сохранённую версию профиля run после изменения/архивации
+каталога. Обычный `describe` по-прежнему требует актуальный active профиль;
+gates назначения задач и независимого review остаются отдельными.
+
 > TASK012 добавляет scoped REST `POST tasks/similar`, `POST tasks/{key}/duplicate`,
 > `GET team`; CLI `similar|duplicate|team`, MCP resources similar/team и
 > существующий link с `duplicate_of` без13-го tool. Create/Claim могут возвращать

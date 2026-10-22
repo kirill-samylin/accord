@@ -167,6 +167,7 @@ func (s *Store) ManagedReport(ctx context.Context, a core.Actor, in core.Managed
 			}
 			r.State = "stopped"
 			c.Command.Status = "cancelled"
+			c.Command.Forced = c.Command.Forced || in.Forced
 			// One local tree exit reconciles this execution attempt, including a
 			// concurrent stop receipt. Undispatched clarification remains mailbox.
 			for _, peer := range b.ManagedCommands {

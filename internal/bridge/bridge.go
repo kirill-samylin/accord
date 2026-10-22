@@ -17,6 +17,8 @@ import (
 
 // Options describes a native client; TokenFile's contents are never protocol output.
 type Options struct {
+	ManagedRunID      string
+	ManagedGeneration int64
 	Server            string
 	ProjectID         string
 	TokenFile         string
@@ -25,28 +27,33 @@ type Options struct {
 }
 
 type bridge struct {
-	mu              sync.Mutex
-	upstream        *mcp.ClientSession
-	server          *mcp.Server
-	session         core.SessionView
-	task            *core.Lease
-	taskKey         string
-	sessionDeadline time.Time
-	taskDeadline    time.Time
-	lastHeartbeat   time.Time
-	interval        time.Duration
-	rpcTimeout      time.Duration
-	override        time.Duration
-	quarantined     bool
-	successful      map[string]bool
-	readOnly        map[string]bool
-	wake            chan struct{}
-	stderr          io.Writer
+	managedRunID      string
+	managedGeneration int64
+	mu                sync.Mutex
+	upstream          *mcp.ClientSession
+	server            *mcp.Server
+	session           core.SessionView
+	task              *core.Lease
+	taskKey           string
+	sessionDeadline   time.Time
+	taskDeadline      time.Time
+	lastHeartbeat     time.Time
+	interval          time.Duration
+	rpcTimeout        time.Duration
+	override          time.Duration
+	quarantined       bool
+	successful        map[string]bool
+	readOnly          map[string]bool
+	wake              chan struct{}
+	stderr            io.Writer
 }
 
 // Serve runs exactly one local MCP connection and stops renewing on EOF/cancel.
 // It never releases a lease implicitly or recovers ownership after uncertainty.
 func Serve(ctx context.Context, options Options, transport mcp.Transport) error {
+	if (options.ManagedRunID == "") != (options.ManagedGeneration == 0) || options.ManagedGeneration < 0 {
+		return errors.New("managed bridge requires an exact run and positive generation")
+	}
 	if options.HeartbeatInterval < 0 {
 		return errors.New("heartbeat interval must be positive")
 	}
@@ -77,7 +84,7 @@ func Serve(ctx context.Context, options Options, transport mcp.Transport) error 
 		return errors.New("cannot connect to Accord; check HTTPS origin and private token")
 	}
 	defer remote.Close()
-	b := &bridge{upstream: remote, override: options.HeartbeatInterval, wake: make(chan struct{}, 1), successful: make(map[string]bool), readOnly: make(map[string]bool), stderr: options.Stderr}
+	b := &bridge{managedRunID: options.ManagedRunID, managedGeneration: options.ManagedGeneration, upstream: remote, override: options.HeartbeatInterval, wake: make(chan struct{}, 1), successful: make(map[string]bool), readOnly: make(map[string]bool), stderr: options.Stderr}
 	b.server = mcp.NewServer(&mcp.Implementation{Name: "accord-bridge", Version: "0.2.0"}, &mcp.ServerOptions{Logger: silent,
 		Instructions: "Use describe once with a fresh request_id per process, role, run_id and token machine. Session IDs are injected. This bridge renews ownership while alive. LEASE_UNCERTAIN or LEASE_LOST means stop local edits immediately and restart with a fresh describe; the bridge cannot stop your shell/file tools. Closing stdin stops heartbeat without releasing work."})
 	listing, stopListing := context.WithTimeout(ctx, 10*time.Second)

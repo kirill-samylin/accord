@@ -25,7 +25,18 @@ func TestManagedRecoveredStartClosesAcceptedStopAndResumesWithQueuedClarificatio
 		t.Fatal("missing stop")
 	}
 	m.report(t, stop, "accepted")
-	recovered := m.report(t, start, "recovered_stopped")
+	recovery := m.reportInput(start, "recovered_stopped")
+	recovery.Forced = true
+	recovered, err := m.f.s.ManagedReport(testContext, m.a, recovery)
+	if err != nil || !recovered.Command.Forced {
+		t.Fatal("forced recovery truth lost", err)
+	}
+	recovery.RequestID = m.f.id()
+	recovery.Forced = false
+	recovered, err = m.f.s.ManagedReport(testContext, m.a, recovery)
+	if err != nil || !recovered.Command.Forced {
+		t.Fatal("later recovery downgraded forced termination", err)
+	}
 	if recovered.Run.State != "stopped" {
 		t.Fatal("recovery did not confirm stopped")
 	}

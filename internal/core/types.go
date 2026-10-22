@@ -28,14 +28,18 @@ type Config struct {
 type Clock func() time.Time
 
 type OpenSession struct {
-	ProfileID      string `json:"profile_id,omitempty"`
-	ProfileVersion int64  `json:"profile_version,omitempty"`
-	RequestID      string `json:"request_id"`
-	Role           string `json:"role"`
-	RunID          string `json:"run_id"`
-	Machine        string `json:"machine"`
+	ManagedRunID      string `json:"managed_run_id,omitempty"`
+	ManagedGeneration int64  `json:"managed_generation,omitempty"`
+	ProfileID         string `json:"profile_id,omitempty"`
+	ProfileVersion    int64  `json:"profile_version,omitempty"`
+	RequestID         string `json:"request_id"`
+	Role              string `json:"role"`
+	RunID             string `json:"run_id"`
+	Machine           string `json:"machine"`
 }
 type SessionView struct {
+	ManagedRunID          string            `json:"managed_run_id,omitempty"`
+	ManagedGeneration     int64             `json:"managed_generation,omitempty"`
 	Profile               *ProfileSnapshot  `json:"profile,omitempty"`
 	SessionID             string            `json:"session_id"`
 	Role                  string            `json:"role"`

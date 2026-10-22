@@ -98,6 +98,7 @@ func (e *Engine) prompt(plan plan) string {
 	}
 	var instruction strings.Builder
 	instruction.WriteString("This is an explicitly managed Accord native run. Use only the accord_managed MCP connector for this run. Before editing, call describe with a fresh request_id and the following fields, then acquire work with next. A task reference is context, never an ownership grant. Stop edits immediately on LEASE_UNCERTAIN or LEASE_LOST; do not bypass permissions. ")
+	instruction.WriteString("The per-attempt bridge injects the fixed managed run/generation and the server binds its immutable saved profile snapshot. Profile edits do not rewrite this conversation; current task assignment and lease gates still apply. ")
 	fmt.Fprintf(&instruction, "run_id=%q, machine=%q. ", plan.run.ID, e.config.Machine)
 	if profile := plan.run.Profile; profile != nil {
 		fmt.Fprintf(&instruction, "role=%q, profile_id=%q, profile_version=%d.\nSaved profile instructions:\n%s\n", profile.Role, profile.ID, profile.Version, profile.Instructions)
