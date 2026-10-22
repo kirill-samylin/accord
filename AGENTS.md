@@ -26,7 +26,11 @@
 не lease/identity, schema4/coordination floor обязательны. Управляемый запуск
 остаётся следующим отдельным чатом после реального closure TASK011.
 TASK012 (дедупликация и экран «Команда») — `docs/TASK-012-dedup-team.md`;
-реализован локально в ветке `codex/dedup`, не выпущен.
+поставлен на VPS release `64ed870b749289b545d29cd2ec7813c6266de54d`, ветка
+`codex/dedup` отправлена в origin. Board schema4 сохраняется; новый permanent
+floor `deduplication:1` обязателен вместе с coordination/profiles/registry/ACL.
+Прежний schema4 binary не понимает новые JSON semantics и запрещён. Следующие
+обновления только capable `projects/upgrade.py` с all-project backup/roll-forward.
 
 ## Работа
 

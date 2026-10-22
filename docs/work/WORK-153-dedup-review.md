@@ -339,3 +339,98 @@ Root сообщил полный final bridge makecheck PASS в `make-check-fina
 
 **LOCAL QA FINAL + TEST SOURCE/EVIDENCE APPROVE**. Можно готовить immutable
 release/exact Linux QA и actual hardened stage; это ещё не FINAL delivery approval.
+
+## Immutable Linux и actual stage — APPROVE перед apply
+
+Release `64ed870b749289b545d29cd2ec7813c6266de54d`; reviewer независимо проверил
+пустой product diff4742→64ed и Go1.27.2/linux-amd64/trimpath/VCSmodified=false.
+Linux ELF SHA256
+`c4b25c45de5204dee55f6bb3e85de03be7e1073267d0304aa04c5c816f918b45`;
+Next BuildID `PWEoVOCD7jLxpbqh89NjG`, manifest SHA256
+`63f17b3e12bfd6f2b20c28713ab0f303faf3f4e162aa17984546087b4e307af9`.
+Полные local bundles проверены независимо:53Go/1247Next exact regular members,
+без symlink и с совпадающими SHA.604committed QA source package/proof revision,
+manifest/tarSHA также совпали; source/binary binding не выводится только из label.
+
+Exact Linux reports в private deploy: product10/10 **PASS**, SHA256
+`49747ff7ea5cda24697d5ffcb069b803aa58aeeaedc7a4fc58f7b5880a6e9baa`;
+updater8/8 **PASS**, SHA256
+`b57417d88894620a4ddef5e4cab280b18d443d30666d43aeea2fe6840edb2698`.
+Reviewer сверил revision/ELF/source_unchanged и все captured source/test/archive
+file hashes с current bytes; ports cleanup PASS. Old Linux ELF pinned a03f64d5.
+В updater actual Go/SQLite/proc/guard replacement/crash/resume/fullrestore7DB;
+systemd/Next/UID adapters по-прежнему simulated и не подменяют actual stage.
+
+Actual hardened Next stage report SHA256
+`1ba5575aee5bf5ee55e6a0e4580822f61e10146cf0f37ce8d979b748edf3e539`:
+phase staged, owned PID416087, NRestarts0, helpers/effective configuration PASS,
+оба active pointer прежнегоe53, markers0,7894free после cleanup, штатные
+службы/timers active. Node Linux24.19/sharp/exact bundle проверены выполняемым
+reviewed stage operator; BuildID связан manifest. JSON отдельно не сериализует
+raw Next argv/Node/BuildID, поэтому эти поля не объявляются отдельной raw-proc
+уликой из данного report. Root уведомлён об этой точности формулировки.
+
+**EXACT LINUX + ACTUAL STAGE APPROVE** до штатного capable apply: полный
+pre-snapshot и новый floor остаются обязательны под owned hold. Это разрешение
+следующего уже авторизованного шага, не итоговая приёмка production.
+
+## Production delivery evidence — FINAL APPROVE
+
+Reviewed новый read-only `process_proof.py`, SHA256
+`ac76451bfe2fb4bacd4b1ad627a15e7a3c631df27418d728cf07e7ee75461176`:
+remote-B, только чтение effective configuration/helpers, `/proc`, unit PID,
+snapshot/marker/capabilities. Он не читает credential values и сохраняет hash
+Next cmdline вместо полного содержимого. Pending proof49c9a6a6 и final proof
+ниже подтверждают фактические owned процессы, не только pointer/HTTP200.
+
+Actual capable apply прошёл: новый guard под owned hold, fresh full snapshot,
+сохранены3реальныхDB/default-only/schema4; initial apply/reset/rollback не
+использовались. HTTPS final report
+`.local/task012/deploy/https-20261022T213702/production-readonly-results.json`,
+SHA256 `0ad8789bdd96cd916e1c880c652d84dbebb439e096b9b7aa5e3b9508fc350f79`:
+**PASS9/9**,61screens,951browserHTTP200, page/severe-console/asset errors0,
+prefetch0. Reviewer сверил все61screen hashes и frozen script400ce6a9/supportSHA.
+script_unchanged=true, browser_closed=true. Mutations только собственные login,
+project switch и logout; task digest и session expiry unchanged. Прочитаны
+2existing task coordination, team/native/web/MCP и existing-only similar;
+create dialog открыт пустым без submit. Business mutations проверены synthetic.
+
+Final `final-runtime-proof.json` SHA256
+`74b1628aea2aa3faec459ba1447b3654fcea7bcdb4fa6c7457a5c85bcb06e600`
+и `process-complete-proof.json` SHA256
+`4d1ea1da53dc31d168088364e78c07c543e5c5f52d5e686b6fcc35a649d603be`
+проверены. Journal complete, owned GoPID416724/NextPID416371, actual GoELF c4b25c45,
+NodeELF bc17c508/cwd exact64ed release, NextBuildID PWEoVOCD7jLxpbqh89NjG.
+Effective launch/backup/guard/helpers PASS, deduplication1+coordination1/schema4,
+authority marker regular UID999/0600/prebytes preserved; все службы/timers active,
+NRestarts0, markers0/7894free. Go PID после штатного backup restart изменился
+ожидаемо; новое PID повторно связано с тем же ELF/argv.
+
+Fresh pre-snapshot:
+`/var/backups/accord-web/projects-20261022T183638Z-cb8c77677ed04bd0b673ea6f60e10c1f`,
+manifestSHA256
+`4fa528d2bef2cd48bda38b2a533f662ba326d2843279f9db45fc134d64c10de7`.
+Final full backup:
+`/var/backups/accord-web/projects-20261022T184141Z-335d09b46e124585b51f0091d8e61128`,
+manifestSHA256
+`4b6bd4da82a85044ee7b94813afe197a049037f56f65f87f2fd8c279a971dbb6`.
+Format2/default board4/web2+registry/history validated наVPS. Production содержит
+толькоdefault (0additional projects), сохранены3DB; default+2projects/7DB и
+fullrestore проверены отдельно synthetic. РеальныеDB не скачивались и не
+заменялись fixtures, backup пока только на прежнемVPS.
+
+**DELIVERY EVIDENCE FINAL APPROVE**, mandatory findings закрыты. Остались
+декларированные ограничения: физический второйПК/native Claude/Codex execution,
+managed workers/fullV1 NOT-RUN; mobile — viewport, visibility — input simulation,
+полный accessibility/нагрузочный audit не выполнялся. Дедупликация эвристическая,
+warn advisory, автоматический semantic/no-duplicate guarantee не заявляется.
+Closing docs сверяются координатором с этими фактами отдельно; source/tests
+release64ed остаются заморожены. Пользовательский deploy-task012.command
+не запускался, его автоматический rollback по-прежнему не одобрен.
+
+Closing AGENTS/TASK012/WORK154 consistency review: **APPROVE**. Release/hash/
+check counts/backup paths, production3DB против synthetic7DB, old cloud NOT-RUN
+как история, stage proof против actual process proof и явные ограничения
+согласованы с evidence выше. Diff от64ed по cmd/internal/infra/tests/web/
+`.gitignore` пуст; только4closing docs, пользовательский untracked script
+сохранён. **FINAL APPROVE TASK012**, незакрытых обязательных findings нет.

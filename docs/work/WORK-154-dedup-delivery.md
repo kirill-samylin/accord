@@ -98,3 +98,57 @@ resume и project switch. Visibility input эмулирован DOM getter/event
 полный V1 и полный a11y audit не объявляются PASS. Production readonly script
 одобрен отдельно, SHA256
 `400ce6a9ce3c227e4089505684356eae429965e26c2d4c41c3be33ce5d8a41ff`.
+
+## Immutable релиз
+
+Release `64ed870b749289b545d29cd2ec7813c6266de54d`, cleanVCS, product diff от
+проверенного4742 пуст. Ветка `codex/dedup` отправлена в origin; main/merge/PR
+не выполнялись. Финальный pattern scan95changed paths: совпадений0, values не
+выводились. Пользовательский untracked `deploy-task012.command` сохранён.
+
+Linux Go SHA256
+`c4b25c45de5204dee55f6bb3e85de03be7e1073267d0304aa04c5c816f918b45`,
+Next BuildID `PWEoVOCD7jLxpbqh89NjG`, manifest SHA256
+`63f17b3e12bfd6f2b20c28713ab0f303faf3f4e162aa17984546087b4e307af9`.
+Reviewer независимо проверил Go1.27.2/Linuxamd64/VCSmodified=false и manifests
+53Go/1247Next members (regular/no symlink), QA archives604committed files.
+Private package/runner связывают revision, manifestSHA и archiveSHA до transfer;
+после transfer каждый файл сверяется снова, активные pointers не меняются.
+Exact Linux product/update и actual hardened stage ещё отдельные барьеры.
+
+## Фактическое завершение
+
+Exact final Linux **PASS10/10 product +8/8 updater**, actualELF/source604/
+archive/revision binding и cleanup. Actual hardened stage **PASS**: reviewed
+operator проверил LinuxNode/sharp/bundle, owned transient PID/NRestarts0;
+stage JSON фиксирует PID/runtime, не отдельный raw argv dump. После stage
+old pointers сохранились,7894free. WORK153 EXACT LINUX + ACTUAL STAGE APPROVE.
+
+Actual capable apply **PASS**: full format2 snapshot до storage/writer,
+newdedup guard под owned hold, oldrows3DB сохранены, затем новые Go/Next.
+Readonly inspector подтвердил actualGo argv/ELF и actualNext Node ELF/cwd/
+BuildID/MainPID; rawNext argv не заявляется, сохранён cmdline hash и effective
+launch assertions. Marker UID999/regular0600/pre-bytes preserved, markers0.
+
+Public HTTPS **PASS9/9**,61screens/951browserHTTP200/errors0/prefetch0,
+ownlogout/browser_closed=true, source400ce6a9 unchanged. Report SHA256
+`0ad8789bdd96cd916e1c880c652d84dbebb439e096b9b7aa5e3b9508fc350f79`.
+Final backup format2/default4web2/registry/history validated наVPS, manifest
+`4b6bd4da82a85044ee7b94813afe197a049037f56f65f87f2fd8c279a971dbb6`.
+Пути обоих snapshots, changed areas, полный результат и ограничения — TASK012.
+
+Finalize **complete**, services/timers active/NRestarts0/7894free/markers0.
+Final runtime proof SHA256
+`74b1628aea2aa3faec459ba1447b3654fcea7bcdb4fa6c7457a5c85bcb06e600`;
+actual process complete proof SHA256
+`4d1ea1da53dc31d168088364e78c07c543e5c5f52d5e686b6fcc35a649d603be`.
+WORK153 **DELIVERY EVIDENCE FINAL APPROVE**, обязательных findings нет.
+
+**COMPLETE** для поставки согласованной дедупликации/«Команды». Production
+содержит default/3DB;7DB относятся только к synthetic fixtures. Source/тесты
+release64ed870 после QA не менялись, closing изменения только docs/AGENTS.
+Исходные `team.css`755строк и `team.tsx`305строк сохранены как цельные стилевой
+слой/экран пользовательского4ec5cca: их механическое дробление не требовалось
+для исправления поставки и не меняет verified behavior. Existing create dialog
+>300строк отдельно объяснён автором156. Неизвестные runtime/recovery артефакты
+не удалялись; пользовательский untracked script сохранён.
