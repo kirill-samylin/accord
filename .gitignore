@@ -16,5 +16,6 @@ __pycache__/
 !.env.example
 /web/node_modules/
 /web/.local/
+/web/.next/
 /web/next-env.d.ts
 /web/*.tsbuildinfo

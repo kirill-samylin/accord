@@ -1,5 +1,11 @@
 # Архитектура пилота
 
+> TASK012 добавляет project-local similarity и `duplicate_of`, не изменяя
+> scheduler/lease/generation/SHA gates. Durable поля задач требуют нового
+> `deduplication:1` permanent floor при той же board schema4; прежний binary
+> не допускается поверх новых записей. Контракт/приёмка —
+> [TASK012](TASK-012-dedup-team.md), capable update — projects/upgrade.py.
+
 > TASK011: назначения задач pinned профилям, объяснимые gates и ручной цикл
 > review → QA описаны в [coordination.md](coordination.md). Schema4/coordination1
 > floor защищает новые task semantics; фактическая готовность — TASK011.

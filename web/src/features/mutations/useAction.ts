@@ -22,6 +22,7 @@ export function useAction(
   const [page, setPage] = useState(initialPage);
   const [phase, setPhase] = useState<Phase>("idle");
   const [message, setMessage] = useState("");
+  const [errorCode, setErrorCode] = useState("");
   const [fieldErrors, setFieldErrors] = useState(
     initialPage.field_errors ?? {},
   );
@@ -51,6 +52,7 @@ export function useAction(
     pending.current = action;
     setPhase("sending");
     setMessage("");
+    setErrorCode("");
     let result: MutationResult;
     try {
       result = await withMutationDeadline(action.path, (signal) =>
@@ -76,6 +78,11 @@ export function useAction(
     }
     setPage(state.page);
     setPhase(state.phase);
+    // Only a confirmed rejection may enable an explicit override. Unknown
+    // outcomes keep the original action frozen for an exact retry.
+    setErrorCode(
+      !result.ok && !state.keepPending ? (result.error?.code ?? "") : "",
+    );
     if (result.ok) {
       setFieldErrors({});
       onSuccess(result);
@@ -133,6 +140,8 @@ export function useAction(
     page,
     phase,
     message,
+    errorCode,
+    clearErrorCode: () => setErrorCode(""),
     fieldErrors,
     send,
     retry,

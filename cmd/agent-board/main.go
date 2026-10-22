@@ -42,7 +42,7 @@ func run(args []string, in io.Reader, out io.Writer) error {
 		if len(args) != 1 && !(len(args) == 2 && args[1] == "--json") {
 			return errors.New("capabilities accepts only --json")
 		}
-		return json.NewEncoder(out).Encode(map[string]any{"project_registry": 1, "project_acl": 1, "registry_schema": []int{1}, "agent_profiles": 1, "coordination": 1, "board_schema": []int{4}})
+		return json.NewEncoder(out).Encode(map[string]any{"project_registry": 1, "project_acl": 1, "registry_schema": []int{1}, "agent_profiles": 1, "coordination": 1, "deduplication": 1, "board_schema": []int{4}})
 	case "projects":
 		return projectCommand(args[1:], out)
 	case "serve":

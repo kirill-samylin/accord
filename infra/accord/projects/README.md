@@ -12,6 +12,14 @@ Go7892/Next7893/nginx/accord-web-backup уже должны работать. О
 nginx hash, без owner-identity. Команды stage/apply/resume/finalize сохраняют
 отдельный journal kind=capable-update. Никакого bootstrap-owner повторно.
 
+TASK012 сохраняет board schema4 и добавляет capability `deduplication:1`.
+Постоянный guard требует её вместе с coordination/profiles/registry/ACL:
+прежний schema4 binary не понимает новые JSON-поля и `duplicate_of`, поэтому
+его запуск поверх новых записей запрещён. Новый guard устанавливается под
+owned startup hold до миграции/запуска writer. Bytes, UID и mode0600 capability
+marker не переписываются. Обязательны полный all-project snapshot, сохранность
+старых строк и roll-forward; отсутствие DDL не отменяет эти проверки.
+
 Перед schema4 writer останавливается под owned inspection marker; создаётся
 полный format2 snapshot registry/default/всех проектов. Новый permanent guard
 требует `coordination:1,agent_profiles:1,board_schema:[4]` вместе с registry/ACL. Старый TASK009

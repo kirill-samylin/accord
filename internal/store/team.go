@@ -104,7 +104,7 @@ func (s *Store) ControlTeam(ctx context.Context, a core.Actor) (core.TeamView, e
 					}
 				}
 			}
-			if t.State == "ready" && t.Lease == nil && !blocked(b, t) && t.Role != "human" {
+			if t.State == "ready" && t.Lease == nil && !blocked(b, t) && assignmentAvailable(b, t) && t.Role != "human" {
 				epic := b.Tasks[t.EpicKey]
 				if epic != nil && epic.State == "open" {
 					view.UnclaimedTotal++

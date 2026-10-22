@@ -40,7 +40,7 @@ class ProjectGuard(unittest.TestCase):
 
     def test_guard_requires_capability_before_registry_activation(self):
         value = {'project_registry': 1, 'project_acl': 1, 'registry_schema': [1],
-                 'agent_profiles': 1, 'coordination': 1, 'board_schema': [4]}
+                 'agent_profiles': 1, 'coordination': 1, 'deduplication': 1, 'board_schema': [4]}
         with patch.object(guard.subprocess, 'run', return_value=self.response(value)) as run:
             self.assertEqual(guard.require_capable(self.binary, self.root), value)
             self.assertEqual(run.call_args.args[0], [str(self.binary), 'capabilities', '--json'])
@@ -49,7 +49,7 @@ class ProjectGuard(unittest.TestCase):
 
     def test_old_registry_capable_binary_and_invalid_profile_floor_are_denied(self):
         current = {'project_registry': 1, 'project_acl': 1, 'registry_schema': [1],
-                   'agent_profiles': 1, 'coordination': 1, 'board_schema': [4]}
+                   'agent_profiles': 1, 'coordination': 1, 'deduplication': 1, 'board_schema': [4]}
         for change in ({'agent_profiles': None}, {'agent_profiles': True},
                        {'agent_profiles': 0}, {'board_schema': [2]},
                        {'board_schema': [True]}, {'board_schema': [3]},
@@ -59,6 +59,42 @@ class ProjectGuard(unittest.TestCase):
                     return_value=self.response(current | change)):
                 with self.assertRaises(RuntimeError):
                     guard.require_capable(self.binary, self.root)
+
+    def test_schema4_binary_without_deduplication_is_denied_before_any_write(self):
+        current = {'project_registry': 1, 'project_acl': 1, 'registry_schema': [1],
+                   'agent_profiles': 1, 'coordination': 1, 'board_schema': [4]}
+        for value in (current, current | {'deduplication': None},
+                      current | {'deduplication': True}, current | {'deduplication': 0},
+                      current | {'deduplication': '1'}, current | {'deduplication': 2}):
+            with self.subTest(value=value), patch.object(guard.subprocess, 'run',
+                    return_value=self.response(value)):
+                with self.assertRaises(RuntimeError):
+                    guard.require_capable(self.binary, self.root)
+                self.assertFalse(self.root.exists())
+
+    def test_capability_check_preserves_service_authority_marker(self):
+        self.root.mkdir(mode=0o700)
+        marker = self.root / guard.MARKER
+        marker.write_bytes(b'synthetic service-owned authority\n')
+        marker.chmod(0o600)
+        before = marker.stat()
+        content = marker.read_bytes()
+        current = {'project_registry': 1, 'project_acl': 1, 'registry_schema': [1],
+                   'agent_profiles': 1, 'coordination': 1, 'deduplication': 1, 'board_schema': [4]}
+        for value in (current, current | {'deduplication': 0}):
+            with self.subTest(value=value), patch.object(guard.subprocess, 'run',
+                    return_value=self.response(value)):
+                if value['deduplication'] == 1:
+                    guard.require_capable(self.binary, self.root)
+                else:
+                    with self.assertRaises(RuntimeError):
+                        guard.require_capable(self.binary, self.root)
+            after = marker.stat()
+            self.assertEqual(marker.read_bytes(), content)
+            self.assertEqual((after.st_uid, after.st_gid, after.st_mode, after.st_ino,
+                              after.st_mtime_ns, after.st_ctime_ns),
+                             (before.st_uid, before.st_gid, before.st_mode, before.st_ino,
+                              before.st_mtime_ns, before.st_ctime_ns))
 
     def test_marker_loss_never_allows_legacy_binary(self):
         self.root.mkdir(mode=0o700)

@@ -1,5 +1,12 @@
 # agent-board — требования 1.1
 
+> TASK012 расширяет duplicate/participation контур: предупреждения при create/
+> claim, strict с явным обоснованием, аудируемая отмена незахваченного дубля и
+> экран «Команда». Контракт/ограничения и фактическая приёмка —
+> [TASK012](TASK-012-dedup-team.md). Это эвристическая похожесть, не гарантия
+> обнаружить все перефразы. Board schema4 сохраняется; новый постоянный
+> `deduplication:1` floor защищает JSON semantics от старого executable.
+
 > TASK011: назначения задач pinned профилям, объяснимые gates и ручной цикл
 > review → QA описаны в [coordination.md](coordination.md). Schema4/coordination1
 > floor защищает новые task semantics; фактическая готовность — TASK011.

@@ -7,7 +7,10 @@
 «приступай. А так же дизайн и функционал поправь… чтобы мы могли видеть кто что
 делает».
 
-Статус: **реализовано локально, не выпущено**. Production/VPS не обновлялся.
+Статус: **подготовка поставки по поручению22.10.2026** «залил новые изменения.
+залей, обнови стенд и дай ссылку». До окончания review/QA/capable update и
+HTTPS-приёмки этап не объявляется выпущенным. Исходная версия `4ec5cca`;
+поставка и фактические результаты — [WORK154](work/WORK-154-dedup-delivery.md).
 Решения по умолчанию приняты исполнителем, т.к. пользователь не выбрал явно:
 режим `warn`, порог `0.6`, похожесть без внешних сервисов (триграммы + словарь).
 
@@ -100,3 +103,21 @@
 NOT-RUN: `next build` и TypeScript 7 (в облачной среде не было доступа к npm за
 нативными бинарниками — интерфейс собирался esbuild с заглушками `next/*`);
 production; два физических ПК. Перед выпуском выполните на Mac `make check`.
+
+## Подготовка поставки22.10.2026
+
+Root настоящий `make check` исходного4ec5cca **PASS**, включая Go/all/race/vet,
+infra155 и Next72/types/format/production build. Прежний NOT-RUN локальной
+production-сборки закрыт. Независимое ревью153 потребовало собственный
+`deduplication:1` floor при прежней schema4, исправление «Это разные» для эпиков
+и исключение недоступных profile assignments из свободной очереди «Команды».
+Отдельный автор156 вносит fixes и unit/integration regressions. Отдельный
+tester155 начинает новые process/browser tests только после SOURCE APPROVE,
+затем тесты также проходят review. Случайный generated Next cache удаляется
+из tracked source перед push. Секреты и реальные данные не публикуются.
+
+Перед активацией — immutable clean release, exact Linux проверка/hardened stage,
+полный all-project snapshot через reviewed capable updater. Новый permanent
+guard запрещает прежний schema4 binary без deduplication до writer start;
+DDL/сброса данных/DB rollback нет. Production обновление и final HTTPS пока
+NOT-RUN; физический второй ПК и управляемый запуск остаются NOT-RUN.

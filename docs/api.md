@@ -1,5 +1,12 @@
 # API пилота — v1
 
+> TASK012 добавляет scoped REST `POST tasks/similar`, `POST tasks/{key}/duplicate`,
+> `GET team`; CLI `similar|duplicate|team`, MCP resources similar/team и
+> существующий link с `duplicate_of` без13-го tool. Create/Claim могут возвращать
+> advisory warnings; strict create требует явные force/force_reason.
+> DTO, права, replay, browser и ограничения — [TASK012](TASK-012-dedup-team.md).
+> Durable semantics защищены `deduplication:1` floor при прежней schema4.
+
 > TASK011: назначения задач pinned профилям, объяснимые gates и ручной цикл
 > review → QA описаны в [coordination.md](coordination.md). Schema4/coordination1
 > floor защищает новые task semantics; фактическая готовность — TASK011.

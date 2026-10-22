@@ -114,6 +114,10 @@ func summarize(b *board, t *core.Task, now time.Time, score float64, reasons, ar
 
 // similarTo compares one proposed item against existing comparable work.
 func similarTo(b *board, now time.Time, in core.SimilarInput, min float64, limit int) []core.SimilarTask {
+	return similarCandidates(b, now, in, min, limit, false)
+}
+
+func similarCandidates(b *board, now time.Time, in core.SimilarInput, min float64, limit int, liveOnly bool) []core.SimilarTask {
 	kind := kindOf(in.Type, in.Role)
 	out := []core.SimilarTask{}
 	if kind == "" {
@@ -123,6 +127,11 @@ func similarTo(b *board, now time.Time, in core.SimilarInput, min float64, limit
 	exclude := b.Tasks[in.ExcludeKey]
 	for _, t := range b.Tasks {
 		if t.Key == in.ExcludeKey || dupKind(t) != kind || !comparable(t, now) || exclude != nil && linkedPair(exclude, t) {
+			continue
+		}
+		// Claim warnings select live work before ranking/truncation, otherwise
+		// higher-ranked unclaimed items can hide another holder's actual work.
+		if liveOnly && (t.Lease == nil || !t.Lease.ExpiresAt.After(now)) {
 			continue
 		}
 		score, reasons := similar.Score(doc, similar.New(t.Title, t.Description, t.ExternalID))
@@ -237,15 +246,12 @@ func (s *Store) Similar(ctx context.Context, a core.Actor, in core.SimilarInput)
 // claimWarnings tells a new holder about live work by others that overlaps.
 func claimWarnings(b *board, t *core.Task, now time.Time) []core.Warning {
 	var out []core.Warning
-	_, threshold := duplicateMode(b)
-	var same []core.SimilarTask
-	for _, s := range similarTo(b, now, core.SimilarInput{Type: t.Type, Role: t.Role, Title: t.Title, Description: t.Description, ExternalID: t.ExternalID, ExcludeKey: t.Key}, threshold, 5) {
-		if s.LiveLease {
-			same = append(same, s)
+	mode, threshold := duplicateMode(b)
+	if mode != core.DuplicateOff {
+		same := similarCandidates(b, now, core.SimilarInput{Type: t.Type, Role: t.Role, Title: t.Title, Description: t.Description, ExternalID: t.ExternalID, ExcludeKey: t.Key}, threshold, 5, true)
+		if len(same) > 0 {
+			out = append(out, core.Warning{Rule: "duplicate_check", Message: "Похожую задачу уже выполняют: " + strings.Join(similarKeys(same), ", ") + ". Сверьтесь до правок", Similar: same})
 		}
-	}
-	if len(same) > 0 {
-		out = append(out, core.Warning{Rule: "duplicate_check", Message: "Похожую задачу уже выполняют: " + strings.Join(similarKeys(same), ", ") + ". Сверьтесь до правок", Similar: same})
 	}
 	var overlap []core.SimilarTask
 	for _, other := range b.Tasks {
@@ -258,6 +264,9 @@ func claimWarnings(b *board, t *core.Task, now time.Time) []core.Warning {
 	}
 	if len(overlap) > 0 {
 		sortSimilar(overlap)
+		if len(overlap) > 5 {
+			overlap = overlap[:5]
+		}
 		out = append(out, core.Warning{Rule: "area_overlap", Message: "В тех же областях сейчас работают: " + strings.Join(similarKeys(overlap), ", ") + ". Области — метки, не блокировка файлов", Similar: overlap})
 	}
 	return out

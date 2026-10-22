@@ -45,7 +45,10 @@ func (s *Store) Link(ctx context.Context, a core.Actor, in core.LinkInput) (core
 			}
 			return s.markDuplicate(b, sess, a, in.From, in.To, "", 0, now)
 		}
-		if source.Type != "task" || target.Type != "task" {
+		// Epics can dismiss a suspected duplicate pair with a descriptive relation;
+		// dependency and lease-generation semantics remain task-only.
+		epicRelated := source.Type == "epic" && target.Type == "epic" && in.Type == "related" && in.Condition == "" && in.Generation == 0
+		if !epicRelated && (source.Type != "task" || target.Type != "task") {
 			return core.Task{}, core.Fail("invalid_input", "pilot links require tasks")
 		}
 

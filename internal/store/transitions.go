@@ -77,13 +77,7 @@ func (s *Store) Transition(ctx context.Context, a core.Actor, in core.Transition
 				return core.Task{}, core.Fail("invalid_input", "restoration reason required")
 			}
 			// Restoring a duplicate makes it independent work again.
-			kept := t.Links[:0:0]
-			for _, l := range t.Links {
-				if l.Type != "duplicate_of" || l.From != t.Key {
-					kept = append(kept, l)
-				}
-			}
-			t.Links = kept
+			detachDuplicateLinks(t)
 			t.State = "ready"
 			t.ReadyAt = now
 		default:
@@ -155,6 +149,9 @@ func transitionEpic(b *board, t *core.Task, sess *core.Session, in core.Transiti
 		if t.State == "open" || !bounded(in.Reason, 4096) {
 			return core.Task{}, core.Fail("invalid_transition", "reopen reason required")
 		}
+		if t.State == "cancelled" {
+			detachDuplicateLinks(t)
+		}
 	default:
 		return core.Task{}, core.Fail("invalid_transition", "invalid epic state")
 	}
@@ -165,6 +162,16 @@ func transitionEpic(b *board, t *core.Task, sess *core.Session, in core.Transiti
 	t.Version++
 	emit(b, now, "epic_"+in.State, t.Key, sess.SessionID)
 	return viewTask(b, t), nil
+}
+
+func detachDuplicateLinks(t *core.Task) {
+	kept := t.Links[:0:0]
+	for _, l := range t.Links {
+		if l.Type != "duplicate_of" || l.From != t.Key {
+			kept = append(kept, l)
+		}
+	}
+	t.Links = kept
 }
 
 func hasEvidence(e core.Evidence) bool {

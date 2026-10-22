@@ -56,6 +56,8 @@ export function CreateTaskDialog({
   );
   const action = useAction(page, (result) => {
     setProfile("");
+    setForce(false);
+    setForceReason("");
     setDraft(createDraft({}, page.roles));
     onSuccess(result);
     onOpenChange(false);
@@ -76,12 +78,20 @@ export function CreateTaskDialog({
   );
   const [force, setForce] = useState(false);
   const [forceReason, setForceReason] = useState("");
+  const serverDuplicate = action.errorCode === "DUPLICATE_SUSPECTED";
+  const needsConsent = serverDuplicate || (strict && blocking);
   function change(name: string, value: string) {
+    if (draft[name] !== value) {
+      setForce(false);
+      setForceReason("");
+      action.clearErrorCode();
+    }
     if (name === "role") setProfile("");
     setDraft((previous) => ({ ...previous, [name]: value }));
   }
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (needsConsent && !force) return;
     const useProfile = isTask && draft.role !== "human";
     if (
       useProfile &&
@@ -214,7 +224,7 @@ export function CreateTaskDialog({
               />
               <FieldError name="description" errors={action.fieldErrors} />
             </label>
-            {matches.length ? (
+            {matches.length || serverDuplicate || force ? (
               <section className="similar-callout" aria-live="polite">
                 <div className="similar-callout-head">
                   <CopyX size={15} aria-hidden />
@@ -225,7 +235,7 @@ export function CreateTaskDialog({
                   агенты не сделают одно и то же дважды.
                 </p>
                 <SimilarList items={matches.slice(0, 4)} compact />
-                {strict && blocking ? (
+                {needsConsent || force ? (
                   <label className="checkbox-row">
                     <input
                       type="checkbox"
@@ -323,7 +333,7 @@ export function CreateTaskDialog({
                 type="submit"
                 disabled={
                   !actionID(action.page, "create") ||
-                  (strict && blocking && !force) ||
+                  (needsConsent && !force) ||
                   (isTask &&
                     draft.role !== "human" &&
                     !currentProfileChoice(
