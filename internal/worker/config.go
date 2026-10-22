@@ -24,18 +24,19 @@ type Workspace struct {
 // Config is a local allowlist. Remote commands cannot supply executable paths,
 // working directories, environment, provider flags, or permission overrides.
 type Config struct {
-	Server               string               `json:"server"`
-	Project              string               `json:"project"`
-	TokenFile            string               `json:"token_file"`
-	StateDir             string               `json:"state_dir"`
-	Name                 string               `json:"name"`
-	Machine              string               `json:"machine"`
-	Controllers          []string             `json:"controllers"`
-	Executables          map[string]string    `json:"executables"`
-	Models               map[string][]string  `json:"models,omitempty"`
-	CodexSandbox         string               `json:"codex_sandbox,omitempty"`
-	ClaudePermissionMode string               `json:"claude_permission_mode,omitempty"`
-	Workspaces           map[string]Workspace `json:"workspaces"`
+	NativeMCPApprovedTools map[string][]string  `json:"native_mcp_approved_tools,omitempty"`
+	Server                 string               `json:"server"`
+	Project                string               `json:"project"`
+	TokenFile              string               `json:"token_file"`
+	StateDir               string               `json:"state_dir"`
+	Name                   string               `json:"name"`
+	Machine                string               `json:"machine"`
+	Controllers            []string             `json:"controllers"`
+	Executables            map[string]string    `json:"executables"`
+	Models                 map[string][]string  `json:"models,omitempty"`
+	CodexSandbox           string               `json:"codex_sandbox,omitempty"`
+	ClaudePermissionMode   string               `json:"claude_permission_mode,omitempty"`
+	Workspaces             map[string]Workspace `json:"workspaces"`
 }
 
 func LoadConfig(path string) (Config, error) {
@@ -61,6 +62,9 @@ func LoadConfig(path string) (Config, error) {
 }
 
 func (c Config) Validate() error {
+	if err := validateNativeMCPConsent(c.NativeMCPApprovedTools, c.Executables); err != nil {
+		return err
+	}
 	if c.CodexSandbox != "" && c.CodexSandbox != "read-only" && c.CodexSandbox != "workspace-write" {
 		return errors.New("codex_sandbox must be read-only or workspace-write")
 	}

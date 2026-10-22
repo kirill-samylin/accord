@@ -10,7 +10,7 @@ import (
 
 const managedMCPName = "accord_managed"
 
-func codexMCPOverrides(connectors []mcpConnector, self string, args []string) ([]string, error) {
+func codexMCPOverrides(connectors []mcpConnector, self string, args []string, approved []string) ([]string, error) {
 	var tables []string
 	for _, connector := range connectors {
 		if connector.Name == managedMCPName {
@@ -35,7 +35,7 @@ func codexMCPOverrides(connectors []mcpConnector, self string, args []string) ([
 		tables = append(tables, strconv.Quote(connector.Name)+"="+transport)
 	}
 	encoded, _ := json.Marshal(args)
-	tables = append(tables, strconv.Quote(managedMCPName)+"={command="+strconv.Quote(self)+",args="+string(encoded)+",enabled=true}")
+	tables = append(tables, strconv.Quote(managedMCPName)+"={command="+strconv.Quote(self)+",args="+string(encoded)+",enabled=true"+codexMCPConsent(approved)+"}")
 	// Codex's CLI key-path parser treats quoted path segments literally.
 	// Put names inside one TOML map, where quotes have TOML key semantics.
 	return []string{"-c", "mcp_servers={" + strings.Join(tables, ",") + "}"}, nil

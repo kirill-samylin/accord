@@ -118,3 +118,79 @@ handoff только после proven terminal worker report; обычный st
 остаются без implicit release. После independent source approve тесты проверят
 реальный next той же задачи новым session ID/большим task generation. Один
 provider UUID без этой проверки не объявляется рабочим продолжением задачи.
+
+## Проверка frozen v5, 23.10.2026
+
+Independent165 SOURCE APPROVE получен для product fixes и всей новой QA source.
+Проверен immutable candidate `3ea1f8b16ca7bb81d6a2639f67b9f2d78fdc2f1a`, SHA256
+`7d2864cc488d573463c69f9670100c989a21bf5915c4f8319977592d57a864ca`.
+Каждый suite копирует его в новый private runtime. Source/binary pins после
+нижеследующих завершённых проверок совпадают. Production не изменён.
+
+- Полный HTTP/worker process suite **PASS16**:
+  `.local/task013-qa/run-1792704142678/results.json`. Помимо прежней матрицы
+  проверен actual stdio terminal handoff: ordinary EOF сохраняет lease, proven
+  stop освобождает её; тот же task немедленно получает новый board session и
+  большую fencing generation после exact provider UUID resume. Две owned PGID
+  под одним worker принудительно прекращены параллельно до30s при потере сети;
+  обе после reconnect получили proven stopped. Одиночный offline, SIGKILL,
+  restart/global intent и reserved stop также PASS. Private ownership unknown
+  в этом запуске не возник. Из-за прежней intermittent ошибки выполнены ещё
+  два независимых новых runtime повтора: **PASS16** в
+  `.local/task013-qa/run-1792704425213/results.json` и **PASS16** в
+  `.local/task013-qa/run-1792704614479/results.json`. Во всех трёх runtime
+  binary/source unchanged; оба offline сценария proven, unknown не повторился.
+  Это три фактических PASS с диагностикой, а не доказательство невозможности
+  прежнего непостоянного сбоя. После завершения собственные3100/3101/3102 свободны.
+- Actual Next/Chrome **PASS5**,8 screenshots:
+  `.local/task013-qa/run-1792704399407/results.json`. Проверены exact retry после
+  потерянного ответа, explicit409 conflict adoption с сохранением draft,
+  stop/resume/message, viewer/foreign-project isolation, desktop/mobile и обе
+  темы. Нет page errors, failed static assets или horizontal overflow.
+  Визуально просмотрены actual detail390dark и list1440light: читаемы, overflow
+  отсутствует. Process fixture в browser suite не выдаётся за native provider.
+- Capable all-project upgrade/full restore/auth-reset **PASS3**:
+  `.local/task013-qa/update-1792704408397229000/results.json`. Семь DB/три проекта,
+  исходные rows/ACL/profiles/history сохранены; guard поставлен до DDL;
+  restored hosts disabled/proofs erased/pending cancelled, auth epochs+1,
+  immutable snapshot/live business history и boot guard сохранены. Old/new
+  binary и source pins unchanged. Systemd/Next lifecycle симулируется явно.
+- Настоящий Codex CLI `0.163.0-alpha.11.1` **FAIL**:
+  `.local/task013-qa/run-1792704338811/native-result.json`. После actual valid
+  isolated MCP configuration создан реальный conversation UUID, но native
+  `accord_managed.describe` отклонён политикой CLI: `MCP tool call requires
+  approval, but approval policy is never`. Ответ CLI честно сообщил отказ;
+  synthetic DB подтверждает managed sessions0, task attempts0, task ready/no
+  lease. README marker не прочитан, Next и native resume не проверены. Run
+  completed означает окончание отказа и не засчитывается как native PASS.
+  Никакие approval bypass/autoapprove/skip-Git или sandbox escalation не
+  применялись. Синтетический checkout создан как обычный Git repo.
+
+Предыдущий v4 общий process FAIL сохранён:
+`.local/task013-qa/run-1792703868918/results.json`. Это новая fixture ошибочно
+читала expired session без `include_closed:true`; tiny fix и явная проверка
+наличия historical row независимо approved165 и включены в v5. Product logic
+не менялась. Actual whole-map installed native MCP config-only probe PASS
+сохранён отдельно в
+`.local/task013-qa/run-1792702309939/mcp-isolation-wholemap-source-proof.json`:
+единственный enabled connector — exact attempt-bound managed stdio, остальные
+discovered connectors disabled. Это подтверждает config parsing/isolation,
+но не заменяет проваленную native MCP acceptance.
+
+Общий TASK013 **не завершён**: обязательный native scenario FAIL; Windows/native
+Claude и второй физический ПК **NOT-RUN**. Production/schema5 capable delivery
+в VPS этим локальным QA не выполнялась.
+
+Reviewer165 независимо одобрил финальное v5 evidence: три PASS16, реальные
+private binary hashes и source inventory без drift, cleanup failures отсутствуют;
+browser5/8 и updater3 с тем же pin, native отказ/нулевые managed sessions и task
+attempts подтверждены. Причина прежнего flake остаётся недоказанной.
+
+Следующая отдельная product delta предусматривает default-off локальный выбор
+native MCP tools. QA source подготовлена только для fixed opt-in
+`ACCORD_TASK013_NATIVE_ALLOW_DESCRIBE_NEXT=1` → `codex: [describe,next]` внутри
+нового synthetic native fixture; unset/прочие значения grant не создают.
+Произвольный список из environment не принимается. README требует явное согласие
+человека до применения и отмечает write-смысл `next`. На момент подготовки
+ответа на вопрос о разрешении нет: actual native повтор с grant **NOT-RUN**,
+v5 FAIL сохранён. Node syntax и diff checks PASS, source ожидает review165.

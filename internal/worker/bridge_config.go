@@ -86,7 +86,7 @@ func (e *Engine) bridgeArgs(run RunState) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		overrides, err := codexMCPOverrides(connectors, self, args)
+		overrides, err := codexMCPOverrides(connectors, self, args, e.config.NativeMCPApprovedTools["codex"])
 		if err != nil {
 			return nil, err
 		}
@@ -101,7 +101,7 @@ func (e *Engine) bridgeArgs(run RunState) ([]string, error) {
 	if err = immutableBridgeFile(path, data); err != nil {
 		return nil, err
 	}
-	return []string{"--strict-mcp-config", "--mcp-config", path}, nil
+	return append([]string{"--strict-mcp-config", "--mcp-config", path}, claudeMCPConsent(e.config.NativeMCPApprovedTools["claude"])...), nil
 }
 
 // Attempt-specific immutable files keep a surviving old bridge from observing

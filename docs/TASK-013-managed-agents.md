@@ -97,30 +97,35 @@ descendant containment/отсутствие любых писателей на U
 
 ## Фактическая приёмка
 
-Промежуточный проверенный checkpoint — `0b05610`, не финальная поставка.
-Browser и updater v3 ниже используют binary SHA256
-`737793070b90a1fed579ef090a39389be45e884a30b9360d4cf9188e4c07905d`;
-точные private evidence paths сохранены в WORK168.
-Его полный `make check` PASS: Go unit/integration/acceptance/race, infra164,
-web88, TypeScript/format и production Next build. Независимые process/browser
-tests и отчёты — WORK168; source/evidence review — WORK165.
+Проверенный локальный candidate v5 — `3ea1f8b16ca7bb81d6a2639f67b9f2d78fdc2f1a`,
+Mac binary SHA256 `7d2864cc488d573463c69f9670100c989a21bf5915c4f8319977592d57a864ca`.
+Точные private evidence paths — WORK168; независимый source/evidence review —
+WORK165. Source/binary unchanged подтверждены каждым законченным suite.
+Полный `make check` product source PASS на `85fbc50`; v5 меняет только запрос
+закрытых сессий в QA tests. Go/race/acceptance, infra164, web88,
+TypeScript/format и production Next build проверены.
 
 | Проверка | Результат | Граница результата |
 | --- | --- | --- |
 | Next/Chrome, запуск/остановка/resume/уточнение, ACL, lost response | PASS5, 8 снимков | Детерминированный CLI fixture, один Mac |
 | Capable all-project migration4→5 и restore/auth-reset | PASS3 | Настоящие Go/SQLite/snapshot; systemd/ingress simulated |
-| Основной process suite | FAIL после8 PASS | Offline stop прекратил owned heartbeat, но proof оказался unknown |
-| Настоящий Mac Codex | FAIL на startup | Частичный disabled MCP override не содержал transport |
+| Основной process suite, включая оба offline сценария | 3 × PASS16 | Три независимых private runtime, owned PGID на одном Mac |
+| Настоящий Mac Codex | FAIL на MCP approval | Native conversation создан, Describe отклонён policy never; task attempts0 |
 | Windows runtime, native Claude | NOT-RUN | Cross-build не заменяет запуск на Windows |
 | Второй физический ПК | NOT-RUN | Два synthetic host на одном Mac не являются двумя ПК |
 
-После checkpoint реализованы positive terminal handoff, private ownership
-diagnostics и одновременная остановка групп; source APPROVE получен. Исправлены
-Codex MCP isolation и блокирование watchdog во время подготовки нового запуска;
-combined source/test APPROVE и четвёртый полный `make check` PASS получены.
-Config-only probe установленного Codex подтвердил изоляцию подключений.
-Причина intermittent ownership unknown пока не установлена. Source approvals
-и промежуточные PASS не заменяют повтор actual QA на точной финальной версии.
+Codex MCP isolation, positive terminal handoff и независимость watchdog от
+подготовки запуска independently approved и проверены actual fixture процессами.
+Config-only probe установленного Codex подтвердил изоляцию подключений; это
+не заменяет native task acceptance. Более ранний ownership unknown не повторился
+в трёх полных v5 runtime; его исходная причина остаётся недоказанной. Unknown
+по-прежнему сохраняет checkout intent и требует локального восстановления.
+
+Отказ настоящего Codex сохранён без bypass. Подготовлена выключенная по умолчанию
+локальная опция точного native MCP consent —
+[native-agent-permissions.md](native-agent-permissions.md). Source review и
+проверки этой новой опции учитываются отдельно; разрешение человека до повторного
+native запуска с grant обязательно и ещё не получено.
 
 Статус: **IN PROGRESS — итоговая приёмка и исправления по QA**. Remote
 push/merge/release не выполнены; VPS остаётся TASK012. Непройденная обязательная

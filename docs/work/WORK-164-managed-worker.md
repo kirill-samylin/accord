@@ -169,3 +169,45 @@ Native auth/permissions должны быть подготовлены влад�
 [Claude permissions](https://code.claude.com/docs/en/permissions),
 [Windows Job Objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects),
 [Job accounting](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_basic_accounting_information).
+
+### Локальное согласие на отдельные native MCP tools (default off)
+
+Реальный native smoke QA дошёл до conversation, но `accord_managed.describe`
+получил отказ native approval policy. Отказ не обходился. Подготовлена локальная
+опция `native_mcp_approved_tools`: map только configured `codex`/`claude` в массив
+уникальных точных имён 12 bridge tools (`comment`, `create`, `describe`, `events`,
+`get`, `heartbeat`, `link`, `next`, `note`, `release`, `transition`, `update`).
+Панель не может задать эту опцию. Отсутствующая map, null/пустой provider array
+не создают permission overrides. Ни один текущий runtime config не получил grant.
+
+При непустом Codex grant только таблица фиксированного `accord_managed` получает
+`enabled_tools` ровно выбранных операций, default approval `prompt` и явные
+per-tool policies для всех 12: выбранные `approve`, остальные `prompt`. Это
+ограничивает каталог и не наследует более широкий grant из merged tool tables.
+Global `approval_policy`, sandbox, authentication и пользовательские файлы
+настроек не меняются. Для Claude добавляются точные MCP `--allowedTools` выбранных
+операций и `--disallowedTools` остальных известных bridge операций; strict MCP
+config сохраняется, builtin tools/native managed deny/ask rules не меняются.
+Consent map глубоко копируется для подготовки immutable invocation snapshot.
+
+Установленный Codex parser config-only подтвердил поддержку per-tool `approve`
+на отключённом синтетическом connector; неизвестный enum отклонён. `mcp get`
+показывает exact `enabled_tools`, но `mcp list` этого поля не раскрывает; ни один
+из них не раскрывает effective tool approval policies. Поэтому обязательная
+повторная list-инспекция по-прежнему доказывает exact bridge binding/isolation;
+состав consent override проверяют unit и disabled parser evidence, без заявления
+об effective runtime approval introspection. Пробы не запускали модель/MCP tools.
+Без отдельного человеческого согласия native smoke после denial не повторялся.
+
+PASS: worker+cmd unit/integration/race, включая default-off/strict enum/duplicate
+validation, exact selected Codex catalog и policies, exact Claude allow/deny names,
+изолированный snapshot и передачу локальных grants в provider invocation. Новых
+process/E2E тестов автор не добавлял. Реальный native smoke с explicit grant,
+Windows Claude runtime и второй физический ПК — NOT-RUN. Эти проверки остаются
+за независимым QA после source review и требуемого локального согласия.
+
+Источники: [Codex MCP approval settings](https://learn.chatgpt.com/docs/extend/mcp),
+[Codex config reference](https://learn.chatgpt.com/docs/config-file/config-reference),
+[Claude headless tool consent](https://code.claude.com/docs/en/headless),
+[Claude CLI tool restrictions](https://code.claude.com/docs/en/cli-reference),
+[Claude MCP permission names](https://code.claude.com/docs/en/permissions).

@@ -1,7 +1,6 @@
 # Управляемые агенты — TASK013
 
-22.10.2026. Контракт реализации по поручению запускать, останавливать,
-продолжать и уточнять работу из Accord, включая Windows-компьютер коллеги.
+22.10.2026. Контракт запуска, остановки, продолжения и уточнений из Accord, включая Windows-компьютер коллеги.
 Фактический статус и проверки фиксируются в TASK/WORK; этот документ не PASS.
 Расширяет прежнее ограничение REQ-01 о запуске, сохраняя все ACL, lease,
 generation, idempotency, profile snapshot, coordination и deduplication gates.
@@ -173,6 +172,7 @@ file с stdin redirect, never shell interpolation. Worker сам собирае�
 flags из локальных presets; панель не разрешает bypass permissions или произвольный
 config override. Permission denial становится видимой ошибкой/блокировкой.
 Локальный provider preset сохраняет согласованную политику чтения/записи и approvals.
+Отдельный default-off native MCP consent — [native-agent-permissions.md](native-agent-permissions.md).
 
 Codex: `codex exec --json -`, затем `codex exec resume --json UUID -` с cwd workspace.
 `thread.started.thread_id` сохраняется до success ACK; проверяются turn.started,

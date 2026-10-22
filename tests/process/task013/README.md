@@ -28,6 +28,16 @@ and approvals; no bypass flags or automatic approval. Native evidence is separat
 `native-result.json`. Native denial is FAIL, not a fixture PASS. Windows/native
 Claude and the second physical PC remain NOT-RUN.
 
+After a native permission denial, do not rerun with a grant until the human has
+explicitly consented. Only for this synthetic read-only Git checkout, and only
+after that consent, `ACCORD_TASK013_NATIVE_ALLOW_DESCRIBE_NEXT=1` opts into the
+fixed local Codex tools `describe` and `next`. Unset or any other value leaves
+`native_mcp_approved_tools` absent. No environment-supplied tool list is accepted.
+The selected `next` tool claims the synthetic task; it is a write operation.
+The report records the selected scope. This flag does not authorize real project
+workspaces, other tools, another person's computer, or global approval bypass.
+The prior denied native report remains FAIL and is never overwritten.
+
 ```sh
 PYTHONDONTWRITEBYTECODE=1 ACCORD_TASK013_REVISION=EXACT_REVIEWED_REVISION \
   python3 -B tests/process/task013/update.py

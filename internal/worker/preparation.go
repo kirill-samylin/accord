@@ -59,6 +59,12 @@ func snapshotConfig(config Config) Config {
 	for provider, models := range config.Models {
 		copy.Models[provider] = snapshotStrings(models)
 	}
+	if config.NativeMCPApprovedTools != nil {
+		copy.NativeMCPApprovedTools = make(map[string][]string, len(config.NativeMCPApprovedTools))
+	}
+	for provider, tools := range config.NativeMCPApprovedTools {
+		copy.NativeMCPApprovedTools[provider] = snapshotStrings(tools)
+	}
 	if config.Workspaces != nil {
 		copy.Workspaces = make(map[string]Workspace, len(config.Workspaces))
 	}

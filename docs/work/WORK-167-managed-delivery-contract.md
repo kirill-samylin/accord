@@ -144,6 +144,28 @@ web88/format/TypeScript/production Next build. Предварительный v4
 намеренно остановлен exit143 при смене adapter source и не считается PASS.
 QA fixture/case review и exact candidate runtime остаются отдельным gate.
 
-Статус: финальная приёмка остаётся открытой. Actual migration/browser PASS на
-прежнем checkpoint не заменяет process/native FAIL и повтор после новых fixes.
-Никакой production поставки не было.
+Actual v5 `3ea1f8b`/Mac SHA7d2864...: три независимых full process **PASS16**,
+browser **PASS5**/8PNG и capable updater **PASS3**, pins unchanged. Reviewer165
+независимо проверил отчёты, private binaries/DB/journals и screenshots. Прежний
+ownership unknown в этих трёх runtime не повторился, его причина не объявляется
+доказанной. Native Codex **FAIL** с точным отказом MCP approval policy never:
+реальная conversation создана, но Describe/Next не исполнялись, board sessions/
+task attempts0. Completed turn не засчитывается как выполнение поручения.
+
+После этого author164 добавил отдельную **default-off** локальную опцию
+native_mcp_approved_tools: строгие provider/12имён, scoped exact catalog/policies,
+без global approval/sandbox изменений и без remote permission fields. Root
+описал контракт в native-agent-permissions.md и guide. Source/tests/docs
+APPROVE165; пятый полный root `make check` **PASS**, exit0,
+`.local/task013-delivery/check-v6.log`, прежние Go/race/acceptance/infra164/web88/
+format/TypeScript/Next build включены. QA flag для явно согласованного native
+probe получил отдельный source APPROVE165 перед новым candidate.
+
+Подготовлен конкретный private review artifact с grant только describe/next
+для новой synthetic доски/read-only checkout. Человеку задан отдельный вопрос,
+поскольку установленный native CLI явно отказал. Ответ ещё не получен;
+никакой native grant после отказа не применялся. Windows/второй ПК NOT-RUN.
+
+Статус: финальная приёмка остаётся открытой. Три actual process PASS16,
+migration/browser PASS на v5 не отменяют исторические FAIL и необходимость
+новой native приёмки после явного согласия человека. Production поставки не было.

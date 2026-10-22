@@ -10,7 +10,7 @@ import (
 func TestCodexDisabledOverridesContainCompleteMatchingTransport(t *testing.T) {
 	connectors := []mcpConnector{{Name: "code-review", Transport: "stdio", Enabled: true}, {Name: "remote.tool", Transport: "streamable_http", Enabled: true}}
 	managedArgs := []string{"worker", "bridge", "--config", "/synthetic/private/bridge.json"}
-	overrides, err := codexMCPOverrides(connectors, "/synthetic/agent-board", managedArgs)
+	overrides, err := codexMCPOverrides(connectors, "/synthetic/agent-board", managedArgs, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -29,7 +29,7 @@ func TestCodexDisabledOverridesContainCompleteMatchingTransport(t *testing.T) {
 }
 
 func TestCodexConnectorNamesUseTOMLMapKeysRatherThanQuotedCLIPaths(t *testing.T) {
-	args, err := codexMCPOverrides([]mcpConnector{{Name: "plugin.server-name", Transport: "stdio"}}, "/synthetic/agent-board", []string{"worker", "bridge"})
+	args, err := codexMCPOverrides([]mcpConnector{{Name: "plugin.server-name", Transport: "stdio"}}, "/synthetic/agent-board", []string{"worker", "bridge"}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func TestCodexConnectorNamesUseTOMLMapKeysRatherThanQuotedCLIPaths(t *testing.T)
 
 func TestCodexReservedHTTPAndUnknownTransportFailClosed(t *testing.T) {
 	for _, connector := range []mcpConnector{{Name: managedMCPName, Transport: "streamable_http"}, {Name: "unknown", Transport: "injected_unknown"}} {
-		if _, err := codexMCPOverrides([]mcpConnector{connector}, "/synthetic/agent-board", nil); err == nil {
+		if _, err := codexMCPOverrides([]mcpConnector{connector}, "/synthetic/agent-board", nil, nil); err == nil {
 			t.Fatal("created an incompatible mixed transport configuration")
 		}
 	}

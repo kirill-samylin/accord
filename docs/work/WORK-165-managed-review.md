@@ -404,3 +404,90 @@ V4 main остановлен на fixture TypeError: корректно закр
 `update-1792703868984271000/results.json`, revision85fbc50e59a22ecac572a8261ebe6f685d6e2a9c,
 binaryfa303a77cc88636ee8cc4c5b11af31fab5324c87c587687d6e61ffc74a0000c0,
 source/binaries unchanged true. Final main/native/OS-stress повтор ещё PENDING.
+
+V5 main actual evidence **APPROVE: PASS16**:
+`run-1792704142678/results.json`, revision3ea1f8b16ca7bb81d6a2639f67b9f2d78fdc2f1a,
+SHA7d2864cc488d573463c69f9670100c989a21bf5915c4f8319977592d57a864ca,
+source/binary unchanged true. Private binary hash независимо пересчитан.
+Дополнительно прочитаны actual SQLite/local journals: same-task stdio handoff
+ready/noLease,2 закрытые managed_stopped attempts с generation1→2/разными board
+sessions; один worker завершил обе parallel группы, forced отражён во всех3
+соответствующих commands. Crash остаётся needs_recovery, сохраняет local intent;
+stopping у quota-only synthetic run не выдаётся за процесс. Это deterministic
+provider + actual workers/HTTP/SQLite/stdio, не native Codex/Windows. Одного PASS
+недостаточно назвать прежнюю intermittent Unix unknown причину исправленной;
+root/QA планируют повтор и отдельные native/browser/updater на том же candidate.
+
+V5 browser `run-1792704399407/results.json` **PASS5/8screens**, updater
+`update-1792704408397229000/results.json` **PASS3**: тот же3ea1f8b/7d2864…,
+source/binary unchanged true, evidence независимо прочитана; два latest pixels
+desktop-light/mobile-dark просмотрены без blockers. Границы fake provider и
+systemd/Next simulation сохранены.
+
+V5 actual native Codex0.163.0-alpha.11.1 **FAIL**:
+`run-1792704338811/native-result.json`. Transport startup проходит и native turn
+завершается, но README marker не получен. QA зафиксировала native MCP approval
+denial при policy never; SQL независимо подтверждает0 managed board sessions,
+0 task attempts/leases. Native completed не означает functional acceptance.
+Silent broad approval/sandbox/rules bypass не одобрен. Root исследует только
+default-off narrow local per-tool consent proposal; без human ответа применять
+его нельзя. Это не закрывает existing native FAIL и потребует source/QA review.
+
+## Финальное evidence review v5
+
+**EVIDENCE APPROVE в заявленной границе**: main suite трижды PASS16 на одной
+версии3ea1f8b16ca7bb81d6a2639f67b9f2d78fdc2f1a/SHA7d2864…:
+`run-1792704142678`, `run-1792704425213`, `run-1792704614479`/results.json.
+Независимо пересчитаны все3 private binary SHA; все stored source inventories
+сравнены с actual files — drift0. Source/binary unchanged true, cleanup failures
+отсутствуют. В каждом local journal обе SAME-worker parallel группы stopped,
+private ownership diagnostic отсутствует; отдельно ожидаемый crash остаётся
+needs_recovery. Browser5/8screens и updater3 выше на той же версии подтверждены.
+Три прохода подтверждают повторяемый успех этих сценариев, но не устанавливают
+причину прежнего intermittent unknown и не отменяют исторический v3 FAIL.
+
+Actual native workflow остаётся FAIL на approvals; Windows/Claude/второй ПК и
+production NOT-RUN. TASK013 не complete. Новая default-off local optin до
+реализации требует official API proof/source review; её применение к реальному
+native требует отдельного явного human consent. Existing v5 native FAIL этим
+не переименовывается в PASS. Проверяющий менял только WORK165.
+
+## Default-off native permission option source review
+
+Новая `native_mcp_approved_tools` реализация/tests/docs **SOURCE APPROVE**.
+Только локальный config, configured codex/claude, exact unique известные12 имён;
+unset/null/empty не создают override. Codex получает только fixed managed
+connector selected enabled_tools, default prompt и явные selected approve/
+nonselected prompt. Claude — exact managed allow names и deny остальных известных
+bridge tools. Global approval_policy/sandbox/auth/builtin permissions не меняются;
+новая map глубоко копируется перед unlock в immutable preparation snapshot.
+Браузер, commands и profiles это поле не задают. Author unit прочитаны;
+независимый полный worker/cmd race **PASS** (5.1s/3.1s), diff check PASS.
+
+Применена инструкция OpenAI Docs, independently fetched official
+[Codex MCP](https://learn.chatgpt.com/docs/extend/mcp): per-tool approval_mode и
+approve поддержаны. Также fetched official [Claude CLI](https://code.claude.com/docs/en/cli-reference)
+и [permission names](https://code.claude.com/docs/en/permissions) для exact rules.
+Disabled synthetic installed parser evidence прочитан: approve accepted,
+invalid enum rejected; get показывает выбранные enabled_tools, list их скрывает,
+effective approval policy оба не показывают. Runtime introspection не заявляется.
+Docs native-agent-permissions/guide/contract read, границы source APPROVE.
+Рекомендовано уточнение про остальные model MCP calls: существующий автоматический
+heartbeat bridge при живой сессии не становится отдельным новым native grant.
+
+Это source approval безопасного выключенного по умолчанию механизма, не согласие
+на его применение. После предыдущего actual denial реальные model/MCP вызовы
+с grant до явного human ответа не авторизованы. Root готовит конкретный scope
+только describe+next для synthetic read-only QA. Existing v5 native FAIL остаётся
+в отчёте; новый native result, Windows и второй ПК ещё не PASS.
+
+QA follow-up native flag/README **SOURCE APPROVE**: только exact
+`ACCORD_TASK013_NATIVE_ALLOW_DESCRIBE_NEXT==='1'` создаёт fixed local Codex
+describe/next grant; любое другое значение оставляет поле absent. Список tools
+из environment не принимается, result фиксирует scope. README отдельно требует
+human consent, называет next write и ограничивает synthetic read-only checkout.
+Node syntax/diff check PASS. Это не является human consent: actual execution с
+flag не разрешена, пока человек не ответил. Guide/permission doc уточняют, что
+автоматический bridge heartbeat существующих leases сохраняется отдельно от
+model MCP tool grants. Новая v6 full root check PASS сообщена root; actual
+runtime новых permission настроек пока NOT-RUN/PENDING, старый native FAIL сохранён.
