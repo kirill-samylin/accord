@@ -382,3 +382,25 @@ strict exact-managed/all-others-disabled проверку. Последний fu
 `e924cb9c999c1b2636d3570c96ed9c82047b1a172f600d10d24704edaba6a06e`.
 QA разрешены exact new-shape config-only probe и truthful fixture delta с её
 отдельным review. Actual native и intermittent Unix unknown пока не закрыты.
+
+Новая QA fixture delta SOURCE APPROVE: provider действительно разбирает leading
+-c/TOML whole table, имеет injected stdio+HTTP inventory, требует полного exclusive
+transport и логирует resulting entries. Main проверяет sole managed exact binary/
+attempt args, all others disabled и output truncation label. Новый concurrency
+сценарий запускает две owned группы в одном worker, SIGINT игнорируется; обе
+должны прекратить heartbeat до30s и после связи получить forced terminal proof.
+Failure summary содержит только private state/closed stage codes. JS/Python
+syntax независимо PASS; actual новый process/native run ещё PENDING.
+Exact wholemap config-only native proof прочитан: PASS6 entries, один enabled
+managed/exact args и все остальные disabled. Этот probe не запускал model и не
+проверял permission/task flow. Guide4 строки про отдельные working copies и Git
+APPROVE: workspace alias не обещает синхронизацию файлов между компьютерами.
+
+V4 main остановлен на fixture TypeError: корректно закрытая managed session
+отсутствует в sessions default active-only list. Предыдущий source review это
+упустил. Tiny test fix bridge/native `include_closed:true` + явный old-row assert
+сверен с настоящим Sessions/ListInput: SOURCE APPROVE, поведенческие assertions
+не ослаблены. Actual updater v4 evidence PASS3:
+`update-1792703868984271000/results.json`, revision85fbc50e59a22ecac572a8261ebe6f685d6e2a9c,
+binaryfa303a77cc88636ee8cc4c5b11af31fab5324c87c587687d6e61ffc74a0000c0,
+source/binaries unchanged true. Final main/native/OS-stress повтор ещё PENDING.
