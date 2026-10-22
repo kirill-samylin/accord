@@ -11,6 +11,10 @@ import (
 // Run only opens outbound HTTPS requests. A monotonic local watchdog stops the
 // owned process group before the server's 30s ownership lease can expire.
 func (e *Engine) Run(ctx context.Context) error {
+	return e.run(ctx, 2*time.Second, 35*time.Second)
+}
+
+func (e *Engine) run(ctx context.Context, pollPeriod, acquisitionGrace time.Duration) error {
 	if err := e.probe(e.config); err != nil {
 		return err
 	}
@@ -32,9 +36,11 @@ func (e *Engine) Run(ctx context.Context) error {
 	watchDone := make(chan struct{})
 	go func() { defer close(watchDone); e.watchdog(running) }()
 	defer func() { cancel(); <-watchDone; _ = e.StopAll("worker connection is stopping") }()
-	ticker := time.NewTicker(2 * time.Second)
+	ticker := time.NewTicker(pollPeriod)
 	defer ticker.Stop()
 	lastHeartbeat := time.Now()
+	acquireUntil := time.Now().Add(acquisitionGrace)
+	acquired := false
 	for {
 		blocked, recoveryErr := e.recoverExpiredReports(running, r)
 		if recoveryErr != nil {
@@ -60,6 +66,7 @@ func (e *Engine) Run(ctx context.Context) error {
 			if err = e.SetLease(result.WorkerEpoch, deadline); err != nil {
 				return err
 			}
+			acquired = true
 			if result.Command != nil {
 				if result.Run == nil {
 					return errors.New("managed dispatch has no run")
@@ -71,7 +78,11 @@ func (e *Engine) Run(ctx context.Context) error {
 		} else {
 			var rejected statusError
 			if errors.As(err, &rejected) && (rejected.code == 401 || rejected.code == 403 || rejected.code == 409) {
-				return err
+				// A newly opened local incarnation may wait for the previous
+				// host lease to expire. No authority or native work exists here.
+				if rejected.code != 409 || acquired || !time.Now().Before(acquireUntil) || !e.canWaitForAcquisition() {
+					return err
+				}
 			}
 		}
 		for sent := 0; sent < 8; sent++ {
@@ -103,6 +114,20 @@ func (e *Engine) Run(ctx context.Context) error {
 		case <-ticker.C:
 		}
 	}
+}
+
+func (e *Engine) canWaitForAcquisition() bool {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if len(e.active) != 0 || len(e.journal.Pending) != 0 {
+		return false
+	}
+	for _, run := range e.journal.Runs {
+		if run.State != "stopped" && run.State != "completed" && run.State != "failed" {
+			return false
+		}
+	}
+	return true
 }
 
 // Every poll has a fresh random request ID, so it cannot replay a cached lease.

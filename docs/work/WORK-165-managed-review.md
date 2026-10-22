@@ -269,3 +269,23 @@ PENDING. Это разрешение на отдельную QA, а не зав�
 `Command.Forced = old || incoming`; прочитана вместе с regression true→false
 без downgrade и дальнейшим resume. **SOURCE APPROVE**; author focused PASS,
 независимый полный race выше был до этой tiny delta. Binding36 выше её не включает.
+
+QA v2 на checkpoint615ddf0 дала9 промежуточных PASS, включая actual stdio
+archive-snapshot и offline deadman/reconnect, затем FAIL на новом worker после
+локального consent revoke: прежняя30s host lease ещё ограждала old incarnation.
+Это корректный server fence; weakening/takeover не одобряются. Предложенное
+initial-only bounded acquisition ожидание35s концептуально APPROVE при local
+noactive/no-unknown/no-pending и без lease renewal/launch. Source fix ещё PENDING.
+Весь v2 run не PASS: есть failure и source drift; требуется final repeat.
+Небольшой отдельный browser/native bootstrap wrapper и перевод enroll/consent
+на async fixture child (proxy остаётся отзывчивым) прочитаны: test SOURCE APPROVE.
+
+Initial-acquisition runner и7-case HTTP regression после реализации прочитаны:
+**SOURCE APPROVE**. До первого успешного poll разрешён только bounded monotonic
+35s retry409 с новым request ID, при noactive/no-pending и исключительно terminal
+local runs. После первого успешного poll409 сразу fatal;401/403 также сразу fatal.
+Ни deadline, ни epoch, ни launch не создаются ожиданием. Старый live/ambiguous
+владелец не теряет server fence. Независимый focused race worker initial acquisition
++ expired recovery/request-incarnation tests **PASS**. Late test SIGINT_IGN с
+actual applied forced-stop assertion прочитан и APPROVE; detached/unrelated
+границы сохранены. Новая private candidate и финальная QA evidence ещё PENDING.

@@ -90,5 +90,17 @@ unit/HTTP regressions root с race PASS; source/tests APPROVE165 получен.
 offline process сценарий выполняет QA168. Profile snapshot continuity исправляет
 author163 отдельно; final candidate/manifest будут перестроены после этих fixes.
 
+Checkpoint fixes `615ddf0`: второй полный root `make check` PASS, включая новые
+binding/reconnect unit cases, полный Go race, acceptance и прежний web build.
+Фактический QA подтвердил первые9 сценариев, затем нашёл startup UX409 при ещё
+действующей прежней host lease. Server fence сохранён. Root добавил ограниченное
+ожидание35s только до первого успешного poll и только при отсутствии active/
+pending/неоднозначной local работы. Каждый запрос новый;401/403 и любой409 после
+успешного получения authority остаются fail-stop. Семь HTTP unit cases проверяют
+transient/fresh-owner/living-owner/post-acquire/auth/recovery paths; root и
+независимый focused race PASS, source/test APPROVE165. Guide описывает ожидание.
+Final QA candidate требуется пересобрать ещё раз; actual сценарии не заменены
+одобрением source или промежуточными PASS.
+
 Статус: implementation готова к source review165; actual process migration и
 полная интеграция пока NOT-RUN. Никакой production поставки не было.
