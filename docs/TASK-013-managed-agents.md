@@ -79,6 +79,20 @@ descendant containment/отсутствие любых писателей на U
 `deploy-task012.command`. Они сохраняются; текущий этап не выдаёт их за новую
 продуктовую реализацию и не исполняет посторонний deployment script.
 
+## Изменённые области
+
+Основные точки входа (полный набор source/tests — commits ветки TASK013):
+
+| Область | Файлы |
+| --- | --- |
+| Backend/schema5 | `internal/core/managed.go`, `internal/store/managed_*.go`, `internal/projects/service_managed.go` |
+| Native/browser API | `internal/transport/managed.go`, `internal/web/managed.go`, `internal/bridge/` |
+| Локальный worker | `cmd/agent-board/worker.go`, `internal/worker/` |
+| Панель | `web/src/features/managed/`, `web/src/lib/managed-*.ts`, `web/src/app/styles/managed.css` |
+| Capable delivery | `cmd/agent-board/main.go`, `infra/accord/projects/{guard,snapshot,validate,upgrade*}.py` |
+| Проверки | `tests/process/task013/`, `tests/browser/task013/`, Go author regressions, `tests/infra/`, web unit tests |
+| Инструкции | `managed-agents.md`, `managed-worker-guide.md`, `native-agent-permissions.md`, WORK162–168 |
+
 ## Критерии приёмки
 
 1. Author unit/integration: ACL/epochs/replay, quotas/version conflicts,
@@ -97,20 +111,19 @@ descendant containment/отсутствие любых писателей на U
 
 ## Фактическая приёмка
 
-Проверенный локальный candidate v5 — `3ea1f8b16ca7bb81d6a2639f67b9f2d78fdc2f1a`,
-Mac binary SHA256 `7d2864cc488d573463c69f9670100c989a21bf5915c4f8319977592d57a864ca`.
+Проверенный локальный candidate v6 — `798e689efc38761c5b4ec377e59b627edbe04d54`,
+Mac binary SHA256 `4177b6f4eefa5d27584e2e1b5ca56a73a1dcfb47014d603bf40275daa9b13334`.
 Точные private evidence paths — WORK168; независимый source/evidence review —
 WORK165. Source/binary unchanged подтверждены каждым законченным suite.
-Полный `make check` product source PASS на `85fbc50`; v5 меняет только запрос
-закрытых сессий в QA tests. Go/race/acceptance, infra164, web88,
-TypeScript/format и production Next build проверены.
+Пятый полный `make check` product source PASS, включая новую default-off опцию:
+Go/race/acceptance, infra164, web88, TypeScript/format и production Next build.
 
 | Проверка | Результат | Граница результата |
 | --- | --- | --- |
 | Next/Chrome, запуск/остановка/resume/уточнение, ACL, lost response | PASS5, 8 снимков | Детерминированный CLI fixture, один Mac |
 | Capable all-project migration4→5 и restore/auth-reset | PASS3 | Настоящие Go/SQLite/snapshot; systemd/ingress simulated |
-| Основной process suite, включая оба offline сценария | 3 × PASS16 | Три независимых private runtime, owned PGID на одном Mac |
-| Настоящий Mac Codex | FAIL на MCP approval | Native conversation создан, Describe отклонён policy never; task attempts0 |
+| Основной process suite, включая оба offline сценария | PASS16 на v6; ещё3 × PASS16 на v5 | Независимые private runtime, owned PGID на одном Mac |
+| Настоящий Mac Codex | FAIL на v5; новый grant probe NOT-RUN | Native conversation создан, Describe отклонён policy never; task attempts0 |
 | Windows runtime, native Claude | NOT-RUN | Cross-build не заменяет запуск на Windows |
 | Второй физический ПК | NOT-RUN | Два synthetic host на одном Mac не являются двумя ПК |
 
@@ -118,14 +131,15 @@ Codex MCP isolation, positive terminal handoff и независимость wat
 подготовки запуска independently approved и проверены actual fixture процессами.
 Config-only probe установленного Codex подтвердил изоляцию подключений; это
 не заменяет native task acceptance. Более ранний ownership unknown не повторился
-в трёх полных v5 runtime; его исходная причина остаётся недоказанной. Unknown
+в трёх полных v5 и одном v6 runtime; его исходная причина остаётся недоказанной. Unknown
 по-прежнему сохраняет checkout intent и требует локального восстановления.
 
 Отказ настоящего Codex сохранён без bypass. Подготовлена выключенная по умолчанию
 локальная опция точного native MCP consent —
-[native-agent-permissions.md](native-agent-permissions.md). Source review и
-проверки этой новой опции учитываются отдельно; разрешение человека до повторного
-native запуска с grant обязательно и ещё не получено.
+[native-agent-permissions.md](native-agent-permissions.md). Source/test/docs
+APPROVE165 получен, v6 actual проверки выше выполнены без native grant.
+Разрешение человека до повторного native запуска с grant обязательно и ещё
+не получено. Настоящие токены/адреса в публичные пакеты не включаются.
 
 Статус: **IN PROGRESS — итоговая приёмка и исправления по QA**. Remote
 push/merge/release не выполнены; VPS остаётся TASK012. Непройденная обязательная

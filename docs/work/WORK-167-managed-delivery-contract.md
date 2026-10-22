@@ -166,6 +166,26 @@ probe получил отдельный source APPROVE165 перед новым 
 поскольку установленный native CLI явно отказал. Ответ ещё не получен;
 никакой native grant после отказа не применялся. Windows/второй ПК NOT-RUN.
 
+Exact v6 `798e689efc38761c5b4ec377e59b627edbe04d54`, Mac SHA256
+`4177b6f4eefa5d27584e2e1b5ca56a73a1dcfb47014d603bf40275daa9b13334`:
+actual default-off process **PASS16**, browser **PASS5**/8PNG, updater **PASS3**,
+source/binary unchanged. Go1.27.2 trimpath CGO0 builds Mac-arm64/Windows-amd64/
+Linux-amd64 PASS; Windows runtime этим не подтверждается. Own QA services stopped.
+Настоящий probe с новым grant остаётся NOT-RUN без ответа человека; сохранённый
+v5 native FAIL не заменён fixture результатом.
+
+Curated packages `.local/task013-delivery/Accord-managed-{Mac-arm64,Windows-x64}-798e689.zip`
+готовы: binaries точного candidate, инструкция/контракт/TASK/native permissions,
+LICENSE, placeholder config без grant, SOURCE и SHA256 checksums. В manifest
+явно отмечены candidate/incomplete, native FAIL/NOT-RUN и отсутствие production
+поставки. Mac ZIP SHA256 `b2b2b018a4c093d9a84969d5afebf3fce91a1270f222ee3831c799fca4672d12`;
+Windows ZIP `ba4084f93e0604a61a3760fcabdb77aae0c2ec8f4176f55e1d57aa45d91dd019`.
+Root CRC/checksums/link/default-off/known-private-pattern checks PASS. Reviewer165
+независимо сверил все archive bytes/9checksums каждого пакета/headers/templates,
+relative links и source/evidence границы: delivery/evidence APPROVE. Это не
+разрешение на production или native grant. На момент фиксации ответа человека
+нет; все own QA services остановлены, source code frozen.
+
 Статус: финальная приёмка остаётся открытой. Три actual process PASS16,
 migration/browser PASS на v5 не отменяют исторические FAIL и необходимость
 новой native приёмки после явного согласия человека. Production поставки не было.

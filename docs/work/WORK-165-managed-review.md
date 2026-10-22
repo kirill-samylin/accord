@@ -491,3 +491,40 @@ flag не разрешена, пока человек не ответил. Guide
 автоматический bridge heartbeat существующих leases сохраняется отдельно от
 model MCP tool grants. Новая v6 full root check PASS сообщена root; actual
 runtime новых permission настроек пока NOT-RUN/PENDING, старый native FAIL сохранён.
+
+## Default-off candidate v6: final runtime evidence
+
+**EVIDENCE APPROVE** revision798e689efc38761c5b4ec377e59b627edbe04d54 /
+Mac SHA4177b6f4eefa5d27584e2e1b5ca56a73a1dcfb47014d603bf40275daa9b13334:
+main `run-1792705219055` PASS16, browser `run-1792705429405` PASS5/8screens,
+updater `update-1792705220314847000` PASS3. Три actual private binary SHA независимо
+пересчитаны, stored source inventories сравнены с current files — drift0;
+source/binary unchanged true, cleanup failures нет. Latest mobile-light list и
+desktop-dark detail pixels просмотрены без blockers. Во всех4 main config новый
+grant field отсутствует; обе parallel группы stopped/diagnostic0, ожидаемый crash
+сохраняет needs_recovery. Native execution с grant v6 NOT-RUN: human ответа нет,
+historical v5 native FAIL сохранён. Windows/Claude/второй ПК/production NOT-RUN.
+Source и default-off runtime подтверждены, TASK013 complete не объявлен.
+
+## Curated delivery review
+
+**PACKAGE CONTENT APPROVE**, не production/native acceptance. Прочитаны
+manifest-798e689.json, SOURCE/README, оба JSON templates и latest TASK status.
+Оба ZIP CRC PASS, actual SHA/bytes совпадают с manifest:
+Mac `b2b2b018a4c093d9a84969d5afebf3fce91a1270f222ee3831c799fca4672d12`,
+Windows `ba4084f93e0604a61a3760fcabdb77aae0c2ec8f4176f55e1d57aa45d91dd019`.
+Все10 entries каждого ZIP совпадают с curated files byte-for-byte;9 CHECKSUMS
+пересчитаны для каждого набора. Нет absolute/traversal archive paths, все relative
+Markdown links разрешаются. Binary headers независимо подтверждают Mac ARM64 и
+Windows PE x64; SHA совпадают с SOURCE/manifest, Mac — с actual v6 QA binary.
+Windows binary SHA7059b925b8ea9e7dffca8105c3eaf251ba13082d80917008111be9a21aa2efb0.
+
+Templates JSON parse PASS: placeholders origin/project/token/path/machine,
+controllers empty, native grant отсутствует; decoded Windows separators ровно
+по одному backslash. Known private origin/path/project/token-pattern scan
+curated text files чист. SOURCE честно сохраняет candidate/incomplete,
+v5 native FAIL, v6 grant NOT-RUN/human pending, Windows/второй ПК/production
+NOT-RUN, Unix PGID boundary и недоказанную исходную flake cause.
+Latest TASK table/changed areas/read-only connection guide APPROVE. Человеческого
+ответа на grant нет; новый native запуск не выполнен и не одобрен этим review.
+Reviewer изменял только WORK165; общий TASK, implementation и delivery files — root.

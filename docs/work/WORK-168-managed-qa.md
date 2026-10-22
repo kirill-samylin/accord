@@ -193,4 +193,28 @@ native MCP tools. QA source подготовлена только для fixed o
 Произвольный список из environment не принимается. README требует явное согласие
 человека до применения и отмечает write-смысл `next`. На момент подготовки
 ответа на вопрос о разрешении нет: actual native повтор с grant **NOT-RUN**,
-v5 FAIL сохранён. Node syntax и diff checks PASS, source ожидает review165.
+v5 FAIL сохранён. Node syntax и diff checks PASS; source независимо approved165
+и заморожена перед candidate-v6. Source approval не является human permission
+на actual native execution с grant.
+
+## Frozen v6: default-off повтор
+
+Candidate `798e689efc38761c5b4ec377e59b627edbe04d54`, SHA256
+`4177b6f4eefa5d27584e2e1b5ca56a73a1dcfb47014d603bf40275daa9b13334`.
+Root сообщил полный makecheck PASS и Next BUILD READY. QA выполняется без
+native opt-in, пока нет явного согласия человека и root GO. Первый завершённый
+suite — capable update/restore/auth-reset **PASS3**:
+`.local/task013-qa/update-1792705220314847000/results.json`, old/new binaries
+unchanged и source unchanged. Полный process main **PASS16**:
+`.local/task013-qa/run-1792705219055/results.json`, binary/source unchanged.
+Оба offline proof сценария, SIGKILL/lifeline, handoff и reserved stop PASS;
+ownership unknown не возник. У четырёх actual synthetic worker configs поле
+`native_mcp_approved_tools` отсутствует: default-off сохранён.
+
+Actual Chrome/Next v6 **PASS5**,8 screenshots:
+`.local/task013-qa/run-1792705429405/results.json`, тот же binary/source pin,
+drift отсутствует. Mobile detail390dark просмотрен, читаемость/overflow без
+замечаний. Собственные services завершены, LISTEN на3100/3101/3102 отсутствуют;
+повторный bind с SO_REUSEADDR успешен. Native повтор с новым grant остаётся
+**NOT-RUN**, пока human permission и root GO не получены. Прежний v5 native
+**FAIL** остаётся отдельным фактом; default-off process/browser его не заменяют.
