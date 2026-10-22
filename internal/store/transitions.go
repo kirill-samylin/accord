@@ -76,6 +76,14 @@ func (s *Store) Transition(ctx context.Context, a core.Actor, in core.Transition
 			if t.State == "cancelled" && !bounded(in.Reason, 4096) {
 				return core.Task{}, core.Fail("invalid_input", "restoration reason required")
 			}
+			// Restoring a duplicate makes it independent work again.
+			kept := t.Links[:0:0]
+			for _, l := range t.Links {
+				if l.Type != "duplicate_of" || l.From != t.Key {
+					kept = append(kept, l)
+				}
+			}
+			t.Links = kept
 			t.State = "ready"
 			t.ReadyAt = now
 		default:

@@ -2,12 +2,30 @@ import { ProjectLink as Link } from "@/components/project-link";
 import { Fact, Status } from "@/components/common";
 import { date, label } from "@/lib/format";
 import type { Task } from "@/lib/types";
+import { PersonChip } from "@/components/people";
 export function TaskProperties({ task }: { task: Task }) {
   return (
     <dl className="properties">
       <Fact
         name="Статус"
         value={<Status value={task.state} blocked={task.blocked} />}
+      />
+      {task.holder_owner && task.lease ? (
+        <Fact
+          name="Сейчас делает"
+          value={
+            <PersonChip
+              owner={task.holder_owner}
+              prefix={
+                task.holder_machine ? `${task.holder_machine} ·` : undefined
+              }
+            />
+          }
+        />
+      ) : null}
+      <Fact
+        name="Создал"
+        value={task.created_by ? <PersonChip owner={task.created_by} /> : "—"}
       />
       <Fact name="Роль" value={label(task.role)} />
       <Fact

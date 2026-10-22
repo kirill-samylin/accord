@@ -16,11 +16,14 @@ type Actor struct {
 	SessionID string
 }
 type Config struct {
-	SessionTTL      time.Duration
-	LeaseTTL        time.Duration
-	Project         string
-	CursorNamespace string
-	Notes           NoteLimits
+	SessionTTL time.Duration
+	LeaseTTL   time.Duration
+	// DuplicateMode is off|warn|strict; DuplicateThreshold is 0.3..1.
+	DuplicateMode      string
+	DuplicateThreshold float64
+	Project            string
+	CursorNamespace    string
+	Notes              NoteLimits
 }
 type Clock func() time.Time
 
@@ -132,6 +135,14 @@ type Task struct {
 	Comments      []Comment       `json:"comments,omitempty"`
 	Links         []Link          `json:"links,omitempty"`
 	Blocked       bool            `json:"blocked"`
+	// CreatedBy is the creator's owner label, persisted from new creations.
+	CreatedBy         string             `json:"created_by,omitempty"`
+	DuplicateOverride *DuplicateOverride `json:"duplicate_override,omitempty"`
+	// Response-only projections; never persisted on the stored task.
+	HolderOwner   string    `json:"holder_owner,omitempty"`
+	HolderMachine string    `json:"holder_machine,omitempty"`
+	DuplicateOf   string    `json:"duplicate_of,omitempty"`
+	Warnings      []Warning `json:"warnings,omitempty"`
 }
 type CreateInput struct {
 	ProfileID      string   `json:"profile_id,omitempty"`
@@ -150,6 +161,10 @@ type CreateInput struct {
 	Priority       int      `json:"priority"`
 	TargetKey      string   `json:"target_key,omitempty"`
 	TargetCommit   string   `json:"target_commit,omitempty"`
+	// Force creates despite similar work under strict mode; ForceReason is
+	// required with it and recorded on the task.
+	Force       bool   `json:"force,omitempty"`
+	ForceReason string `json:"force_reason,omitempty"`
 }
 type NextInput struct {
 	RequestID string `json:"request_id"`
@@ -157,6 +172,7 @@ type NextInput struct {
 	TaskKey   string `json:"task_key,omitempty"`
 }
 type Claim struct {
+	Warnings  []Warning    `json:"warnings,omitempty"`
 	EpicNotes []Note       `json:"epic_notes,omitempty"`
 	Queue     QueueSummary `json:"queue"`
 	Task      *Task        `json:"task"`

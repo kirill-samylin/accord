@@ -71,6 +71,9 @@ type QueueSummary struct {
 type EventData struct {
 	AssignmentChange *AssignmentChange `json:"assignment_change,omitempty"`
 	CheckCreated     *CheckCreated     `json:"check_created,omitempty"`
+	DuplicateOf      string            `json:"duplicate_of,omitempty"`
+	DuplicateReason  string            `json:"duplicate_reason,omitempty"`
+	Similar          []string          `json:"similar,omitempty"`
 	// Human decisions retain event-time facts after a question is reopened.
 	Answer           *string    `json:"answer,omitempty"`
 	Generation       int64      `json:"generation,omitempty"`

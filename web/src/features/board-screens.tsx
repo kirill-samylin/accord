@@ -7,6 +7,7 @@ import { AgentDetail, AgentsScreen } from "./screens/agents";
 import { ActivityScreen, HistoryScreen } from "./screens/organization";
 import { ProjectsScreen, SettingsScreen } from "./screens/project-settings";
 import { StatsScreen } from "./screens/stats";
+import { TeamScreen } from "./screens/team";
 import { DesignsScreen } from "./screens/designs";
 import { SessionControls } from "./mutations/SessionControls";
 import { ProfilesScreen } from "./profiles/profiles-screen";
@@ -60,6 +61,8 @@ export function BoardScreen({
           onSuccess={onSuccess}
         />
       );
+    case "team":
+      return <TeamScreen page={page} refresh={refresh} onSuccess={onSuccess} />;
     case "agents":
       return <AgentsScreen page={page} refresh={refresh} />;
     case "agent":

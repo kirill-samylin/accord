@@ -38,6 +38,13 @@ func (s *Store) Link(ctx context.Context, a core.Actor, in core.LinkInput) (core
 		if err != nil {
 			return core.Task{}, err
 		}
+		// duplicate_of: From is the duplicate (cancelled), To the canonical item.
+		if in.Type == "duplicate_of" {
+			if in.Unlink || in.Generation != 0 || in.Condition != "" {
+				return core.Task{}, core.Fail("invalid_input", "duplicate_of accepts only from/to; restore a duplicate with transition to ready")
+			}
+			return s.markDuplicate(b, sess, a, in.From, in.To, "", 0, now)
+		}
 		if source.Type != "task" || target.Type != "task" {
 			return core.Task{}, core.Fail("invalid_input", "pilot links require tasks")
 		}

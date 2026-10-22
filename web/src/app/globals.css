@@ -14,6 +14,7 @@
 @import "./styles/projects.css";
 @import "./styles/profiles.css";
 @import "./styles/coordination.css";
+@import "./styles/team.css";
 @font-face {
   font-family: Inter;
   src: url("/fonts/InterVariable.woff2") format("woff2");

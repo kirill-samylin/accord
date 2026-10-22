@@ -71,6 +71,69 @@ export interface Task {
   comments?: { text: string; session_id: string; at: string }[];
   links?: { from: string; to: string; type: string; condition?: string }[];
   blocked: boolean;
+  created_by?: string;
+  holder_owner?: string;
+  holder_machine?: string;
+  duplicate_of?: string;
+  duplicate_override?: { reason: string; similar: string[] };
+  warnings?: Warning[];
+}
+export interface SimilarTask {
+  key: string;
+  type: string;
+  title: string;
+  state: string;
+  role?: string;
+  epic_key?: string;
+  score: number;
+  reasons: string[];
+  created_by?: string;
+  holder_owner?: string;
+  assignment?: TaskAssignment;
+  created_at?: string;
+  shared_areas?: string[];
+  live_lease: boolean;
+  finished_recent?: boolean;
+}
+export interface Warning {
+  rule: string;
+  message: string;
+  similar?: SimilarTask[];
+}
+export interface SimilarPage {
+  observed_at: string;
+  mode: string;
+  threshold: number;
+  similar: SimilarTask[];
+}
+export interface DuplicatePair {
+  score: number;
+  reasons: string[];
+  older: SimilarTask;
+  newer: SimilarTask;
+}
+export interface TeamMember {
+  owner: string;
+  machines: string[];
+  agents: Agent[];
+  human_online: boolean;
+  in_progress: number;
+  open_requested: number;
+  done_recent: number;
+  created_recent: number;
+  last_event_at?: string;
+}
+export interface TeamView {
+  observed_at: string;
+  project: string;
+  recent_window_hours: number;
+  members: TeamMember[];
+  unclaimed: Task[];
+  unclaimed_total: number;
+  duplicates: DuplicatePair[];
+  duplicates_total: number;
+  duplicate_mode: string;
+  duplicate_threshold: number;
 }
 export type Question = Task;
 export interface Note {
@@ -156,6 +219,9 @@ export interface BoardEvent {
     tokens_spent?: number;
     tokens_spent_delta?: number;
     tokens_spent_total?: number;
+    duplicate_of?: string;
+    duplicate_reason?: string;
+    similar?: string[];
   };
 }
 export interface Metrics {
@@ -224,6 +290,8 @@ export interface PageData {
   draft: Record<string, string>;
   field_errors?: Record<string, string>;
   overview?: Overview;
+  team?: TeamView;
+  similar?: SimilarTask[];
   agents?: Agent[];
   agent?: Agent;
   activity?: BoardEvent[];

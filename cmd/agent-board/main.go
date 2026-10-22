@@ -99,7 +99,7 @@ func helpRequested(args []string) bool {
 
 const commandHelp = `Accord — authenticated coordination server and native client
 
-agent-board serve --db PATH --listen 127.0.0.1:8080 [--external-host DNS:PORT] [--task-ttl 15m --session-ttl 15m]
+agent-board serve --db PATH --listen 127.0.0.1:8080 [--external-host DNS:PORT] [--task-ttl 15m --session-ttl 15m] [--duplicate-mode off|warn|strict --duplicate-threshold 0.6]
 agent-board mcp --server ORIGIN --token-file PRIVATE [--project ID] [--heartbeat-interval 1m]
 agent-board call OPERATION --server ORIGIN --token-file PRIVATE [--project ID] < request.json
 agent-board token create --db PATH --owner NAME --machine NAME --output NEW_PRIVATE [--days 30]
@@ -158,8 +158,13 @@ func serve(args []string, out io.Writer) error {
 	trustedProxy := f.Bool("web-trusted-proxy", false, "trust loopback proxy overwritten client IP")
 	taskTTL := f.Duration("task-ttl", 15*time.Minute, "task lease TTL")
 	sessionTTL := f.Duration("session-ttl", 15*time.Minute, "session and singleton role TTL")
+	dupMode := f.String("duplicate-mode", envOr("ACCORD_DUPLICATE_MODE", core.DuplicateWarn), "similar work on create: off, warn or strict")
+	dupThreshold := f.Float64("duplicate-threshold", 0.6, "similarity 0.3..1 treated as a possible duplicate")
 	if err := parse(f, args); err != nil {
 		return err
+	}
+	if *dupMode != core.DuplicateOff && *dupMode != core.DuplicateWarn && *dupMode != core.DuplicateStrict || *dupThreshold < 0.3 || *dupThreshold > 1 {
+		return errors.New("duplicate-mode must be off|warn|strict and duplicate-threshold 0.3..1")
 	}
 	if *taskTTL < time.Second || *taskTTL > 24*time.Hour || *sessionTTL < time.Second || *sessionTTL > 24*time.Hour {
 		return errors.New("TTLs must be between 1s and 24h")
@@ -180,9 +185,9 @@ func serve(args []string, out io.Writer) error {
 			return fmt.Errorf("project storage preflight failed: %w", err)
 		}
 	}
-	s, err := openDB(*db, *taskTTL, *sessionTTL)
+	s, err := store.Open(*db, core.Config{LeaseTTL: *taskTTL, SessionTTL: *sessionTTL, Project: "agent-board", DuplicateMode: *dupMode, DuplicateThreshold: *dupThreshold}, nil)
 	if err != nil {
-		return err
+		return errors.New("cannot open board database")
 	}
 	defer s.Close()
 	options := transport.HandlerOptions{ExternalHost: *externalHost}
@@ -201,7 +206,7 @@ func serve(args []string, out io.Writer) error {
 		}
 		defer browser.Close()
 		if *projectsData != "" {
-			registry, err := projects.Open(projects.Options{DataDir: *projectsData, DefaultDB: *db, DefaultWeb: *webData, Default: s, Browser: browser, Renderer: renderer, Static: renderer.Static(), Origin: *webOrigin, TrustedProxy: *trustedProxy, Config: core.Config{Project: "agent-board", LeaseTTL: *taskTTL, SessionTTL: *sessionTTL}})
+			registry, err := projects.Open(projects.Options{DataDir: *projectsData, DefaultDB: *db, DefaultWeb: *webData, Default: s, Browser: browser, Renderer: renderer, Static: renderer.Static(), Origin: *webOrigin, TrustedProxy: *trustedProxy, Config: core.Config{Project: "agent-board", LeaseTTL: *taskTTL, SessionTTL: *sessionTTL, DuplicateMode: *dupMode, DuplicateThreshold: *dupThreshold}})
 			if err != nil {
 				return fmt.Errorf("cannot initialize project registry: %w", err)
 			}
@@ -246,4 +251,11 @@ func serve(args []string, out io.Writer) error {
 		return errors.New("HTTP server stopped unexpectedly")
 	}
 	return nil
+}
+
+func envOr(name, fallback string) string {
+	if v := os.Getenv(name); v != "" {
+		return v
+	}
+	return fallback
 }

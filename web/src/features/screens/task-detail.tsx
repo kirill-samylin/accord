@@ -16,6 +16,7 @@ import { QuestionActions } from "../mutations/QuestionActions";
 import { TaskProperties } from "./task-properties";
 import { EditTaskDialog } from "../mutations/EditTaskDialog";
 import { CoordinationPanel } from "../coordination/coordination-panel";
+import { DuplicateBanners, SimilarTasks } from "../duplicates/task-duplicates";
 export function TaskDetail({
   page,
   onSuccess,
@@ -80,6 +81,7 @@ export function TaskDetail({
                     Открыть задачу для работы
                   </Link>
                 ) : null}
+                <DuplicateBanners task={task} />
                 <div className="task-description">
                   {task.description || (
                     <span className="muted">Описание ещё не добавлено.</span>
@@ -99,7 +101,18 @@ export function TaskDetail({
                             {link.to === task.key ? link.from : link.to}
                           </span>
                           <span className="muted">
-                            {link.type}
+                            {(
+                              {
+                                duplicate_of:
+                                  link.from === task.key
+                                    ? "основная задача"
+                                    : "дубль этой задачи",
+                                related: "связана",
+                                blocks: "блокирует",
+                                contract_of: "контракт",
+                                spawned_by: "порождена",
+                              } as Record<string, string>
+                            )[link.type] ?? link.type}
                             {link.condition ? ` · ${link.condition}` : ""}
                           </span>
                         </Link>
@@ -107,6 +120,12 @@ export function TaskDetail({
                     </div>
                   </section>
                 ) : null}
+                <SimilarTasks
+                  key={`${task.key}:${task.version}`}
+                  page={page}
+                  onSuccess={onSuccess}
+                  readOnly={compact}
+                />
                 {!compact && task.role === "human" && task.type === "task" ? (
                   <section className="answer-panel">
                     <h2>Вопрос человеку</h2>

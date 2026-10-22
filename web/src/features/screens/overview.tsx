@@ -2,7 +2,10 @@
 import { ProjectLink as Link } from "@/components/project-link";
 import { useQuery } from "@tanstack/react-query";
 import { useProjectScope } from "../projects/project-context";
-import { ArrowUpRight, Bot, RefreshCw } from "lucide-react";
+import { ArrowUpRight, Bot, CopyX, RefreshCw } from "lucide-react";
+import { PersonAvatar, RoleBadge } from "@/components/people";
+import { personClass } from "@/lib/people";
+import { useTeam } from "../hooks/use-team";
 import {
   AgentRow,
   Avatar,
@@ -27,6 +30,7 @@ export function OverviewScreen({
 }) {
   const scope = useProjectScope();
   const live = useDashboard(page, onSessionExpired);
+  const team = useTeam(undefined, onSessionExpired);
   const recent = useQuery({
     queryKey: ["recent-tasks", scope.key],
     queryFn: ({ signal }) =>
@@ -80,9 +84,68 @@ export function OverviewScreen({
           </button>
         </div>
       ) : null}
+      {team.data?.duplicates_total ? (
+        <Link prefetch={false} className="dup-alert" href="/app/team">
+          <CopyX size={16} aria-hidden />
+          <span>
+            Найдено возможных дублей: {team.data.duplicates_total}. Разберите
+            их, чтобы агенты не делали одну работу дважды.
+          </span>
+          <ArrowUpRight size={14} />
+        </Link>
+      ) : null}
       <section>
-        <SectionHeading title="Агенты" href="/app/agents" />
-        {agents.length ? (
+        <SectionHeading title="Кто что делает" href="/app/team" />
+        {team.data?.members.length ? (
+          <div className="team-strip">
+            {team.data.members.map((member) => {
+              const online = member.human_online || member.agents.length > 0;
+              const busy = member.agents.filter((agent) => agent.task);
+              return (
+                <Link
+                  prefetch={false}
+                  key={member.owner}
+                  href="/app/team"
+                  className={`team-strip-card ${personClass(member.owner)}`}
+                >
+                  <div className="team-strip-head">
+                    <PersonAvatar owner={member.owner} online={online} />
+                    <div>
+                      <strong className="truncate">{member.owner}</strong>
+                      <span className="muted truncate">
+                        {member.agents.length
+                          ? `${busy.length} в работе · ${member.agents.filter((a) => !a.task && a.role !== "coordinator").length} свободны`
+                          : online
+                            ? "в сети, без агентов"
+                            : "не в сети"}
+                      </span>
+                    </div>
+                  </div>
+                  {busy.length ? (
+                    <div className="team-strip-tasks">
+                      {busy.slice(0, 3).map((agent) => (
+                        <span
+                          key={agent.session_id}
+                          className="team-strip-task"
+                        >
+                          <RoleBadge
+                            role={agent.role}
+                            name={agent.profile?.name}
+                          />
+                          <span className="mono muted">{agent.task!.key}</span>
+                          <span className="truncate">{agent.task!.title}</span>
+                        </span>
+                      ))}
+                      {busy.length > 3 ? (
+                        <span className="muted">и ещё {busy.length - 3}</span>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </Link>
+              );
+            })}
+          </div>
+        ) : agents.length ? (
           <div className="agent-strip">
             {agents.slice(0, 8).map((agent) => (
               <Link
@@ -99,10 +162,6 @@ export function OverviewScreen({
                     </strong>
                     <span className="muted">{label(agent.role)}</span>
                   </div>
-                  <span
-                    className={`session-dot session-${agent.status}`}
-                    title={label(agent.status)}
-                  />
                 </div>
                 <div className="agent-card-task truncate">
                   {agent.task ? (
@@ -111,15 +170,8 @@ export function OverviewScreen({
                       {agent.task.title}
                     </>
                   ) : (
-                    <span className="muted">
-                      Сессия с доступом · без задачи
-                    </span>
+                    <span className="muted">Без задачи</span>
                   )}
-                </div>
-                <div className="agent-card-meta muted">
-                  <Bot size={11} />
-                  <span className="truncate">{agent.machine}</span>
-                  <ArrowUpRight size={12} />
                 </div>
               </Link>
             ))}

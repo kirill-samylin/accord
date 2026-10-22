@@ -42,3 +42,6 @@ func (s *service) CheckCreate(ctx context.Context, a core.Actor, in core.CheckCr
 func (s *service) Coordination(ctx context.Context, a core.Actor, in core.CoordinationInput) (core.TaskCoordination, error) {
 	return actorCall(s, ctx, a, in, false, s.board.Coordination)
 }
+func (s *service) Duplicate(ctx context.Context, a core.Actor, in core.DuplicateInput) (core.Task, error) {
+	return actorCall(s, ctx, a, in, true, s.board.Duplicate)
+}

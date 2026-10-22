@@ -18,7 +18,7 @@ func coordinationRoute(path string) (string, string, bool) {
 		return "", "", false
 	}
 	switch parts[1] {
-	case "assign", "link", "transition", "checks":
+	case "assign", "link", "transition", "checks", "duplicate":
 		return parts[0], "coord:" + parts[1], true
 	}
 	return "", "", false
@@ -32,6 +32,9 @@ func (s *Server) coordinationPage(r *http.Request, b *browserSession, p *Page) e
 		return err
 	}
 	p.Coordination = &out
+	if similar, e := s.board.Similar(r.Context(), b.actor(), core.SimilarInput{Type: p.Task.Type, Role: p.Task.Role, Title: p.Task.Title, Description: p.Task.Description, ExternalID: p.Task.ExternalID, Areas: p.Task.Areas, ExcludeKey: p.Task.Key, Limit: 5}); e == nil {
+		p.Similar = similar.Similar
+	}
 	p.CanCoordinate = b.Session.Role == "human" || b.Session.Role == "coordinator"
 	if s.options.ProjectInfo != nil {
 		project, e := s.options.ProjectInfo(r.Context())
@@ -44,7 +47,7 @@ func (s *Server) coordinationPage(r *http.Request, b *browserSession, p *Page) e
 	if !p.CanCoordinate {
 		return nil
 	}
-	for _, op := range []string{"coord:assign", "coord:link", "coord:transition", "coord:checks"} {
+	for _, op := range []string{"coord:assign", "coord:link", "coord:transition", "coord:checks", "coord:duplicate"} {
 		p.Actions[op], err = s.issueAction(r.Context(), b, op)
 		if err != nil {
 			return err
@@ -63,6 +66,8 @@ func coordinationForm(r *http.Request, key, op, id string) (any, error) {
 		allowed += "state reason evidence_ref generation "
 	case "coord:checks":
 		allowed += "target_version role profile_id profile_version "
+	case "coord:duplicate":
+		allowed += "canonical_key reason version "
 	}
 	if r.URL.RawQuery != "" {
 		return nil, core.Fail("validation", "Параметры URL для действия запрещены")
@@ -114,6 +119,12 @@ func coordinationForm(r *http.Request, key, op, id string) (any, error) {
 			return nil, core.Fail("validation", "unlink принимает true или false")
 		}
 		return core.LinkInput{RequestID: id, From: r.PostForm.Get("from"), To: key, Type: r.PostForm.Get("type"), Condition: r.PostForm.Get("condition"), Unlink: unlink == "true", Generation: g}, nil
+	case "coord:duplicate":
+		v, e := number("version", false)
+		if e != nil {
+			return nil, e
+		}
+		return core.DuplicateInput{RequestID: id, TaskKey: key, CanonicalKey: r.PostForm.Get("canonical_key"), Version: v, Reason: r.PostForm.Get("reason")}, nil
 	case "coord:transition":
 		g, e := number("generation", false)
 		if e != nil {
@@ -179,6 +190,11 @@ func (s *Server) runCoordinationAction(ctx context.Context, a core.Actor, action
 		if err = json.Unmarshal([]byte(action.Payload), &in); err == nil {
 			task, err = s.board.CheckCreate(ctx, a, in)
 		}
+	case "coord:duplicate":
+		var in core.DuplicateInput
+		if err = json.Unmarshal([]byte(action.Payload), &in); err == nil {
+			task, err = s.board.Duplicate(ctx, a, in)
+		}
 	}
 	return "/web/tasks/" + task.Key, err
 }
@@ -208,4 +224,36 @@ func (s *Server) coordinationError(w http.ResponseWriter, r *http.Request, b *br
 	}
 	browserErrorCode(w, err)
 	s.render(w, errorStatus(err), "task", p)
+}
+
+// teamActions issues per-pair action IDs so a human can resolve suspected
+// duplicates from the team screen: mark the newer item or dismiss the pair.
+func (s *Server) teamActions(r *http.Request, b *browserSession, p *Page) error {
+	p.CanCoordinate = b.Session.Role == "human" || b.Session.Role == "coordinator"
+	if s.options.ProjectInfo != nil {
+		project, err := s.options.ProjectInfo(r.Context())
+		if err != nil {
+			return err
+		}
+		p.Project = project
+		p.CanCoordinate = p.CanCoordinate && project.CanWrite
+	}
+	if !p.CanCoordinate || p.Team == nil {
+		return nil
+	}
+	for _, pair := range p.Team.Duplicates {
+		for _, key := range []string{pair.Older.Key, pair.Newer.Key} {
+			for _, op := range []string{"coord:duplicate", "coord:link"} {
+				if p.Actions[op+":"+key] != "" {
+					continue
+				}
+				id, err := s.issueAction(r.Context(), b, op)
+				if err != nil {
+					return err
+				}
+				p.Actions[op+":"+key] = id
+			}
+		}
+	}
+	return nil
 }

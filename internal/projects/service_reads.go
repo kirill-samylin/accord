@@ -49,3 +49,15 @@ func (s *service) ListDecisions(ctx context.Context, a core.Actor, in core.Decis
 func (s *service) ListQuestions(ctx context.Context, a core.Actor, in core.ListInput) (core.TasksPage, error) {
 	return actorCall(s, ctx, a, in, false, s.board.ListQuestions)
 }
+
+func (s *service) Similar(ctx context.Context, a core.Actor, in core.SimilarInput) (core.SimilarPage, error) {
+	return actorCall(s, ctx, a, in, false, s.board.Similar)
+}
+func (s *service) ControlTeam(ctx context.Context, a core.Actor) (core.TeamView, error) {
+	return withAccess(s, ctx, false, a.SessionID, func(ctx context.Context, access access) (core.TeamView, error) {
+		if a.Principal != access.principal {
+			return core.TeamView{}, denied()
+		}
+		return s.board.ControlTeam(ctx, a)
+	})
+}

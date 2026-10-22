@@ -25,6 +25,9 @@ var routes = []route{
 	{"GET", "/api/v1/tasks/{key}/coordination", "coordination", false},
 	{"POST", "/api/v1/tasks/{key}/assign", "assign", true},
 	{"POST", "/api/v1/tasks/{key}/checks", "check_create", true},
+	{"POST", "/api/v1/tasks/similar", "similar", true},
+	{"POST", "/api/v1/tasks/{key}/duplicate", "duplicate", true},
+	{"GET", "/api/v1/team", "team", false},
 	{"GET", "/api/v1/profiles", "profiles", false},
 	{"GET", "/api/v1/profile", "profile", false},
 	{"POST", "/api/v1/profile_create", "profile_create", true},
@@ -68,6 +71,7 @@ func NewHandlerWithOptions(s Service, ready func(context.Context) error, options
 	all := append(append([]operation(nil), ops...), readOperations(s)...)
 	all = append(all, profileOperations(s)...)
 	all = append(all, coordinationOperations(s)...)
+	all = append(all, dedupOperations(s)...)
 	byName := make(map[string]operation, len(all))
 	for _, op := range all {
 		byName[op.name] = op
@@ -191,7 +195,7 @@ func requestBody(w http.ResponseWriter, r *http.Request, route route) ([]byte, e
 		}
 		return readQuery(route.name, r.URL.RawQuery)
 	}
-	if (route.name == "assign" || route.name == "check_create") && r.URL.RawQuery != "" {
+	if (route.name == "assign" || route.name == "check_create" || route.name == "duplicate" || route.name == "similar") && r.URL.RawQuery != "" {
 		return nil, core.Fail("validation", "unexpected query parameters")
 	}
 	media, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))

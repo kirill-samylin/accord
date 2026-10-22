@@ -40,6 +40,8 @@ func (s *Store) Describe(ctx context.Context, p core.Principal, in core.OpenSess
 		sess.Order = b.Events[len(b.Events)-1].Cursor
 		v.Notes = scopeNotes(b, "role", in.Role)
 		v.Rules = map[string]string{"independent_review": "block", "one_task_per_agent": "block", "cycle_check": "block", "singleton_role": "block"}
+		mode, _ := duplicateMode(b)
+		v.Rules["duplicate_check"] = mode
 		v.MyTasks = []core.Task{}
 		v.Queue = sessionQueueSummary(b, sess)
 		return v, nil

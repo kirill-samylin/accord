@@ -56,6 +56,9 @@ func enrichEvents(b *board, before map[string]taskFact, now time.Time) {
 			d.TokensSpentDelta = previous.TokensSpentDelta
 			d.TokensSpentTotal = previous.TokensSpentTotal
 			d.CorrectionDelta = previous.CorrectionDelta
+			d.DuplicateOf = previous.DuplicateOf
+			d.DuplicateReason = previous.DuplicateReason
+			d.Similar = previous.Similar
 		}
 		e.Data = d
 	}

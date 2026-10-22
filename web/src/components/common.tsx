@@ -15,6 +15,7 @@ import type { ReactNode } from "react";
 import type { Agent, BoardEvent, Task } from "@/lib/types";
 import { date, initial, label } from "@/lib/format";
 import { AssignmentLabel } from "@/features/coordination/assignment-label";
+import { PersonChip } from "@/components/people";
 import { cn } from "@/lib/utils";
 export function Status({
   value,
@@ -154,6 +155,30 @@ export function TaskRow({
       >
         {task.title}
       </Link>
+      {task.duplicate_of ? (
+        <span className="dup-tag" title={`Дубль задачи ${task.duplicate_of}`}>
+          дубль {task.duplicate_of}
+        </span>
+      ) : null}
+      <span className="task-people">
+        {task.holder_owner && task.lease ? (
+          <PersonChip
+            owner={task.holder_owner}
+            prefix="делает"
+            title={
+              task.holder_machine
+                ? `Агент на ${task.holder_machine}`
+                : undefined
+            }
+          />
+        ) : task.created_by ? (
+          <PersonChip
+            owner={task.created_by}
+            prefix="от"
+            title="Кто создал задачу"
+          />
+        ) : null}
+      </span>
       <span className="task-role muted truncate">{label(task.role)}</span>
       <span className="task-owner muted">
         <AssignmentLabel task={task} />
@@ -237,10 +262,19 @@ export function EventRows({
             ) : null}
             {event.reason ? <p className="muted">{event.reason}</p> : null}
             <div className="event-meta muted">
-              {event.data?.owner ??
-                (event.session_id
-                  ? `Сессия ${event.session_id.slice(0, 12)}`
-                  : "Автор не записан")}
+              {event.data?.owner ? (
+                <PersonChip owner={event.data.owner} />
+              ) : event.session_id ? (
+                `Сессия ${event.session_id.slice(0, 12)}`
+              ) : (
+                "Автор не записан"
+              )}
+              {event.data?.duplicate_of
+                ? ` · дубль ${event.data.duplicate_of}`
+                : ""}
+              {event.data?.similar?.length
+                ? ` · похожие: ${event.data.similar.join(", ")}`
+                : ""}
               {event.data?.role ? ` · ${label(event.data.role)}` : ""}
               {event.data?.new_state ? ` · ${label(event.data.new_state)}` : ""}
               {decisions && event.data?.generation

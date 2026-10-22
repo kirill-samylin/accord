@@ -13,6 +13,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { CopyX } from "lucide-react";
+import { useSimilar } from "../duplicates/use-similar";
+import { SimilarList } from "../duplicates/similar-list";
 
 export type CreateTaskDialogProps = MutationProps & {
   open: boolean;
@@ -59,6 +62,20 @@ export function CreateTaskDialog({
   });
   const isTask = draft.type !== "epic";
   const isReview = isTask && ["reviewer", "tester"].includes(draft.role);
+  const similar = useSimilar({
+    title: draft.title ?? "",
+    description: draft.description,
+    type: draft.type,
+    role: draft.role,
+    enabled: open && !isReview,
+  });
+  const matches = similar.data?.similar ?? [];
+  const strict = similar.data?.mode === "strict";
+  const blocking = matches.some(
+    (m) => m.score >= (similar.data?.threshold ?? 1),
+  );
+  const [force, setForce] = useState(false);
+  const [forceReason, setForceReason] = useState("");
   function change(name: string, value: string) {
     if (name === "role") setProfile("");
     setDraft((previous) => ({ ...previous, [name]: value }));
@@ -98,6 +115,11 @@ export function CreateTaskDialog({
     if (!isReview) {
       fields.target_key = "";
       fields.target_commit = "";
+    }
+    if (force) {
+      if (!forceReason.trim()) return;
+      fields.force = "true";
+      fields.force_reason = forceReason.trim();
     }
     void action.send("/web/tasks", actionBody(action.page, "create", fields));
   }
@@ -192,6 +214,41 @@ export function CreateTaskDialog({
               />
               <FieldError name="description" errors={action.fieldErrors} />
             </label>
+            {matches.length ? (
+              <section className="similar-callout" aria-live="polite">
+                <div className="similar-callout-head">
+                  <CopyX size={15} aria-hidden />
+                  <span>Похоже, такая работа уже есть</span>
+                </div>
+                <p className="muted">
+                  Откройте задачу и проверьте, прежде чем создавать новую — так
+                  агенты не сделают одно и то же дважды.
+                </p>
+                <SimilarList items={matches.slice(0, 4)} compact />
+                {strict && blocking ? (
+                  <label className="checkbox-row">
+                    <input
+                      type="checkbox"
+                      checked={force}
+                      onChange={(event) => setForce(event.target.checked)}
+                    />
+                    Это другая задача — создать всё равно
+                  </label>
+                ) : null}
+                {force ? (
+                  <label className="form-field">
+                    Чем она отличается
+                    <input
+                      required
+                      maxLength={1000}
+                      value={forceReason}
+                      placeholder="Например: отдельный экран для администратора"
+                      onChange={(event) => setForceReason(event.target.value)}
+                    />
+                  </label>
+                ) : null}
+              </section>
+            ) : null}
             {isTask ? (
               <div className="form-grid">
                 <label className="form-field">
@@ -266,6 +323,7 @@ export function CreateTaskDialog({
                 type="submit"
                 disabled={
                   !actionID(action.page, "create") ||
+                  (strict && blocking && !force) ||
                   (isTask &&
                     draft.role !== "human" &&
                     !currentProfileChoice(

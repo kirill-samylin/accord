@@ -22,7 +22,7 @@ func (s *Store) createInBoard(b *board, sess *core.Session, a core.Actor, in cor
 	if in.Type != "task" && in.Type != "epic" {
 		return zero, core.Fail("invalid_input", "type must be task or epic")
 	}
-	t := &core.Task{CreatedAt: &now, Category: in.Category, Complexity: in.Complexity, ExternalID: in.ExternalID, Key: nextKey(b), Type: in.Type, Title: in.Title, Description: in.Description, Role: in.Role, State: "ready", EpicKey: in.EpicKey, Priority: in.Priority, Version: 1, Requester: a.Principal.ID, ReadyAt: now, Areas: in.Areas}
+	t := &core.Task{CreatedAt: &now, Category: in.Category, Complexity: in.Complexity, ExternalID: in.ExternalID, Key: nextKey(b), Type: in.Type, Title: in.Title, Description: in.Description, Role: in.Role, State: "ready", EpicKey: in.EpicKey, Priority: in.Priority, Version: 1, Requester: a.Principal.ID, CreatedBy: a.Principal.Owner, ReadyAt: now, Areas: in.Areas}
 	if t.Priority == 0 {
 		t.Priority = 2
 	}
@@ -78,12 +78,29 @@ func (s *Store) createInBoard(b *board, sess *core.Session, a core.Actor, in cor
 	if err := validateMetadata(b, t); err != nil {
 		return zero, err
 	}
+	warnings, err := duplicateCheck(b, in, t, now)
+	if err != nil {
+		return zero, err
+	}
 	b.Tasks[t.Key] = t
 	emit(b, now, "task_created", t.Key, a.SessionID)
 	if t.Assignment != nil {
 		b.Events[len(b.Events)-1].Data = &core.EventData{AssignmentChange: &core.AssignmentChange{Next: t.Assignment, Reason: "Назначение при создании"}}
 	}
-	return viewTask(b, t), nil
+	if len(warnings) > 0 {
+		data := b.Events[len(b.Events)-1].Data
+		if data == nil {
+			data = &core.EventData{}
+			b.Events[len(b.Events)-1].Data = data
+		}
+		data.Similar = similarKeys(warnings[0].Similar)
+		if t.DuplicateOverride != nil {
+			data.DuplicateReason = t.DuplicateOverride.Reason
+		}
+	}
+	v := viewTask(b, t)
+	v.Warnings = warnings
+	return v, nil
 }
 func (s *Store) Get(ctx context.Context, a core.Actor, in core.GetInput) (core.Task, error) {
 	return transact(s, ctx, func(b *board, now time.Time) (core.Task, error) {
@@ -144,7 +161,7 @@ func (s *Store) Next(ctx context.Context, a core.Actor, in core.NextInput) (core
 		t.Attempts = append(t.Attempts, core.Attempt{SessionID: a.SessionID, PrincipalID: a.Principal.ID, RunID: sess.RunID, Machine: sess.Machine, Generation: t.Generation, StartedAt: now})
 		emit(b, now, "claimed", t.Key, a.SessionID)
 		v := viewTask(b, t)
-		return core.Claim{Task: &v, Lease: t.Lease, EpicNotes: scopeNotes(b, "epic", t.EpicKey), Queue: sessionQueueSummary(b, sess)}, nil
+		return core.Claim{Task: &v, Lease: t.Lease, EpicNotes: scopeNotes(b, "epic", t.EpicKey), Queue: sessionQueueSummary(b, sess), Warnings: claimWarnings(b, t, now)}, nil
 	})
 }
 func (s *Store) Update(ctx context.Context, a core.Actor, in core.UpdateInput) (core.Task, error) {

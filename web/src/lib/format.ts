@@ -28,6 +28,7 @@ export const eventLabels: Record<string, string> = {
   task_updated: "Задача обновлена",
   task_assigned: "Назначение задачи изменено",
   check_created: "Проверка назначена",
+  task_duplicate: "Отмечена дублем",
   claimed: "Задача взята",
   released: "Задача возвращена",
   commented: "Комментарий добавлен",

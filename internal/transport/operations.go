@@ -43,6 +43,7 @@ type Service interface {
 	Sessions(context.Context, core.Actor, core.ListInput) (core.SessionsPage, error)
 	ListNotes(context.Context, core.Actor, core.NotesInput) (core.NotesPage, error)
 	Stats(context.Context, core.Actor, core.StatsInput) (core.Stats, error)
+	DedupService
 }
 
 type operation struct {
@@ -100,11 +101,11 @@ func operations(s Service) []operation {
 	}
 	return []operation{
 		bind("comment", "Record a short report on your current leased attempt.", false, s.Comment),
-		strictCoordination(bind("create", "Create an epic or a ready task.", false, s.Create)), describe,
+		strictCoordination(bind("create", "Create an epic or a ready task. Similar existing work is returned in warnings (strict mode rejects unless force+force_reason).", false, s.Create)), describe,
 		bind("events", "Read one page; persist next_cursor, never high_water.", true, s.Events),
 		bind("get", "Read an epic or task, including attempts and evidence.", true, s.Get),
 		bind("heartbeat", "Renew only live leases using their exact generations.", false, s.Heartbeat),
-		bind("link", "Add a typed dependency; cycles and unsuccessful gates are rejected.", false, s.Link),
+		bind("link", "Add a typed dependency; type duplicate_of cancels unleased from as a duplicate of to.", false, s.Link),
 		bind("next", "Claim one eligible task for this session's role.", false, s.Next),
 		bind("note", "Create or soft-delete a bounded role or epic note with provenance.", false, s.Note),
 		bind("release", "Release your live task lease with a reason.", false, s.Release),

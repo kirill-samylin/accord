@@ -107,7 +107,7 @@ export async function submitAction<
   if (/^\/web\/p\/[^/]+\/login$/.test(path))
     throw new Error("Вход выполняется через общий адрес");
   if (
-    !/^\/web\/(?:p\/p_[a-f0-9]{32}\/)?(?:login|logout|heartbeat|session\/continue|tasks(?:\/[A-Za-z0-9_-]+\/(?:claim|answer|release|update|assign|link|transition|checks))?|profiles(?:\/ap_[a-f0-9]{32}\/(?:update|archive))?|designs)$/.test(
+    !/^\/web\/(?:p\/p_[a-f0-9]{32}\/)?(?:login|logout|heartbeat|session\/continue|tasks(?:\/[A-Za-z0-9_-]+\/(?:claim|answer|release|update|assign|link|transition|checks|duplicate))?|profiles(?:\/ap_[a-f0-9]{32}\/(?:update|archive))?|designs)$/.test(
       path,
     ) &&
     !/^\/web\/catalog\/(?:switch|projects(?:\/p_[a-f0-9]{32}\/(?:update|members|repositories(?:\/[A-Za-z0-9_-]+)?))?)$/.test(

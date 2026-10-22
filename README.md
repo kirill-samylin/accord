@@ -25,6 +25,14 @@ The shared-service delivery is tracked in [TASK-003](docs/TASK-003-working-servi
 Its [service contract](docs/service-contract.md) separates the working bearer
 release from the remaining V1 features and external acceptance checks.
 
+## Без дублей и «кто что делает» (TASK-012)
+
+При `create` сервер ищет похожую открытую работу всего проекта и возвращает
+`warnings` (режим `warn`) или отклоняет до `force`+`force_reason` (`strict`).
+Лишнюю задачу закрывает `link type=duplicate_of`. Экран **«Команда»** показывает,
+у кого из людей какие агенты и над чем работают, и пары возможных дублей.
+Подробности — [TASK-012](docs/TASK-012-dedup-team.md).
+
 ## Веб для людей
 
 Текущий новый клиент: **Next.js + TypeScript** с интерфейсом по Paperclip.

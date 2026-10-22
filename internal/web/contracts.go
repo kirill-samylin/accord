@@ -20,6 +20,9 @@ type Board interface {
 	ProfileArchive(context.Context, core.Actor, core.ProfileArchiveInput) (core.AgentProfile, error)
 
 	ControlOverview(context.Context, core.Actor) (core.ControlOverview, error)
+	ControlTeam(context.Context, core.Actor) (core.TeamView, error)
+	Similar(context.Context, core.Actor, core.SimilarInput) (core.SimilarPage, error)
+	Duplicate(context.Context, core.Actor, core.DuplicateInput) (core.Task, error)
 	ControlSessions(context.Context, core.Actor, core.ControlSessionsInput) (core.ControlSessionsPage, error)
 	ControlTasks(context.Context, core.Actor, core.ControlTasksInput) (core.TasksPage, error)
 	RecentEvents(context.Context, core.Actor, core.RecentEventsInput) (core.RecentEventsPage, error)
@@ -67,6 +70,8 @@ type Page struct {
 	CanManageProfiles                                     bool
 	Project                                               *core.ProjectView
 	Overview                                              *core.ControlOverview
+	Team                                                  *core.TeamView
+	Similar                                               []core.SimilarTask
 	Agents                                                []core.ControlSession
 	Agent                                                 *core.ControlSession
 	Activity                                              []core.Event

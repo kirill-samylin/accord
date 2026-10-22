@@ -33,6 +33,8 @@ type board struct {
 	Sequence         int64                         `json:"sequence"`
 	EventBase        int64                         `json:"-"`
 	tx               *sql.Tx
+	owners           map[string]string
+	ownersFor        int
 }
 
 // Open serializes transactions in process and obtains a SQLite write lock before
@@ -43,6 +45,19 @@ func Open(path string, cfg core.Config, clock core.Clock) (*Store, error) {
 	}
 	if cfg.LeaseTTL == 0 {
 		cfg.LeaseTTL = 15 * time.Minute
+	}
+	switch cfg.DuplicateMode {
+	case "":
+		cfg.DuplicateMode = core.DuplicateWarn
+	case core.DuplicateOff, core.DuplicateWarn, core.DuplicateStrict:
+	default:
+		return nil, core.Fail("invalid_input", "duplicate mode must be off, warn or strict")
+	}
+	if cfg.DuplicateThreshold == 0 {
+		cfg.DuplicateThreshold = 0.6
+	}
+	if cfg.DuplicateThreshold < 0.3 || cfg.DuplicateThreshold > 1 {
+		return nil, core.Fail("invalid_input", "duplicate threshold must be within 0.3..1")
 	}
 	if cfg.SessionTTL < time.Second || cfg.LeaseTTL < time.Second {
 		return nil, core.Fail("invalid_input", "TTL must be at least one second")

@@ -14,7 +14,9 @@ import (
 func controlQuery(r *http.Request) error {
 	allowed := ""
 	switch {
-	case r.URL.Path == "/web/data/overview", r.URL.Path == "/web/data/dashboard", r.URL.Path == "/web/overview", r.URL.Path == "/web/projects", r.URL.Path == "/web/settings":
+	case r.URL.Path == "/web/data/overview", r.URL.Path == "/web/data/dashboard", r.URL.Path == "/web/data/team", r.URL.Path == "/web/team", r.URL.Path == "/web/overview", r.URL.Path == "/web/projects", r.URL.Path == "/web/settings":
+	case r.URL.Path == "/web/data/similar":
+		return similarQuery(r)
 	case r.URL.Path == "/web/":
 		allowed = "view cursor epic_cursor state role epic_key owner include_closed q layout"
 	case r.URL.Path == "/web/tasks", r.URL.Path == "/web/questions":
@@ -151,4 +153,27 @@ func eventBefore(r *http.Request) (int64, error) {
 		return 0, core.Fail("validation", "Неверная страница истории")
 	}
 	return n, nil
+}
+
+// similarQuery bounds live suggestion input; the store validates semantics.
+func similarQuery(r *http.Request) error {
+	values, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		return core.Fail("validation", "Неверные параметры URL")
+	}
+	for key, items := range values {
+		if len(items) != 1 || !strings.Contains(" title description type role exclude_key ", " "+key+" ") {
+			return core.Fail("validation", "Неизвестный или повторный параметр: "+key)
+		}
+		if !utf8.ValidString(items[0]) || len(items[0]) > 4096 {
+			return core.Fail("validation", "Слишком длинный запрос")
+		}
+	}
+	if strings.TrimSpace(values.Get("title")) == "" {
+		return core.Fail("validation", "Нужен заголовок")
+	}
+	if key := values.Get("exclude_key"); key != "" && !core.ValidControlTaskKey(key) && !core.ValidControlEpicKey(key) {
+		return core.Fail("validation", "Неверный ключ задачи")
+	}
+	return nil
 }

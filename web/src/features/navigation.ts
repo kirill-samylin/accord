@@ -9,10 +9,12 @@ import {
   Inbox,
   ListTodo,
   Settings2,
+  Users,
 } from "lucide-react";
 import { screenPath } from "@/lib/project-routes";
 export const navigation = [
   { href: "/app", title: "Обзор", icon: House, group: "Работа" },
+  { href: "/app/team", title: "Команда", icon: Users, group: "Работа" },
   { href: "/app/tasks", title: "Задачи", icon: ListTodo, group: "Работа" },
   { href: "/app/questions", title: "Вопросы", icon: Inbox, group: "Работа" },
   {

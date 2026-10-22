@@ -122,6 +122,13 @@ func clientRoute(operation string, fields map[string]json.RawMessage) (string, s
 		path = "/api/v1/tasks"
 	case "next":
 		path = "/api/v1/tasks/next"
+	case "similar":
+		path = "/api/v1/tasks/similar"
+	case "team":
+		if len(fields) != 0 {
+			return "", "", nil, errors.New("team takes no fields")
+		}
+		return "GET", "/api/v1/team", nil, nil
 	case "link":
 		path = "/api/v1/links"
 	case "heartbeat":
@@ -154,7 +161,7 @@ func clientRoute(operation string, fields map[string]json.RawMessage) (string, s
 			query.Set("task_key", input.TaskKey)
 		}
 		return "GET", "/api/v1/events?" + query.Encode(), nil, nil
-	case "get", "update", "transition", "release", "comment", "coordination", "assign", "check_create":
+	case "get", "update", "transition", "release", "comment", "coordination", "assign", "check_create", "duplicate":
 		field := "task_key"
 		if operation == "check_create" {
 			field = "target_key"
@@ -177,7 +184,7 @@ func clientRoute(operation string, fields map[string]json.RawMessage) (string, s
 			method = "PATCH"
 		case "check_create":
 			path += "/checks"
-		case "assign", "transition", "release":
+		case "assign", "transition", "release", "duplicate":
 			path += "/" + operation
 		case "comment":
 			path += "/comments"

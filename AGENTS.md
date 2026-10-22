@@ -25,6 +25,8 @@
 `docs/TASK-011-coordination.md`, контракт `docs/coordination.md`; pinned assignment
 не lease/identity, schema4/coordination floor обязательны. Управляемый запуск
 остаётся следующим отдельным чатом после реального closure TASK011.
+TASK012 (дедупликация и экран «Команда») — `docs/TASK-012-dedup-team.md`;
+реализован локально в ветке `codex/dedup`, не выпущен.
 
 ## Работа
 

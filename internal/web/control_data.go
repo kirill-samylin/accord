@@ -12,7 +12,7 @@ import (
 // controlData is deliberately independent of page/action/session continuation.
 func (s *Server) controlData(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	if r.URL.Path != "/web/data/overview" && r.URL.Path != "/web/data/dashboard" {
+	if r.URL.Path != "/web/data/overview" && r.URL.Path != "/web/data/dashboard" && r.URL.Path != "/web/data/team" && r.URL.Path != "/web/data/similar" {
 		s.controlJSONError(w, core.Fail("not_found", "Не найдено"))
 		return
 	}
@@ -35,9 +35,15 @@ func (s *Server) controlData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var payload any
-	if r.URL.Path == "/web/data/dashboard" {
+	switch r.URL.Path {
+	case "/web/data/dashboard":
 		payload, err = s.readDashboard(r.Context(), b.actor())
-	} else {
+	case "/web/data/team":
+		payload, err = s.board.ControlTeam(r.Context(), b.actor())
+	case "/web/data/similar":
+		q := r.URL.Query()
+		payload, err = s.board.Similar(r.Context(), b.actor(), core.SimilarInput{Title: q.Get("title"), Description: q.Get("description"), Type: q.Get("type"), Role: q.Get("role"), ExcludeKey: q.Get("exclude_key"), Limit: 6})
+	default:
 		payload, err = s.board.ControlOverview(r.Context(), b.actor())
 	}
 	if err != nil {

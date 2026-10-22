@@ -129,8 +129,13 @@ func (s *Store) renew(t *core.Task, now time.Time) {
 		t.Lease.ExpiresAt = now.Add(s.cfg.LeaseTTL)
 	}
 }
-func viewTask(b *board, t *core.Task) core.Task { v := *t; v.Blocked = blocked(b, t); return v }
-func nextKey(b *board) string                   { b.Sequence++; return fmt.Sprintf("T-%d", b.Sequence) }
+func viewTask(b *board, t *core.Task) core.Task {
+	v := *t
+	v.Blocked = blocked(b, t)
+	projectPeople(b, &v)
+	return v
+}
+func nextKey(b *board) string { b.Sequence++; return fmt.Sprintf("T-%d", b.Sequence) }
 
 func validTitle(value string) bool {
 	return strings.TrimSpace(value) != "" && utf8.RuneCountInString(value) <= 200

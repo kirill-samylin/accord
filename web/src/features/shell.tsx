@@ -252,7 +252,7 @@ export function Shell({
       <nav className="mobile-nav" aria-label="Быстрая навигация">
         {navigation
           .filter((item) =>
-            ["/app", "/app/tasks", "/app/questions", "/app/agents"].includes(
+            ["/app", "/app/team", "/app/tasks", "/app/questions"].includes(
               item.href,
             ),
           )

@@ -241,6 +241,7 @@ const linkLabels: Record<string, string> = {
   contract_of: "Предоставляет контракт",
   spawned_by: "Порождена",
   related: "Связана",
+  duplicate_of: "Дубль",
 };
 const conditionLabels: Record<string, string> = {
   completed: "Успешное завершение",

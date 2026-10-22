@@ -31,6 +31,8 @@ type browserPage struct {
 	CanEdit            bool                   `json:"can_edit"`
 	CanUpdate          bool                   `json:"can_update"`
 	Overview           *core.ControlOverview  `json:"overview,omitempty"`
+	Team               *core.TeamView         `json:"team,omitempty"`
+	Similar            []core.SimilarTask     `json:"similar,omitempty"`
 	Agents             []core.ControlSession  `json:"agents,omitempty"`
 	Agent              *core.ControlSession   `json:"agent,omitempty"`
 	Activity           []core.Event           `json:"activity,omitempty"`
@@ -77,7 +79,7 @@ func projectBrowserPage(name string, p Page) browserPage {
 		ActionID: p.ActionID, Actions: p.Actions, Draft: draft, FieldErrors: p.FieldErrors,
 		Principal: browserPrincipal{Owner: p.Principal.Owner, Machine: p.Principal.Machine},
 		Session:   p.Session, CanContinue: p.CanContinue, CanEdit: p.CanEdit, CanUpdate: p.CanUpdate,
-		Overview: p.Overview, Agents: p.Agents, Agent: p.Agent, Activity: p.Activity, Stats: p.Stats,
+		Overview: p.Overview, Team: p.Team, Similar: p.Similar, Agents: p.Agents, Agent: p.Agent, Activity: p.Activity, Stats: p.Stats,
 		ObservedAt: p.ObservedAt, AgentsObservedAt: p.AgentsObservedAt, ActivityObservedAt: p.ActivityObservedAt,
 		Task: p.Task, Tasks: p.Tasks, Epics: p.Epics, Questions: p.Questions, MyQuestions: p.MyQuestions,
 		LegacyDecisions: p.LegacyDecisions, Designs: p.Designs, Decisions: p.Decisions,

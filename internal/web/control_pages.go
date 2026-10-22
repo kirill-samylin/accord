@@ -24,6 +24,8 @@ func controlPageName(r *http.Request) (string, string) {
 		return "board", "questions"
 	case "/web/agents":
 		return "agents", "agents"
+	case "/web/team":
+		return "agents", "team"
 	case "/web/activity":
 		return "activity", "activity"
 	case "/web/projects":
@@ -117,6 +119,14 @@ func (s *Server) controlPage(r *http.Request, b *browserSession, p *Page) error 
 		p.ActivityObservedAt = snapshot.Activity.ObservedAt
 	case "agents":
 		return s.agentsPage(r, b, p)
+	case "team":
+		team, err := s.board.ControlTeam(r.Context(), b.actor())
+		if err != nil {
+			return err
+		}
+		p.Team = &team
+		p.ObservedAt = team.ObservedAt
+		return s.teamActions(r, b, p)
 	case "agent":
 		id := strings.TrimPrefix(r.URL.Path, "/web/agents/")
 		agents, err := s.board.ControlSessions(r.Context(), b.actor(), core.ControlSessionsInput{SessionID: id, IncludeClosed: true, Limit: 1})
