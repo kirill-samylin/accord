@@ -100,3 +100,20 @@ Root Forced recovery follow-up: recovered_stopped сохраняет Forced=true
 при следующем proof без Forced; managed_recovery_test дополнен assert true→false
 не понижает историю принудительной остановки. Focused store recovery/managed
 Describe PASS, diff check PASS. Source проверяется WORK165 перед rebuild.
+
+Managed terminal handoff follow-up на базе0b05610: design APPROVE WORK165 до кода.
+Новый managedCloseSessions вызывается в той же candidate transaction только после
+валидных completed/stopped/failed/recovered_stopped exit proof. Scope authoritative
+Session.ManagedRunID+ManagedGeneration+Session.RunID+PrincipalID host owner.
+Закрывает ровно живые принадлежащие task leases через finishAttempt/released,
+сохраняя fencing/evidence/done; expires only future bound-session expiry и пишет
+managed_session_closed. Singleton counter не сбрасывается. Unknown/ordinary EOF/
+foreign/other run/generation остаются прежними, mismatch rollback всей mutation.
+Авторские regressions проверяют все4terminal phases, немедленный managed resume и
+Next с новым task/singleton generation, old-session deny, exact terminal replay
+после нового claim, unknown/invalid proof и selective scope/done/mismatch rollback.
+
+Final handoff author validation: store/projects/bridge/worker/transport/web/cmd
+PASS (все 7 пакетов), git diff --check PASS. Новые helper и два test-файла
+содержат 57/113/112 строк. Независимый source re-approve WORK165 и отдельный
+process/native QA на новом candidate остаются обязательными; production не изменён.

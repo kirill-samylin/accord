@@ -84,16 +84,20 @@ func TestMonotonicLeaseIgnoresServerClockSkew(t *testing.T) {
 	}
 }
 
-func TestMCPDiscoveryParsesNamesWithoutReplayingSecrets(t *testing.T) {
-	data := []byte(`[{"name":"accord_gui","transport":{"env":{"TOKEN":"synthetic"}}},{"name":"other.tool"}]`)
-	names, err := parseMCPNames(data)
-	if err != nil || !reflect.DeepEqual(names, []string{"accord_gui", "other.tool"}) {
-		t.Fatal("invalid name discovery")
+func TestMCPDiscoveryParsesTransportWithoutReplayingSecrets(t *testing.T) {
+	data := []byte(`[{"name":"accord_gui","enabled":true,"transport":{"type":"stdio","env":{"TOKEN":"synthetic"}}},{"name":"other.tool","enabled":false,"transport":{"type":"streamable_http","url":"https://example.invalid/?token=synthetic-url-secret"}}]`)
+	connectors, err := parseMCPConnectors(data)
+	if err != nil || len(connectors) != 2 || connectors[0].Transport != "stdio" || connectors[1].Transport != "streamable_http" {
+		t.Fatal("invalid connector transport discovery")
 	}
-	if _, err = parseMCPNames([]byte(`[{"name":""}]`)); err == nil {
+	encoded, _ := json.Marshal(connectors)
+	if strings.Contains(string(encoded), "synthetic") {
+		t.Fatal("irrelevant transport credentials retained")
+	}
+	if _, err = parseMCPConnectors([]byte(`[{"name":""}]`)); err == nil {
 		t.Fatal("accepted empty connector")
 	}
-	if _, err = parseMCPNames(json.RawMessage(`null`)); err == nil {
+	if _, err = parseMCPConnectors(json.RawMessage(`null`)); err == nil {
 		t.Fatal("accepted missing connector inventory")
 	}
 }

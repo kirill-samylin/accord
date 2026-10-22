@@ -16,11 +16,12 @@ type supervisorRequest struct {
 }
 
 type supervisorProof struct {
-	Type    string `json:"type"`
-	Nonce   string `json:"nonce"`
-	Proven  bool   `json:"proven"`
-	Success bool   `json:"success"`
-	Forced  bool   `json:"forced"`
+	Type       string `json:"type"`
+	Nonce      string `json:"nonce"`
+	Proven     bool   `json:"proven"`
+	Success    bool   `json:"success"`
+	Forced     bool   `json:"forced"`
+	Diagnostic string `json:"local_diagnostic,omitempty"`
 }
 
 // Supervise lives in a separate OS process. Its stdin is a private parent
@@ -50,6 +51,7 @@ func Supervise(input io.Reader, output io.Writer) error {
 	}
 	exitError := child.Wait()
 	proof.Proven = !errors.Is(exitError, errOwnership)
+	proof.Diagnostic = ownershipDiagnostic(exitError)
 	proof.Success = exitError == nil && copyError == nil
 	proof.Forced = child.Forced()
 	// Keep the final proof on its own JSONL boundary even if the native

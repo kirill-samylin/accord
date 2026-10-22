@@ -10,14 +10,17 @@ func waitGroupExit(group int) error {
 	deadline := time.Now().Add(3 * time.Second)
 	for {
 		live, leader, err := groupMembers(group)
-		if err != nil || !leader {
-			return errOwnership
+		if err != nil {
+			return ownershipSystemFailure("unix_exit_census", err)
+		}
+		if !leader {
+			return ownershipFailureAt("unix_exit_census_leader_missing")
 		}
 		if live == 0 {
 			return nil
 		}
 		if time.Now().After(deadline) {
-			return errOwnership
+			return ownershipFailureAt("unix_group_exit_timeout")
 		}
 		time.Sleep(20 * time.Millisecond)
 	}

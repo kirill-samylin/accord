@@ -28,3 +28,14 @@ func TestSupervisorProofIsNonceBound(t *testing.T) {
 		t.Fatal("genuine supervisor proof was lost")
 	}
 }
+
+func TestSupervisorPreservesPrivateFailureStage(t *testing.T) {
+	proof := &supervisorProof{Proven: false, Diagnostic: "unix_reap_kill_errno_1"}
+	if code := ownershipDiagnostic(proofOwnershipFailure(proof)); code != "unix_reap_kill_errno_1" {
+		t.Fatal("helper stage was lost")
+	}
+	proof.Diagnostic = "arbitrarysecret"
+	if code := ownershipDiagnostic(proofOwnershipFailure(proof)); code != "supervisor_unproven_exit" {
+		t.Fatal("helper arbitrary data accepted")
+	}
+}

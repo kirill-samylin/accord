@@ -95,6 +95,33 @@ descendant containment/отсутствие любых писателей на U
 6. Полная сборка/проверки и secret scan; точная проверенная версия указана.
    Source/staging не означает установленный production release.
 
-Статус: **IN PROGRESS — контракт и реализация**. Remote push/merge/release
-не выполнены. PASS/FAIL/NOT-RUN добавляются только по фактической проверке;
-непройденная обязательная native/Windows проверка оставляет этап незавершённым.
+## Фактическая приёмка
+
+Промежуточный проверенный checkpoint — `0b05610`, не финальная поставка.
+Browser и updater v3 ниже используют binary SHA256
+`737793070b90a1fed579ef090a39389be45e884a30b9360d4cf9188e4c07905d`;
+точные private evidence paths сохранены в WORK168.
+Его полный `make check` PASS: Go unit/integration/acceptance/race, infra164,
+web88, TypeScript/format и production Next build. Независимые process/browser
+tests и отчёты — WORK168; source/evidence review — WORK165.
+
+| Проверка | Результат | Граница результата |
+| --- | --- | --- |
+| Next/Chrome, запуск/остановка/resume/уточнение, ACL, lost response | PASS5, 8 снимков | Детерминированный CLI fixture, один Mac |
+| Capable all-project migration4→5 и restore/auth-reset | PASS3 | Настоящие Go/SQLite/snapshot; systemd/ingress simulated |
+| Основной process suite | FAIL после8 PASS | Offline stop прекратил owned heartbeat, но proof оказался unknown |
+| Настоящий Mac Codex | FAIL на startup | Частичный disabled MCP override не содержал transport |
+| Windows runtime, native Claude | NOT-RUN | Cross-build не заменяет запуск на Windows |
+| Второй физический ПК | NOT-RUN | Два synthetic host на одном Mac не являются двумя ПК |
+
+После checkpoint реализованы positive terminal handoff, private ownership
+diagnostics и одновременная остановка групп; source APPROVE получен. Исправлены
+Codex MCP isolation и блокирование watchdog во время подготовки нового запуска;
+combined source/test APPROVE и четвёртый полный `make check` PASS получены.
+Config-only probe установленного Codex подтвердил изоляцию подключений.
+Причина intermittent ownership unknown пока не установлена. Source approvals
+и промежуточные PASS не заменяют повтор actual QA на точной финальной версии.
+
+Статус: **IN PROGRESS — итоговая приёмка и исправления по QA**. Remote
+push/merge/release не выполнены; VPS остаётся TASK012. Непройденная обязательная
+native/Windows проверка оставляет этап незавершённым.

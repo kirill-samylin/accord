@@ -59,6 +59,91 @@ Claude/второй ПК остаются NOT-RUN. Production/VPS/GUI/Tandem н�
 
 ## Ограничения
 
+### Конфигурационная подготовка не блокирует failsafe
+
+Независимое ревью обнаружило, что discovery/verification native MCP выполнялись
+под общим `Engine.mu` во время accepted ACK. Два медленных config-only вызова могли
+задержать watchdog и StopAll уже работающего другого workspace после локального
+monotonic deadline.
+
+Подготовка теперь получает глубокий immutable Config и RunState snapshot и отпускает
+общую блокировку на время внешних MCP проверок. Перед созданием native процесса
+повторно проверяются fatal/closed, deadline, StopAll epoch, identity/generation/state
+попытки, отсутствие active процесса, локальный controller/config allowlist и pins.
+Accepted attempt identity сохраняется до проверки; Close/failsafe во время подготовки
+не разрешает отложенный launch даже при последующем обновлении lease.
+
+PASS: focused unit/integration/race worker+cmd. Barrier unit удерживает verification,
+пока у другого активного workspace истекает deadline, и требует входа Stop до
+освобождения verification; после освобождения новый native процесс не создаётся.
+Отдельно проверено отсутствие разделяемых mutable allowlists в Config snapshot.
+Новых process/E2E тестов автор не добавлял; actual generated-map native MCP config
+probe и повтор offline диагностики выполняет QA после source APPROVE этой дельты.
+
+### Native Codex transport overrides
+
+QA установил причину отдельного startup FAIL на Codex `0.163.0-alpha.11.1`:
+`mcp list --json` включает plugin-provided runtime stdio servers, у которых нет
+transport table в пользовательском config. Прежний override только `enabled=false`
+создавал новую неполную запись и Codex завершался с invalid transport до thread.
+
+Adapter теперь читает strict metadata name/transport/enabled и формирует полные
+invocation-only disabled записи: для stdio — command+args, для HTTP — отключённый
+loopback placeholder URL. Исходные access-bearing URL/HTTP credentials не копируются
+в argv. Неизвестный transport отклоняется. Совпадение зарезервированного имени
+`accord_managed` с HTTP transport отклоняется до запуска вместо смешивания url и
+command; переименование существующего подключения остаётся локальным решением.
+
+Последующий QA exact-shape probe показал, что CLI path `mcp_servers."name"`
+создаёт имя с буквальными кавычками: исходное подключение остаётся включённым.
+Обязательная повторная инспекция корректно запрещала такой запуск. Исправлена
+форма override: одна таблица `mcp_servers={"name"={...},...}`; имена интерпретирует
+TOML parser внутри таблицы, а не CLI path parser. Transport-aware ограничения и
+проверка единственного enabled managed bridge сохранены. Unit regression требует
+целую таблицу и запрещает возвращение к quoted CLI path segments.
+
+Перед native agent запуском обязательна повторная config-only инспекция именно с
+полученными overrides: единственный enabled MCP — managed stdio с точным executable
+и immutable attempt arguments, все остальные connections disabled. Успешный parse
+или отсутствие prompt сами по себе не считаются доказательством isolation.
+User config/auth/sandbox/approvals/rules не изменяются, skipGit/bypass не добавлены.
+
+PASS: focused unit/integration/race worker+cmd, включая полные transport overrides,
+HTTP collision/unknown transport fail-closed и exact post-override verification.
+PASS: кросс-компиляция тестов Linux amd64/Windows amd64. Native configuration
+probe для нового adapter и реальный provider smoke — NOT-RUN до source APPROVE;
+их повторяет QA существующим probe. Диагностический offline runtime дефект остаётся
+отдельным: его причина не выводится из этого transport startup исправления.
+
+API: [MCP transport configuration](https://learn.chatgpt.com/docs/extend/mcp),
+[configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference).
+
+### Диагностический checkpoint после runtime QA
+
+После `0b05610` независимый QA воспроизвёл нестабильный `needs_recovery` в offline
+сценарии: активность управляемой группы прекращалась до30s, но положительный exit
+proof терялся. Причина на этом checkpoint ещё не установлена; гипотеза о Darwin
+EPERM не считается доказательством и сигнальные ошибки не игнорируются.
+
+Добавлены только allowlisted stage codes: waitid errno, census error/missing leader,
+kill/interrupt errno, group exit timeout, helper exit/missing nonce proof/timeout.
+Они проходят через nonce-bound helper proof и сохраняются в приватном поле
+`RunState.local_diagnostic`. Public error остаётся общим; Receipt/API/UI не получают
+коды, raw stderr, пути, PID, prompt, provider output или credentials. Неполный proof
+по-прежнему оставляет `needs_recovery` и durable checkout intent.
+
+Отдельная подтверждённая source ошибка исправлена: `StopAll` запускает Stop для
+всех групп одновременно. Последовательные grace periods могли оставлять поздние
+группы активными дольше общего deadline. Ошибки и uncertain state каждого процесса
+сохраняются отдельно. Авторский barrier fake test требует входа всех Stop до
+освобождения первого; новых process/E2E тестов автор не добавлял.
+
+PASS: повтор focused unit/integration/race worker+cmd и кросс-компиляция тестов
+Linux amd64/Windows amd64. Добавлены unit проверки закрытого набора/private-only
+диагностики, переноса helper stage и concurrent stop. Реальный offline repro с
+новой диагностикой остаётся NOT-RUN до независимого source APPROVE; после него
+QA повторяет существующий сценарий. Intermittent runtime дефект ещё не назван fixed.
+
 Unix supervision охватывает управляемый native CLI и принадлежащую ему process
 group. Потомки, намеренно вышедшие из неё через `setsid`/double-fork с отделением,
 могут продолжить работу вне этих границ. Проверка отсутствия живых членов PGID и

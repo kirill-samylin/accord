@@ -78,8 +78,14 @@ func (p *supervisedProcess) Wait() error {
 	<-p.done
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.waitError != nil || p.proof == nil || !p.proof.Proven {
-		return errOwnership
+	if p.proof != nil && !p.proof.Proven {
+		return proofOwnershipFailure(p.proof)
+	}
+	if p.waitError != nil {
+		return ownershipFailureAt("supervisor_helper_exit_failed")
+	}
+	if p.proof == nil {
+		return ownershipFailureAt("supervisor_missing_nonce_proof")
 	}
 	if !p.proof.Success {
 		return errNativeExit
@@ -99,16 +105,23 @@ func (p *supervisedProcess) Stop() error {
 				if proof.Proven {
 					return nil
 				}
-				return errOwnership
+				return proofOwnershipFailure(proof)
 			}
 			if time.Now().After(deadline) {
-				return errOwnership
+				return ownershipFailureAt("supervisor_stop_proof_timeout")
 			}
 			time.Sleep(10 * time.Millisecond)
 		}
 	case <-time.After(7 * time.Second):
-		return errOwnership
+		return ownershipFailureAt("supervisor_stop_helper_timeout")
 	}
+}
+
+func proofOwnershipFailure(proof *supervisorProof) error {
+	if proof.Diagnostic != "" && validDiagnostic(proof.Diagnostic) {
+		return ownershipFailureAt(proof.Diagnostic)
+	}
+	return ownershipFailureAt("supervisor_unproven_exit")
 }
 
 // ReadSlice keeps any single allocation bounded even for malformed native

@@ -102,5 +102,48 @@ transient/fresh-owner/living-owner/post-acquire/auth/recovery paths; root и
 Final QA candidate требуется пересобрать ещё раз; actual сценарии не заменены
 одобрением source или промежуточными PASS.
 
-Статус: implementation готова к source review165; actual process migration и
-полная интеграция пока NOT-RUN. Никакой production поставки не было.
+Checkpoint initial acquisition `0b05610`: третий полный root `make check` PASS.
+Actual QA v3 browser5/5 и8снимков, capable all-project migration/restore3/3 PASS.
+Main process suite итог FAIL: после offline watchdog owned heartbeat прекратился,
+но exit proof оказался unknown;8предшествующих PASS не заменяют весь suite.
+Author164 добавил fixed allowlisted private diagnostics и параллельный StopAll:
+восемь groups не должны последовательно расходовать по grace каждый. Source/
+unit/race APPROVE165 получен, причина intermittent unknown ещё расследуется.
+
+Actual native CLI `0.163.0-alpha.11.1` v3 пока FAIL до thread.started: частичный
+override enabled=false для host-injected MCP создавал запись без transport.
+QA config-only отдельно подтвердил full disabled stdio entries и all-disabled
+list; author164 исправляет transport-aware adapter с дополнительной проверкой
+получившегося MCP набора. Native permissions/auth не меняются и bypass не вводится.
+
+Author163 после design/source APPROVE165 реализовал managed terminal handoff:
+positive exit в той же транзакции закрывает только run/gen/host-owner bound
+sessions и текущие task leases, сохраняет fencing/evidence и не выдаёт task done.
+Unknown/ordinary EOF ничего не освобождают. Unit/race scope/replay/rollback и
+немедленное продолжение singleton/task PASS; actual native-next continuation
+требует новой приёмки. Guide дополнен этой семантикой.
+
+В ходе native adapter review165 найден P1: два native config inspections под
+общим e.mu блокировали local watchdog других active запусков. Доказано нарушение
+локального monotonic deadline; успешный accepted report отдельно продлевает
+server lease, поэтому истечение именно server lease этим наблюдением не доказано.
+Author164 выносит blocking prep из mutex с повторным authority/state/path check
+перед spawn и barrier regression. Combined source approval пока REQUEST CHANGES.
+
+Последующая combined source/test review165: APPROVE. Blocking prep вынесен из
+общего mutex; immutable snapshots и повторная проверка state/epoch/deadline/
+consent/pins сохранены. Barrier unit доказывает Stop другого active запуска до
+завершения blocked inspection и отказ просроченного нового launch. Actual
+config-only probe обнаружил literal quoted names в CLI key-path parser;
+whole-map TOML override исправлен, независимый probe подтвердил exact managed
+connector и все5 остальных disabled, без обращения к модели.
+
+Четвёртый полный root `make check` на итоговой product delta: **PASS**, exit0,
+`.local/task013-delivery/check-v4-final.log`: весь Go/race/acceptance, infra164,
+web88/format/TypeScript/production Next build. Предварительный v4 check был
+намеренно остановлен exit143 при смене adapter source и не считается PASS.
+QA fixture/case review и exact candidate runtime остаются отдельным gate.
+
+Статус: финальная приёмка остаётся открытой. Actual migration/browser PASS на
+прежнем checkpoint не заменяет process/native FAIL и повтор после новых fixes.
+Никакой production поставки не было.

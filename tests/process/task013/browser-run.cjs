@@ -1,0 +1,16 @@
+'use strict';
+// Independent owned runtime so browser/native acceptance does not repeat crash waits.
+const h=require('./harness.cjs'),catalog=require('./catalog.cjs'),m=require('./managed.cjs');
+const {fs,path,assert,root,repo,binary,sha,save,Native,BrowserSession}=h;
+function inventory(){const walk=p=>fs.readdirSync(p,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(p,e.name)):/\.(cjs|py|go|tsx?|css|conf|in)$/.test(e.name)?[path.join(p,e.name)]:[]);return Object.fromEntries(['tests/process/task013','tests/browser/task013','internal','cmd','infra/accord','web/src'].flatMap(p=>walk(path.join(repo,p))).sort().map(p=>[path.relative(repo,p),sha(fs.readFileSync(p))]));}
+const sources=inventory(),report={result:'FAIL',binary_sha256:sha(fs.readFileSync(binary)),source_revision:process.env.ACCORD_TASK013_REVISION||'local-diff',checks:[],limitations:['one synthetic Mac; Windows/native Claude and physical second PC NOT-RUN','browser fixture process is not native provider; optional native result recorded separately']};
+const pass=(id,extra={})=>{report.checks.push({id,result:'PASS',...extra});console.log(id+' PASS');};let srv;
+async function main(){
+ await h.freePorts();const fixture=path.join(root,'state');fs.mkdirSync(fixture,{mode:0o700});const aliceToken=h.legacyToken(fixture,'QA-Alice');srv=await h.startServer(fixture,{legacy:true});await h.stop(srv);srv=null;h.admin(fixture,'bootstrap-owner',['--identity',aliceToken.id]);const bobToken=h.catalogToken(fixture,'QA-Bob'),viewer=h.catalogToken(fixture,'QA-Viewer');srv=await h.startServer(fixture);
+ const owner=await new BrowserSession().login(aliceToken),project=await catalog.create(owner,'QA Managed Browser'),foreign=await catalog.create(owner,'QA Foreign');await catalog.member(owner,project,bobToken.id,'editor');await catalog.member(owner,project,viewer.id,'viewer');await owner.open(project);
+ const alice=new Native(aliceToken,project),bob=new Native(bobToken,project);alice.open('human');bob.open('human');const profile=alice.call('profile_create',{name:'QA managed profile',description:'Synthetic browser',role:'developer',instructions:'Synthetic test pinned profile.',provider:'unconfigured',model:''});
+ if(process.env.ACCORD_TASK013_BROWSER!=='0'){report.next_build_id=fs.readFileSync(path.join(repo,'web/.local/next/BUILD_ID'),'utf8').trim();await require('../../browser/task013/browser.cjs').run({aliceToken,viewer,project,foreign,alice,bob,profile},pass);}
+ if(process.env.ACCORD_TASK013_NATIVE==='1')await require('./native.cjs').run({aliceToken,project,alice},pass);
+ report.result='PASS';
+}
+main().catch(e=>{report.failure=String(e.stack||e).slice(0,1200);console.error(report.failure);process.exitCode=1;}).finally(async()=>{try{await h.stop(srv);}catch(e){report.cleanup_failure=String(e.message);report.result='FAIL';process.exitCode=1;}report.binary_unchanged=sha(fs.readFileSync(binary))===report.binary_sha256;report.sources=sources;report.source_unchanged=JSON.stringify(inventory())===JSON.stringify(sources);if(!report.binary_unchanged||!report.source_unchanged){report.result='FAIL';process.exitCode=1;}report.finished_at=new Date().toISOString();save(path.join(root,'results.json'),report);console.log('private evidence '+path.relative(repo,root));});

@@ -3,7 +3,6 @@
 package worker
 
 import (
-	"errors"
 	"io"
 	"os"
 	"os/exec"
@@ -62,14 +61,16 @@ func (p *unixProcess) reap() {
 	var cleanupError error
 	if errno == 0 {
 		live, leader, err := groupMembers(p.cmd.Process.Pid)
-		if err != nil || !leader {
-			cleanupError = errOwnership
+		if err != nil {
+			cleanupError = ownershipSystemFailure("unix_reap_census", err)
+		} else if !leader {
+			cleanupError = ownershipFailureAt("unix_reap_census_leader_missing")
 		} else if live > 0 {
 			// Darwin can reject a signal to an all-zombie group with EPERM.
 			// WNOWAIT plus the group census already proves that group exited;
 			// only groups with live members need a termination signal.
 			if err = syscall.Kill(-p.cmd.Process.Pid, syscall.SIGKILL); err != nil && err != syscall.ESRCH {
-				cleanupError = errOwnership
+				cleanupError = ownershipSystemFailure("unix_reap_kill", err)
 			} else {
 				cleanupError = waitGroupExit(p.cmd.Process.Pid)
 			}
@@ -77,8 +78,10 @@ func (p *unixProcess) reap() {
 	}
 	// If the ownership wait itself fails, do not signal an unverified PID.
 	p.result = p.cmd.Wait()
-	if errno != 0 || cleanupError != nil {
-		p.result = errOwnership
+	if errno != 0 {
+		p.result = ownershipSystemFailure("unix_waitid", errno)
+	} else if cleanupError != nil {
+		p.result = cleanupError
 	}
 	p.finished = true
 	close(p.done)
@@ -96,7 +99,7 @@ func (p *unixProcess) Stop() error {
 	err := syscall.Kill(-p.cmd.Process.Pid, syscall.SIGINT)
 	p.mu.Unlock()
 	if err != nil && err != syscall.ESRCH {
-		return errors.New("cannot interrupt owned process group")
+		return ownershipSystemFailure("unix_stop_interrupt", err)
 	}
 	select {
 	case <-p.done:
@@ -108,7 +111,7 @@ func (p *unixProcess) Stop() error {
 	if !p.finished {
 		p.forced = true
 		if err = syscall.Kill(-p.cmd.Process.Pid, syscall.SIGKILL); err != nil && err != syscall.ESRCH {
-			return errors.New("cannot stop owned process group")
+			return ownershipSystemFailure("unix_stop_force", err)
 		}
 	}
 	return nil

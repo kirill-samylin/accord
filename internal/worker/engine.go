@@ -35,8 +35,11 @@ type Engine struct {
 	plans            map[string]plan
 	deadline         time.Time
 	fatal            error
+	closed           bool
+	stopEpoch        uint64
 	start            func(launchSpec) (process, error)
-	discover         func(string, string) ([]string, error)
+	discover         func(string, string) ([]mcpConnector, error)
+	verifyMCP        func(string, string, []string, string, []string) error
 	workspaceLockDir string
 	probe            func(Config) error
 }
@@ -65,10 +68,13 @@ func Open(config Config) (*Engine, error) {
 		d.close()
 		return nil, err
 	}
-	return &Engine{config: config, disk: d, journal: j, active: map[string]*activeRun{}, plans: map[string]plan{}, start: startSupervised, discover: discoverCodexMCP, probe: probeProviders}, nil
+	return &Engine{config: config, disk: d, journal: j, active: map[string]*activeRun{}, plans: map[string]plan{}, start: startSupervised, discover: discoverCodexMCP, verifyMCP: verifyCodexMCP, probe: probeProviders}, nil
 }
 
 func (e *Engine) save() error {
+	if e.closed {
+		return errors.New("worker is closed")
+	}
 	if e.fatal != nil {
 		return e.fatal
 	}

@@ -13,15 +13,16 @@ import (
 )
 
 type RunState struct {
-	ID         string `json:"id"`
-	Provider   string `json:"provider"`
-	Workspace  string `json:"workspace"`
-	Generation int64  `json:"generation"`
-	State      string `json:"state"`
-	SessionID  string `json:"session_id,omitempty"`
-	CommandID  string `json:"command_id"`
-	Output     string `json:"output,omitempty"`
-	Error      string `json:"error,omitempty"`
+	ID              string `json:"id"`
+	Provider        string `json:"provider"`
+	Workspace       string `json:"workspace"`
+	Generation      int64  `json:"generation"`
+	State           string `json:"state"`
+	SessionID       string `json:"session_id,omitempty"`
+	CommandID       string `json:"command_id"`
+	Output          string `json:"output,omitempty"`
+	Error           string `json:"error,omitempty"`
+	LocalDiagnostic string `json:"local_diagnostic,omitempty"`
 }
 
 type Receipt struct {

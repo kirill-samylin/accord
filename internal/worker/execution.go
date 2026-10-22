@@ -33,8 +33,11 @@ func (e *Engine) launch(plan plan) error {
 	if err != nil {
 		return fail("resume_unavailable: exact native session is invalid")
 	}
-	bridgeArgs, err := e.bridgeArgs(*run)
+	bridgeArgs, err := e.prepareBridgeLocked(plan, run)
 	if err != nil {
+		if e.closed || e.fatal != nil || run.State != "accepted" || run.CommandID != plan.command.ID {
+			return err
+		}
 		return fail("cannot prepare isolated native MCP connection")
 	}
 	args = append(bridgeArgs, args...)
@@ -163,9 +166,13 @@ func (e *Engine) observe(id string, child process) {
 	if active.workspaceLock != nil {
 		if err := active.workspaceLock.release(!active.uncertain && !errors.Is(exitError, errOwnership)); err != nil {
 			active.uncertain = true
+			run.LocalDiagnostic = "workspace_lock_release_failed"
 		}
 	}
 	if active.uncertain || errors.Is(exitError, errOwnership) {
+		if code := ownershipDiagnostic(exitError); code != "" {
+			run.LocalDiagnostic = code
+		}
 		run.State = "needs_recovery"
 		run.Error = "native process ownership is uncertain; local recovery required"
 		e.reportFor(run.CommandID, "delivery_unknown", run, run.Error, "")
@@ -206,6 +213,7 @@ func boundedText(text string, limit int) string {
 
 func (e *Engine) StopAll(reason string) error {
 	e.mu.Lock()
+	e.stopEpoch++
 	var children []process
 	for id, active := range e.active {
 		active.stop = true
@@ -215,22 +223,7 @@ func (e *Engine) StopAll(reason string) error {
 	}
 	err := e.save()
 	e.mu.Unlock()
-	for _, child := range children {
-		if stopErr := child.Stop(); stopErr != nil {
-			err = errors.New("cannot prove native process tree stopped; local recovery required")
-			e.mu.Lock()
-			for id, active := range e.active {
-				if active.process == child {
-					active.uncertain = true
-					e.journal.Runs[id].State = "needs_recovery"
-				}
-			}
-			_ = e.save()
-			e.mu.Unlock()
-			continue
-		}
-		_ = child.Wait()
-	}
+	err = errors.Join(err, e.stopBatch(children))
 	done := make(chan struct{})
 	go func() { e.wg.Wait(); close(done) }()
 	select {
@@ -242,10 +235,19 @@ func (e *Engine) StopAll(reason string) error {
 }
 
 func (e *Engine) Close() error {
+	e.mu.Lock()
+	closed := e.closed
+	e.mu.Unlock()
+	if closed {
+		return nil
+	}
 	err := e.StopAll("local worker is stopping")
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	e.disk.close()
+	if !e.closed {
+		e.closed = true
+		e.disk.close()
+	}
 	return err
 }
 

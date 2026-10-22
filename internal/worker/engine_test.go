@@ -43,7 +43,10 @@ func testEngine(t *testing.T) *Engine {
 	if err != nil {
 		t.Fatal(err)
 	}
-	e.discover = func(string, string) ([]string, error) { return []string{"accord_gui", "accord_managed"}, nil }
+	e.discover = func(string, string) ([]mcpConnector, error) {
+		return []mcpConnector{{Name: "accord_gui", Transport: "stdio", Enabled: true}, {Name: managedMCPName, Transport: "stdio", Enabled: true}}, nil
+	}
+	e.verifyMCP = func(string, string, []string, string, []string) error { return nil }
 	e.workspaceLockDir = filepath.Join(dir, "workspace-locks")
 	e.probe = func(Config) error { return nil }
 	e.journal.OwnerPrincipalID = "principal_test"
@@ -76,7 +79,7 @@ func TestAcceptedACKPrecedesLaunchAndReplayNeverRespawns(t *testing.T) {
 			t.Error("pinned profile not supplied")
 		}
 		args := strings.Join(spec.args, " ")
-		if strings.Contains(args, "synthetic user instruction") || strings.Contains(args, "bypass") || !strings.Contains(args, `mcp_servers."accord_gui".enabled=false`) {
+		if strings.Contains(args, "synthetic user instruction") || strings.Contains(args, "bypass") || !strings.Contains(args, `mcp_servers={"accord_gui"={enabled=false,command=`) {
 			t.Error("unsafe native invocation")
 		}
 		return successfulFake(), nil

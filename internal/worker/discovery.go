@@ -7,12 +7,20 @@ import (
 	"time"
 )
 
-func discoverCodexMCP(executable, directory string) ([]string, error) {
+type mcpConnector struct {
+	Name      string
+	Transport string
+	Enabled   bool
+	Command   string
+	Args      []string
+}
+
+func discoverCodexMCP(executable, directory string) ([]mcpConnector, error) {
 	data, err := readNative(executable, directory, []string{"mcp", "list", "--json"})
 	if err != nil {
 		return nil, err
 	}
-	return parseMCPNames(data)
+	return parseMCPConnectors(data)
 }
 
 func readNative(executable, directory string, args []string) ([]byte, error) {
@@ -35,19 +43,30 @@ func readNative(executable, directory string, args []string) ([]byte, error) {
 	return data, nil
 }
 
-func parseMCPNames(data []byte) ([]string, error) {
+func parseMCPConnectors(data []byte) ([]mcpConnector, error) {
 	var entries []struct {
-		Name string `json:"name"`
+		Name      string `json:"name"`
+		Enabled   *bool  `json:"enabled"`
+		Transport struct {
+			Type    string   `json:"type"`
+			Command string   `json:"command"`
+			Args    []string `json:"args"`
+		} `json:"transport"`
 	}
 	if json.Unmarshal(data, &entries) != nil || entries == nil || len(entries) > 128 {
 		return nil, errors.New("invalid local Codex MCP configuration")
 	}
-	var names []string
+	var connectors []mcpConnector
+	seen := map[string]bool{}
 	for _, entry := range entries {
-		if entry.Name == "" || len(entry.Name) > 128 {
+		if entry.Name == "" || len(entry.Name) > 128 || seen[entry.Name] || entry.Enabled == nil {
 			return nil, errors.New("invalid local Codex MCP connector name")
 		}
-		names = append(names, entry.Name)
+		if entry.Transport.Type != "stdio" && entry.Transport.Type != "streamable_http" {
+			return nil, errors.New("unsupported local Codex MCP transport")
+		}
+		seen[entry.Name] = true
+		connectors = append(connectors, mcpConnector{Name: entry.Name, Transport: entry.Transport.Type, Enabled: *entry.Enabled, Command: entry.Transport.Command, Args: entry.Transport.Args})
 	}
-	return names, nil
+	return connectors, nil
 }

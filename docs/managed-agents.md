@@ -106,9 +106,11 @@ Stop queued start отменяет его до dispatch. Stop running перев
 worker прекращает новые provider turns и завершает managed CLI + owned PGID/Job,
 после bounded platform-specific grace принудительно завершает остатки
 (Unix до3s; Windows Job Object termination сразу forced). Forced stop отображается
-отдельно. Task lease освобождается только прежним release держателя с текущим
-generation после остановки; если это невозможно — истекает штатно. Human stop
-не подменяет release чужой session и не завершает задачу.
+отдельно. Валидные completed/stopped/recovered_stopped (failed только с exit proof)
+атомарно releases task leases и истекают только authoritative run/gen/hostowner sessions.
+Попытка закрывается, task ready; generation/evidence/done сохраняются, аудит released/
+managed_session_closed. Новый next/role binding получает новое поколение; unknown и
+обычный EOF не дают release/expiry, произвольного human release чужой session нет.
 
 Resume допустим только после доказанной остановки/exit и с сохранённым exact
 provider session ID. Conversation продолжается на том же host/workspace/provider.
@@ -199,9 +201,8 @@ active профиль, а task assignment/next/SHA/lease gates остаются 
 
 ## API, browser и ограничения
 
-Native scoped operations: `managed_hosts`, `managed_host_enroll`,
-`managed_host_update`, `managed_runs`, `managed_run`, `managed_start`,
-`managed_command`; worker-only `managed_poll`, `managed_report`.
+Native scoped: `managed_list`, `managed_run`, `managed_host_enroll`, `managed_host_update`,
+`managed_host_disable`, `managed_start`, `managed_command`; worker-only `managed_poll/report`.
 Каждая human write содержит request_id; update/command — expected version.
 Worker fields: host_id, worker_epoch, dispatch_id, run_id, run_generation,
 report_id, phase, provider_session_id?, output entries?, error?. Report IDs

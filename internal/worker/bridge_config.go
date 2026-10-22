@@ -82,18 +82,18 @@ func (e *Engine) bridgeArgs(run RunState) ([]string, error) {
 	if run.Provider == "codex" {
 		// Codex merges maps instead of replacing them. Disable each discovered
 		// connector for this invocation so another board session cannot be used.
-		names, err := e.discover(e.config.Executables[run.Provider], e.config.Workspaces[run.Workspace].Path)
+		connectors, err := e.discover(e.config.Executables[run.Provider], e.config.Workspaces[run.Workspace].Path)
 		if err != nil {
 			return nil, err
 		}
-		var overrides []string
-		for _, name := range names {
-			if name != "accord_managed" {
-				overrides = append(overrides, "-c", "mcp_servers."+strconv.Quote(name)+".enabled=false")
-			}
+		overrides, err := codexMCPOverrides(connectors, self, args)
+		if err != nil {
+			return nil, err
 		}
-		encoded, _ := json.Marshal(args)
-		return append(overrides, "-c", "mcp_servers.accord_managed={command="+strconv.Quote(self)+",args="+string(encoded)+",enabled=true}"), nil
+		if err = e.verifyMCP(e.config.Executables[run.Provider], e.config.Workspaces[run.Workspace].Path, overrides, self, args); err != nil {
+			return nil, err
+		}
+		return overrides, nil
 	}
 	mcp := map[string]any{"mcpServers": map[string]any{"accord_managed": map[string]any{"command": self, "args": args}}}
 	data, _ = json.Marshal(mcp)

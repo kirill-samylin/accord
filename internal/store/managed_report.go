@@ -180,6 +180,11 @@ func (s *Store) ManagedReport(ctx context.Context, a core.Actor, in core.Managed
 		default:
 			return out, core.Fail("validation", "Неизвестная фаза worker report")
 		}
+		if in.Phase == "completed" || in.Phase == "stopped" || in.Phase == "failed" || in.Phase == "recovered_stopped" {
+			if err := managedCloseSessions(b, r, h, in.Phase, now); err != nil {
+				return out, err
+			}
+		}
 		if in.Phase == "started" || in.Phase == "failed" {
 			for _, related := range b.ManagedCommands {
 				if related.Command.ID != c.Command.ID && related.Command.DispatchID == c.Command.DispatchID && related.Command.Status == "accepted" {

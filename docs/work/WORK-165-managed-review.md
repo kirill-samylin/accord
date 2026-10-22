@@ -4,6 +4,8 @@
 общую TASK ведут отдельные исполнители/координатор. Прочитаны AGENTS,
 requirements/architecture, multi-project, agent-profiles, coordination, TASK012,
 managed-agents и существующие store/transport/projects/browser hooks.
+Файл превышает300строк как последовательный audit trail независимых review,
+runtime findings и повторных approvals; прежние verdicts сохраняются для сверки.
 
 ## Предварительный контракт
 
@@ -289,3 +291,94 @@ local runs. После первого успешного poll409 сразу fata
 + expired recovery/request-incarnation tests **PASS**. Late test SIGINT_IGN с
 actual applied forced-stop assertion прочитан и APPROVE; detached/unrelated
 границы сохранены. Новая private candidate и финальная QA evidence ещё PENDING.
+
+Следующая QA выявила функциональный gap: fresh bridge при native resume создаёт
+новую board session, но lease/singleton прежней managed session ждут TTL. Узкий
+terminal handoff design APPROVE до реализации: при authenticated positive-exit
+completed/stopped/failed/recovered_stopped atomically закрываются только server-
+bound same managed run/current generation/host-owner sessions и их exact task
+leases с finishAttempt/released audit. Task fencing не сбрасывается; новый Next
+проходит обычные gates и увеличивает generation. Ordinary EOF, unknown и чужие
+sessions/leases не меняются. Author source/tests ещё PENDING; native acceptance
+должна доказать новый task claim после resume, одного conversation UUID мало.
+
+QA v3 на immutable0b05610/source unchanged дала8 промежуточных runtime PASS
+(включая forced stop), но offline stop стал needs_recovery/ownership uncertain.
+Общий FAIL сохранён; причина ещё расследуется. Unknown не является stopped и не
+может освободить board leases новым handoff. Финальный QA gate требует review
+будущих fixes и повтор; предыдущий source approval не является acceptance.
+
+## Diagnostic/handoff source re-approve после0b05610
+
+Прочитаны managed_terminal.go и два новых author regression файла: все4
+positive-exit phases release exact attempt+expire exact managed sessions;
+ordinary/foreign/othergen/otherRun/done сохраняются, mismatch rollback атомарен,
+old writes fenced, fresh singleton/Next немедленно получают новые generations,
+historical terminal replay не освобождает новый claim. **SOURCE APPROVE**.
+
+Прочитаны private allowlisted diagnostic codes, nonce-bound helper field,
+generic Error()/errors.Is, сохранение stage только в local journal; Receipt/UI
+его не получают. PGID/intent fail-closed поведение не ослаблено. Concurrent
+stopBatch устраняет последовательные grace delays между owned groups; barrier
+regression требует входа всех Stop до ожидания и сохраняет каждую uncertainty.
+**SOURCE APPROVE** diagnostics/concurrent stop, но причина intermittent Unix
+failure ещё UNKNOWN: это разрешение диагностической QA, не исправленный runtime.
+Независимый focused race store/worker новых regressions PASS; cmd compilation
+PASS, matching test cases N/A. Diff check PASS. Binding15 Go files поверх
+`0b05610167e27d3bf556e59960c0d9f8b6ae1bd4`:
+`2339bc9db04d83f1a12c7b41930a3c6a74213654b3fadfa1ec5d4fe89676e733`.
+
+Actual browser v3 evidence прочитана: immutable SHA737793070b90a1fe…,
+revision0b05610, source/binary unchanged true,5checks/8screens PASS. Просмотрены
+четыре pixels light/dark + desktop/mobile + list/detail; blockers не выявлены.
+Tiny test selector changes anchored combo names/#managed-message APPROVE,
+поведенческие assertions сохранены. Это actual Chrome/Next с fake provider;
+native Codex/Windows/второй ПК не подтверждает. Отдельный native v3 startup FAIL
+на disabled MCP transport остаётся открытым до source fix/review и actual rerun.
+
+## Native adapter follow-up: transport scope approved, concurrency P1 открыт
+
+Полные matching stdio/HTTP disabled tables, отсутствие raw original credential
+URLs в argv, reserved HTTP-name rejection и обязательная config-only проверка
+единственного enabled managed connector/exactself+attemptargs прочитаны вместе
+с5 unit regressions. Auth/sandbox/approval/rules настройки не обходятся.
+Но **REQUEST CHANGES** для combined adapter: Ack→apply→launch держит глобальный
+e.mu во время двух blocking native inspections. Watchdog/StopAll других активных
+workspace не может взять mutex; если prior report backlog съел lease budget,
+inspection может удерживать живые процессы послеdeadline. Последняя проверка
+перед новым spawn этого не исправляет. Нужны blocking prep вне mutex и повторная
+проверка authority/state/pins после reacquire; barrier regression должен доказать
+Stop старого active до завершения blocked inspection и отсутствие нового spawn.
+Root/164 уведомлены, fix/source re-review PENDING.
+
+Новые native.cjs/bridge.cjs handoff tests SOURCE APPROVE: marker не содержится в
+prompt и читается из synthetic git checkout; initial ended attempt подтверждает
+actual Next, proven terminal handoff; resume требует same provider UUID, нового
+board session и большего fencing same task. Отдельный actual stdio сценарий
+проверяет ordinary EOF retains lease, затем proven stop release и immediate
+reclaim после profile archive. Выполнение новой native версии ещё NOT-RUN.
+
+Root docs TASK013 matrix/WORK167 local-vs-server deadline/guide manual2PC
+приёмка APPROVE после уточнений: возвращается лишь незавершённая задача, новый
+claim не гарантирован вне обычных gates. Исправленный guide не выдаёт будущую
+Windows/двухПК проверку за сделанную. Дополнительно независимо прочитан final
+updater v3 `update-1792701762378298000/results.json`: PASS3, revision0b05610,
+SHA737793070b90a1fed579ef090a39389be45e884a30b9360d4cf9188e4c07905d,
+source_unchanged/binaries_unchanged true. Это тот же binary, что browser v3;
+evidence APPROVE в заявленных границах реального Go/SQLite/snapshot/auth-reset
+и симулированного systemd/Next. Первый updater6a52 больше не единственный proof.
+
+Combined adapter/preparation **SOURCE APPROVE** после fixes: blocking inspections
+идут по deep immutable config/run snapshots вне mutex, затем повторно проверяются
+closed/fatal, stop epoch, exact run/state/gen/session, deadline, controller/config
+и pins. Barrier regression доказал Stop другого active при blocked verification
+и отсутствие deferred spawn; snapshot alias test прочитан. Независимый focused
+race PASS, затем полный worker/cmd race PASS. Quoted CLI path probe обнаружил
+отдельный functional FAIL: literal quote names оставляли originals enabled.
+Второй inspect это корректно отвергал. Финальный source использует один whole
+`mcp_servers={quoted TOML keys...}` override, transport-aware full tables и ту же
+strict exact-managed/all-others-disabled проверку. Последний full worker/cmd race
+и diff check PASS; binding24 Go files поверх0b05610:
+`e924cb9c999c1b2636d3570c96ed9c82047b1a172f600d10d24704edaba6a06e`.
+QA разрешены exact new-shape config-only probe и truthful fixture delta с её
+отдельным review. Actual native и intermittent Unix unknown пока не закрыты.
