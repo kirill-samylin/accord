@@ -262,3 +262,80 @@ source_unchanged=true, fullrestore7DB/authreset/history/source bytes PASS.
 
 **UPDATER TEST SOURCE + LOCAL EVIDENCE APPROVE**. Исторические test-only FAIL
 сохранены в WORK157 и private run-*; их поздний PASS не переписывает.
+
+## Bridge fix — повтор SOURCE APPROVE
+
+WORK156 добавил exact team/similar templates. При повторном review выявлена
+вторая часть: `query.Encode()` превращает пробелы title в `+`, что не совпадает
+с RFC6570 resource matcher. Автор воспроизвёл actual product FAIL своим новым
+integration test и нормализовал outbound spaces в `%20`; literal plus остаётся
+`%2B`, SID guards/URI projection не меняются. Положительный test title теперь
+«Экспорт задач JSONL + CSV». Один последующий reviewer run был FAIL test-only:
+fixture использовала PathEscape и оставляла literal `+` в query; исправлено на
+QueryEscape + space normalization. Финальный reviewer bridge suite **PASS**.
+
+Новые unit проверяют templates ровно по одному, отказ до Describe, omitted/own
+SID reads, typed team/similar contents и original returned URI, foreign/repeated
+SID отказ и12tools. **SOURCE + AUTHOR TESTS APPROVE восстановлен**:
+product70files manifest SHA256
+`fd749802c85a790808fb0b75203856531aecee33359eab2a1b42d3ac3216b67f`
+по прежней формуле. Прежний69256c4/69manifest не является финальным candidate.
+
+Tester1557newfiles также прочитаны: actual Go/SQLite/CLI/native HTTP/stdio MCP,
+контролируемые synthetic identities, strict concurrency/lease/restore/off/ACL,
+actual Next+Chrome и unknown-result replay; production readonly утверждён
+отдельно выше. **TEST SOURCE APPROVE** на SHA256
+`df43cdb88c2f7129f0e341dd64e1852a77fc297df0491cac7d9ae5ff570cfbd4`.
+Root runner теперь вызывает именно TASK012 readonly; SHA256
+`a15df00d3e0a8582f7177f12fecc85db8f61b748e3d372d04155db6ae38c17d6`.
+Окончательная local evidence ещё ожидается. Reviewer запросил tester-only
+покрытие заявленного10s team polling/visibility/offline/resume и A→B browser
+isolation: прежние cases обновляли страницу навигацией, что не доказывает этот
+новый hook. Последующие changes тестов требуют нового review/hash.
+
+Reviewer дополнительно просмотрел новый `polling.cjs`: actual native claim/release
+меняют открытый Team DOM через реальные10s GET без navigation; actual browser
+offline останавливает запросы, online возобновляет; visibilityState/event —
+явно заявленная input simulation, не OS tab proof. Session expiry сохраняется,
+projectB не показывает A labels/work. Parsed stdio test теперь проверяет точные
+task keys с кириллицей/пробелами/C++ вместо одного contents.length.
+
+Первый frozen local4742 PASS22/22 report
+`.local/task012-qa/run-1792693626921/results.json`, SHA256
+`4814637e01a61b47cd6a9e0fe32a1f3b67d14d3fa283e5923eb7a98d0bf75996`,
+source_unchanged=true,17screens/482browserresponses проверен как промежуточный
+PASS. Reviewer визуально посмотрел Team1440light/390dark и create390: читаемые
+карточки/дубли/формы, без observed horizontal overflow. Mobile остаётся viewport.
+Затем tester добавил actual epic related→unlink→2×duplicate/restore с сохранением
+отдельной related и повторным появлением пары. Этот узкий delta **TEST SOURCE
+APPROVE**, финальные8files SHA256
+`788b6d59bd393641496f4674eb3c6955475a98113cee710f402687e0868b03b3`;
+окончательный frozen report ожидается.
+
+Исключение300строк: этот WORK сохраняет историю независимых findings, actual
+FAIL, disposition и отдельных source/test/runtime gate. Аудит append-only
+продолжения оставлен одним документом, чтобы старые approvals не выглядели
+итоговыми после изменения candidate; product source этим не усложняется.
+
+## Окончательная local QA — APPROVE
+
+Frozen final report `.local/task012-qa/run-1792693746818/results.json`, SHA256
+`eac721307dc8afc0f5ca875668cbb55b47b4ab1c8d48cce8bcb8055aae238b82`:
+**PASS22/22**, source_unchanged=true. Reviewer сверил все434captured source/test
+file hashes с текущими bytes — exact match.8test manifest788b6d59 выше совпал;
+product70manifestfd749 не менялся. Candidate
+`4742e71c96d41aed17243e04ab3e5171f9d5da1f`, macOS SHA256
+`f17b4bb8dfa06dbdd9168687beb79c2fa4ce9b33579f6e58cca86932738bbfb5`.
+Actual local Next BuildID `7cLF6QiHKLNWtrKA9ckFg`, Node24.19.0,
+Chrome155.0.8059.86.17screens; reviewer дополнительно посмотрел finalTeam1440dark
+и detail390light, blocking visual findings нет.3100/3101 independently free.
+
+482 — число всех browser responses, включая намеренно проверенные400/409/503;
+оно не объявляется482успешных200. Actual final includes stdio team/similar
+space/literalplus,10s polling/pause/resume, strict late concurrency/reason recovery,
+unknown committed exactretry, epic2×restore, viewer/ACL/project boundaries.
+OS visibility input остаётся simulation; physical secondPC/fullV1/workers NOT-RUN.
+Root сообщил полный final bridge makecheck PASS в `make-check-final-bridge.log`.
+
+**LOCAL QA FINAL + TEST SOURCE/EVIDENCE APPROVE**. Можно готовить immutable
+release/exact Linux QA и actual hardened stage; это ещё не FINAL delivery approval.

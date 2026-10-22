@@ -73,3 +73,28 @@ Reviewer153 повторно дал **SOURCE + AUTHOR TESTS APPROVE**:70files ma
 повторил8/8 и одобрил test source/evidence. Сохранены7syntheticDB/ACL/epochs/
 profiles/assignments/history; actual Go/SQLite/guard replacement, systemd/Next/
 UID simulated и честно отделены от actual VPS stage. Exact final Linux впереди.
+
+## Финальная локальная QA
+
+Новый clean candidate `4742e71c96d41aed17243e04ab3e5171f9d5da1f`, macOS SHA256
+`f17b4bb8dfa06dbdd9168687beb79c2fa4ce9b33579f6e58cca86932738bbfb5`.
+Root повторный полный `make check` после bridgefix **PASS**: Go/all/race/vet/
+build, embedded16, infra157, Next72/types/format/production build.
+
+Tester155 definitive actualprocess/Next/Chrome **PASS22/22**,17screens,
+source_unchanged=true, browser responses482 всего (включая намеренные negative
+cases, не482 HTTP200). Next BuildID `7cLF6QiHKLNWtrKA9ckFg`, Node24.19/Chrome155.
+Report `.local/task012-qa/run-1792693746818/results.json`, SHA256
+`eac721307dc8afc0f5ca875668cbb55b47b4ab1c8d48cce8bcb8055aae238b82`.
+Reviewer153 **LOCAL QA FINAL + TEST SOURCE/EVIDENCE APPROVE**, hashes434source/
+test files совпали. Test8manifest SHA256
+`788b6d59bd393641496f4674eb3c6955475a98113cee710f402687e0868b03b3`.
+Root и reviewer проверили representative screenshots; blocking visual findings0.
+Owned processes закрыты, порты3100/3101 свободны.
+
+Polling подтверждён actual10s claim/release без navigation, actual offline/
+resume и project switch. Visibility input эмулирован DOM getter/event: это
+проверка ветки hook, не OS tab lifecycle. Физический второй ПК, real AI worker,
+полный V1 и полный a11y audit не объявляются PASS. Production readonly script
+одобрен отдельно, SHA256
+`400ce6a9ce3c227e4089505684356eae429965e26c2d4c41c3be33ce5d8a41ff`.

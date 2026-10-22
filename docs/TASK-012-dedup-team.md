@@ -121,3 +121,17 @@ tester155 начинает новые process/browser tests только пос�
 guard запрещает прежний schema4 binary без deduplication до writer start;
 DDL/сброса данных/DB rollback нет. Production обновление и final HTTPS пока
 NOT-RUN; физический второй ПК и управляемый запуск остаются NOT-RUN.
+
+Независимая actualprocess/Next/Chrome QA155 выявила bridge defect: stdio
+не публиковал новые resources и form-style `+` ломал title с пробелами.
+Автор156 исправил mirror/percentencoding, добавил regression Unicode/пробелы/
+literal `+`/ownSID/foreignSID/tools12; reviewer153 повторно SOURCE APPROVE.
+Root финальный `make check` после этого PASS (Go/all/race/vet/build, embedded16,
+infra157, Next72/types/format/production build). Product70manifest
+`fd749802c85a790808fb0b75203856531aecee33359eab2a1b42d3ac3216b67f`.
+
+Финальная QA155 **PASS22/22**,17screens/sourceunchanged, reviewer153 LOCAL FINAL
+APPROVE; updater157 **PASS8/8** и независимый повтор reviewer8/8. Это synthetic
+fixtures: actualGo/Next/Chrome и7DB, systemd/UID часть updater simulated;
+production/Linux идут отдельным барьером. Доказательства и история FAIL —
+WORK153–157. Native stdio MCP не является реальным Claude/Codex executor.
