@@ -122,6 +122,28 @@ func (s *Store) RecoverState(ctx context.Context, reason string) (core.RecoveryR
 			}
 			result.Sessions++
 		}
+		for _, h := range b.ManagedHosts {
+			h.Host.State = "disabled"
+			h.Host.Version++
+			h.Host.WorkerEpoch++
+			h.SecretHash = ""
+			h.WorkerID = ""
+			h.Host.LeaseExpiresAt = now
+		}
+		for _, r := range b.ManagedRuns {
+			if managedActive(r.State) {
+				r.State = "needs_recovery"
+				r.LastError = "restore: old local processes must be reconciled before new enrollment"
+				r.Version++
+				r.UpdatedAt = now
+			}
+		}
+		for _, c := range b.ManagedCommands {
+			if c.Command.Status == "queued" || c.Command.Status == "accepted" {
+				c.Command.Status = "cancelled"
+				c.Command.Error = "restore: automatic replay disabled"
+			}
+		}
 		for _, task := range b.Tasks {
 			closedAttempt := false
 			for i := range task.Attempts {

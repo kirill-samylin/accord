@@ -116,6 +116,10 @@ func takeString(fields map[string]json.RawMessage, name string) (string, error) 
 func clientRoute(operation string, fields map[string]json.RawMessage) (string, string, []byte, error) {
 	method, path := "POST", ""
 	switch operation {
+	case "managed_list", "managed_run", "managed_start", "managed_command", "managed_poll", "managed_report":
+		path = "/api/v1/managed/" + strings.TrimPrefix(operation, "managed_")
+	case "managed_host_enroll", "managed_host_update", "managed_host_disable":
+		path = "/api/v1/managed/hosts/" + strings.TrimPrefix(operation, "managed_host_")
 	case "describe":
 		path = "/api/v1/session"
 	case "create":

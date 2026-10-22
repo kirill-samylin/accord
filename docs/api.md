@@ -1,5 +1,11 @@
 # API пилота — v1
 
+> TASK013 расширяет scoped REST/browser API управлением добровольно
+> подключёнными workers. Host proof и native controller ACL не заменяют
+> project/board session auth. MCP остаётся12tools. DTO, monotonic command
+> phases, idempotency и native provider границы — [managed-agents.md](managed-agents.md);
+> фактическая приёмка schema5/managed_agents1 — [TASK013](TASK-013-managed-agents.md).
+
 > TASK012 добавляет scoped REST `POST tasks/similar`, `POST tasks/{key}/duplicate`,
 > `GET team`; CLI `similar|duplicate|team`, MCP resources similar/team и
 > существующий link с `duplicate_of` без13-го tool. Create/Claim могут возвращать

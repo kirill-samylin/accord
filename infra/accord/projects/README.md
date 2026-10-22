@@ -7,6 +7,16 @@ Go7892/Next7893/nginx/accord-web-backup уже должны работать. О
 
 ## Следующие capable релизы после TASK009
 
+TASK013 в рабочей ветке добавляет board schema5 и `managed_agents:1`.
+Перед schema5 writer обязателен новый independent permanent floor вместе
+с registry/ACL/profiles/coordination/deduplication. Установленный TASK012 VPS
+остаётся schema4 до отдельной проверенной поставки. Предыдущий schema4 binary
+не допускается поверх новой БД. Existing capability marker/ACL не переписываются.
+Managed host credentials/epochs, runs и commands входят в тот же полный format2
+snapshot; restore выполняется только offline с отзывом managed authority.
+Исторические schema4 migration snapshots сохраняются с checksum. При неудаче
+только roll-forward, без накладывания старого snapshot на новые записи.
+
 Для уже активированного registry использовать **`upgrade.py`**, а не initial
 `operate.py apply`. Аргументы stage те же immutable Go/Next hashes/revision/
 nginx hash, без owner-identity. Команды stage/apply/resume/finalize сохраняют

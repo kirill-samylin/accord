@@ -19,6 +19,9 @@ func validateSchema(ctx context.Context, db *sql.DB, version int) error {
 	if version >= 4 {
 		queries = append(queries, `SELECT id,version FROM coordination_metadata LIMIT 0`)
 	}
+	if version >= 5 {
+		queries = append(queries, `SELECT key,data FROM managed_hosts LIMIT 0`, `SELECT key,data FROM managed_runs LIMIT 0`, `SELECT key,data FROM managed_commands LIMIT 0`, `SELECT id,version FROM managed_metadata LIMIT 0`)
+	}
 	for _, q := range queries {
 		rows, err := db.QueryContext(ctx, q)
 		if err != nil {
@@ -41,6 +44,15 @@ func validateSchema(ctx context.Context, db *sql.DB, version int) error {
 		}
 	}
 	if version >= 2 {
+		if version >= 5 {
+			var count, v int
+			if err := db.QueryRowContext(ctx, `SELECT count(*),COALESCE(MAX(version),0) FROM managed_metadata`).Scan(&count, &v); err != nil || count != 1 || v != 1 {
+				return fmt.Errorf("existing managed metadata incomplete")
+			}
+			if err := db.QueryRowContext(ctx, `SELECT version FROM managed_metadata WHERE id=1`).Scan(&v); err != nil || v != 1 {
+				return fmt.Errorf("existing managed metadata identity missing")
+			}
+		}
 		return db.QueryRowContext(ctx, `SELECT sequence FROM note_metadata WHERE id=1`).Scan(&sequence)
 	}
 	return nil

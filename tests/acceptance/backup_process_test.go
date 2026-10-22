@@ -49,7 +49,7 @@ func TestCLIOnlineSnapshotAndOfflineRecovery(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if metadata.SchemaVersion != 4 || metadata.CreatedAt.IsZero() || metadata.SHA256 != fmt.Sprintf("%x", sha256.Sum256(data)) {
+	if metadata.SchemaVersion != 5 || metadata.CreatedAt.IsZero() || metadata.SHA256 != fmt.Sprintf("%x", sha256.Sum256(data)) {
 		t.Fatal("snapshot checksum/schema metadata does not describe published file")
 	}
 	if info, err := os.Stat(snapshot); err != nil || info.Mode().Perm() != 0600 {

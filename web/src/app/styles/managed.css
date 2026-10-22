@@ -1,0 +1,139 @@
+.managed-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.managed-host-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr));
+  gap: 12px;
+}
+.managed-host {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.managed-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.managed-status {
+  margin-left: auto;
+  font-size: 12px;
+}
+.managed-online {
+  color: var(--green);
+}
+.managed-warning {
+  color: var(--red);
+}
+.managed-run-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(130px, auto) 90px 150px;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.managed-run-row:last-child {
+  border-bottom: 0;
+}
+.managed-run-row:hover {
+  background: var(--accent);
+}
+.managed-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 20px;
+  gap: 24px;
+}
+.managed-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.managed-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+.managed-controls .form-field {
+  width: 100%;
+}
+.managed-controls textarea {
+  width: 100%;
+}
+.managed-commands {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.managed-command {
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-wrap: anywhere;
+}
+.managed-command time {
+  font-size: 12px;
+  margin-left: auto;
+}
+.managed-output {
+  max-height: 440px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.managed-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.managed-setup summary,
+.managed-identifiers summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+.managed-setup p {
+  margin-top: 10px;
+}
+.managed-identifiers {
+  margin-top: 20px;
+}
+.managed-dialog {
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+}
+@media (max-width: 800px) {
+  .managed-summary {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .managed-run-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+  .managed-run-row time {
+    font-size: 12px;
+  }
+  .managed-command time {
+    margin-left: 0;
+  }
+}
+
+.managed-control-code {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 16px 0;
+}

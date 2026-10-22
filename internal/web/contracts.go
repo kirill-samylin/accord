@@ -61,6 +61,8 @@ type Renderer interface {
 }
 
 type Page struct {
+	Managed                                               *core.ManagedPage
+	ManagedRun                                            *core.ManagedRunPage
 	Coordination                                          *core.TaskCoordination
 	AssignmentProfiles                                    []core.AgentProfile
 	CanCoordinate                                         bool

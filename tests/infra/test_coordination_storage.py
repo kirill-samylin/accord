@@ -79,16 +79,16 @@ class CoordinationStorage(ProjectsFixture, unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'checksum'):
             self.snapshot()
 
-    def test_unknown_schema5_and_historical_schema4_require_inspection(self):
+    def test_unknown_schema6_and_historical_schema5_require_inspection(self):
         self.upgrade(self.state)
         with closing(sqlite3.connect(self.state / 'board.db')) as db, db:
-            db.execute('PRAGMA user_version=5')
+            db.execute('PRAGMA user_version=6')
         with self.assertRaises(RuntimeError):
             self.snapshot()
         with closing(sqlite3.connect(self.state / 'board.db')) as db, db:
             db.execute('PRAGMA user_version=4')
         self.schema3_history(self.state)
-        path = self.state / 'board.db.migrations' / ('schema4-' + 'f' * 64 + '.db')
+        path = self.state / 'board.db.migrations' / ('schema5-' + 'f' * 64 + '.db')
         path.write_bytes(b'unknown future migration evidence')
         path.chmod(0o600)
         with self.assertRaisesRegex(RuntimeError, 'unknown'):

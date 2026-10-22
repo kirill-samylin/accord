@@ -8,6 +8,7 @@ import {
   House,
   Inbox,
   ListTodo,
+  Monitor,
   Settings2,
   Users,
 } from "lucide-react";
@@ -22,6 +23,12 @@ export const navigation = [
     title: "Проекты",
     icon: FolderKanban,
     group: "Работа",
+  },
+  {
+    href: "/app/managed",
+    title: "Управление",
+    icon: Monitor,
+    group: "Организация",
   },
   { href: "/app/profiles", title: "Агенты", icon: Bot, group: "Организация" },
   {

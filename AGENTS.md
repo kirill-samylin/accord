@@ -32,6 +32,18 @@ floor `deduplication:1` обязателен вместе с coordination/profil
 Прежний schema4 binary не понимает новые JSON semantics и запрещён. Следующие
 обновления только capable `projects/upgrade.py` с all-project backup/roll-forward.
 
+Текущий явно порученный этап — TASK013 управляемые агенты:
+`docs/TASK-013-managed-agents.md`, контракт `docs/managed-agents.md`.
+Пользователь выбрал управление обоими ПК обоими участниками после local owner
+enrollment/controller allowlist; роль editor сама не даёт OS control.
+Рабочая реализация расширяет board до schema5 и floor `managed_agents:1`,
+сохраняя registry/ACL/profiles/coordination/deduplication. Установленный VPS
+пока остаётся TASK012/schema4; source branch не означает production update.
+Только capable all-project upgrade/roll-forward, не старый binary/DB rollback.
+Native CLI resume использует точный conversation ID; уточнения первой версии
+доставляются на следующем turn. Не выдавай queued/offline за applied/stopped,
+SDK/stub/cross-build за real native Windows или второй физический ПК.
+
 ## Работа
 
 - Пользователь 18.10.2026 поручил переработать ТЗ и начать реализацию в отдельном

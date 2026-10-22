@@ -144,7 +144,9 @@ func TestProfileMigrationSchema2PreservesRowsAndRejectsDamagedCurrent(t *testing
 	task := f.task(t, "developer")
 	var before string
 	f.s.db.QueryRow(`SELECT data FROM tasks WHERE key=?`, task.Key).Scan(&before)
-	f.s.db.Exec(`DROP TABLE coordination_metadata`)
+	for _, q := range []string{`DROP TABLE managed_hosts`, `DROP TABLE managed_runs`, `DROP TABLE managed_commands`, `DROP TABLE managed_metadata`, `DROP TABLE coordination_metadata`} {
+		f.s.db.Exec(q)
+	}
 	f.s.db.Exec(`DROP TABLE agent_profiles`)
 	f.s.db.Exec(`DROP TABLE agent_profile_revisions`)
 	f.s.db.Exec(`PRAGMA user_version=2`)

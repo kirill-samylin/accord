@@ -52,7 +52,9 @@ def require_capable(binary, root):
             capabilities['coordination'] != 1 or
             type(capabilities.get('deduplication')) is not int or
             capabilities['deduplication'] != 1 or
-            capabilities.get('board_schema') != [4] or
+            type(capabilities.get('managed_agents')) is not int or
+            capabilities['managed_agents'] != 1 or
+            capabilities.get('board_schema') != [5] or
             type(capabilities['board_schema'][0]) is not int):
         raise RuntimeError('selected executable cannot enforce project isolation')
     return capabilities

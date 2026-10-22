@@ -1,5 +1,12 @@
 # Архитектура пилота
 
+> TASK013: управляемый outbound-only local worker и durable project-local
+> host/run/command state описаны в [managed-agents.md](managed-agents.md).
+> Board schema5 и permanent managed_agents1 floor добавляются поверх прежних
+> registry/ACL/profiles/coordination/deduplication, с полным backup/roll-forward.
+> Процесс, native conversation, board session и task lease не взаимозаменяемы.
+> Фактическая реализация/приёмка и ограничения — [TASK013](TASK-013-managed-agents.md).
+
 > TASK012 добавляет project-local similarity и `duplicate_of`, не изменяя
 > scheduler/lease/generation/SHA gates. Durable поля задач требуют нового
 > `deduplication:1` permanent floor при той же board schema4; прежний binary

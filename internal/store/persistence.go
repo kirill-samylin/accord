@@ -38,6 +38,20 @@ func loadBoard(ctx context.Context, tx *sql.Tx) (*board, error) {
 			return nil, err
 		}
 	}
+	if schema >= 5 {
+		b.ManagedHosts = map[string]*managedHostRecord{}
+		b.ManagedRuns = map[string]*core.ManagedRun{}
+		b.ManagedCommands = map[string]*managedCommandRecord{}
+		if err := loadEntities(ctx, tx, "managed_hosts", b.ManagedHosts); err != nil {
+			return nil, err
+		}
+		if err := loadEntities(ctx, tx, "managed_runs", b.ManagedRuns); err != nil {
+			return nil, err
+		}
+		if err := loadEntities(ctx, tx, "managed_commands", b.ManagedCommands); err != nil {
+			return nil, err
+		}
+	}
 	rows, err := tx.QueryContext(ctx, `SELECT role,generation FROM role_generations`)
 	if err != nil {
 		return nil, err
@@ -75,6 +89,15 @@ func loadEntities[T any](ctx context.Context, tx *sql.Tx, table string, target m
 	return rows.Err()
 }
 func saveBoard(ctx context.Context, tx *sql.Tx, b *board) error {
+	if err := saveEntities(ctx, tx, "managed_hosts", b.ManagedHosts); err != nil {
+		return err
+	}
+	if err := saveEntities(ctx, tx, "managed_runs", b.ManagedRuns); err != nil {
+		return err
+	}
+	if err := saveEntities(ctx, tx, "managed_commands", b.ManagedCommands); err != nil {
+		return err
+	}
 	if err := saveEntities(ctx, tx, "agent_profiles", b.Profiles); err != nil {
 		return err
 	}

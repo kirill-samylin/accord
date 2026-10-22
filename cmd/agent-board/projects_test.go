@@ -109,12 +109,13 @@ func TestCapabilitiesMachineJSON(t *testing.T) {
 		Profiles      int   `json:"agent_profiles"`
 		Coordination  int   `json:"coordination"`
 		Deduplication int   `json:"deduplication"`
+		ManagedAgents int   `json:"managed_agents"`
 		BoardSchemas  []int `json:"board_schema"`
 	}
 	if e := json.Unmarshal(out.Bytes(), &result); e != nil || result.Registry != 1 || result.ACL != 1 || len(result.Schemas) != 1 || result.Schemas[0] != 1 {
 		t.Fatal("capability contract", e, out.String())
 	}
-	if result.Profiles != 1 || result.Coordination != 1 || result.Deduplication != 1 || len(result.BoardSchemas) != 1 || result.BoardSchemas[0] != 4 {
+	if result.Profiles != 1 || result.Coordination != 1 || result.Deduplication != 1 || result.ManagedAgents != 1 || len(result.BoardSchemas) != 1 || result.BoardSchemas[0] != 5 {
 		t.Fatal("persisted semantic capability contract", out.String())
 	}
 }

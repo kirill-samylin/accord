@@ -27,7 +27,7 @@ def database(path, version, live=False):
 
 
 def board(path, schemas, live=False):
-    if schemas.get('board_schema') not in (2, 3, 4) or schemas.get('web_schema') not in (1, 2):
+    if schemas.get('board_schema') not in (2, 3, 4, 5) or schemas.get('web_schema') not in (1, 2):
         raise RuntimeError('unknown project snapshot schema')
     database(path / 'board.db', schemas['board_schema'], live=live)
     if schemas['board_schema'] >= 3:
@@ -47,10 +47,16 @@ def board(path, schemas, live=False):
             for table in ('metadata', 'note_metadata'):
                 if len(connection.execute('SELECT sequence FROM ' + table + ' WHERE id=1').fetchall()) != 1:
                     raise RuntimeError('snapshot board metadata missing')
-    if schemas['board_schema'] == 4:
+    if schemas['board_schema'] >= 4:
         with closing(sqlite3.connect((path / 'board.db').absolute().as_uri() + '?mode=ro&immutable=1', uri=True)) as connection:
             if connection.execute('SELECT id,version FROM coordination_metadata').fetchall() != [(1, 1)]:
                 raise RuntimeError('snapshot coordination metadata differs')
+    if schemas['board_schema'] == 5:
+        with closing(sqlite3.connect((path / 'board.db').absolute().as_uri() + '?mode=ro&immutable=1', uri=True)) as connection:
+            if connection.execute('SELECT id,version FROM managed_metadata').fetchall() != [(1, 1)]:
+                raise RuntimeError('snapshot managed agents metadata differs')
+            for table in ('managed_hosts', 'managed_runs', 'managed_commands'):
+                connection.execute('SELECT key,data FROM ' + table + ' LIMIT 0')
     if (path / 'board.db.migrations').exists():
         validate_migrations(path / 'board.db.migrations', LEGACY)
     database(path / 'web/web.db', schemas['web_schema'], live=live)

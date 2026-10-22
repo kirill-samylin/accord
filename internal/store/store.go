@@ -21,17 +21,20 @@ type replay struct {
 	Response json.RawMessage `json:"response"`
 }
 type board struct {
-	Profiles         map[string]*core.AgentProfile `json:"profiles"`
-	ProfileRevisions []core.AgentProfile           `json:"profile_revisions"`
-	Notes            map[string]*core.Note         `json:"notes"`
-	NoteSequence     int64                         `json:"note_sequence"`
-	Config           core.Config                   `json:"config"`
-	Tasks            map[string]*core.Task         `json:"tasks"`
-	Sessions         map[string]*core.Session      `json:"sessions"`
-	Roles            map[string]int64              `json:"roles"`
-	Events           []core.Event                  `json:"events"`
-	Sequence         int64                         `json:"sequence"`
-	EventBase        int64                         `json:"-"`
+	ManagedHosts     map[string]*managedHostRecord    `json:"managed_hosts"`
+	ManagedRuns      map[string]*core.ManagedRun      `json:"managed_runs"`
+	ManagedCommands  map[string]*managedCommandRecord `json:"managed_commands"`
+	Profiles         map[string]*core.AgentProfile    `json:"profiles"`
+	ProfileRevisions []core.AgentProfile              `json:"profile_revisions"`
+	Notes            map[string]*core.Note            `json:"notes"`
+	NoteSequence     int64                            `json:"note_sequence"`
+	Config           core.Config                      `json:"config"`
+	Tasks            map[string]*core.Task            `json:"tasks"`
+	Sessions         map[string]*core.Session         `json:"sessions"`
+	Roles            map[string]int64                 `json:"roles"`
+	Events           []core.Event                     `json:"events"`
+	Sequence         int64                            `json:"sequence"`
+	EventBase        int64                            `json:"-"`
 	tx               *sql.Tx
 	owners           map[string]string
 	ownersFor        int

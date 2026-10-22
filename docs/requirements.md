@@ -1,5 +1,12 @@
 # agent-board — требования 1.1
 
+> TASK013 по прямому поручению пользователя расширяет прежний запрет запуска:
+> локальные добровольно подключённые workers исполняют команды start/stop/
+> resume/clarify в разрешённом workspace, включая ПК коллеги. Контракт —
+> [managed-agents.md](managed-agents.md), фактическая приёмка — [TASK013](TASK-013-managed-agents.md).
+> Это отдельный control ACL, не следствие роли editor/profile/board session.
+> Реализация schema5/managed_agents1 не означает обновление production TASK012.
+
 > TASK012 расширяет duplicate/participation контур: предупреждения при create/
 > claim, strict с явным обоснованием, аудируемая отмена незахваченного дубля и
 > экран «Команда». Контракт/ограничения и фактическая приёмка —

@@ -266,6 +266,8 @@ export interface DesignAsset {
   preview_url?: string;
 }
 export interface PageData {
+  managed?: import("./managed-agents.ts").ManagedPage;
+  managed_run?: import("./managed-agents.ts").ManagedRunPage;
   coordination?: TaskCoordination;
   assignment_profiles?: ProfileSummary[];
   can_coordinate?: boolean;

@@ -1,0 +1,7 @@
+//go:build windows
+
+package worker
+
+// Windows Job Object kill-on-close already provides a kernel parent-lifetime
+// guard; creating an additional helper would add no ownership protection.
+func startSupervised(spec launchSpec) (process, error) { return startProcess(spec) }

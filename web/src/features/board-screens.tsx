@@ -12,6 +12,8 @@ import { DesignsScreen } from "./screens/designs";
 import { SessionControls } from "./mutations/SessionControls";
 import { ProfilesScreen } from "./profiles/profiles-screen";
 import { ProfileDetail } from "./profiles/profile-detail";
+import { ManagedScreen } from "./managed/managed-screen";
+import { ManagedDetail } from "./managed/managed-detail";
 export function BoardScreen({
   page,
   refresh,
@@ -35,6 +37,18 @@ export function BoardScreen({
       </div>
     );
   switch (page.view || page.name) {
+    case "managed":
+      return (
+        <ManagedScreen page={page} refresh={refresh} onSuccess={onSuccess} />
+      );
+    case "managed-run":
+      return (
+        <ManagedDetail
+          key={page.managed_run?.run.id}
+          page={page}
+          onSuccess={onSuccess}
+        />
+      );
     case "profiles":
       return (
         <ProfilesScreen page={page} refresh={refresh} onSuccess={onSuccess} />

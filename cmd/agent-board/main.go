@@ -42,13 +42,15 @@ func run(args []string, in io.Reader, out io.Writer) error {
 		if len(args) != 1 && !(len(args) == 2 && args[1] == "--json") {
 			return errors.New("capabilities accepts only --json")
 		}
-		return json.NewEncoder(out).Encode(map[string]any{"project_registry": 1, "project_acl": 1, "registry_schema": []int{1}, "agent_profiles": 1, "coordination": 1, "deduplication": 1, "board_schema": []int{4}})
+		return json.NewEncoder(out).Encode(map[string]any{"project_registry": 1, "project_acl": 1, "registry_schema": []int{1}, "agent_profiles": 1, "coordination": 1, "deduplication": 1, "managed_agents": 1, "board_schema": []int{5}})
 	case "projects":
 		return projectCommand(args[1:], out)
 	case "serve":
 		return serve(args[1:], out)
 	case "mcp":
 		return runMCP(args[1:], in, out)
+	case "worker":
+		return workerCommand(args[1:], out)
 	case "backup":
 		return backup(args[1:], out)
 	case "sessions":
@@ -90,7 +92,7 @@ func helpRequested(args []string) bool {
 	}
 	if len(args) == 2 && (args[1] == "-h" || args[1] == "--help") {
 		switch args[0] {
-		case "serve", "mcp", "call", "backup", "token", "sessions", "maintenance":
+		case "serve", "mcp", "worker", "call", "backup", "token", "sessions", "maintenance":
 			return true
 		}
 	}
@@ -110,6 +112,10 @@ agent-board sessions list --db PATH
 agent-board backup --db PATH --output NEW_PRIVATE
 agent-board maintenance reset --db PATH --reason REASON
 agent-board capabilities --json
+agent-board worker enroll --config PRIVATE_JSON
+agent-board worker run --config PRIVATE_JSON
+agent-board worker identity --config PRIVATE_JSON
+agent-board worker consent --config PRIVATE_JSON
 agent-board projects token-create --projects-data ROOT --db DEFAULT --web-data WEB --owner NAME --machine NAME --output NEW_PRIVATE
 agent-board projects token-revoke --projects-data ROOT --db DEFAULT --web-data WEB --identity REGISTRY_ID
 agent-board projects bootstrap-owner --projects-data ROOT --db DEFAULT --web-data WEB --identity LEGACY_TOKEN_ID

@@ -12,6 +12,13 @@ REST, Streamable HTTP MCP and the JSON CLI share the same Go/SQLite service.
 It coordinates work; clients remain responsible for stopping local edits when
 connectivity or ownership becomes uncertain.
 
+Managed local agents are being added in [TASK-013](docs/TASK-013-managed-agents.md):
+explicitly enrolled workers run native Codex/Claude processes in locally allowed
+workspaces, with durable start/stop/resume/clarification commands. The
+[contract](docs/managed-agents.md) separates process control from board sessions,
+task leases and provider conversations. This source branch is not a deployed
+release or a passed native Windows/two-computer acceptance test.
+
 The native bearer service runs behind a public HTTPS proxy with separate machine tokens.
 Clients do not require Tailscale; see [public HTTPS setup](docs/public-https.md).
 The former private routes remain available for compatibility. It is **not a

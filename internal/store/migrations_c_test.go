@@ -12,7 +12,7 @@ import (
 func schema1Fixture(t *testing.T) *fixture {
 	t.Helper()
 	f := newFixture(t)
-	for _, q := range []string{`DROP TABLE coordination_metadata`, `DROP TABLE agent_profiles`, `DROP TABLE agent_profile_revisions`, `DROP TABLE notes`, `DROP TABLE note_metadata`, `PRAGMA user_version=1`} {
+	for _, q := range []string{`DROP TABLE managed_hosts`, `DROP TABLE managed_runs`, `DROP TABLE managed_commands`, `DROP TABLE managed_metadata`, `DROP TABLE coordination_metadata`, `DROP TABLE agent_profiles`, `DROP TABLE agent_profile_revisions`, `DROP TABLE notes`, `DROP TABLE note_metadata`, `PRAGMA user_version=1`} {
 		if _, err := f.s.db.Exec(q); err != nil {
 			t.Fatal(err)
 		}
@@ -31,7 +31,7 @@ func TestMigrationSchema1BackupAndNoInventedHistoricalTimes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, q := range []string{`DROP TABLE coordination_metadata`, `DROP TABLE agent_profiles`, `DROP TABLE agent_profile_revisions`, `DROP TABLE notes`, `DROP TABLE note_metadata`, `PRAGMA user_version=1`} {
+	for _, q := range []string{`DROP TABLE managed_hosts`, `DROP TABLE managed_runs`, `DROP TABLE managed_commands`, `DROP TABLE managed_metadata`, `DROP TABLE coordination_metadata`, `DROP TABLE agent_profiles`, `DROP TABLE agent_profile_revisions`, `DROP TABLE notes`, `DROP TABLE note_metadata`, `PRAGMA user_version=1`} {
 		if _, err = f.s.db.Exec(q); err != nil {
 			t.Fatal(err)
 		}
@@ -43,7 +43,7 @@ func TestMigrationSchema1BackupAndNoInventedHistoricalTimes(t *testing.T) {
 	}
 	defer s.Close()
 	var version int
-	if err = s.db.QueryRow(`PRAGMA user_version`).Scan(&version); err != nil || version != 4 {
+	if err = s.db.QueryRow(`PRAGMA user_version`).Scan(&version); err != nil || version != SchemaVersion {
 		t.Fatalf("version %d %v", version, err)
 	}
 	var created sql.NullString

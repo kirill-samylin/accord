@@ -9,6 +9,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { APIError, pageQueryKey, readPage, webToApp } from "@/lib/api";
+import { managedPollInterval } from "@/lib/managed-agents";
 import {
   projectRoute,
   routeScope,
@@ -90,6 +91,19 @@ function ControlContent() {
   const result = useQuery({
     queryKey: pageQueryKey(location),
     queryFn: ({ signal }) => readPage<PageData | CatalogPage>(location, signal),
+    refetchInterval: (query) =>
+      managedPollInterval(
+        path,
+        scope.locked,
+        query.state.data && !isCatalogPage(query.state.data)
+          ? query.state.data.can_continue
+          : true,
+        query.state.error instanceof APIError
+          ? query.state.error.status
+          : undefined,
+        query.state.errorUpdateCount,
+      ),
+    refetchIntervalInBackground: false,
     placeholderData: (previous, previousQuery) =>
       String(previousQuery?.queryKey[1] ?? "").split("?")[0] === path
         ? previous

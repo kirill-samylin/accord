@@ -22,6 +22,16 @@ type route struct {
 }
 
 var routes = []route{
+	{"GET", "/api/v1/managed", "managed_list", false},
+	{"POST", "/api/v1/managed/list", "managed_list", true},
+	{"POST", "/api/v1/managed/run", "managed_run", true},
+	{"POST", "/api/v1/managed/hosts/enroll", "managed_host_enroll", true},
+	{"POST", "/api/v1/managed/hosts/update", "managed_host_update", true},
+	{"POST", "/api/v1/managed/hosts/disable", "managed_host_disable", true},
+	{"POST", "/api/v1/managed/start", "managed_start", true},
+	{"POST", "/api/v1/managed/command", "managed_command", true},
+	{"POST", "/api/v1/managed/poll", "managed_poll", true},
+	{"POST", "/api/v1/managed/report", "managed_report", true},
 	{"GET", "/api/v1/tasks/{key}/coordination", "coordination", false},
 	{"POST", "/api/v1/tasks/{key}/assign", "assign", true},
 	{"POST", "/api/v1/tasks/{key}/checks", "check_create", true},
@@ -72,6 +82,7 @@ func NewHandlerWithOptions(s Service, ready func(context.Context) error, options
 	all = append(all, profileOperations(s)...)
 	all = append(all, coordinationOperations(s)...)
 	all = append(all, dedupOperations(s)...)
+	all = append(all, managedOperations(s)...)
 	byName := make(map[string]operation, len(all))
 	for _, op := range all {
 		byName[op.name] = op
@@ -81,6 +92,9 @@ func NewHandlerWithOptions(s Service, ready func(context.Context) error, options
 	mux.HandleFunc("GET /metrics", admission.metrics)
 	for _, r := range routes {
 		op := byName[r.name]
+		if op.run == nil {
+			continue
+		}
 		mux.HandleFunc(r.method+" "+r.path, func(w http.ResponseWriter, req *http.Request) {
 			principal, ok := req.Context().Value(principalKey{}).(core.Principal)
 			if !ok {
@@ -190,12 +204,18 @@ func requestBody(w http.ResponseWriter, r *http.Request, route route) ([]byte, e
 			}
 			return json.Marshal(core.GetInput{TaskKey: r.PathValue("key")})
 		}
+		if route.name == "managed_list" {
+			if r.URL.RawQuery != "" {
+				return nil, core.Fail("validation", "unexpected query parameters")
+			}
+			return []byte(`{}`), nil
+		}
 		if route.name == "events" {
 			return eventsQuery(r)
 		}
 		return readQuery(route.name, r.URL.RawQuery)
 	}
-	if (route.name == "assign" || route.name == "check_create" || route.name == "duplicate" || route.name == "similar") && r.URL.RawQuery != "" {
+	if (route.name == "assign" || route.name == "check_create" || route.name == "duplicate" || route.name == "similar" || strings.HasPrefix(route.name, "managed_")) && r.URL.RawQuery != "" {
 		return nil, core.Fail("validation", "unexpected query parameters")
 	}
 	media, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))

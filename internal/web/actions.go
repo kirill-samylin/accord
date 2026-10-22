@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 )
 
@@ -128,6 +129,11 @@ func (s *Server) runAction(ctx context.Context, b *browserSession, a *webAction)
 		return out, err
 	}
 	if a.Result != "" {
+		if strings.HasPrefix(a.Operation, "managed:") {
+			if err := s.checkManagedPermission(ctx, core.Actor{Principal: b.Principal, SessionID: a.SessionID}, a); err != nil {
+				return out, err
+			}
+		}
 		err := json.Unmarshal([]byte(a.Result), &out)
 		if err != nil {
 			return out, err
@@ -141,6 +147,8 @@ func (s *Server) runAction(ctx context.Context, b *browserSession, a *webAction)
 	actor := core.Actor{Principal: b.Principal, SessionID: a.SessionID}
 	var err error
 	switch a.Operation {
+	case "managed:start", "managed:command", "managed:disable":
+		out.Redirect, err = s.runManagedAction(ctx, actor, a)
 	case "coord:assign", "coord:link", "coord:transition", "coord:checks", "coord:duplicate":
 		out.Redirect, err = s.runCoordinationAction(ctx, actor, a)
 	case "profile:create", "profile:update", "profile:archive":
@@ -253,7 +261,7 @@ func (s *Server) runAction(ctx context.Context, b *browserSession, a *webAction)
 // Resolve uncertain native calls before opening another native session. Stored
 // payload and the original session are replayed even after that session expires.
 func (s *Server) recoverActions(ctx context.Context, b *browserSession) error {
-	rows, err := s.db.QueryContext(ctx, `SELECT id,operation,payload,session_id,result FROM web_actions WHERE session_hash=? AND payload<>'' AND result='' AND operation IN ('create','claim','answer','release','heartbeat','update','profile:create','profile:update','profile:archive','coord:assign','coord:link','coord:transition','coord:checks','coord:duplicate') ORDER BY created`, b.Hash)
+	rows, err := s.db.QueryContext(ctx, `SELECT id,operation,payload,session_id,result FROM web_actions WHERE session_hash=? AND payload<>'' AND result='' AND operation IN ('create','claim','answer','release','heartbeat','update','profile:create','profile:update','profile:archive','coord:assign','coord:link','coord:transition','coord:checks','coord:duplicate','managed:start','managed:command','managed:disable') ORDER BY created`, b.Hash)
 	if err != nil {
 		return err
 	}
