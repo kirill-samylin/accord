@@ -69,3 +69,30 @@ Store/CLI/infra source/test файлы меньше300 строк; зависи�
 
 Независимое review, новый process/browser QA, Linux и production: **NOT-RUN**
 этим автором; их выполняют отдельные роли до разрешённой поставки.
+
+## Follow-up после QA: native stdio resources
+
+QA155 обнаружил **PRODUCT FAIL**: настоящий `agent-board mcp` сохранял12 tools,
+но `accord://team` возвращал Resource not found. Координатор отдельно передал
+владение только `internal/bridge/resources.go`, `resources_test.go` и этим WORK;
+прочий product остался frozen. Причина: parser уже принимал team/similar, однако
+`mirrorResources` не регистрировал их templates. Добавлены ровно две действующие
+transport templates без новых SDK методов и без изменения SID/ACL контрактов.
+
+Авторский integration regression через существующий IOTransport stdio fixture
+проверяет template list, no-session reject, SID injection при пропущенном SID,
+свой явный SID, foreign/repeated SID reject, typed team/similar contents,
+сохранение consumer URI и бюджет12 tools. Новый title содержит кириллицу,
+пробелы и literal `+`.
+
+Он выявил ещё **PRODUCT FAIL**: `query.Encode()` заменял пробелы на `+`, после
+чего upstream RFC6570 matcher не находил similar resource. Перед forwarding
+пробелы теперь нормализуются в `%20`; literal `+` остаётся `%2B`. Первые test/race
+после добавления allowlist сохранили этот FAIL. Отдельная test-only ошибка при
+усилении title: `url.PathEscape` оставляет literal `+`, поэтому fixture был
+поправлен на корректный query encoder с `%20`. Product не принимал неканонический
+запрос, SID guards ради теста не ослаблены. Отчёты QA155 не изменялись.
+
+Финальные `make test`, `make race vet`, `git diff --check`: **PASS**. Независимый
+source review follow-up ожидается в WORK153. Remote,
+production, QA script/process/browser файлы и commit автором не затрагивались.

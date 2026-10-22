@@ -159,3 +159,106 @@ CreateTaskDialog
 actual stage/guard replacement, production full backup/HTTPS/preservation и
 итоговый evidence review остаются отдельными обязательными барьерами.
 Это не FINAL APPROVE и не разрешение запускать исходный deploy-task012.command.
+
+## Delivery source review
+
+Source checkpoint `69256c419a7a5529e7890633304e54c819b358c0`; root независимо
+совпал с69manifest и сообщил final make check PASS (Go/all/race/vet/build,
+embedded16, infra157, Next72/types/format/настоящий build). Это сообщение root,
+а не новый полный независимый прогон reviewer; его узкие повторы описаны выше.
+
+Прочитаны private `.local/task012/deploy/{build_release,transfer,activate_release,
+collect_runtime,transport_safe,run_https}.py` и фактические release/updater chains.
+Go build требует clean source и pinnedGo1.27.2, VCSmodified=false/exact revision;
+Next standalone пакет связывается с той же revision и pinned LinuxNode SHA.
+Transfer проверяет exact regular files/hashes, не следует symlink/path traversal,
+пишет только новый inactive release; existing/partial target не удаляется молча.
+`activate_release.py` вызывает именно capable `upgrade.py`; apply сохраняет
+owned startup hold, останавливает обоих writers и делает full all-project
+snapshot до helper installation, переключения и storage validation. Новый
+semantic guard установлен под hold до старта writer; ACL/schema4 сохранены.
+Failed apply остаётся blocked-roll-forward; старый Go/DB не выбираются.
+Final проверяет service UID999/0600 marker и bytes из pre-snapshot, actual Go
+ELF/argv/PID, pointers, helpers, effective configuration и новый full backup.
+Remote Python через `transport_safe.py` использует `-B`, local imports также
+запрещают bytecode; unknown artifacts не удаляются. Bootstrap/reset не вызываются.
+
+Delivery source slice build/transfer/stage/apply/finalize **APPROVE**.
+Private helper hashes (до actual выполнения): build_release
+`0e5dd3bb9615ca28ba62bc500dc15969325ccd7aec6b479adaf48822f02a87dd`, transfer
+`8e5337725c449e157f1f0d39d8d375670e73b3a8695f53e8b9610188d830a6c9`,
+activate_release
+`516691ed297dab797edc167cdb81676b2b41767eb25350cf9855d3052326993d`,
+collect_runtime
+`d7b5b4f42f6e8e196d1ef013c24825db998712e0ce7eee556e9fb670a33b6a83`,
+transport_safe
+`b487f76bbbf5fa5413fe95abd807a53361a8f7ed801738742a5abad08ffa19f7`.
+
+HTTPS runner пока запускает TASK011 readonly script, что полезно как regression,
+но не проверяет новый `/team` и dedup projections. До TASK012 actual HTTPS нужен
+отдельно reviewed новый/расширенный tester155 readonly script и точная привязка
+runner к нему. Ни script source review, ни старый HTTPS PASS не являются новыми
+runtime PASS. Финальный evidence review остаётся впереди.
+
+Отдельно reviewed private `package_qa.py` и `linux_qa.py`. Первое замечание
+reviewer: committed fixture bytes сверялись с HEAD без связи с release revision.
+Координатор добавил HEAD==release-proof revision и per-kind source proof
+(revision, manifestSHA, tarSHA, count). Runner проверяет всё до remote transfer,
+создаёт новый exclusive private synthetic root, сверяет exact archived files,
+старый e53 ELF SHA и новый candidate SHA. Runtime передаёт только synthetic
+fixtures, Node из candidate bundle, Python-B; report требует PASS/exit0 и
+свободные3100/3101 до/после. Failure сохраняет private diagnostics и не
+выполняет production operations. Actual suites требуют отдельного test review.
+После binding fix wrappers **SOURCE APPROVE**: package_qa SHA256
+`eedcc9ee42dd18c049394d014f5e7a55791b1da1390808a8cccb371751fe5f19`,
+linux_qa
+`3a3f43bdc3ddee69f3970c6ce971242346392f1b28862fa446376fe1afa841c7`.
+
+## Независимая QA обнаружила bridge defect
+
+QA155 actual process run `.local/task012-qa/run-1792693223830/results.json`
+выявил **PRODUCT FAIL**, подтверждённый reviewer по source:
+`internal/bridge/resources.go:27–31` не регистрирует team/similar templates в
+mirrorResources, хотя нижний readNotes host allowlist уже их принимает.
+Actual stdio клиент получает -32602 Resource not found до session-bound handler.
+Прямой HTTP MCP тест не обнаружил эту неполноту. Это P2 обязательный functional
+finding, не test-only ошибка. Bridge SOURCE APPROVE приостановлен до отдельного
+author fix/regression; прежний69manifest не финальный. Остальные review slices
+сохраняются; production не переключается ради диагностики.
+
+Отдельно reviewed новый `tests/browser/task012/production-readonly.cjs`:
+**SOURCE APPROVE** до выполнения. Browser allowlist разрешает только собственные
+login/logout/project open; native calls только GET и MCP read methods. Проверяет
+team через web/native/resource, existing-only similar, прежние profile/coordination
+screens, task digest/nonrenewal, пустой create dialog без ввода/submit, cleanup.
+Page screenshots/error reports private, token value не выводится; reports
+сохраняют script hash/unchanged, cleanup не скрывает исходную ошибку.
+Script SHA256
+`400ce6a9ce3c227e4089505684356eae429965e26c2d4c41c3be33ce5d8a41ff`,
+support TASK009 SHA256
+`f3c2313e4b169e266f5bb3945ebc82049a892fd3bf80cd16a4c312eda07265cf`.
+HTTP readonly не заменяет actual stdio QA; новый script запускается только после
+исправления и повторного source/local/Linux approval.
+
+## Updater157 — test source и независимый повтор
+
+Новые6файлов `tests/process/task012-update/` прочитаны полностью, включая README,
+Environment наследует неизменённый reviewed TASK011 adapter. Проверены actual
+old guard до update, installed new guard перед storage под hold, negative old
+schema4, exact7DB rows, byte/history/marker oracle, crash73/resume/fail-closed,
+manual/drift/known/unknown partial и новый offline fullrestore с auth reset.
+Полный source manifest совпал с заявленным:
+`04d539f492927fb5932ed872314d3031847bda1c89473afb66db997ec6b003ae`.
+
+Report tester157 `run-1792693333967058000` SHA256
+`a4a1dac182519c2ab05aa263683c21b8f1e3ae9b44793572fa0d81af5a3193b2`
+проверен; reviewer независимо выполнил тот же suite: **PASS8/8**,
+`.local/task012-update-qa/run-1792693420987480000/results.json`, SHA256
+`874cc63df898a6e8857a272796de62d6c427111153dbe4d7a0697f1c9d2f5b48`,
+source_unchanged=true, fullrestore7DB/authreset/history/source bytes PASS.
+Оба относятся к source69256c4/macOS candidate889bf770; exact финальный Linux
+после bridge fix проверяется отдельно. Systemd/Next/UID simulation остаётся
+объявленной границей и не превращается в actual production evidence.
+
+**UPDATER TEST SOURCE + LOCAL EVIDENCE APPROVE**. Исторические test-only FAIL
+сохранены в WORK157 и private run-*; их поздний PASS не переписывает.

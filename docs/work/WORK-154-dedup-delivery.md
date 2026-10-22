@@ -54,3 +54,22 @@ Root независимо повторил формулу и получил то
 Next72/types/format/production build. Лог `make-check-final-source.log`.
 Tester155 теперь разрешены новые process/browser tests. Release/push/production
 update/final review пока не завершены; результаты дополняются по факту.
+
+## QA нашла bridge defect
+
+Actual native stdio QA155 выявила **PRODUCT FAIL**: mirrorResources не
+регистрировал новые team/similar templates, запрос получал MCP -32602.
+Добавленный автором156 regression выявил вторую часть: form-style `+` для
+пробелов не совпадал с upstream URI matcher. Исправлены exact allowlist и
+RFC6570 `%20` forwarding с сохранением literal `%2B`; SID guards/tool12 прежние.
+История product/test-only FAIL сохранена в WORK155/156, прежние отчёты не менялись.
+
+Reviewer153 повторно дал **SOURCE + AUTHOR TESTS APPROVE**:70files manifest
+`fd749802c85a790808fb0b75203856531aecee33359eab2a1b42d3ac3216b67f`, root
+независимо получил тот же hash. Для финальной QA создаётся новый clean candidate;
+прежний mac69256c4/889bf770 остаётся историческим, не заменяется на PASS мосту.
+
+Отдельный tester157 updater4→4/fullrestore **PASS8/8**, reviewer независимо
+повторил8/8 и одобрил test source/evidence. Сохранены7syntheticDB/ACL/epochs/
+profiles/assignments/history; actual Go/SQLite/guard replacement, systemd/Next/
+UID simulated и честно отделены от actual VPS stage. Exact final Linux впереди.

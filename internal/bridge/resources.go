@@ -28,7 +28,9 @@ func (b *bridge) mirrorResources(ctx context.Context) error {
 			"accord://designs{?session_id,scope,scope_key,design_id,limit,cursor}",
 			"accord://designs/{asset_id}{?session_id}",
 			"accord://profiles{?session_id,state}",
-			"accord://profile{?session_id,profile_id,version}", "accord://coordination{?session_id,task_key}":
+			"accord://profile{?session_id,profile_id,version}", "accord://coordination{?session_id,task_key}",
+			"accord://similar{?session_id,title,description,type,role}",
+			"accord://team{?session_id}":
 		default:
 			continue
 		}
@@ -66,7 +68,9 @@ func (b *bridge) readNotes(ctx context.Context, request *mcp.ReadResourceRequest
 		}
 	}
 	query.Set("session_id", b.session.SessionID)
-	u.RawQuery = query.Encode()
+	// RFC6570 resource template matching needs percent-encoded spaces. Form
+	// encoding's '+' would no longer match upstream; literal '+' stays %2B.
+	u.RawQuery = strings.ReplaceAll(query.Encode(), "+", "%20")
 	reading, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	result, err := b.upstream.ReadResource(reading, &mcp.ReadResourceParams{URI: u.String()})

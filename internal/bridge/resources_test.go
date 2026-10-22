@@ -3,6 +3,8 @@ package bridge
 import (
 	"context"
 	"encoding/json"
+	"net/url"
+	"strings"
 	"testing"
 
 	"agent-board/internal/core"
@@ -28,6 +30,83 @@ func TestNotesResourceUsesOnlyWorkerSession(t *testing.T) {
 		if _, err := f.client.ReadResource(context.Background(), &mcp.ReadResourceParams{URI: candidate}); err == nil {
 			t.Fatal("resource escaped worker session")
 		}
+	}
+}
+
+func TestDedupResourcesMirrorTemplatesAndBindReadsToWorkerSession(t *testing.T) {
+	f := setup(t, 0)
+	task := f.task()
+	title := "Экспорт задач JSONL + CSV"
+	task, err := f.store.Update(context.Background(), f.admin(), core.UpdateInput{LeaseInput: core.LeaseInput{RequestID: fmtID(), TaskKey: task.Key}, Title: &title})
+	if err != nil {
+		t.Fatal(err)
+	}
+	templates, err := f.client.ListResourceTemplates(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]int{
+		"accord://team{?session_id}":                                0,
+		"accord://similar{?session_id,title,description,type,role}": 0,
+	}
+	for _, template := range templates.ResourceTemplates {
+		if _, exists := want[template.URITemplate]; exists {
+			want[template.URITemplate]++
+		}
+	}
+	for template, count := range want {
+		if count != 1 {
+			t.Fatalf("dedup resource template %q mirrored %d times", template, count)
+		}
+	}
+	encodedTitle := strings.ReplaceAll(url.QueryEscape(task.Title), "+", "%20")
+	uris := []string{"accord://team", "accord://similar?title=" + encodedTitle}
+	for _, uri := range uris {
+		if _, err := f.client.ReadResource(context.Background(), &mcp.ReadResourceParams{URI: uri}); err == nil {
+			t.Fatal("resource read accepted without describe", uri)
+		}
+	}
+	session := f.describe()
+	for _, uri := range uris {
+		separator := "?"
+		if uri != "accord://team" {
+			separator = "&"
+		}
+		for _, candidate := range []string{uri, uri + separator + "session_id=" + session.SessionID} {
+			result, err := f.client.ReadResource(context.Background(), &mcp.ReadResourceParams{URI: candidate})
+			if err != nil || len(result.Contents) != 1 || result.Contents[0].URI != candidate {
+				t.Fatalf("bound dedup read %q: %v %v", candidate, result, err)
+			}
+			if uri == "accord://team" {
+				var team core.TeamView
+				if err := json.Unmarshal([]byte(result.Contents[0].Text), &team); err != nil || team.UnclaimedTotal != 1 || len(team.Unclaimed) != 1 || team.Unclaimed[0].Key != task.Key {
+					t.Fatalf("team resource contents: %v %v", team, err)
+				}
+				bound := false
+				for _, member := range team.Members {
+					for _, agent := range member.Agents {
+						bound = bound || agent.SessionID == session.SessionID
+					}
+				}
+				if !bound {
+					t.Fatal("team omitted bound worker participation")
+				}
+			} else {
+				var page core.SimilarPage
+				if err := json.Unmarshal([]byte(result.Contents[0].Text), &page); err != nil || len(page.Similar) != 1 || page.Similar[0].Key != task.Key {
+					t.Fatalf("similar resource contents: %v %v", page, err)
+				}
+			}
+		}
+		for _, query := range []string{"session_id=foreign", "session_id=" + session.SessionID + "&session_id=foreign"} {
+			if _, err := f.client.ReadResource(context.Background(), &mcp.ReadResourceParams{URI: uri + separator + query}); err == nil {
+				t.Fatal("dedup resource escaped worker session", uri)
+			}
+		}
+	}
+	tools, err := f.client.ListTools(context.Background(), nil)
+	if err != nil || len(tools.Tools) != 12 {
+		t.Fatal("dedup resources changed tool budget", err)
 	}
 }
 
