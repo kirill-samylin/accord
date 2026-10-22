@@ -528,3 +528,57 @@ NOT-RUN, Unix PGID boundary и недоказанную исходную flake c
 Latest TASK table/changed areas/read-only connection guide APPROVE. Человеческого
 ответа на grant нет; новый native запуск не выполнен и не одобрен этим review.
 Reviewer изменял только WORK165; общий TASK, implementation и delivery files — root.
+
+## После явного разрешения человека на Mac synthetic native test
+
+Root передал прямой human ответ «Разрешить этот тест»: только describe/next,
+synthetic read-only README и exact session resume. Один authorised actual run
+`run-1792705928065/native-result.json` на прежнем798e/4177… overall **FAIL**:
+marker отсутствует. SQL независимо подтверждает1 managed board session,
+1 task attempt gen1 с managed_completed reason и ready/noLease после proven exit.
+Output говорит об only describe/next и отсутствии file-reading operation, а не
+policy never. Native grant работает в этом partial scope, resume ещё NOT-RUN.
+
+Найден fixture prompt conflict: QA profile «Use only accord_managed» запрещал
+модели builtin file reading, нужное для README. Узкий one-phrase QA test diff
+явно ограничивает accord_managed координацией и разрешает прежнее builtin
+read-only чтение README. **SOURCE APPROVE**, independent Node/diff checks PASS.
+Никакие native rights/sandbox/MCP grant/product source не расширяются. Имеющийся
+human scope уже включает это чтение; root разрешает один новый private attempt
+с тем же binary и отдельным test revision/hash. Прежний partial FAIL сохранён;
+новый actual result и resume ещё PENDING. Windows/production вне разрешения.
+
+Новый authorised actual native result **EVIDENCE APPROVE: PASS4**:
+`run-1792706107727/native-result.json` и wrapper results PASS. Настоящий Codex
+CLI0.163.0-alpha.11.1, product798e689/4177…; QA test commit
+cc4b17539b38902d43d09731e6ec28d9ff1f8af1, native.cjs SHA
+0da1396e7bc87552dcdf3f3c9d21cbe69b24eb2936b42ba3e5ee738bd606646f.
+Private binary SHA пересчитан, stored inventory/current files drift0,
+source/binary unchanged true. Config содержит только codex describe/next grant,
+sandbox read-only, provenance соответствует human scope. Git status synthetic
+checkout независимо проверен — чист, неотслеживаемых/изменённых файлов нет.
+
+Actual SQLite:2 managed board sessions разныхID для generations1/2; одна и та же
+task имеет2 ended managed_completed attempts с fencing1→2 и разными sessions,
+ready/noLease. Start/resume execution commands applied. Оба private completed
+receipts gens1/2 содержат один идентичный provider UUID, совпадающий с final run.
+Random marker из README и QA_NATIVE_RESUME присутствуют в native output.
+Подтверждены настоящие Describe/Next/read-only marker/точное продолжение с новым
+task claim и обоими terminal handoffs. Historical denial/fixture FAIL не
+переписаны. Этот PASS ограничен Mac synthetic read-only scope; реальный Windows,
+второй физический ПК и production не проверены. Новые R2 delivery docs ещё ждут
+отдельного content review; product binary остаётся прежним.
+
+R2 final curated delivery/docs **CONTENT APPROVE**: actual ZIP SHA
+Mac84dedcf1529aec47e79a6784c3113d6d763c27eae5cef2a79d2eaf67f557f02d,
+Windowsce7779fadfdde57eacb4b2b0c719a54ec1ee52f89b2f8521c7f323a34c7bf8da
+и bytes совпадают с manifest-798e689-r2.json. CRC,9 checksums/10 entries каждого
+архива, byte equality curated folders, безопасные relative paths/Markdown links
+и known-private pattern scan независимо PASS. Product binaries прежние4177/7059;
+templates сохраняют placeholders/controllers[]/grant absent, Windows separators
+декодируются по одному. Оба immutable R1 ZIP SHA повторно совпали с прежним manifest.
+SOURCE/TASK/WORK167 точно отделяют product798e от QA-onlycc4, ограниченный Mac
+native PASS4 после human scope от historical FAIL и Windows/двухПК/production
+NOT-RUN. Ранее неизвестная flake cause не переименована в исправленную. Candidate
+и TASK остаются incomplete. Reviewer менял только WORK165; дополнительных native
+запусков или разрешений/production действий этот verdict не добавляет.

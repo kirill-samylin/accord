@@ -186,6 +186,38 @@ relative links и source/evidence границы: delivery/evidence APPROVE. Э�
 разрешение на production или native grant. На момент фиксации ответа человека
 нет; все own QA services остановлены, source code frozen.
 
-Статус: финальная приёмка остаётся открытой. Три actual process PASS16,
-migration/browser PASS на v5 не отменяют исторические FAIL и необходимость
-новой native приёмки после явного согласия человека. Production поставки не было.
+23.10.2026 получен явный ответ человека: разрешить только Mac synthetic
+describe/next + read-only README + exact conversation resume. Global native
+настройки, права файлов и реальный GUI/VPS этим не разрешены. Первый authorized
+probe подтвердил actual Describe/Next/terminal handoff, но FAIL из-за QA profile
+«Use only accord_managed»: модель отказалась применять builtin file read.
+Этот FAIL сохранён. Narrow test-only fix разрешает builtin чтение README в
+исходном read-only scope, не меняя permissions; review165 APPROVE, Node/diff
+checks PASS, test commit cc4b175...; product diff пуст, binary798e/4177... прежний.
+
+Следующий actual native probe **PASS4**:
+`.local/task013-qa/run-1792706107727/native-result.json` и wrapper results PASS.
+Codex CLI0.163.0-alpha.11.1 реально Describe/Next, прочитал random README marker,
+handoff освободил task; exact provider UUID resume получил новую board session
+и большую fencing generation той же task, затем второй proven handoff.
+Native.cjs SHA0da1396e7bc87552dcdf3f3c9d21cbe69b24eb2936b42ba3e5ee738bd606646f;
+product binary/source unchanged, cleanup PASS. Только agreed2 tools, без иных
+MCP/native permission changes. Reviewer165 независимо сверил DB/receipts/marker/
+sameUUID/clean checkout: evidence APPROVE.
+
+Статус: Mac read-only native acceptance PASS. Windows/второй ПК NOT-RUN,
+исторические FAIL сохранены, прежний flaky cause не объявлен доказанным.
+Production поставки не было; TASK013 в целом остаётся открытой.
+
+После native PASS подготовлена новая immutable документационная поставка r2;
+исходные R1 ZIP не перезаписаны и их SHA повторно совпали. R2 использует те же
+798e binaries, обновлённые TASK/SOURCE и сведения о test commit cc4b175.
+Mac r2 SHA256 `84dedcf1529aec47e79a6784c3113d6d763c27eae5cef2a79d2eaf67f557f02d`;
+Windows r2 `ce7779fadfdde57eacb4b2b0c719a54ec1ee52f89b2f8521c7f323a34c7bf8da`.
+Manifest — `.local/task013-delivery/manifest-798e689-r2.json`; folders —
+`.local/task013-delivery/r2/{Mac-arm64,Windows-x64}`. Default-off templates и
+placeholder параметры сохранены: test grant не перенесён в пакеты/GUI/Windows.
+Root проверки и независимое package/doc review165 APPROVE: CRC/все checksums/
+archive bytes/headers/links/no private patterns, R1 неизменны. Только отчёты и
+QA profile phrase изменились после product798e; broad tests не повторяются
+без новой product delta. Все собственные тестовые службы остановлены.

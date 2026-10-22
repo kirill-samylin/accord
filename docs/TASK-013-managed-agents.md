@@ -123,24 +123,38 @@ Go/race/acceptance, infra164, web88, TypeScript/format и production Next build.
 | Next/Chrome, запуск/остановка/resume/уточнение, ACL, lost response | PASS5, 8 снимков | Детерминированный CLI fixture, один Mac |
 | Capable all-project migration4→5 и restore/auth-reset | PASS3 | Настоящие Go/SQLite/snapshot; systemd/ingress simulated |
 | Основной process suite, включая оба offline сценария | PASS16 на v6; ещё3 × PASS16 на v5 | Независимые private runtime, owned PGID на одном Mac |
-| Настоящий Mac Codex | FAIL на v5; новый grant probe NOT-RUN | Native conversation создан, Describe отклонён policy never; task attempts0 |
+| Настоящий Mac Codex | PASS4 после явного согласия человека | Только describe/next и read-only synthetic README; exact conversation resume и новая task lease подтверждены |
 | Windows runtime, native Claude | NOT-RUN | Cross-build не заменяет запуск на Windows |
 | Второй физический ПК | NOT-RUN | Два synthetic host на одном Mac не являются двумя ПК |
 
 Codex MCP isolation, positive terminal handoff и независимость watchdog от
 подготовки запуска independently approved и проверены actual fixture процессами.
-Config-only probe установленного Codex подтвердил изоляцию подключений; это
-не заменяет native task acceptance. Более ранний ownership unknown не повторился
+Config-only probe установленного Codex подтвердил изоляцию подключений;
+отдельный actual native probe закрыл Mac read-only acceptance. Более ранний ownership unknown не повторился
 в трёх полных v5 и одном v6 runtime; его исходная причина остаётся недоказанной. Unknown
 по-прежнему сохраняет checkout intent и требует локального восстановления.
 
 Отказ настоящего Codex сохранён без bypass. Подготовлена выключенная по умолчанию
 локальная опция точного native MCP consent —
 [native-agent-permissions.md](native-agent-permissions.md). Source/test/docs
-APPROVE165 получен, v6 actual проверки выше выполнены без native grant.
-Разрешение человека до повторного native запуска с grant обязательно и ещё
-не получено. Настоящие токены/адреса в публичные пакеты не включаются.
+APPROVE165 получен, v6 process/browser/updater проверки выполнены без native grant.
+23.10.2026 человек явно разрешил describe/next только для synthetic read-only
+проверки на Mac. Actual Codex CLI `0.163.0-alpha.11.1` получил задачу, прочитал
+случайный README marker и продолжил тот же conversation UUID. При продолжении
+та же task получила новый board session и большую fencing generation; после
+обоих шагов proven terminal handoff вернул её ready/no lease. Synthetic Git
+checkout остался clean, binary/source unchanged; review165 evidence APPROVE.
 
-Статус: **IN PROGRESS — итоговая приёмка и исправления по QA**. Remote
+Native evidence — `.local/task013-qa/run-1792706107727/{native-result,results}.json`,
+product binary798e/4177... неизменён. QA-only prompt fix — test commit
+`cc4b17539b38902d43d09731e6ec28d9ff1f8af1`, native.cjs SHA256
+`0da1396e7bc87552dcdf3f3c9d21cbe69b24eb2936b42ba3e5ee738bd606646f`.
+Первый authorized probe создал сессию/claim, но противоречивая QA profile фраза
+«Use only accord_managed» запретила builtin file read. Этот FAIL и прежний
+отказ policy never сохранены; narrow prompt fix отдельно approved165 и не
+расширяет permissions. Для GUI/Windows/global policy test grant не применяется.
+Настоящие токены/адреса в публичные пакеты не включаются.
+
+Статус: **IN PROGRESS — Mac native PASS; Windows/второй ПК NOT-RUN**. Remote
 push/merge/release не выполнены; VPS остаётся TASK012. Непройденная обязательная
 native/Windows проверка оставляет этап незавершённым.

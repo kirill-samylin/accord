@@ -218,3 +218,68 @@ drift отсутствует. Mobile detail390dark просмотрен, чит�
 повторный bind с SO_REUSEADDR успешен. Native повтор с новым grant остаётся
 **NOT-RUN**, пока human permission и root GO не получены. Прежний v5 native
 **FAIL** остаётся отдельным фактом; default-off process/browser его не заменяют.
+
+## v6 actual native после отдельного разрешения человека
+
+Root передал явный ответ человека «Разрешить этот тест» на точный Mac synthetic
+scope describe/next, read-only README и exact conversation continuation; дал GO
+для frozen v6 без иных permission/global config/sandbox изменений. Запущен новый
+private runtime с approved fixed opt-in. Результат **FAIL**:
+`.local/task013-qa/run-1792705928065/native-result.json`; wrapper report подтверждает
+точный798e689/4177b6 pin, source/binary unchanged, cleanup завершён, порты свободны.
+
+Настоящий Codex `0.163.0-alpha.11.1` теперь реально выполнил Describe и Next:
+managed session1, task attempt1, generation1; positive completed handoff закрыл
+attempt с `managed_completed`, task ready/no lease. Однако случайный README
+marker не прочитан. Native ответ: connector содержит только describe/next и не
+имеет операции чтения файлов. QA profile содержит неоднозначное `Use only
+accord_managed`, которое модель прочитала как запрет builtin file read. Это
+точный semantic refusal, не native PASS; exact native resume не выполнялся.
+Повтор автоматически не запущен. Передан root узкий harness prompt диагноз:
+различить MCP connectors и обычное builtin read-only чтение README; permissions
+расширять не требуется. Любая test source правка проходит review165/новый pin.
+Прежние FAIL reports сохранены.
+
+## Actual native после approved QA clarification — PASS
+
+Root разрешил исправить только неоднозначную фразу QA profile: Accord
+coordination выполняется через `accord_managed`, builtin read-only чтение
+synthetic README явно разрешено. Scope прежнего human consent, два MCP tools,
+sandbox и product source неизменны. Reviewer165 независимо approved одну фразу;
+root дал GO ровно на один новый запуск. QA test commit
+`cc4b17539b38902d43d09731e6ec28d9ff1f8af1`; product binary остаётся
+`798e689efc38761c5b4ec377e59b627edbe04d54`, SHA256
+`4177b6f4eefa5d27584e2e1b5ca56a73a1dcfb47014d603bf40275daa9b13334`.
+
+Новый private runtime `.local/task013-qa/run-1792706107727/`:
+`native-result.json` **PASS4** / wrapper `results.json` **PASS**.
+Настоящий установленный Codex CLI `0.163.0-alpha.11.1`:
+
+- Создал actual provider conversation UUID; выполнил реальный MCP Describe с
+  pinned profile, затем Next и task attempt.
+- Прочитал случайный README marker, отсутствующий в prompt. Файлы checkout не
+  изменял; positive completed report выполнил terminal handoff, задача ready/no
+  lease, attempt завершён reason `managed_completed`.
+- Продолжил exact тот же provider UUID; выполнил Describe через новый board
+  session, немедленно Next той же задачи с большей fencing generation и новый
+  terminal handoff. Вернул исходный marker и `QA_NATIVE_RESUME`.
+
+В этом запуске local opt-in ограничен `codex: [describe,next]`, остальные MCP
+connectors disabled; global config/permissions и другие проекты не изменялись.
+Source inventory и private binary после запуска unchanged=true. SHA256
+`tests/process/task013/native.cjs` в зафиксированном inventory:
+`0da1396e7bc87552dcdf3f3c9d21cbe69b24eb2936b42ba3e5ee738bd606646f`.
+Cleanup без ошибок, собственные3100/3101/3102 свободны. Старые native FAIL
+сохранены и не переименованы в PASS. Evidence передано reviewer165.
+Дополнительное read-only чтение synthetic SQLite подтвердило два task attempts
+с разными board sessions/generations1,2 и оба `managed_completed`; task ready/no
+lease. `git --no-optional-locks status --porcelain --untracked-files=all` в
+synthetic checkout пуст: tracked/untracked файловых изменений нет.
+Reviewer165 дал final evidence **APPROVE**, независимо сверив reports,
+provenance, SQLite/private journal, две managed sessions, same-task fencing1→2,
+оба terminal handoff, applied start/resume и один provider UUID в receipts
+generations1/2; marker, clean Git и source/binary hashes подтверждены.
+
+Локальная Mac native проверка теперь PASS в явно разрешённом synthetic scope.
+Windows/native Claude, второй физический ПК и production/schema5 deploy
+остаются **NOT-RUN**; этот результат не объявляет их выполненными.
