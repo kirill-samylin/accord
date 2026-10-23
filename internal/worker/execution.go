@@ -120,7 +120,20 @@ func (e *Engine) prompt(plan plan) string {
 	}
 	if plan.run.Automation != nil {
 		a := e.config.Automation.Workspaces[plan.run.Workspace]
-		fmt.Fprintf(&instruction, "Local verification preset IDs only; use workflow_run_check and wait for the corresponding status resource to be completed before transitioning the task. Developer presets require a clean committed HEAD first. Approved artifact roots: %q. Test design artifact writes separately consented: %t. Reviewer/tester must preserve every reviewed source byte and full HEAD; a source change blocks the workflow. A .patch proposal in approved artifact roots is test_design/NOT-RUN, never PASSED.\n", a.ArtifactRoots, a.AllowTesterArtifactWrites)
+		if profile := plan.run.Profile; profile != nil {
+			switch profile.Role {
+			case "developer", "tester":
+				instruction.WriteString("Run the required owner-approved local verification preset IDs through workflow_run_check. Wait for each corresponding status resource to be completed and inspect its actual result before transitioning the task. Queued/running, failed, NOT-RUN and N/A are never PASSED. ")
+				if profile.Role == "developer" {
+					instruction.WriteString("Developer presets require a clean committed HEAD first. ")
+				}
+			case "analyst":
+				instruction.WriteString("Create the structured plan through workflow_plan under your own task lease. Use workflow_question when requirements need human clarification. Planning does not require starting local verification presets. ")
+			case "reviewer":
+				fmt.Fprintf(&instruction, "Perform a read-only review of the assigned exact target SHA %q and its diff, using available qualified verification evidence. Report approve, changes_requested or blocked honestly; ask workflow_question if missing evidence requires human clarification. Do not start local verification presets as the reviewer. ", plan.run.Automation.TargetSHA)
+			}
+		}
+		fmt.Fprintf(&instruction, "Approved artifact roots: %q. Test design artifact writes separately consented: %t. Reviewer/tester must preserve every reviewed source byte and full HEAD; a source change blocks the workflow. A .patch proposal in approved artifact roots is test_design/NOT-RUN, never PASSED.\n", a.ArtifactRoots, a.AllowTesterArtifactWrites)
 	}
 	instruction.WriteString("User request:\n")
 	instruction.WriteString(text)
