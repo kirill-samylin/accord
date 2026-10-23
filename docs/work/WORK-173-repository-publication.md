@@ -16,4 +16,14 @@ Current production/native checkpoint исправлен честно: server273/
 
 Known real credential scan и tracked private key patterns выполняются без вывода значений. Historical public HTTPS links preserved in old commits; currentdoc copies generalized. deploy-task012.command, .local/runtime, refs/codex snapshots excluded. Документы GUI158–161 сохраняют dated scope, current guide указывает schema5/TASK013.
 
-Publication ещё NOT-RUN; final review174 и ancestry/tree/secret proof pending. После публикации продолжается narrow native preparation diagnosis без ослабления ownership guards.
+## Фактическая публикация
+
+SOURCE CHECKPOINT APPROVE174 получен для21 documentation files; checkpoint commit `9983dc05f1c4141c3da2f8a1fac9cc8549cd8393`. Explicit history merge `cf88e01945c0868cd26370b13acab2b7580d7a9b` имеет6 parents: checkpoint и5 covering tips. Все31 исходные вершины — ancestors main; merge tree равен checkpoint tree. Product tree относительно273 и MIT LICENSE побайтно неизменны. Текущий tree985files без runtime/token/DB/deploycommand.
+
+Independent174 FINAL PREPUSH APPROVE exactcf88. Branch history1886 blobs scanned root, consolidated closure1907 blobs independently scanned reviewer: известных private credentials/ключей не найдено. Historical4publicHTTPS links остаются только в прежних коммитах; новые documentation copies не содержат actualorigin. App snapshot refs не включены в main.
+
+PASS: `git push -u origin main` создал единственную ветку в `https://github.com/DenisShagi/accord.git`. Независимый remote readback: HEAD→refs/heads/main и main exact `cf88e01945c0868cd26370b13acab2b7580d7a9b`. Новый origin — репозиторий пользователя; прежний URL сохранён как previous-origin. Force/mirror/tag push и удаление локальных веток не выполнялись. Private backup/inventory/proofs остались ignored.
+
+Current handoff/receiver instructions указывают newmain; старые bundle instructions помечены historical. Полный make check не повторялся: product code не менялся, проверены Git ancestry/tree/license, secret boundaries и diff--check. Production/runtime/native status не подменён Git publication: GUI preparation FAIL и pendingfinalize остаются в TASK013.
+
+Статус публикации: **PASS — current code + all requested branch history, одна main**. После неё продолжается narrow native preparation diagnosis без ослабления ownership guards.

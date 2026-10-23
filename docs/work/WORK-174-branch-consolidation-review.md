@@ -109,3 +109,32 @@ onboarding schema4 guidance следует пометить историческ
 Final consolidation manifest, exact tree/ancestry, выбранный whitelist staged
 docs и push ещё **PENDING**. Эта карточка не разрешает silent product changes,
 обход native prep failure, finalize или публикацию private runtime evidence.
+
+## Итоговая проверка и публикация
+
+**FINAL PREPUSH APPROVE** для consolidation commit
+`cf88e01945c0868cd26370b13acab2b7580d7a9b`. Independently проверены6 parents:
+primary docs checkpoint9983dc05 и пять перечисленных covering tips; все31
+исходные local/old-remote branch tips из публичного manifest являются ancestors.
+Merge tree точно равен primary-parent tree; product cmd/internal/infra/web/schema/
+go.mod/go.sum не изменён относительно273ccbb, MIT LICENSE blob прежний.
+Дерево985 tracked files без .local/token/DB/private-key/deploy-command paths.
+Только untracked deploy-task012.command остаётся в локальном checkout.
+
+Дополнительный scan именно published reachable closure:2767 objects/1907 blobs,
+bounded secret patterns и точное сравнение с тремя доступными reviewer GUI
+token files —0 findings. Root отдельно проверил свой known4-credential набор;
+его проверка не приписывается reviewer. Internal app snapshot refs не merged.
+Current21-doc whitelist и staged diff-check independently PASS, source не менялся;
+исторический onboarding получил явный TASK012 banner и current schema5 guide.
+
+После root push reviewer самостоятельно выполнил read-only remote ref check:
+origin `https://github.com/DenisShagi/accord.git` содержит единственную head
+`main`, HEAD symbolic→main; обе refs exactcf88e01945c0868cd26370b13acab2b7580d7a9b,
+tags отсутствуют. Прежний upstream сохранён как previous-origin.
+**PUBLICATION EVIDENCE APPROVE**. Следующий документационный closure commit
+может быть обычным fast-forward поверхcf88, без product/history rewrite.
+
+Перенос и объединение истории завершены в заявленной user границе. Это не
+native GUI runtime PASS: prep failure и pending production finalize сохранены
+честно; дальнейшая диагностика возвращается к WORK169/170/172 после публикации.

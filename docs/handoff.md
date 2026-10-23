@@ -1,3 +1,12 @@
+> Обновление 23.10.2026: основной репозиторий —
+> [DenisShagi/accord](https://github.com/DenisShagi/accord), единая ветка `main`.
+> Для передачи исходников: `git clone --branch main https://github.com/DenisShagi/accord.git`.
+> В ней сохранена история прежних веток; их экспериментальные функции не
+> включались в продукт. См. [объединение истории](repository-consolidation.md).
+> Инструкции старого bundle/`codex/pilot` ниже — исторические. Для современного
+> schema5 worker используйте [managed-worker-guide.md](managed-worker-guide.md)
+> и фактический [TASK013](TASK-013-managed-agents.md); native GUI проверка пока FAIL.
+
 > Обновление 19.10.2026: клиентский доступ Accord теперь через обычный публичный HTTPS.
 
 > Дополнение веб-версии19.10.2026: человеку достаточно открыть существующий
