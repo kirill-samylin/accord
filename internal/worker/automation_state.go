@@ -9,6 +9,7 @@ import (
 )
 
 type automationAttempt struct {
+	PermissionProof       *permissionProof            `json:"permission_proof,omitempty"`
 	Compacted             bool                        `json:"compacted,omitempty"`
 	RunSnapshotSHA256     string                      `json:"run_snapshot_sha256,omitempty"`
 	ProfileSnapshotSHA256 string                      `json:"profile_snapshot_sha256,omitempty"`
@@ -49,6 +50,7 @@ type automationBudget struct {
 	Invocations    int       `json:"invocations"`
 }
 type automationRuntime struct {
+	connectors []mcpConnector // Sanitized names/transports from the exact MCP preflight.
 	ctx        context.Context
 	cancel     context.CancelFunc
 	ipc        *automationipc.Server

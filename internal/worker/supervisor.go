@@ -7,12 +7,13 @@ import (
 )
 
 type supervisorRequest struct {
-	Executable string   `json:"executable"`
-	Directory  string   `json:"directory"`
-	Args       []string `json:"args"`
-	Env        []string `json:"env"`
-	Prompt     string   `json:"prompt"`
-	Nonce      string   `json:"nonce"`
+	Executable string            `json:"executable"`
+	Directory  string            `json:"directory"`
+	Args       []string          `json:"args"`
+	Env        []string          `json:"env"`
+	Prompt     string            `json:"prompt"`
+	Nonce      string            `json:"nonce"`
+	Inspection *configInspection `json:"config_inspection,omitempty"`
 }
 
 type supervisorProof struct {
@@ -33,6 +34,9 @@ func Supervise(input io.Reader, output io.Writer) error {
 	var request supervisorRequest
 	if err := decoder.Decode(&request); err != nil || !identifier.MatchString(request.Nonce) {
 		return errors.New("invalid local supervisor handshake")
+	}
+	if request.Inspection != nil {
+		return superviseConfigInspection(request, io.MultiReader(decoder.Buffered(), input), output)
 	}
 	child, err := startProcess(launchSpec{executable: request.Executable, directory: request.Directory, args: request.Args, env: request.Env, prompt: request.Prompt})
 	proof := supervisorProof{Type: "accord.supervisor.exit", Nonce: request.Nonce, Proven: true}

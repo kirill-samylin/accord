@@ -108,6 +108,9 @@ func (e *Engine) bridgeArgs(run RunState) ([]string, error) {
 		if err != nil {
 			return nil, preparationContext("prepare_discovery", err)
 		}
+		for _, c := range connectors {
+			e.preparedConnectors = append(e.preparedConnectors, mcpConnector{Name: c.Name, Transport: c.Transport})
+		}
 		overrides, err := codexMCPOverrides(connectors, self, args, e.config.NativeMCPApprovedTools["codex"])
 		if err != nil {
 			return nil, err

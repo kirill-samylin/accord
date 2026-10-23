@@ -14,9 +14,12 @@ import (
 
 func workerCommand(args []string, out io.Writer) error {
 	if len(args) == 0 {
-		return errors.New("usage: agent-board worker enroll|run --config PRIVATE")
+		return errors.New("usage: agent-board worker enroll|run|identity|consent|automation-preview --config PRIVATE")
 	}
 	operation := args[0]
+	if operation == "automation-preview" {
+		return workerAutomationPreview(args[1:], out)
+	}
 	if operation == "supervise" {
 		if len(args) != 1 {
 			return errors.New("invalid local supervisor invocation")

@@ -151,3 +151,152 @@ Final author checks: общий worker/IPC/cmd race PASS; Linux/Windows amd64 wo
 test cross-build и Windows IPC cross-build PASS; `git diff --check` PASS.
 Native Git commit permissions остаются непроверенными: разрешения native CLI
 этим reopen не расширены; реальный commit/pipeline — отдельный QA после review.
+
+## Read-only addendum — узкий native Git commit
+
+Это проект решения, не изменение frozen product или разрешение на повторный
+native запуск. По сообщению root, WORK198v2 доказал edit/owned exit0/native UUID,
+но commit отсутствует; точная Git ошибка ещё исследуется QA. Изменение hash
+пользовательского config требует отдельного объяснения, а не автоматического
+restore. До этих фактов причина отказа не назначается.
+
+Установленный CLI `0.163.0-alpha.11.1`: проверены только version/help/exec help/
+debug help/doctor help. `--approve-for-me` существует; `--profile` загружает
+`$CODEX_HOME/<name>.config.toml` поверх user config. `exec --ignore-user-config`
+пропускает user config, сохраняя CODEX_HOME для auth. Модель, doctor diagnostics,
+config parse и policy activation не запускались. Документация подтверждает
+приоритет CLI над trusted project config, затем profile/user/system; пропуск
+user config сам по себе не доказывает отсутствие остальных слоёв.
+[Config basics](https://learn.chatgpt.com/docs/config-file/config-basic),
+[non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode).
+
+**Предпочтительный узкий filesystem вариант — отдельный owner opt-in профиль.**
+Предлагается оставить approvals `never`, расширить `:workspace` ровно на
+canonical Git metadata одного consented checkout, сохранив config/hooks и
+`.agents/.codex/.aws` read-only, native command network выключенным. Набросок
+ниже не проверен парсером и не установлен:
+
+```toml
+default_permissions = "accord-local-commit"
+approval_policy = "never"
+[permissions.accord-local-commit]
+extends = ":workspace"
+[permissions.accord-local-commit.filesystem."/EXACT/CONSENTED/CHECKOUT/.git"]
+"." = "write"
+"config" = "read"
+"hooks" = "read"
+[permissions.accord-local-commit.network]
+enabled = false
+```
+
+Предусловие: реальная directory `.git` внутри этого checkout; external gitdir/
+worktree/symlink требуют отдельного рассмотрения. Список metadata можно сузить
+после доказанного Git поведения. Это разрешение файловых записей, а не запрет
+всех Git операций кроме commit. Все native commands остаются внутри OS sandbox;
+сохранность локальной истории проверяется отдельно. Profiles beta; текущий193
+всегда добавляет `-c sandbox_mode=…`, а любой загруженный legacy sandbox выбирает
+старую модель вместо profiles. Следовательно, нужен отдельно согласованный
+invocation/config-layer путь без legacy settings; простого `--profile` либо
+добавления `.git` в writable_roots недостаточно.
+[Permissions](https://learn.chatgpt.com/docs/permissions).
+
+**Альтернатива — automatic approval review, только явно согласованный риск.**
+`--approve-for-me` использует workspace-write + on-request + auto_review и
+конфликтует с `--sandbox`; совместимость с текущим193 invocation не доказана.
+Это общий reviewer для эскалаций, не Git-only capability.
+[Developer commands](https://learn.chatgpt.com/docs/developer-commands).
+Короткий `[auto_review].policy` применять нельзя: он заменяет активную политику;
+документация требует сохранить полный active policy, иначе не переопределять.
+Для добавочного ограничения есть `extra_policy`, но managed политика старше
+локальной. Reviewer вероятностный; инструкцией нельзя гарантировать hard deny.
+[Auto-review](https://learn.chatgpt.com/docs/sandboxing/auto-review),
+[config reference](https://learn.chatgpt.com/docs/config-file/config-reference).
+
+Если root выберет этот вариант, design требует отдельный default-off developer
+opt-in, связанный с executable hash/version, workspace identity, сроком и policy
+digest. Reviewer допускает только отдельные exact-path local add/commit в этом
+checkout после read-only проверки diff/index/config/hooks; остальные escalations,
+compound shell, произвольные helpers, push/network, auth/globalconfig writes,
+destructive Git и неоднозначные действия отклоняются. Native отказ не обходится.
+Нужен полный запрет остальных review categories там, где installed granular
+semantics доказаны; иначе вариант не объявляется узким. MCP grants не расширяются.
+При требовании детерминированного «только commit» нужен отдельный parent-owned
+fixed Git operation, что выходит за этот read-only design.
+
+Перед реализацией: independent contract review, затем отдельно разрешённый
+config-only/effective-policy proof. После source approval — QA positive local
+commit с real UUID/owned exit и сохранением exact resume; negative outside-root/
+global config/hooks write, push/network и unrelated escalation; policy denial
+должен остановить попытку, не включить fallback. Сравнить config/rules/auth hashes
+до/после без вывода содержимого. Native QA и Windows physical здесь NOT-RUN.
+Production/settings/product source не менялись;193 pin сохраняется.
+
+## WORK201 feasibility — supervised config-only dialogue
+
+Read-only review: `supervisor.go`, Unix/Windows process implementations,
+installed schema201 и `codex app-server --help`. Текущий `launchSpec.prompt`
+одноразовый: Unix использует конечный Reader, Windows пишет строку и закрывает
+child stdin. Supervisor stdin остаётся отдельным parent lifeline; bytes после
+handshake выбрасываются. Его нельзя использовать для native JSON-RPC.
+
+Официальный app-server использует stdio JSONL, сначала initialize/initialized,
+затем остальные методы. Schema201 JSONRPCMessage допускает отдельный object,
+не batch-array; метода shutdown в ClientRequest/ClientNotification нет. Для
+pipeline четырёх строк с немедленным EOF не найдена гарантия обработки запросов
+и ответов до завершения. Такой batch shortcut не считаю доказанным.
+[App-server protocol](https://learn.chatgpt.com/docs/app-server).
+
+Минимальное предлагаемое расширение supervisor — закрытый `config_inspection`
+режим, а не общий interactive RPC proxy. Внутри helper создаётся отдельный
+child stdin pipe, работающий с прежними OS ownership/Stop/Wait primitives.
+Parent lifeline сохраняет прежнюю семантику; parent API не получает произвольный
+WriteStdin, model/remote не передают методы или JSON. Legacy prompt mode неизменён.
+
+Фиксированная state machine внутри helper:
+
+1. Spawn pinned executable с фиксированным `app-server --listen stdio://` и
+   согласованными config overrides; без proxy/daemon/socket listener. Сразу
+   владеть child, привязать cancellation к runtime.ctx/stop/revoke и local epoch.
+2. Отправить initialize id1 с fixed clientInfo, без experimental/attestation/
+   elicitation capabilities; дождаться единственного корректного ответа id1.
+3. Отправить initialized notification, затем config/read id2 с exact canonical
+   cwd/includeLayers:true; дождаться единственного ответа id2.
+4. Отправить configRequirements/read id3 с пустыми params; дождаться ответа id3.
+5. Только после этих ответов закрыть child stdin и дождаться natural exit,
+   полностью дочитав stdout. Positive proof требует owned exit0, без force.
+   Если EOF не завершает actual CLI корректно, timeout/Stop не превращаются в
+   положительный результат: режим blocked до отдельного согласованного решения.
+
+Предлагаемые hard limits: requests суммарно≤8KiB, line≤2MiB, stdout≤4MiB,
+notifications≤32, dialogue≤20s либо раньше attempt/worker deadline; exit grace
+≤2s входит в тот же deadline. Cleanup использует прежний bounded owned Stop;
+его время учитывается отдельно и не даёт late native spawn. Duplicate JSON
+keys/IDs, extra response/result+error, неизвестный ID, malformed/truncated/oversize
+frame или любая server-initiated request — отказ без ответного tool/auth действия.
+Notifications только из reviewed exact allowlist, bounded и без сохранения raw
+params; неизвестный method блокирует. Никаких произвольных RPC после отказа.
+
+Raw config/ошибки сервера не пересылаются как output и не сохраняются. Helper
+проверяет permissions projection и возвращает только fixed safe result/enum
+error, digest и согласованные identity/version факты; итог принимается лишь с
+прежним nonce exit proof. На timeout/parent EOF helper закрывает child stdin,
+останавливает owned scope и сообщает ownership uncertainty честно. Сохранённый
+digest не заменяет повторную authority/config/path проверку перед native spawn.
+Все blocking действия вне Engine.mu; active preparation не исчезает до cleanup.
+
+Schema201 нюанс: config/read `Config` имеет additionalProperties:true, а raw
+default_permissions/permissions не входят в его typed properties; layers[].config
+вообще arbitrary JSON. layers name — tagged source object, version string,
+disabledReason optional/null. Нельзя считать typed sandbox_mode:null активной
+legacy настройкой либо предполагать, что разрешения вернутся по факту CLI flags.
+Нужны actual raw selected-profile/layer facts; отсутствие/unknown shape блокирует
+режим. Requirements дают allowedPermissionProfiles/defaultPermissions, но не
+доказывают OS-compiled filesystem policy. Configured grants и negative OS QA —
+разные доказательства. Отключение connectors при inspection не должно менять
+permission projection относительно будущего native invocation.
+
+Реализация helper, interactive process plumbing, parser и авторские unit требуют
+contract approval201. Config RPC, native model и новые process sources здесь
+NOT-RUN; их отдельный QA следует после независимого source approve. Возможные
+startup side effects app-server не объявляются отсутствующими без проверки;
+global config hash drift не восстанавливается. Source pin193 не изменён.

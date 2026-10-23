@@ -99,3 +99,61 @@ unit/TypeScript/Next production build PASS; infra54 PASS. Эти результ�
 предшествуют отдельным actual native pipeline и Linux restore QA; production
 273 не менялся. Подготовленные source/docs проверены на known local tokens,
 provider-key/private-key patterns: findings0, private runtime не staged.
+
+## Release/native checkpoint после source approval
+
+Проверенный candidate `3e6ac81ee81909e3c33a2c86e593f4781357878d` собран из
+clean checkout для Linux/macOS/Windows и Next. Go/Next загружены в неактивные
+release directories с проверкой hashes; production273/schema5 не переключён.
+Подробности — [WORK200](work/WORK-200-automation-release.md).
+
+WORK198v2 actual Codex: exact file write и positive owned exit PASS, single
+local commit FAIL. В событиях нет `git add/commit`; сообщение модели об отказе
+ОС не является наблюдённым OS-denial. Отдельно зарегистрирован hash drift
+user config, происхождение не установлено; глобальный конфиг не восстанавливался.
+Узкий default-off Git permission contract [WORK201](work/WORK-201-native-git-permissions.md)
+проходит отдельное review до реализации/нового native запуска.
+
+WORK199 первый actual Linux fixture run остановился на public API seeding до
+миграции. Old binary capability rejection PASS; оба собственных server process
+завершились с положительным exit proof, source/binary pins не изменились.
+Migration/snapshot/restore NOT-RUN. Отдельный V2 исправляет project-open flow
+через штатные CSRF/action; требуется review и новый bounded root GO.
+
+Позднейший WORK199V2 после SOURCE APPROVE202 и отдельного GO: actual old seed
+четырёх boards/9DB, format2 schema5 snapshot и candidate schema5→6 с сохранением
+всех прежних logical rows/четырёх schema5 backups PASS. Проверка отказа старого
+CLI остановилась на неверном ожидании внутреннего текста ошибки вместо
+редактированного CLI сообщения. После этого restore не выполнялся. Оба own
+servers exited0, source/binary pins неизменны. Узкий отдельный V3 source fix
+проходит review; полного Linux PASS пока нет.
+
+WORK199V3 уточнил отказ: фактический old CLI exit1, пустой stdout и штатное
+CLI сообщение PASS; logical rows не изменились. Однако полное сравнение bytes
+state не совпало, поэтому общий FAIL и restore NOT-RUN сохранены. Изменённые
+пути первоначально не сохранены: SQLite WAL/SHM — только гипотеза, не диагноз.
+Перед изменением assertions нужен отдельный reviewed diagnostic с before/after
+maps. Подмена сравнения более слабым ради PASS не выполнена.
+
+WORK201 CONTRACT APPROVE202 получен; реализация узкого локального Git opt-in
+идёт отдельно в WORK204. Это не native permission activation и не config RPC PASS.
+
+WORK204 теперь **SOURCE APPROVE202** после P1 effective legacy-config rejection;
+23-file fingerprint `eea3f68a765ec122278cda976774493cbc0859e5ea22ee947f3f98cce53c9714`.
+Author/full targeted race и independent13cases PASS; actual config RPC/commit/
+OS-negative ещё NOT-RUN. Отдельный QA готовит config-only WORK206 перед model turn.
+WORK205 добавил read-only native `worker automation-preview` для локальной
+подготовки pins/consent без собственного Go helper. Six-file SOURCE APPROVE202,
+independent worker/cmd unit race PASS. Команда ничего не включает и не меняет
+config/state/token/server. Новый полный Go race выполняется до нового candidate.
+
+Final204+205 full `go test -race ./...` PASS: store102.833s, worker13.130s,
+acceptance30.352s, web35.919s; все остальные packages также PASS. Web/infra source
+не менялись после103frontend/TypeScript/Next build/54infra PASS3e6, их результаты
+сохраняются с прежними source pins. Новый clean candidate готовится перед
+отдельным WORK206 config-only process; actual native pipeline пока NOT-RUN.
+
+Это сохраняет общий статус **IN PROGRESS / NOT READY**. Новый полный native
+pipeline, отрицательный fix/control, browser UI, Linux restore и production
+activation ещё обязательны. [Инструкция](automation-guide.md) описывает
+реализованный интерфейс кандидата, а не уже установленный автоматический режим.

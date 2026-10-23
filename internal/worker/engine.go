@@ -52,6 +52,8 @@ type Engine struct {
 	automationTransport     func(context.Context, string, any, any) error
 	automationReadTransport func(context.Context, string, string, any, any) error
 	automationGit           func(context.Context, AutomationWorkspace, string) (gitProof, error)
+	inspectPermissions      func(context.Context, launchSpec) (permissionProof, error)
+	preparedConnectors      []mcpConnector
 	automationDeadlines     map[string]time.Time
 	asyncApply              bool
 }

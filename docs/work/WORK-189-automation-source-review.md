@@ -330,3 +330,47 @@ Windows/Claude/физический второй ПК, production schema6 rollou
 Native permission grants/settings не расширялись reviewer и не выводятся из gate.
 Review-card chronology намеренно сохранена целиком; лимит300 строк для этой
 истории превысился, production source files этим исключением не оправдываются.
+
+## QA198/199 новые harnesses — отдельный source gate
+
+198 **SOURCE APPROVE** пяти private Python files, source-pins SHA
+eaebde9f368c40f7f6b63cdbcf6fc4fb14a21af1842a6c922ba249a48f0c248c;
+independent5harness/97source hashes drift0. Fresh HOME copy exact candidate7207d536,
+developer193 workspace-write argv без model/approval/global settings overrides.
+Два readonly5s MCP inventory/whole-map-disable+exact verification предваряют
+ОДИН native180s synthetic file write/local commit. Commit/tree/parent/refs/config/
+hooks/bytes проверяются независимо; nonce positive owned exit0/output drain
+обязательны. Unknown не превращается в clean exit/retry; stdout без transcript.
+Runtime только по отдельному root GO; это не automation pipeline/GUI write gate.
+
+199 initial four-file manifest44750284677f8ae96c0b54ef654868f46538dcf6a0be2ff9e457ae5a77476d71
+прочитан вместе с reused fixture/restore/snapshot helpers. Paths new root-only,
+old/new CLI pins, all4boards/9DB row oracle, historical snapshots, new offline
+restore/authority invalidation/reservation history sound. **REVIEW PENDING**:
+420s outer bound пока только в prose; default SIGTERM может обойти seed finally и
+оставить свой serve child. Требуется bounded termination→owned handle cleanup и
+FAIL report даже при exception в final pin verification. Author notified before
+execution. Typed offline automation fixture не является domain-valid live workflow
+или доказательством pre-reset usable execution capability; scope следует назвать
+точно. Actual systemd/Next/updater activation и production этим harness не проверяются.
+
+198 v2 **SOURCE APPROVE**: source-pins c7beeba47a91d25b623f9ba029eb45ff4c4f05e2a2d6c03caf72326283252346,
+fixture12ebec7b5ab5a7149950cc252f6c7d621f89078b58313c6510d2c0aa908dcfe5.
+Independent diff содержит только exception GIT_PAGER и fixed --no-pager в parent
+Git helper; остальные4modules unchanged,5harness/97source drift0. Original198
+attempt остановился fixture env guard ДО Git/MCP/native (native_attempts0), не
+является native permission отказом. Старые sources/report сохранены; новый
+runtime требует отдельного root GO в том же bounded scope, без grant expansion.
+
+199 final five-file manifest
+d02e935426f79c4dff7de76bb96eddb5767c3a8a02978207bbf6499ba90ab240
+**SOURCE APPROVE**, independent5/5 drift0. Lifecycle33d7ffbb adds360s execution
+timer+60s cleanup reserve, SIGALRM/TERM/INT raise through seed/main finally;
+repeated signals не обрывают cleanup. Только exact Popen handles, bounded
+terminate8/kill3/wait; no PID/name discovery. Missing constructor handle или
+surviving child — FAIL/manual recovery, не proof отсутствия запуска. Source/binary
+pin failures собираются независимо, private exclusive report сохраняется даже
+при verification failure; report write failure даёт sanitized FAIL.
+Fixture semantic-invalid scope описан явно. Допускаются compile/transfer/owned
+fixture execution после отдельного root GO; storage/reset PASS не является
+systemd/Next activation, real workflow/capability runtime или production release.

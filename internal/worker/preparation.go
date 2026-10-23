@@ -45,6 +45,9 @@ func (e *Engine) prepareBridgeLocked(plan plan, run *RunState) ([]string, error)
 	if err := e.checkPins(run.Provider, run.Workspace); err != nil {
 		return nil, preparationFailureAt("prepare_pins", errors.Join(err, prepareError))
 	}
+	if active != nil && active.automation != nil {
+		active.automation.connectors = append([]mcpConnector{}, preparer.preparedConnectors...)
+	}
 	return args, prepareError
 }
 

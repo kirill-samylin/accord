@@ -3,6 +3,7 @@ package worker
 import (
 	"encoding/json"
 	"errors"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -85,6 +86,9 @@ func validateAutomationNativeConsent(c Config) error {
 	for _, workspace := range c.Automation.Workspaces {
 		if !workspace.Enabled {
 			continue
+		}
+		if workspace.CodexGitMetadataWrites && (c.CodexSandbox != "workspace-write" || !slices.Contains(workspace.Roles["developer"], "codex")) {
+			return errors.New("Codex Git metadata writes require explicit workspace-write and a local Codex developer role")
 		}
 		if workspace.AllowTesterArtifactWrites {
 			for _, provider := range workspace.Roles["tester"] {

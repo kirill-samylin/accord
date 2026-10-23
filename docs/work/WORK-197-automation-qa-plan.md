@@ -67,7 +67,7 @@ native grants. Actual execution/new harness пока NOT-RUN.
 
 | Контур | Bounded проверка и требуемый proof |
 | --- | --- |
-| Intake/pipeline | Один synthetic requirement через UI и exact duplicate retry через scoped MCP; один workflow; actual analyst→validated plan→developer commit→независимые reviewer и QA на exact SHA/generation→result. Distinct executors/principals и реальные task leases, не профили вместо identities. |
+| Intake/pipeline | Один synthetic requirement через UI и exact duplicate retry через scoped MCP; один workflow; actual analyst→validated plan→developer commit→независимые reviewer и QA на exact SHA/generation→result. Разные native UUID/RunID/SessionID и проверяемая contributor provenance исключают собственное review; один owner principal у разных ролей допустим. Реальные task leases, не профили вместо identities. |
 | Negative/fix | Один заранее ограниченный дефект в fixture, один negative review/QA и не более одного fix cycle. Stale SHA/epoch/capability evidence rejected; повторное review+QA exact нового commit, лимит/budget overflow требует видимого вмешательства. |
 | Human control | Isolated pause/clarify/question→answer/resume/cancel, lost response exact retry и restart. Queued vs applied, exact native UUID, fresh board session/task fencing, stop proof, retained reservation on unknown. Не использовать реальные production assignments. |
 | UI | Production Next local build, actual browser requirement/status/questions/controls, current-authority/CAS/lost-response/revoke boundaries; screenshots без секретов. Same-Mac two principals не выдавать за второй физический ПК. |
@@ -77,3 +77,12 @@ native grants. Actual execution/new harness пока NOT-RUN.
 reviewer approves до запуска. План не является согласием на production release,
 перенос GUI/credentials, глобальный provider config, push или реальный второйПК.
 Общую TASK редактирует только root; эта карточка не объявляет TASK014 готовым.
+
+## Позднейший scoped test gate
+
+169 SOURCE APPROVE двух existing cases получен; root targeted race PASS8.649s
+в `.local/work186/schema6-acceptance.txt`. Это actual schema6 acceptance foundation,
+не native/pipeline automation PASS. Parent сообщил composite source freeze после
+193 approval; отдельный WORK198 готовит только native permission preflight.
+Два разных site principals остаются отдельной проверкой intake/control ACL,
+а не подменой независимых native reviewer/tester executors.

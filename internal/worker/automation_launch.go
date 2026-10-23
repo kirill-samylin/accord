@@ -23,6 +23,7 @@ func (e *Engine) launchAutomationLocked(p plan) error {
 		return e.save()
 	}
 	config := snapshotConfig(e.config)
+	nativeEnv := providerEnv()
 	epoch := e.stopEpoch
 	ctx, cancel := context.WithCancel(context.Background())
 	runtime := &automationRuntime{ctx: ctx, cancel: cancel, checks: map[string]process{}, checksDone: make(chan struct{})}
@@ -153,8 +154,16 @@ func (e *Engine) launchAutomationLocked(p plan) error {
 		return fail(err)
 	}
 	args = append(bridgeArgs, args...)
+	permission, permissionArgs, err := e.prepareGitPermissionsLocked(p, active, epoch, config, nil, nativeEnv)
+	if err != nil {
+		return fail(err)
+	}
 	if run.Provider == "codex" {
 		sandbox := automationSandbox(config, role, run.Workspace)
+		if permission != nil {
+			args = append(permissionArgs, args...)
+			sandbox = ""
+		}
 		if sandbox != "" {
 			args = append([]string{"-c", fmt.Sprintf("sandbox_mode=%q", sandbox)}, args...)
 		}
@@ -169,6 +178,13 @@ func (e *Engine) launchAutomationLocked(p plan) error {
 	if err = e.appendAutomationModel(p, &args); err != nil {
 		return fail(err)
 	}
+	if permission != nil {
+		permission, _, err = e.prepareGitPermissionsLocked(p, active, epoch, config, permission, nativeEnv)
+		if err != nil {
+			return fail(err)
+		}
+		run.Automation.PermissionProof = permission
+	}
 	if !e.automationPreparing(p, active, epoch, config) {
 		return fail(consentError())
 	}
@@ -179,7 +195,7 @@ func (e *Engine) launchAutomationLocked(p plan) error {
 	// The durable intent and active preparation handle fence a stop racing spawn.
 	// A returned child is always adopted into this attempt and stopped if revoked.
 	e.mu.Unlock()
-	child, err := e.start(launchSpec{executable: config.Executables[run.Provider], directory: directory, args: args, env: providerEnv(), prompt: e.prompt(p)})
+	child, err := e.start(launchSpec{executable: config.Executables[run.Provider], directory: directory, args: args, env: nativeEnv, prompt: e.prompt(p)})
 	e.mu.Lock()
 	if err != nil {
 		return fail(err)
@@ -242,6 +258,10 @@ func (e *Engine) failAutomationPreparationLocked(p plan, active *activeRun, caus
 	} else {
 		run.State = "failed"
 		run.Error = "automation local consent, source proof or scoped registration is unavailable"
+		if errors.Is(cause, errPermissionProof) {
+			run.Error = errPermissionProof.Error()
+			run.LocalDiagnostic = "native_git_permission_unproven"
+		}
 		e.reportFor(p.command.ID, "failed", run, run.Error, "")
 		if active.stopCommand != "" {
 			run.State = "stopped"

@@ -30,6 +30,9 @@ func startProcess(spec launchSpec) (process, error) {
 	}
 	cmd := exec.Command(spec.executable, spec.args...)
 	cmd.Dir, cmd.Env, cmd.Stdin = spec.directory, spec.env, strings.NewReader(spec.prompt)
+	if spec.stdin != nil {
+		cmd.Stdin = spec.stdin
+	}
 	cmd.Stdout, cmd.Stderr = writer, io.Discard
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	if err = cmd.Start(); err != nil {

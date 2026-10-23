@@ -25,9 +25,12 @@ Codex start, stop, exact-conversation resume and clarification checks in WORK195
 Windows and a second physical computer remain unverified; this is not a completed V1.
 
 [TASK-014](docs/TASK-014-automation.md) adds requirement intake, an analyst plan,
-development, independent review, tests and bounded fixes. Its source is undergoing
-independent review. The production schema5 release does not execute that automatic
-pipeline yet; see the task checkpoint before configuring a worker.
+development, independent review, tests and bounded fixes. Candidate `3e6ac81`
+passed independent source review and the full automated checks. Real native
+pipeline acceptance is still in progress. The production schema5 release does
+not execute that automatic pipeline yet; see the task checkpoint before
+configuring a worker. The intended user flow is described in the
+[automation guide](docs/automation-guide.md).
 The repository's consolidated branch preserves older experimental history without
 enabling those isolated features; see [branch dispositions](docs/repository-consolidation.md).
 

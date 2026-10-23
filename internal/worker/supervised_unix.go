@@ -56,7 +56,7 @@ func startSupervised(spec launchSpec) (process, error) {
 	// From this point the helper may have launched a native process. Always
 	// return its ownership handle; handshake failures must go through final
 	// proof/needs_recovery instead of the unambiguous no-child error path.
-	request := supervisorRequest{Executable: spec.executable, Directory: spec.directory, Args: spec.args, Env: spec.env, Prompt: spec.prompt, Nonce: p.nonce}
+	request := supervisorRequest{Executable: spec.executable, Directory: spec.directory, Args: spec.args, Env: spec.env, Prompt: spec.prompt, Nonce: p.nonce, Inspection: spec.inspection}
 	go func() {
 		if json.NewEncoder(input).Encode(request) != nil {
 			p.closeInput()
@@ -124,41 +124,6 @@ func proofOwnershipFailure(proof *supervisorProof) error {
 	return ownershipFailureAt("supervisor_unproven_exit")
 }
 
-// ReadSlice keeps any single allocation bounded even for malformed native
-// output. Provider event framing still belongs to the ordinary bounded scanner.
-type proofReader struct {
-	source io.ReadCloser
-	reader *bufio.Reader
-	owner  *supervisedProcess
-	buffer []byte
-}
-
-func (r *proofReader) Read(data []byte) (int, error) {
-	if len(data) == 0 {
-		return 0, nil
-	}
-	if len(r.buffer) > 0 {
-		n := copy(data, r.buffer)
-		r.buffer = r.buffer[n:]
-		return n, nil
-	}
-	fragment, err := r.reader.ReadSlice('\n')
-	if len(fragment) > 0 {
-		var proof supervisorProof
-		if len(fragment) < 1024 && json.Unmarshal(fragment, &proof) == nil && proof.Type == "accord.supervisor.exit" && proof.Nonce == r.owner.nonce {
-			r.owner.mu.Lock()
-			r.owner.proof = &proof
-			r.owner.mu.Unlock()
-			return r.Read(data)
-		}
-		n := copy(data, fragment)
-		r.buffer = append(r.buffer[:0], fragment[n:]...)
-		return n, nil
-	}
-	return 0, err
-}
-func (r *proofReader) Close() error { return r.source.Close() }
-
 func (p *supervisedProcess) ExitCode() (int, bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -166,4 +131,14 @@ func (p *supervisedProcess) ExitCode() (int, bool) {
 		return 0, false
 	}
 	return *p.proof.ExitCode, true
+}
+
+func (p *supervisedProcess) acceptProof(proof supervisorProof) bool {
+	if proof.Nonce != p.nonce {
+		return false
+	}
+	p.mu.Lock()
+	p.proof = &proof
+	p.mu.Unlock()
+	return true
 }

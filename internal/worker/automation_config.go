@@ -22,6 +22,7 @@ type AutomationConfig struct {
 }
 
 type AutomationWorkspace struct {
+	CodexGitMetadataWrites    bool                   `json:"codex_git_metadata_writes,omitempty"`
 	AllowTesterArtifactWrites bool                   `json:"allow_tester_artifact_writes,omitempty"`
 	Version                   int64                  `json:"version"`
 	Enabled                   bool                   `json:"enabled"`
@@ -143,8 +144,9 @@ func presetConsentDigest(workspace, identity, id string, a AutomationWorkspace, 
 		Source, Artifact, Dependency []string
 		DependencySHA256             map[string]string
 		AllowTesterArtifactWrites    bool
+		CodexGitMetadataWrites       bool `json:",omitempty"`
 		Preset                       CheckPreset
-	}{workspace, identity, id, a.SourceRoots, a.ArtifactRoots, a.DependencyRoots, a.DependencySHA256, a.AllowTesterArtifactWrites, preset})
+	}{workspace, identity, id, a.SourceRoots, a.ArtifactRoots, a.DependencyRoots, a.DependencySHA256, a.AllowTesterArtifactWrites, a.CodexGitMetadataWrites, preset})
 	digest := sha256.Sum256(raw)
 	return hex.EncodeToString(digest[:])
 }

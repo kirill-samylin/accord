@@ -23,6 +23,8 @@ type launchSpec struct {
 	args       []string
 	env        []string
 	prompt     string
+	stdin      io.Reader // Only helper-owned finite config dialogue uses this pipe.
+	inspection *configInspection
 }
 
 // Native verification needs the observed OS exit status, not a fabricated code

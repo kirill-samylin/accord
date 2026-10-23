@@ -118,7 +118,14 @@ func (p *windowsProcess) launch(spec launchSpec) error {
 		return err
 	}
 	p.process, p.output = pi.Process, outputR
-	go func() { _, _ = io.WriteString(inputW, spec.prompt); inputW.Close() }()
+	go func() {
+		if spec.stdin != nil {
+			_, _ = io.Copy(inputW, spec.stdin)
+		} else {
+			_, _ = io.WriteString(inputW, spec.prompt)
+		}
+		inputW.Close()
+	}()
 	return nil
 }
 
