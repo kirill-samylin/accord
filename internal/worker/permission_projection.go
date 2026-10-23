@@ -32,7 +32,7 @@ func provePermissionConfig(raw, requirements json.RawMessage, i configInspection
 		return permissionProof{}, permissionError()
 	}
 	profiles, ok := c["permissions"].(map[string]any)
-	if !ok || !reflect.DeepEqual(profiles[i.Profile], permissionProfile(i)) {
+	if !ok || !reflect.DeepEqual(normalizeEffectiveProfile(profiles[i.Profile]), permissionProfile(i)) {
 		return permissionProof{}, permissionError()
 	}
 	projection := []any{}
@@ -85,7 +85,7 @@ func provePermissionConfig(raw, requirements json.RawMessage, i configInspection
 			}
 		}
 		selected := map[string]any{}
-		for _, key := range []string{"approval_policy", "approvals_reviewer", "default_permissions", "sandbox_mode", "sandbox_workspace_write"} {
+		for _, key := range []string{"approval_policy", "approvals_reviewer", "default_permissions", "sandbox_mode", "sandbox_workspace_write", "include_permissions_instructions"} {
 			if v, present := config[key]; present && v != nil {
 				selected[key] = v
 			}
@@ -220,6 +220,13 @@ func knownRequirementKey(key string) bool {
 func unexpectedPermissionKey(config map[string]any) bool {
 	for key, v := range config {
 		if v == nil {
+			continue
+		}
+		if key == "include_permissions_instructions" {
+			enabled, ok := v.(bool)
+			if !ok || !enabled {
+				return true
+			}
 			continue
 		}
 		lower := strings.ToLower(key)

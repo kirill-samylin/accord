@@ -153,7 +153,66 @@ acceptance30.352s, web35.919s; все остальные packages также PAS
 сохраняются с прежними source pins. Новый clean candidate готовится перед
 отдельным WORK206 config-only process; actual native pipeline пока NOT-RUN.
 
+WORK199V4-P2 actual Linux **PASS7/7**:4projects/9runtimeDB, format2 snapshots,
+schema5→6 со всеми прежними logical rows и4историческими copies; отказ actual
+old273; offline restore с отзывом authority/повышением epochs и сохранением
+истории/reservations. Только exact SQLite SHM/empty-WAL aux отмечены отдельно;
+непустой WAL, основные БД, snapshots/history не исключаются из строгой проверки.
+Report `e0eb6cba41711cb163f5136afa43193a9521a63a0388a1ccf4f9ddd9c469bc26`,
+independent EVIDENCE APPROVE202 получен. Typed offline fixture остаётся storage
+proof с synthetic invalid refs, не live workflow/native/systemd/Next proof.
+
+WORK206V3 actual config-only **FAIL**:2MCP calls доказали5/5disabled connectors,
+один native app-server не выдал permission digest. Owned exit proven, forcedfalse,
+config/source/binary pins неизменны, model0. Raw dialog продуктовый helper не
+раскрывает, поэтому причина ещё не классифицирована. Нельзя объявить legacy/
+profile/OS-denial без фактов. Отдельная QA-only private diagnostic WORK207
+получил CONTRACT APPROVE202; source review ещё впереди до ONE config RPC,
+product8c не расширяется.
+Native commit/OS-negative/full pipeline и production activation всё ещё pending.
+
+WORK207 ONE diagnostic run завершился FAIL до config response: initialize
+получен, затем notification `remoteControl/status/changed` с metadata
+`emittedAtMs` (int64 по schema установленного CLI) отвергнут QA parser.
+Root прочитал только whitelist field names/types и method enum из installed
+schema; raw values не публиковались. Native wait known exit0 после EOF cleanup,
+broker exit1, owned proof proven/!forced; config/source/binary pins unchanged,
+model0. Это конкретная protocol incompatibility до проверки permissions, не
+OS-denial. Отдельный207V2 source разрешает только штатную notification metadata;
+SOURCE review и новый root GO до повторной диагностики обязательны.
+
+WORK207V2 после нового SOURCE APPROVE202/GO: diagnostic CAPTURED, три fixed
+responses, native known natural0/EOF/drained, model0/config/pins unchanged.
+Safe projection показывает expected selected profile/never/no legacy/five
+disabled MCP/requirements null. Effective profile отличается от intent только
+typed-null map entries. [WORK208](work/WORK-208-native-config-compatibility.md)
+задаёт узкую protocol/typed-null совместимость без изменения rights/overrides;
+CONTRACT APPROVE202 получен, separate author208 делает regression units/source
+delta. Independent evidence review подтвердил207V2 CAPTURED diagnostic-only.
+Это ещё не обычный product permission PASS. QA209 готовит только план normal
+proof/native commit/direct synthetic OS-negative, до source approval208 новые
+process harness sources не создаются.
+
+WORK208 FINAL SOURCE APPROVE202 получен на5-file fingerprint
+`10cd3bbc4754ceb675f0169e94e9bc74ec3721a2f454ee4d298c6d8c64e0b3c4`.
+Промежуточный c3d сохраняет REQUEST CHANGES из-за нового blanket include_ reject;
+финальный delta удаляет эту регрессию, сохраняя exact permission-instruction
+true-only и прежние guards. Author targeted/full worker race и independent
+regression races PASS. Root полный Go race на final frozen composite ещё идёт.
+QA209 PLAN APPROVE получен, отдельно пишет минимальный A product-proof harness
+с missing-candidate gate. Candidate build/runtime ещё впереди. WORK203 source
+получил3P1 REQUEST CHANGES (credential cleanup/caps/cleanup deadline), tester
+исправляет private v2 до новых source review; native pipeline не запускался.
+WORK210 PLAN APPROVE согласовал genuine negative-review fix и controls/UI,
+это не process/runtime acceptance.
+
+Final208 composite: root `go test -race ./...` PASS на exact10cd3…,275 source
+pins unchanged. Manifest SHA
+`d203adea5ef3f7f6538354a6b67462f38e1bea54b3207d73cc5b7532312df1f0`.
+Private proof `.local/task014/root208/final-all-packages-proof.json`;
+чистый commit/build готовится до actual QA209A. Web/infra source не изменились.
+
 Это сохраняет общий статус **IN PROGRESS / NOT READY**. Новый полный native
-pipeline, отрицательный fix/control, browser UI, Linux restore и production
+pipeline, отрицательный fix/control, browser UI и production
 activation ещё обязательны. [Инструкция](automation-guide.md) описывает
 реализованный интерфейс кандидата, а не уже установленный автоматический режим.

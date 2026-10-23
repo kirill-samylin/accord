@@ -111,7 +111,7 @@ agent-board worker automation-preview --config PRIVATE_WORKER_JSON
 ```
 
 На Windows используйте путь к `agent-board.exe`, canonical native `.exe` для
-Git/checks и Windows пути в JSON с `\`. Private config/state должны иметь
+Git/checks и Windows пути в JSON с `\\` (например, `C:\\Projects\\repo`). Private config/state должны иметь
 нужные [DACL](managed-worker-guide.md); Unix chmod их не заменяет.
 
 Ожидается JSON с `applied:false`, `requires_local_apply:true` и значениями для

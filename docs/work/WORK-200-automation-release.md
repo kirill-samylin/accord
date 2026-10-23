@@ -60,3 +60,47 @@ WORK199 первый run: old CLI capability guard PASS, seeding HTTPError до 
 оба owned servers exited0, pins unchanged. V2 public project-open source ready,
 review/новый GO ещё pending. Ни один из этих результатов не разрешает объявить
 полный pipeline или Linux restore PASS и переключить production автоматически.
+
+## Новый native-permission кандидат
+
+После CONTRACT/SOURCE APPROVE202 для204+205 и полного Go race PASS создан local
+commit `8c43df9f408712526e223796905bba787e336d5e`. Он добавляет scoped Codex Git
+permission proof и read-only native consent preview; вся реализация3e6 сохраняется.
+29 source delta pins и244 прежних source hashes без drift,45 подготовленных
+source/docs files secret scan findings0. Remote/main не менялись этим commit.
+Новый clean build выполняется в отдельные release artifacts; предыдущие3e6
+artifacts и неактивная загрузка сохранены. Новый config-only WORK206 ещё NOT-RUN;
+подготовка harness не является проверкой actual CLI или успешного commit.
+
+Clean8c builds и immutable inactive upload завершены:
+
+| Артефакт | SHA256 / состояние |
+| --- | --- |
+| Linux amd64 Go | `325cd53ffe76099a895e14dcc9e67dac05ecfe0855aa75a8d55a03284dc438b2` |
+| macOS arm64 Go | `8726daa43fbbf93b026215aede6fb3d2e7b98ebdd06644af5cea12dc1e92622f` |
+| Windows amd64 Go | `83e8ee9cbfa7bbd7da58057399771baaa51cd92f0542a3d431cbccf028f9b38c`; native NOT-RUN |
+| Go bundle manifest | `7a35057bb6d1fe01f78eac44275d1c58f4a1d8dff1c77cdb4155a455d4fa9e91` |
+| Next manifest | `e1e751583e1ae1c959675534d98645db9d8e278e1cc2346d4c9a832043a3cc6b` |
+| Next build ID | `W34afpK9YF9oWNEIULNXf` |
+
+VCS clean/revision8c подтверждены Go metadata. Transfer55Go/1256Next verified,
+`active_changed:false` для обоих. Активный273/schema5 и Mac GUI62e сохраняются.
+Readonly QA206 identity helper отдельно compile-only approved202; actual run ещё
+не был разрешён. Наличие новых артефактов не является operational PASS.
+
+## Последующий actual QA
+
+WORK199V4-P2 завершён Linux PASS7/7 и independent EVIDENCE APPROVE202:
+4 проекта/9 runtime DB, format2 snapshots, schema5→6, отказ old273 и offline
+restore с отзывом прежних полномочий. Actual Linux binary был3e6, не8c;
+root отдельно проверил отсутствие изменений3e6→8c в infra, store, projects,
+core, web. Это сохраняет применимость storage source acceptance, но не
+подменяет будущую process/systemd проверку нового production binary.
+
+WORK206V3 config-only FAIL/unclassified: MCP5/5 disabled доказаны, permission
+digest не получен, model0, owned exit proven без forced stop. User config и
+source/binary pins неизменны; raw product dialogue намеренно не публикуется.
+WORK207 готовит отдельную закрытую диагностику после CONTRACT APPROVE202,
+до SOURCE APPROVE и отдельного root GO никаких новых config RPC нет.
+Native commit/OS-negative/full pipeline, schema6 activation и Test worker
+enrollment остаются обязательной незавершённой работой.

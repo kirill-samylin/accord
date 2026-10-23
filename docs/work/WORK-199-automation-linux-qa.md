@@ -328,3 +328,168 @@ diagnostic V2 в отдельной `diagnostic/v2/` теперь связыва
 inputs.json фиксируется и повторяется после probe. Report сохраняет только
 безопасные provenance hashes/count. Первый diagnostic source dfb93ecc… сохранён;
 новый probe всё ещё не переносился и не выполнялся.
+
+### Diagnostic V2 — фактический один запуск после 202 APPROVE + root GO
+
+202 независимо SOURCE APPROVE exact двухфайловый manifest
+`d7fd7da52366454ff30c1128f742501b00c884fd0f79221a9f53aed4ff51cba2`;
+root затем явно разрешил ONE bounded execution. Approved `probe.py` SHA
+`703770f2ccdab75ea89895589fdd334e118e03354db31d00fce2db455fa89b1b`,
+`support.py` SHA
+`379c1e71f4a1b719a1e6c6109c682d214537f3c70b529a492765274fc7b05e62`.
+Компиляции, изменения продукта и повторов original V3 oldCLI не было.
+
+Private local evidence:
+`.local/task014/linux-qa199/diagnostic/v2/execution-diagnostics-1792773790799965000/evidence/`.
+`diagnostic-results.json` SHA
+`3076f352b1e3fef18cacc5635e9b7e3542db8a476a4e3aff596ca0c2a8ac66d4`.
+До/после exact maps с каждым path/SHA/size и changed-path classification сохранены
+приватно; права evidence owner-only проверены. Последующие source pins совпадают
+с approved manifest; original V1/V2/V3 reports/sources не перезаписаны.
+
+- **DIAGNOSTIC_COMPLETE**: ровно один approved supervised old CLI в новой
+  derivative. Operator exit0, outer timeout=false; child Proven=true, ExitCode1,
+  success=false, forced=false, supervisor natural exit0; stdout old CLI пуст.
+  Manual recovery=false, errors пусты. Stderr subprocess намеренно не receipt:
+  helper его discards, original V3 documented stderr proof остаётся отдельным.
+- Оба census до CLI показали zero open handles на собственную fixture. Copy
+  прошла exact byte proof до SQL; metadata rebind изменил только
+  `registry_meta.default_db/default_web`, остальные logical rows сохранились.
+- Fresh first-open изменил **четыре пути**: созданы два SHM по32768bytes с SHA
+  `fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb`
+  и два пустых WAL, size0 / SHA
+  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+  Before этих четырёх файлов не было. DB/rollback-journal/nonempty-WAL/history
+  и иной nonaux content не изменились; strict nonaux assertion PASS. Все9DB
+  logical rows/schema/integrity/floors facts идентичны before/after CLI.
+- Original V3 state, snapshots, inputs, accepted40-source aggregate, probe
+  sources и exact6c259…/5a1e… binaries byte-unchanged after. Candidate capabilities
+  before/after совпали. No production/native/services/ports были затронуты.
+
+**Исходный V3 acceptance остаётся FAIL.** Этот controlled first-open наблюдал
+aux-creation mechanism в отдельной derivative; отсутствующие original V3
+before-path maps он не восстанавливает. Ослабление strict byte assertion не
+выполнялось. Actual restore/authority reset/history-retention/typed automation
+insertion по-прежнему NOT-RUN. Derivative metadata adjustment не считается
+supported production restore, live automation authority или системной активацией.
+Evidence передано 202 на независимый readback. Следующее acceptance execution
+потребует отдельного source-review и exact root GO, автоматический retry запрещён.
+
+### V4 source preparation after actual diagnostic — runtime запрещён до нового GO
+
+Root явно поручил отдельный source-only V4 на основании diagnostic фактов.
+Папка `.local/task014/linux-qa199/v4/` содержит fresh copies пяти sources;
+исходные V1/V2/V3/diagnostic и их результаты сохранены. V4 сохраняет seed4/9,
+real schema5→6, обе format2 snapshots, typed offline-only fixture, полную
+restore/reset/history/reservation oracle, capable floors/ACL/epochs и прежнюю
+360+60/outer420 lifecycle. Binary6c259…/old5a1e…/generator9a3… неизменны;
+компиляции/transfer/execute V4 не выполнялись.
+
+Изменён только refusal filesystem oracle с evidence persistence:
+
+- До command создаются private полный state и snapshot path→size/SHA maps;
+  checkpointed runtime (все WAL/journals пусты/отсутствуют) обязателен для
+  immutable read oracle. Nonempty WAL никогда не игнорируется.
+- Allowlist содержит ровно `board.db-shm`, `board.db-wal`,
+  `projects-data/registry.sqlite-shm`, `projects-data/registry.sqlite-wal` —
+  только registry и default-board, доказанные diagnostic. SHM допускается
+  create/change только при32768bytes (existing before тоже32768); WAL —
+  только empty size0/hash(empty), новый или byte-identical. Любое удаление,
+  другой путь, main DB/history/nonempty-WAL/snapshot mutation — FAIL.
+- После команды сохраняются полный after maps и каждый changed path со
+  before/after size/hash/class. Actual exit/stdout/public-error receipt и
+  все вычисленные predicates пишутся в report **до assertion**. Фактический
+  `all_state_bytes_unchanged` может быть false и не выдаётся за true; отдельный
+  exact-aux predicate определяет filesystem refusal acceptance.
+- Все9DB logical rows и полный schema/DDL/integrity/user_version/application_id
+  сравниваются строго. Actual declared6/floors/hash и old capabilities5/public
+  exit1+stdoutempty+exact error gates сохранены. Эта узкая observability allowance
+  не разрешает изменения persisted data/authority и не подтверждает native/AI.
+
+AST всех Python sources PASS; файлов больше300строк нет. Source manifest будет
+передан 202 на отдельное независимое review; до его SOURCE APPROVE и нового root
+GO запрещён новый execution. Original V3 acceptance FAIL остаётся в истории;
+новый контракт проверки не переписывает прежний результат.
+
+V4 final source freeze, переданный 202/root:
+manifest SHA `7480521c86f3f26f04a676d1fed9e1891550677f3003ee867be25ef2cbfcc150`;
+run SHA `969f98cacb2cb4c10d6f311b75b163a04afc4c8c8da771078c4ef43abd875d34`;
+oracle SHA `1176448060d79e12e27597c84653eea90070d860dc6d1a61568b67c329e3dd85`.
+Остальные3sources exact V3 pins. Private source-diff114lines; AST PASS,
+max257source lines. Status SOURCE REVIEW PENDING; execution NOT-RUN.
+
+### V4 P2 truthful negative-proof correction — source-only
+
+202 diagnostic evidence APPROVE3076… получен root; V4 source748… был sound с
+узким P2, который root поручил устранить до исполнения. Original `v4/`
+source/manifest748… сохранены. Новая отдельная `v4-p2/` меняет только run source:
+после oldCLI и durable file maps вычисляется `checkpointed_after`. Если любой
+runtime WAL/journal непуст, immutable logical/schema read не выполняется;
+поля равенства остаются JSON null, observation `not_observed_nonempty_WAL_or_journal`,
+checkpointed_after=false и assertion FAIL. Поэтому негативный сценарий не
+выдаёт устаревшее DB-only чтение за доказанное равенство; receipt/maps/nonempty-WAL
+predicate сохраняются до assert. Положительный checkpointed путь прежний.
+
+Новый manifest SHA
+`4f793a7217c8d3f5c7ab747dd5dcf52aff654858596fe30786fd9d2dd523a96c`;
+run SHA `6a352bc0d71e1375bef4a58b71228397d389fa85149d46f373fbd7feda529a55`.
+Остальные4source pins exact V4. AST PASS, run256/max257lines. Новое narrow
+review202 запрошено; compile/transfer/run не выполнялись, нужен новый root GO.
+
+## V4-P2 actual Linux acceptance — PASS7/7, отдельный завершённый прогон
+
+202 FINAL SOURCE APPROVE exact5-source manifest4f793a72… получен, затем root явно
+разрешил ONE fullfresh execution. Source4f793…/run6a352… остались frozen.
+Сначала local input packaging остановился **до SSH/setup/transfer/launch**:
+old binary отсутствовал в прежнем local package (в V3 его копировали на Linux).
+Это не actual pipeline attempt. Root подтвердил разрешение дочитать immutable
+old5a1e… из retained private V3 `input`; read-copy SHA проверен, production не
+читалась. После этого состоялся ровно один fresh actual V4-P2 execution.
+Ни компиляции текущего primary, ни автоматического retry не было.
+
+Private run:
+`.local/task014/linux-qa199/v4-p2/run-v4p2-1792774478739251000/`.
+Полный удалённый isolated runtime сохранён; точный private path в execution.json.
+Evidence содержит results/operator receipt, before/after all-state/snapshot maps,
+changed paths с размерами/SHA/class, exact inputs+root-go. Report SHA
+`e0eb6cba41711cb163f5136afa43193a9521a63a0388a1ccf4f9ddd9c469bc26`.
+Expanded40-source aggregate
+`b9ba2681667a43b81eaca97c738b351d115450eb5083580f11f6f734786726c4`.
+
+**PASS7/7, actual Linux / exact candidate3e6 / Go CLI + existing infra helpers:**
+
+1. Capable guard отверг exact schema5 binary до DDL.
+2. Actual old273 CLI/public scoped HTTP создали4active projects/9runtimeDB;
+   native workers/providers не запускались.
+3. Actual pre-migration snapshot format2 содержит все4schema5 проекта.
+4. Candidate6c259… выполнил schema5→6 для4boards; все прежние logical rows и
+   immutable pre-snapshot сохранились. Созданы4schema5 migration backups с
+   точными checksums и старым содержимым.
+5. Actual old5a1e… отказал declared6: exit1, stdoutempty, точный documented
+   public error, stderr SHA5577ba45…. Private maps доказали2изменения: одна
+   SHM32768 и один новый WAL0 только из exact allowlist. `all_state_bytes_unchanged`
+   **false**, `exact_aux_allowlist_only` true. `checkpointed_after` true;
+   все9DB logical rows/fullDDL/schema/integrity и snapshots byte-unchanged.
+6. Actual full offline format2 restore/reset сохранил history/reservations
+   и immutable content; independent oracle проверил revoked tokens/policies/
+   capabilities, membership access_epoch+1, workflow control_epoch+1 и managed
+   worker_epoch+1, cleared browser/catalog actions/sessions, expired board sessions,
+   released leases/recovered attempts, disabled managed host proof, managed command
+   cancellation и workflows needs_recovery без автоматического replay.
+7. Source/final/pre snapshots и immutable blob/staging/migration bytes сохранились;
+   no false process-exit/autolaunch evidence.
+
+Operator returncode0, outer_timeout=false. Все40source pins и три exact binaries
+(candidate6c259…, old5a1e…, generator9a3…) неизменны after. Оба exact owned seed
+serve завершились natural0, forced=false; all_owned_children_exited=true,
+manual_recovery_required=false, cleanup_failures пусты. По завершении V4-P2
+approved local source pins повторно сверены; evidence owner-only.
+
+Граница результата: typed offline automation rows имеют synthetic invalid
+references, GitPolicy isolated и одну роль. Это storage retention/reset proof,
+**не valid live workflow/policy authority и не AI execution**. Systemd/Next
+activation, production upgrade, native providers/GUI, Windows и физический
+второйПК по этому тесту NOT-RUN. Production data/services/pointers/helpers/
+ports7892/7893/7894 не менялись. Исторические V1/V2/V3 FAIL и diagnostic COMPLETE
+сохранены с исходными sources/maps/reports; V4-P2 PASS их не переписывает.
+Actual evidence передано202 на отдельный независимый readback.

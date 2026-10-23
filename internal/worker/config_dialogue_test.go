@@ -161,3 +161,86 @@ func TestParentConfigCaptureCleansUncertainTimeoutExactlyOnce(t *testing.T) {
 		t.Fatal("timeout cleanup lost uncertainty or repeated its bounded reserve", err, p.stops.Load())
 	}
 }
+
+func configCompatibilityTranscript(t *testing.T) (configInspection, string) {
+	t.Helper()
+	i, r := permissionFixture(t)
+	initial := map[string]any{"userAgent": "synthetic", "platformFamily": "unix", "platformOs": "macos", "codexHome": "/synthetic"}
+	var stream bytes.Buffer
+	for n, value := range []any{initial, r, map[string]any{"requirements": nil}} {
+		if err := json.NewEncoder(&stream).Encode(map[string]any{"id": n + 1, "result": value}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return i, stream.String()
+}
+
+func TestConfigPassiveNotificationsAndTypedMetadataBeforeResponseAndAfterStdinEOF(t *testing.T) {
+	for _, method := range []string{"configWarning", "remoteControl/status/changed"} {
+		for _, metadata := range []string{"", `,"emittedAtMs":0`, `,"emittedAtMs":9223372036854775807`, `,"emittedAtMs":-9223372036854775808`} {
+			i, stream := configCompatibilityTranscript(t)
+			notification := `{"method":"` + method + `","params":{"synthetic-secret":"discarded"}` + metadata + "}\n"
+			var input bufferCloser
+			proof, err := configDialogue(&input, strings.NewReader(notification+stream+notification), i)
+			if err != nil || !validSHA256(proof.Digest) {
+				t.Fatal("known passive notification rejected", err)
+			}
+			if strings.Contains(input.String(), "remoteControl") || strings.Contains(input.String(), "synthetic-secret") {
+				t.Fatal("passive event triggered a command or escaped input")
+			}
+		}
+	}
+}
+
+func TestConfigNotificationMetadataAndPostEOFActionsRemainStrict(t *testing.T) {
+	for _, stamp := range []string{`null`, `true`, `"1"`, `1.25`, `1e3`, `9223372036854775808`, `-9223372036854775809`} {
+		for _, tail := range []bool{false, true} {
+			i, stream := configCompatibilityTranscript(t)
+			bad := `{"method":"remoteControl/status/changed","params":{},"emittedAtMs":` + stamp + "}\n"
+			if tail {
+				stream += bad
+			} else {
+				stream = bad + stream
+			}
+			var input bufferCloser
+			if _, err := configDialogue(&input, strings.NewReader(stream), i); err == nil {
+				t.Fatal("malformed notification timestamp accepted")
+			}
+		}
+	}
+	tails := map[string]string{
+		"server-request":       `{"id":99,"method":"remoteControl/status/changed","params":{}}` + "\n",
+		"unknown-notification": `{"method":"remoteControl/command","params":{}}` + "\n",
+		"duplicate-response":   `{"id":3,"result":{"requirements":null}}` + "\n",
+		"notification-result":  `{"method":"configWarning","result":{},"params":{}}` + "\n",
+		"unknown-metadata":     `{"method":"configWarning","params":{},"futureMetadata":0}` + "\n",
+		"notification-flood":   strings.Repeat(`{"method":"remoteControl/status/changed","params":{},"emittedAtMs":0}`+"\n", 33),
+	}
+	for name, tail := range tails {
+		t.Run(name, func(t *testing.T) {
+			i, stream := configCompatibilityTranscript(t)
+			var input bufferCloser
+			if _, err := configDialogue(&input, strings.NewReader(stream+tail), i); err == nil {
+				t.Fatal("post-EOF action or frame overflow accepted")
+			}
+		})
+	}
+	i, stream := configCompatibilityTranscript(t)
+	stream = strings.Replace(stream, `"id":1`, `"id":1,"emittedAtMs":0`, 1)
+	var input bufferCloser
+	if _, err := configDialogue(&input, strings.NewReader(stream), i); err == nil {
+		t.Fatal("reply metadata accepted")
+	}
+}
+
+func TestConfigPassiveTailSharesOriginalTotalFrameBudget(t *testing.T) {
+	for _, count := range []int{32, 33} {
+		i, stream := configCompatibilityTranscript(t)
+		stream += strings.Repeat(`{"method":"remoteControl/status/changed","params":{},"emittedAtMs":0}`+"\n", count)
+		var input bufferCloser
+		_, err := configDialogue(&input, strings.NewReader(stream), i)
+		if (err == nil) != (count == 32) {
+			t.Fatal("post-EOF drain changed original 35-frame limit", count, err)
+		}
+	}
+}

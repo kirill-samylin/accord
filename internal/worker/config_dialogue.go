@@ -2,6 +2,7 @@ package worker
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -46,13 +47,28 @@ func (f *configFrames) next() (map[string]json.RawMessage, error) {
 	}
 	for k := range m {
 		switch k {
-		case "id", "result", "error", "method", "params":
+		case "id", "result", "error", "method", "params", "emittedAtMs":
 		default:
+			return nil, permissionError()
+		}
+	}
+	if stamp, present := m["emittedAtMs"]; present {
+		var milliseconds int64
+		_, hasID := m["id"]
+		if hasID || bytes.Equal(bytes.TrimSpace(stamp), []byte("null")) || json.Unmarshal(stamp, &milliseconds) != nil {
 			return nil, permissionError()
 		}
 	}
 	return m, nil
 }
+
+func passiveConfigNotification(m map[string]json.RawMessage) bool {
+	_, hasID := m["id"]
+	var method string
+	return !hasID && m["result"] == nil && m["error"] == nil && json.Unmarshal(m["method"], &method) == nil &&
+		(method == "configWarning" || method == "remoteControl/status/changed")
+}
+
 func (f *configFrames) response(id int) (json.RawMessage, error) {
 	for {
 		m, err := f.next()
@@ -60,8 +76,7 @@ func (f *configFrames) response(id int) (json.RawMessage, error) {
 			return nil, permissionError()
 		}
 		if _, ok := m["id"]; !ok {
-			var method string
-			if json.Unmarshal(m["method"], &method) != nil || method != "configWarning" || m["result"] != nil || m["error"] != nil {
+			if !passiveConfigNotification(m) {
 				return nil, permissionError()
 			}
 			continue // Never log possibly secret warning params.
@@ -132,9 +147,16 @@ func configDialogue(input io.WriteCloser, output io.Reader, i configInspection) 
 	if input.Close() != nil {
 		return permissionProof{}, permissionError()
 	}
-	// After stdin EOF no further response or action belongs to this protocol.
-	if _, err = f.next(); err != io.EOF {
-		return permissionProof{}, permissionError()
+	// Only bounded passive status may follow stdin close. A reply/request never
+	// acquires a new protocol slot, and all original frame/deadline limits remain.
+	for {
+		message, readErr := f.next()
+		if readErr == io.EOF {
+			break
+		}
+		if readErr != nil || !passiveConfigNotification(message) {
+			return permissionProof{}, permissionError()
+		}
 	}
 	return proof, nil
 }
