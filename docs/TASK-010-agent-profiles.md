@@ -111,7 +111,7 @@ Go linux/amd64 clean VCS, SHA256
 Next BuildID `hI1Cu6Lg4v0sMm34KPKnO`; manifest SHA256
 `94186245b3d7ff02546f592343ef32ec44cf9b48a3e00f99ce07d6bec1651d06`,
 1256regular members проверены. Рабочая панель:
-[Accord](https://157.22.207.48/app/projects).
+Рабочая панель открывается по индивидуальной ссылке подключения; адрес не хранится в текущей документации.
 
 | Проверка | Фактический результат |
 | --- | --- |

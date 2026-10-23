@@ -139,7 +139,7 @@ WORK153–157. Native stdio MCP не является реальным Claude/Co
 
 ## Итоговая поставка22.10.2026
 
-[Рабочий стенд — «Команда»](https://157.22.207.48/app/team).
+Рабочая панель открывается по индивидуальной ссылке подключения; адрес не хранится в текущей документации.
 Go/Next immutable release **64ed870b749289b545d29cd2ec7813c6266de54d**.
 Go Linux SHA256 `c4b25c45de5204dee55f6bb3e85de03be7e1073267d0304aa04c5c816f918b45`;
 Next BuildID `PWEoVOCD7jLxpbqh89NjG`, manifest SHA256

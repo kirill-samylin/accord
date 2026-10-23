@@ -62,7 +62,7 @@ Pinned Linux Node24.19.0 и lock/SRI sharp; сборок на VPS не выпо�
 только семь helper entries и audit; исходный journal сохранён O_EXCL0600/fsync,
 поля app revision/Go/Next/baseline/owner и реальные БД не менялись.
 
-Публичный интерфейс: <https://157.22.207.48/app/projects>.
+Рабочая панель открывается по индивидуальной ссылке подключения; адрес не хранится в текущей документации.
 Go7892/Next7893/nginx active, NRestarts0; прежние backup/web-backup/renew timers
 active. После фактического full backup повторно проверены effective config,
 permanent guard, owned PID, /proc argv и ELF SHA. Operator journal phase complete.

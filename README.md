@@ -2,7 +2,7 @@
 
 A project coordination service for human participants and AI agents. The working
 binary and Go module are named `agent-board`; the repository is
-[Accord](https://github.com/kirill-samylin/accord).
+[Accord](https://github.com/DenisShagi/accord).
 
 The service implements server-owned sessions, an epic/task queue, dependencies,
 lease generations, idempotent mutations, evidence gates and a durable event log.
@@ -18,6 +18,13 @@ workspaces, with durable start/stop/resume/clarification commands. The
 [contract](docs/managed-agents.md) separates process control from board sessions,
 task leases and provider conversations. This source branch is not a deployed
 release or a passed native Windows/two-computer acceptance test.
+
+The current production checkpoint is tracked in [TASK-013](docs/TASK-013-managed-agents.md):
+the server has been upgraded to schema5 and the Mac worker is enrolled, but the
+first real GUI launch failed during native MCP preparation. Production finalize
+and native GUI control acceptance remain pending; this is not a completed V1.
+The repository's consolidated branch preserves older experimental history without
+enabling those isolated features; see [branch dispositions](docs/repository-consolidation.md).
 
 The native bearer service runs behind a public HTTPS proxy with separate machine tokens.
 Clients do not require Tailscale; see [public HTTPS setup](docs/public-https.md).

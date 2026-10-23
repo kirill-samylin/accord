@@ -166,7 +166,7 @@ closing docs checkpoint. Зависимости и lockfile не обновля�
 
 ## Фактическая поставка и приёмка
 
-[Рабочая панель Accord](https://157.22.207.48/app/projects).
+Рабочая панель открывается по индивидуальной ссылке подключения; адрес не хранится в текущей документации.
 Production Go/Next immutable release **e53c18c9643b9ee086141d0f227ab485f4f88cac**;
 LinuxGo SHA/NextBuildID/manifest выше. WORK150 approved exactLinux+actualstage
 перед apply. Обновление только reviewed `projects/upgrade.py`, не initial apply.

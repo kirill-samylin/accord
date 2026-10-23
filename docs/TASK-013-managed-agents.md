@@ -155,6 +155,56 @@ product binary798e/4177... неизменён. QA-only prompt fix — test commi
 расширяет permissions. Для GUI/Windows/global policy test grant не применяется.
 Настоящие токены/адреса в публичные пакеты не включаются.
 
-Статус: **IN PROGRESS — Mac native PASS; Windows/второй ПК NOT-RUN**. Remote
-push/merge/release не выполнены; VPS остаётся TASK012. Непройденная обязательная
-native/Windows проверка оставляет этап незавершённым.
+Этот локальный checkpoint предшествовал production поставке ниже. Windows и
+второй физический ПК остаются NOT-RUN; source branch не заменяет runtime proof.
+
+## Рабочий VPS и Mac — 23.10.2026
+
+Пользователь отдельно поручил обновить рабочий сервер и подключить свой Mac к
+«Давинчи 2.0». Координатор — WORK171; independent operations/source/evidence
+review — WORK169; local worker/enrollment — WORK170; отдельная Linux/live QA —
+WORK172. Новое поручение разрешает scoped productive Mac connection; прежний
+synthetic grant describe/next сам по себе не переносился.
+
+Clean release `273ccbb15c99dfac91c37f34d2926abf01ca866f`, product diff относительно
+approved798e отсутствует. Go Linux SHA `5a1e1352895c20ec976feef20cc60328aa9ba19834834e75d3b1e5a46ca7dd60`,
+Mac SHA `e3d4caf6ac13621702ba2ef84155b399d46fe14546b0969611fb7176050e2d3a`,
+Go1.27.2/CGO0/trimpath/exact VCS/modified=false. Next buildID
+`EJT-3udsZCJ4tJm9eDhiL`, manifest SHA `b18e7fed8678ec48a9e98656facac67863103fcc1f30661c551dd0d384957a41`.
+
+До apply: independent169 APPROVE, actual hardened Linux Next stage PASS,
+отдельный actual Linux updater PASS3. Дополнительный Linux process PASS16
+получен после apply и проверен до финальной приёмки. Suite использует
+настоящие Go/Linux/SQLite/owned PGID и synthetic credentials; его systemd/Next
+lifecycle simulated. Actual hardened stage и production owned processes
+проверялись отдельно. Linux report pins/source unchanged, cleanup PASS.
+
+Capable `projects/upgrade.py apply` выполнен с owned startup hold, полной
+format2 all-project pre-copy, новыми permanent floors до DDL и additive
+migration4→5. Реальные5 production DB сохранили прежние logical rows, ACL,
+profiles и immutable historical bytes. Go/Next actual PID/ELF/cwd/buildID,
+effective startup guard/backup/helper hashes и прежний capability marker
+bytes/UID0600 проверены; recovery markers отсутствуют. Никакого old binary/DB
+rollback, initial TASK009 apply или Git push/merge не выполнялось.
+
+Mac enrolled текущим project-local owner с additional controller второго
+действующего editor. Отдельный user LaunchAgent работает в фоне от обычного
+пользователя, один canonical GUI workspace, Codex CLI0.163.0-alpha.11.1,
+workspace-write и exact10 coordination tools; global approval/auth не менялись.
+Старый GUI bridge сохранён, source GUI не меняется. Активный постоянный профиль
+«Разработчик GUI · Codex» v1, provider openai/model default готов в панели.
+
+Пока **pending-https-smoke**. Первый actual GUI/UI прогон172 — **FAIL**:
+UI start дошёл до Mac, но native preparation завершилась ошибкой до открытия
+provider session/claim. Source нового harness также содержал неверный selector
+`profile` вместо `profile_snapshot`; исправление отдельно approved, повтор пока
+не выполнялся. Это не native PASS. Тестовые карточки отменены, QA профиль
+архивирован, GUI3316-file baseline и binary/config сохранены; worker работает.
+Config-only discovery и exact isolation verification в реальном env/cwd затем
+прошли, поэтому причина runtime preparation пока не установлена. См. WORK170/172.
+Технический sandbox остаётся workspace-write; проверке разрешалось только чтение.
+Finalize/new post-copy ждут actual native GUI acceptance. Сначала пользователь
+поручил публикацию текущего кода и всей истории в `DenisShagi/accord`; после неё
+продолжается диагностика, без молчаливого ослабления process ownership guards.
+Windows/native Claude и второй физический ПК — **NOT-RUN**; TASK013 целиком
+остаётся **IN PROGRESS**.
