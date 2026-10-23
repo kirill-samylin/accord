@@ -12,7 +12,7 @@ import (
 func (e *Engine) prepareBridgeLocked(plan plan, run *RunState) ([]string, error) {
 	run.State, run.CommandID, run.Generation = "accepted", plan.command.ID, plan.command.Generation
 	if err := e.save(); err != nil {
-		return nil, err
+		return nil, preparationFailureAt("prepare_journal", err)
 	}
 	snapshot := *run
 	config := snapshotConfig(e.config)
@@ -26,20 +26,23 @@ func (e *Engine) prepareBridgeLocked(plan plan, run *RunState) ([]string, error)
 		args, prepareError = preparer.bridgeArgs(snapshot)
 	}()
 	if e.fatal != nil {
-		return nil, e.fatal
+		return nil, preparationFailureAt("prepare_fatal", errors.Join(e.fatal, prepareError))
 	}
 	if e.closed {
-		return nil, errors.New("worker closed during launch preparation")
+		return nil, preparationFailureAt("prepare_closed", prepareError)
 	}
 	current := e.journal.Runs[snapshot.ID]
 	if current != run || current.State != "accepted" || current.CommandID != snapshot.CommandID || current.Generation != snapshot.Generation || current.Provider != snapshot.Provider || current.Workspace != snapshot.Workspace || current.SessionID != snapshot.SessionID {
-		return nil, errors.New("local execution state changed during launch preparation")
+		return nil, preparationFailureAt("prepare_state", prepareError)
 	}
-	if !time.Now().Before(e.deadline) || e.stopEpoch != epoch || e.active[run.ID] != nil || !e.allowedController(plan.command.CreatedBy) || !reflect.DeepEqual(e.config, config) {
-		return nil, errors.New("launch authorization changed during configuration preparation")
+	if !time.Now().Before(e.deadline) {
+		return nil, preparationFailureAt("prepare_deadline", prepareError)
+	}
+	if e.stopEpoch != epoch || e.active[run.ID] != nil || !e.allowedController(plan.command.CreatedBy) || !reflect.DeepEqual(e.config, config) {
+		return nil, preparationFailureAt("prepare_authorization", prepareError)
 	}
 	if err := e.checkPins(run.Provider, run.Workspace); err != nil {
-		return nil, err
+		return nil, preparationFailureAt("prepare_pins", errors.Join(err, prepareError))
 	}
 	return args, prepareError
 }

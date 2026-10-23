@@ -59,24 +59,24 @@ func ReadToken(path string) (string, error) {
 
 func (e *Engine) bridgeArgs(run RunState) ([]string, error) {
 	if !identifier.MatchString(run.ID) || run.Generation < 1 {
-		return nil, errors.New("invalid managed execution binding")
+		return nil, preparationFailureAt("prepare_binding", nil)
 	}
 	runDir := filepath.Join(e.config.StateDir, "runs", run.ID)
 	if err := privateDirectory(runDir); err != nil {
-		return nil, err
+		return nil, preparationFailureAt("prepare_run_directory", err)
 	}
 	dir := filepath.Join(runDir, "attempt-"+strconv.FormatInt(run.Generation, 10))
 	if err := privateDirectory(dir); err != nil {
-		return nil, err
+		return nil, preparationFailureAt("prepare_attempt_directory", err)
 	}
 	path := filepath.Join(dir, "bridge.json")
 	data, _ := json.Marshal(BridgeConfig{ManagedRunID: run.ID, ManagedGeneration: run.Generation, Server: e.config.Server, Project: e.config.Project, TokenFile: e.config.TokenFile})
 	if err := immutableBridgeFile(path, data); err != nil {
-		return nil, err
+		return nil, preparationFailureAt("prepare_bridge_file", err)
 	}
 	self, err := os.Executable()
 	if err != nil {
-		return nil, err
+		return nil, preparationFailureAt("prepare_self", err)
 	}
 	args := []string{"worker", "bridge", "--config", path}
 	if run.Provider == "codex" {
@@ -84,14 +84,14 @@ func (e *Engine) bridgeArgs(run RunState) ([]string, error) {
 		// connector for this invocation so another board session cannot be used.
 		connectors, err := e.discover(e.config.Executables[run.Provider], e.config.Workspaces[run.Workspace].Path)
 		if err != nil {
-			return nil, err
+			return nil, preparationContext("prepare_discovery", err)
 		}
 		overrides, err := codexMCPOverrides(connectors, self, args, e.config.NativeMCPApprovedTools["codex"])
 		if err != nil {
 			return nil, err
 		}
 		if err = e.verifyMCP(e.config.Executables[run.Provider], e.config.Workspaces[run.Workspace].Path, overrides, self, args); err != nil {
-			return nil, err
+			return nil, preparationContext("prepare_verify", err)
 		}
 		return overrides, nil
 	}
@@ -99,7 +99,7 @@ func (e *Engine) bridgeArgs(run RunState) ([]string, error) {
 	data, _ = json.Marshal(mcp)
 	path = filepath.Join(dir, "mcp.json")
 	if err = immutableBridgeFile(path, data); err != nil {
-		return nil, err
+		return nil, preparationFailureAt("prepare_claude_file", err)
 	}
 	return append([]string{"--strict-mcp-config", "--mcp-config", path}, claudeMCPConsent(e.config.NativeMCPApprovedTools["claude"])...), nil
 }

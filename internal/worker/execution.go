@@ -10,6 +10,7 @@ import (
 
 func (e *Engine) launch(plan plan) error {
 	run := e.journal.Runs[plan.run.ID]
+	run.LocalDiagnostic = ""
 	fail := func(message string) error {
 		run.State = "failed"
 		run.Error = message
@@ -20,6 +21,7 @@ func (e *Engine) launch(plan plan) error {
 		return fail("immutable agent profile snapshot is required")
 	}
 	if time.Now().After(e.deadline) {
+		run.LocalDiagnostic = "prepare_deadline"
 		return fail("worker ownership lease is uncertain; native launch refused")
 	}
 	executable, directory, err := e.config.launch(run.Provider, run.Workspace)
@@ -27,6 +29,7 @@ func (e *Engine) launch(plan plan) error {
 		return fail("local workspace/provider consent is unavailable")
 	}
 	if err = e.checkPins(run.Provider, run.Workspace); err != nil {
+		run.LocalDiagnostic = "prepare_pins"
 		return fail("local executable/workspace identity changed; explicit local consent is required")
 	}
 	args, err := providerArgs(run.Provider, run.SessionID)
@@ -35,10 +38,11 @@ func (e *Engine) launch(plan plan) error {
 	}
 	bridgeArgs, err := e.prepareBridgeLocked(plan, run)
 	if err != nil {
+		run.LocalDiagnostic = preparationDiagnostic(err)
 		if e.closed || e.fatal != nil || run.State != "accepted" || run.CommandID != plan.command.ID {
 			return err
 		}
-		return fail("cannot prepare isolated native MCP connection")
+		return fail(preparationError)
 	}
 	args = append(bridgeArgs, args...)
 	if run.Provider == "codex" && e.config.CodexSandbox != "" {
@@ -76,10 +80,12 @@ func (e *Engine) launch(plan plan) error {
 		return fail("workspace is busy or has an unresolved local launch; local recovery required")
 	}
 	if time.Now().After(e.deadline) {
+		run.LocalDiagnostic = "prepare_launch_deadline"
 		_ = checkoutLock.release(true)
 		return fail("worker ownership expired while preparing native launch")
 	}
 	if err = e.checkPins(run.Provider, run.Workspace); err != nil {
+		run.LocalDiagnostic = "prepare_launch_pins"
 		_ = checkoutLock.release(true)
 		return fail("local path identity changed before native launch")
 	}

@@ -2,7 +2,6 @@ package worker
 
 import (
 	"encoding/json"
-	"errors"
 	"reflect"
 	"strconv"
 	"strings"
@@ -15,7 +14,7 @@ func codexMCPOverrides(connectors []mcpConnector, self string, args []string, ap
 	for _, connector := range connectors {
 		if connector.Name == managedMCPName {
 			if connector.Transport != "stdio" {
-				return nil, errors.New("reserved managed MCP name conflicts with another transport; rename the local connector before running")
+				return nil, preparationFailureAt("prepare_override_reserved", nil)
 			}
 			continue
 		}
@@ -30,7 +29,7 @@ func codexMCPOverrides(connectors []mcpConnector, self string, args []string, ap
 			// avoids copying access-bearing original URLs into process argv.
 			transport = `{enabled=false,url="http://127.0.0.1:1"}`
 		default:
-			return nil, errors.New("unsupported local Codex MCP transport")
+			return nil, preparationFailureAt("prepare_override_transport", nil)
 		}
 		tables = append(tables, strconv.Quote(connector.Name)+"="+transport)
 	}
@@ -43,11 +42,11 @@ func codexMCPOverrides(connectors []mcpConnector, self string, args []string, ap
 
 func verifyCodexMCP(executable, directory string, overrides []string, self string, args []string) error {
 	command := append(append([]string(nil), overrides...), "mcp", "list", "--json")
-	data, err := readNative(executable, directory, command)
+	data, err := readNativeFor("verify", executable, directory, command, startProcess)
 	if err != nil {
-		return errors.New("cannot verify isolated Codex MCP configuration")
+		return err
 	}
-	connectors, err := parseMCPConnectors(data)
+	connectors, err := parseMCPFor("verify", data)
 	if err != nil {
 		return err
 	}
@@ -59,15 +58,15 @@ func checkCodexMCP(connectors []mcpConnector, self string, args []string) error 
 	for _, connector := range connectors {
 		if connector.Name == managedMCPName {
 			if found || !connector.Enabled || connector.Transport != "stdio" || connector.Command != self || !reflect.DeepEqual(connector.Args, args) {
-				return errors.New("managed Codex MCP configuration differs from the fixed execution binding")
+				return preparationFailureAt("prepare_verify_binding", nil)
 			}
 			found = true
 		} else if connector.Enabled {
-			return errors.New("another Codex MCP connector remains enabled in the managed invocation")
+			return preparationFailureAt("prepare_verify_binding", nil)
 		}
 	}
 	if !found {
-		return errors.New("managed Codex MCP connector is absent from the invocation")
+		return preparationFailureAt("prepare_verify_binding", nil)
 	}
 	return nil
 }
