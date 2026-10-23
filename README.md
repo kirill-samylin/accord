@@ -20,9 +20,14 @@ task leases and provider conversations. This source branch is not a deployed
 release or a passed native Windows/two-computer acceptance test.
 
 The current production checkpoint is tracked in [TASK-013](docs/TASK-013-managed-agents.md):
-the server has been upgraded to schema5 and the Mac worker is enrolled, but the
-first real GUI launch failed during native MCP preparation. Production finalize
-and native GUI control acceptance remain pending; this is not a completed V1.
+the schema5 server update is finalized and the enrolled Mac worker passed real
+Codex start, stop, exact-conversation resume and clarification checks in WORK195.
+Windows and a second physical computer remain unverified; this is not a completed V1.
+
+[TASK-014](docs/TASK-014-automation.md) adds requirement intake, an analyst plan,
+development, independent review, tests and bounded fixes. Its source is undergoing
+independent review. The production schema5 release does not execute that automatic
+pipeline yet; see the task checkpoint before configuring a worker.
 The repository's consolidated branch preserves older experimental history without
 enabling those isolated features; see [branch dispositions](docs/repository-consolidation.md).
 

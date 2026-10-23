@@ -5,38 +5,41 @@ import "time"
 // ManagedHost grants control of an explicitly enrolled local workspace. It is
 // neither a native board session nor evidence that a provider process is alive.
 type ManagedHost struct {
-	ID               string    `json:"id"`
-	OwnerPrincipalID string    `json:"owner_principal_id"`
-	OwnerAccessEpoch int64     `json:"owner_access_epoch"`
-	Name             string    `json:"name"`
-	Version          int64     `json:"version"`
-	State            string    `json:"state"`
-	Controllers      []string  `json:"controllers"`
-	Workspaces       []string  `json:"workspaces"`
-	Providers        []string  `json:"providers"`
-	LastSeenAt       time.Time `json:"last_seen_at"`
-	WorkerEpoch      int64     `json:"worker_epoch"`
-	LeaseExpiresAt   time.Time `json:"lease_expires_at"`
-	CanControl       bool      `json:"can_control"`
+	Automation         *AutomationHostConsent `json:"automation,omitempty"`
+	WorkerCapabilities map[string]int         `json:"worker_capabilities,omitempty"`
+	ID                 string                 `json:"id"`
+	OwnerPrincipalID   string                 `json:"owner_principal_id"`
+	OwnerAccessEpoch   int64                  `json:"owner_access_epoch"`
+	Name               string                 `json:"name"`
+	Version            int64                  `json:"version"`
+	State              string                 `json:"state"`
+	Controllers        []string               `json:"controllers"`
+	Workspaces         []string               `json:"workspaces"`
+	Providers          []string               `json:"providers"`
+	LastSeenAt         time.Time              `json:"last_seen_at"`
+	WorkerEpoch        int64                  `json:"worker_epoch"`
+	LeaseExpiresAt     time.Time              `json:"lease_expires_at"`
+	CanControl         bool                   `json:"can_control"`
 }
 type ManagedRun struct {
-	ID                string           `json:"id"`
-	HostID            string           `json:"host_id"`
-	Version           int64            `json:"version"`
-	Provider          string           `json:"provider"`
-	Workspace         string           `json:"workspace"`
-	Prompt            string           `json:"prompt"`
-	Profile           *ProfileSnapshot `json:"profile_snapshot,omitempty"`
-	TaskKey           string           `json:"task_key,omitempty"`
-	CreatedBy         string           `json:"created_by"`
-	State             string           `json:"state"`
-	Generation        int64            `json:"generation"`
-	ProviderSessionID string           `json:"provider_session_id,omitempty"`
-	CreatedAt         time.Time        `json:"created_at"`
-	UpdatedAt         time.Time        `json:"updated_at"`
-	LastError         string           `json:"last_error,omitempty"`
-	Output            []string         `json:"output"`
-	OutputTruncated   bool             `json:"output_truncated"`
+	Automation        *ManagedAutomationBinding `json:"automation,omitempty"`
+	ID                string                    `json:"id"`
+	HostID            string                    `json:"host_id"`
+	Version           int64                     `json:"version"`
+	Provider          string                    `json:"provider"`
+	Workspace         string                    `json:"workspace"`
+	Prompt            string                    `json:"prompt"`
+	Profile           *ProfileSnapshot          `json:"profile_snapshot,omitempty"`
+	TaskKey           string                    `json:"task_key,omitempty"`
+	CreatedBy         string                    `json:"created_by"`
+	State             string                    `json:"state"`
+	Generation        int64                     `json:"generation"`
+	ProviderSessionID string                    `json:"provider_session_id,omitempty"`
+	CreatedAt         time.Time                 `json:"created_at"`
+	UpdatedAt         time.Time                 `json:"updated_at"`
+	LastError         string                    `json:"last_error,omitempty"`
+	Output            []string                  `json:"output"`
+	OutputTruncated   bool                      `json:"output_truncated"`
 }
 type ManagedCommand struct {
 	ID         string     `json:"id"`
@@ -55,7 +58,8 @@ type ManagedCommand struct {
 	Forced     bool       `json:"forced,omitempty"`
 }
 type ManagedListInput struct {
-	HostID string `json:"host_id,omitempty"`
+	Workspace string `json:"workspace,omitempty"`
+	HostID    string `json:"host_id,omitempty"`
 }
 type ManagedPage struct {
 	ObservedAt       time.Time     `json:"observed_at"`
@@ -76,12 +80,13 @@ type ManagedRunPage struct {
 	CommandsTruncated bool             `json:"commands_truncated"`
 }
 type ManagedHostEnrollInput struct {
-	RequestID   string   `json:"request_id"`
-	Name        string   `json:"name"`
-	HostSecret  string   `json:"host_secret"`
-	Controllers []string `json:"controllers"`
-	Workspaces  []string `json:"workspaces"`
-	Providers   []string `json:"providers"`
+	Automation  *AutomationHostConsent `json:"automation,omitempty"`
+	RequestID   string                 `json:"request_id"`
+	Name        string                 `json:"name"`
+	HostSecret  string                 `json:"host_secret"`
+	Controllers []string               `json:"controllers"`
+	Workspaces  []string               `json:"workspaces"`
+	Providers   []string               `json:"providers"`
 }
 type ManagedHostUpdateInput struct {
 	ManagedHostEnrollInput
@@ -116,11 +121,12 @@ type ManagedResult struct {
 	Command ManagedCommand `json:"command"`
 }
 type ManagedPollInput struct {
-	RequestID   string `json:"request_id"`
-	HostID      string `json:"host_id"`
-	HostSecret  string `json:"host_secret"`
-	WorkerID    string `json:"worker_id"`
-	WorkerEpoch int64  `json:"worker_epoch,omitempty"`
+	WorkerCapabilities map[string]int `json:"worker_capabilities,omitempty"`
+	RequestID          string         `json:"request_id"`
+	HostID             string         `json:"host_id"`
+	HostSecret         string         `json:"host_secret"`
+	WorkerID           string         `json:"worker_id"`
+	WorkerEpoch        int64          `json:"worker_epoch,omitempty"`
 }
 type ManagedPollResult struct {
 	Host           ManagedHost     `json:"host"`

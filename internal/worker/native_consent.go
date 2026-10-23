@@ -9,7 +9,7 @@ import (
 
 // The local owner opts into specific bridge operations. The dashboard cannot
 // set this map; unset and empty entries preserve the native permission policy.
-var managedMCPTools = []string{"comment", "create", "describe", "events", "get", "heartbeat", "link", "next", "note", "release", "transition", "update"}
+var managedMCPTools = []string{"comment", "create", "describe", "events", "get", "heartbeat", "link", "next", "note", "release", "transition", "update", "workflow_plan", "workflow_question", "workflow_run_check"}
 
 func validateNativeMCPConsent(grants map[string][]string, executables map[string]string) error {
 	for provider, tools := range grants {
@@ -76,4 +76,43 @@ func claudeMCPConsent(approved []string) []string {
 		args = append(args, "--disallowedTools", strings.Join(deny, ","))
 	}
 	return args
+}
+
+func validateAutomationNativeConsent(c Config) error {
+	if c.Automation == nil {
+		return nil
+	}
+	for _, workspace := range c.Automation.Workspaces {
+		if !workspace.Enabled {
+			continue
+		}
+		if workspace.AllowTesterArtifactWrites {
+			for _, provider := range workspace.Roles["tester"] {
+				if provider == "codex" && c.CodexSandbox != "workspace-write" {
+					return errors.New("tester artifact writes require separate local flag and workspace-write native consent")
+				}
+			}
+		}
+		for role, providers := range workspace.Roles {
+			for _, provider := range providers {
+				required := []string{"describe", "next", "get", "transition", "workflow_question"}
+				if role == "analyst" {
+					required = append(required, "workflow_plan")
+				}
+				if role == "developer" || role == "tester" {
+					required = append(required, "workflow_run_check")
+				}
+				for _, tool := range required {
+					found := false
+					for _, granted := range c.NativeMCPApprovedTools[provider] {
+						found = found || granted == tool
+					}
+					if !found {
+						return errors.New("automation needs explicit local native MCP tool consent for every configured role")
+					}
+				}
+			}
+		}
+	}
+	return nil
 }

@@ -154,3 +154,20 @@ Owner/colleague browser contexts закрыты. Worker остаётся гот�
 `profile_snapshot.id`, task_key и created_by. SHA256 нового frozen private
 adapter `3c1e38a585732c94bde9f94a9fb28a952df5b4a198921e44a504770c18150c8b`;
 syntax PASS, передан169, execution **NOT-RUN** до диагноза/отдельного root GO.
+
+## Подготовка bounded повторной проверки с диагностикой
+
+QA177 actual config-only Go comparison PASS12 не воспроизвёл исходный сбой;
+его причина остаётся неизвестной. Root собрал clean Mac diagnostic worker
+`62e354525b83a2b671ab37ede938ffe7e838e24b`, SHA256
+`10e845ff702e2b1f9d9bcac4ac8cdd278c4aba65e5fd839104dd0cc822c6d429`.
+Это будущая локальная замена только worker binary; server product остаётся273.
+
+В approved corrected adapter изменён только expected binary pin и добавлена
+отдельная local_worker_revision; scope/permissions/GUI instructions не менялись.
+Frozen execute-copy:
+`.local/task013-live/qa/qa172-diagnostic-62e3545/adapter-execute.cjs`, SHA256
+`490d13fa844fd3200df4800b320803710658bc411a6785ef7cfc33a608ccb61f`.
+Private provenance рядом; Node syntax PASS, tiny source review169 запрошен.
+Execution **NOT-RUN**, ожидается actual installation proof и отдельный root GO.
+Первые FAIL report/source, cleanup и native stage отсутствие сохранены.

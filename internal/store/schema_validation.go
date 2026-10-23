@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 )
 
 // A declared existing schema must be complete. Missing authority or profile
@@ -22,12 +23,45 @@ func validateSchema(ctx context.Context, db *sql.DB, version int) error {
 	if version >= 5 {
 		queries = append(queries, `SELECT key,data FROM managed_hosts LIMIT 0`, `SELECT key,data FROM managed_runs LIMIT 0`, `SELECT key,data FROM managed_commands LIMIT 0`, `SELECT id,version FROM managed_metadata LIMIT 0`)
 	}
+	if version >= 6 {
+		for _, table := range automationTables {
+			queries = append(queries, "SELECT key,data FROM "+table+" LIMIT 0")
+		}
+		queries = append(queries, `SELECT id,version FROM automation_metadata LIMIT 0`)
+	}
 	for _, q := range queries {
 		rows, err := db.QueryContext(ctx, q)
 		if err != nil {
 			return fmt.Errorf("existing board schema incomplete")
 		}
 		rows.Close()
+	}
+	if version >= 6 {
+		var count, v int
+		if err := db.QueryRowContext(ctx, `SELECT count(*),COALESCE(MAX(version),0) FROM automation_metadata`).Scan(&count, &v); err != nil || count != 1 || v != 1 {
+			return fmt.Errorf("existing automation metadata incomplete")
+		}
+		if err := db.QueryRowContext(ctx, `SELECT version FROM automation_metadata WHERE id=1`).Scan(&v); err != nil || v != 1 {
+			return fmt.Errorf("existing automation metadata identity missing")
+		}
+		for _, name := range []string{"automation_step_execution", "automation_cap_attempt"} {
+			if err := db.QueryRowContext(ctx, `SELECT count(*) FROM sqlite_master WHERE type='index' AND name=?`, name).Scan(&count); err != nil || count != 1 {
+				return fmt.Errorf("existing automation constraint missing")
+			}
+			var actual string
+			if err := db.QueryRowContext(ctx, `SELECT sql FROM sqlite_master WHERE type='index' AND name=?`, name).Scan(&actual); err != nil {
+				return fmt.Errorf("existing automation constraint unreadable")
+			}
+			matched := false
+			for _, q := range automationDDL() {
+				if strings.Contains(q, "INDEX "+name+" ") {
+					matched = strings.TrimSpace(actual) == strings.TrimSpace(q)
+				}
+			}
+			if !matched {
+				return fmt.Errorf("existing automation constraint changed")
+			}
+		}
 	}
 	var sequence int64
 	if err := db.QueryRowContext(ctx, `SELECT sequence FROM metadata WHERE id=1`).Scan(&sequence); err != nil {

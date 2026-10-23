@@ -13,16 +13,17 @@ import (
 )
 
 type RunState struct {
-	ID              string `json:"id"`
-	Provider        string `json:"provider"`
-	Workspace       string `json:"workspace"`
-	Generation      int64  `json:"generation"`
-	State           string `json:"state"`
-	SessionID       string `json:"session_id,omitempty"`
-	CommandID       string `json:"command_id"`
-	Output          string `json:"output,omitempty"`
-	Error           string `json:"error,omitempty"`
-	LocalDiagnostic string `json:"local_diagnostic,omitempty"`
+	Automation      *automationAttempt `json:"automation,omitempty"`
+	ID              string             `json:"id"`
+	Provider        string             `json:"provider"`
+	Workspace       string             `json:"workspace"`
+	Generation      int64              `json:"generation"`
+	State           string             `json:"state"`
+	SessionID       string             `json:"session_id,omitempty"`
+	CommandID       string             `json:"command_id"`
+	Output          string             `json:"output,omitempty"`
+	Error           string             `json:"error,omitempty"`
+	LocalDiagnostic string             `json:"local_diagnostic,omitempty"`
 }
 
 type Receipt struct {
@@ -41,21 +42,22 @@ type Receipt struct {
 }
 
 type journal struct {
-	PathPins         map[string]pathPin           `json:"path_pins"`
-	OwnerPrincipalID string                       `json:"owner_principal_id"`
-	Server           string                       `json:"server"`
-	Project          string                       `json:"project"`
-	Machine          string                       `json:"machine"`
-	Enrollment       *core.ManagedHostEnrollInput `json:"enrollment,omitempty"`
-	Consent          *core.ManagedHostUpdateInput `json:"consent,omitempty"`
-	HostID           string                       `json:"host_id,omitempty"`
-	HostSecret       string                       `json:"host_secret"`
-	EnrollRequestID  string                       `json:"enroll_request_id"`
-	WorkerID         string                       `json:"worker_id"`
-	Epoch            int64                        `json:"epoch"`
-	Runs             map[string]*RunState         `json:"runs"`
-	Receipts         map[string]*Receipt          `json:"receipts"`
-	Pending          []*Receipt                   `json:"pending"`
+	AutomationBudgets map[string]*automationBudget `json:"automation_budgets,omitempty"`
+	PathPins          map[string]pathPin           `json:"path_pins"`
+	OwnerPrincipalID  string                       `json:"owner_principal_id"`
+	Server            string                       `json:"server"`
+	Project           string                       `json:"project"`
+	Machine           string                       `json:"machine"`
+	Enrollment        *core.ManagedHostEnrollInput `json:"enrollment,omitempty"`
+	Consent           *core.ManagedHostUpdateInput `json:"consent,omitempty"`
+	HostID            string                       `json:"host_id,omitempty"`
+	HostSecret        string                       `json:"host_secret"`
+	EnrollRequestID   string                       `json:"enroll_request_id"`
+	WorkerID          string                       `json:"worker_id"`
+	Epoch             int64                        `json:"epoch"`
+	Runs              map[string]*RunState         `json:"runs"`
+	Receipts          map[string]*Receipt          `json:"receipts"`
+	Pending           []*Receipt                   `json:"pending"`
 }
 
 type disk struct {
@@ -112,6 +114,10 @@ func openDisk(dir string) (*disk, journal, error) {
 		j.EnrollRequestID = randomID("enroll_")
 	}
 	for _, run := range j.Runs {
+		if a := run.Automation; a != nil && (len(a.Pending) > 0 || (a.NativeExited && (!a.ExitAck || !a.LockReleased))) {
+			run.State = "needs_recovery"
+			run.Error = "workflow proof or checkout release was not acknowledged before restart; local recovery required"
+		}
 		if run.State == "accepted" || run.State == "launching" || run.State == "running" || run.State == "stopping" {
 			run.State = "needs_recovery"
 			run.Error = "worker restarted after a possible launch; local recovery required"

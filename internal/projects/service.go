@@ -4,6 +4,7 @@ import (
 	"agent-board/internal/core"
 	"agent-board/internal/store"
 	"context"
+	"database/sql"
 	"strings"
 	"time"
 )
@@ -15,6 +16,9 @@ type service struct {
 }
 
 func (s *service) Authenticate(ctx context.Context, secret string) (core.Principal, error) {
+	if strings.HasPrefix(secret, core.ExecutionTokenPrefix) {
+		return s.authenticateExecution(ctx, secret)
+	}
 	who, err := s.registry.Authenticate(ctx, secret)
 	if err != nil {
 		return core.Principal{}, err
@@ -34,23 +38,47 @@ func (s *service) AuthenticateID(ctx context.Context, id string) (core.Principal
 	return a.principal, a.identity.Expires, err
 }
 func (s *service) Describe(ctx context.Context, p core.Principal, in core.OpenSession) (core.SessionView, error) {
+	var bindingError error
+	in, bindingError = executionOpen(ctx, p, in)
+	if bindingError != nil {
+		return core.SessionView{}, bindingError
+	}
 	if strings.TrimSpace(in.RequestID) == "" || len(in.RequestID) > 128 {
 		return core.SessionView{}, invalid()
 	}
-	return withAccess(s, ctx, false, "", func(ctx context.Context, a access) (core.SessionView, error) {
+	return transaction(s.registry, ctx, func(tx *sql.Tx) (core.SessionView, error) {
+		var zero core.SessionView
+		who, err := accountFrom(ctx)
+		if err != nil {
+			return zero, err
+		}
+		a, err := s.registry.access(ctx, tx, who, s.projectID, false)
+		if err != nil {
+			return zero, err
+		}
 		if p != a.principal || (a.member.Role == "viewer" || a.project.State != "active") && in.Role != "human" {
 			return core.SessionView{}, denied()
 		}
-		in.RequestID = s.registry.describeID(a, in.RequestID)
-		view, err := s.board.Describe(store.WithManagedEpoch(ctx, a.member.Epoch), p, in)
-		if err != nil {
+		required := core.Principal{}
+		if who.Source == "legacy" {
+			required = core.Principal{ID: who.TokenID, Owner: who.Owner, Machine: who.Machine}
+		}
+		reader := &store.AutomationPrincipal{Principal: a.principal, Epoch: a.member.Epoch, ExpiresAt: a.identity.Expires}
+		if who.Source == "legacy" && s.projectID == s.registry.defaultID {
+			reader.LegacyTokenID = who.TokenID
+		}
+		return automationGuard(s, ctx, tx, a.project, required, reader, func(inner context.Context) (core.SessionView, error) {
+			in.RequestID = s.registry.describeID(a, in.RequestID)
+			view, err := s.board.Describe(store.WithManagedEpoch(inner, a.member.Epoch), p, in)
+			if err != nil {
+				return view, err
+			}
+			_, err = tx.ExecContext(ctx, `INSERT INTO session_epochs(project_id,session_id,identity_id,access_epoch) VALUES(?,?,?,?) ON CONFLICT(project_id,session_id) DO NOTHING`, a.project.ID, view.SessionID, a.identity.ID, a.member.Epoch)
+			if err == nil {
+				err = s.registry.sessionAllowed(ctx, tx, a, view.SessionID)
+			}
 			return view, err
-		}
-		_, err = a.tx.ExecContext(ctx, `INSERT INTO session_epochs(project_id,session_id,identity_id,access_epoch) VALUES(?,?,?,?) ON CONFLICT(project_id,session_id) DO NOTHING`, a.project.ID, view.SessionID, a.identity.ID, a.member.Epoch)
-		if err == nil {
-			err = s.registry.sessionAllowed(ctx, a.tx, a, view.SessionID)
-		}
-		return view, err
+		})
 	})
 }
 func actorCall[I, O any](s *service, ctx context.Context, a core.Actor, in I, write bool, call func(context.Context, core.Actor, I) (O, error)) (O, error) {

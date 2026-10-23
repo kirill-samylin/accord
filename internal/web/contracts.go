@@ -61,6 +61,10 @@ type Renderer interface {
 }
 
 type Page struct {
+	Automation                                            *core.WorkflowListPage
+	Workflow                                              *core.WorkflowPage
+	AutomationPolicy                                      *core.AutomationPolicyPage
+	CanManageAutomation                                   bool
 	Managed                                               *core.ManagedPage
 	ManagedRun                                            *core.ManagedRunPage
 	Coordination                                          *core.TaskCoordination

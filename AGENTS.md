@@ -41,11 +41,21 @@ enrollment/controller allowlist; роль editor сама не даёт OS contr
 23.10.2026 рабочий VPS обновлён capable updater до clean release
 `273ccbb15c99dfac91c37f34d2926abf01ca866f`, schema5/managed_agents1; Mac GUI
 enrolled с отдельным user LaunchAgent. Текущая production приёмка — WORK169–172
-и TASK013; source branch сама по себе не является доказательством установки.
+и TASK013; позднейший WORK195 realMacPASS5 подтверждён169. WORK196 finalized273, journalcomplete и полный backup4проектов/9runtimeDB проверены. Windows/физический второйПК NOT-RUN. Source branch сама по себе не является доказательством установки.
 Только capable all-project upgrade/roll-forward, не старый binary/DB rollback.
 Native CLI resume использует точный conversation ID; уточнения первой версии
 доставляются на следующем turn. Не выдавай queued/offline за applied/stopped,
 SDK/stub/cross-build за real native Windows или второй физический ПК.
+
+23.10.2026 пользователь расширил поручение до полного цикла выполнения
+требования: из Accord либо Codex/Claude → аналитик → задачи → разработка →
+независимое review → QA → исправления/результат, с управлением и вмешательством
+человека. Канонический checkpoint — `docs/TASK-014-automation.md`, frozen/APPROVE183
+контракт — `docs/automation.md`. Исторический ручной scope TASK011 не запрещает
+это прямо порученное расширение. До независимого architecture/security approve
+новый workflow не реализуется; registry epochs, host-local consent, leases,
+SHA/generation gates, isolation и capable all-project roll-forward сохраняются.
+Наличие контракта не означает, что автоматизация или native GUI запуск работают.
 
 ## Работа
 

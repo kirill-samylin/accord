@@ -25,7 +25,7 @@ func (e *Engine) recoverExpiredReports(ctx context.Context, r *remote) (bool, er
 	if err := e.prepareReconciliation(); err != nil {
 		return true, err
 	}
-	if !r.session.ExpiresAt.After(time.Now().Add(5 * time.Second)) {
+	if !r.sessionSnapshot().ExpiresAt.After(time.Now().Add(5 * time.Second)) {
 		if err := r.open(ctx, e.config, e.journal.WorkerID); err != nil {
 			return true, recoveryRequestError(err)
 		}

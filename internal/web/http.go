@@ -116,6 +116,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.handleProfiles(w, r, b)
 		return
 	}
+	if r.URL.Path == "/web/automation" || strings.HasPrefix(r.URL.Path, "/web/automation/") {
+		s.handleAutomation(w, r, b)
+		return
+	}
 	if r.URL.Path == "/web/managed" || strings.HasPrefix(r.URL.Path, "/web/managed/") {
 		s.handleManaged(w, r, b)
 		return
@@ -138,7 +142,7 @@ func parseForm(w http.ResponseWriter, r *http.Request) error {
 	maxBody := int64(32 * 1024)
 	// A 16 KiB description can expand threefold under URL encoding. Update
 	// still validates decoded field sizes before reaching the authoritative API.
-	if strings.HasPrefix(r.URL.Path, "/web/profiles") || strings.HasPrefix(r.URL.Path, "/web/managed") || strings.HasPrefix(r.URL.Path, "/web/tasks/") && strings.HasSuffix(r.URL.Path, "/update") {
+	if strings.HasPrefix(r.URL.Path, "/web/automation") || strings.HasPrefix(r.URL.Path, "/web/profiles") || strings.HasPrefix(r.URL.Path, "/web/managed") || strings.HasPrefix(r.URL.Path, "/web/tasks/") && strings.HasSuffix(r.URL.Path, "/update") {
 		maxBody = 64 * 1024
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, maxBody)

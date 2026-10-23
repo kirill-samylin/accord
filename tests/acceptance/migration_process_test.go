@@ -52,6 +52,39 @@ func sqlString(t *testing.T, db *sql.DB, query string) string {
 	return value
 }
 
+// Inspect actual migrated/snapshot storage; a version number alone does not
+// prove the automation authority floor or its execution uniqueness constraints.
+func assertSchema6AutomationAuthority(t *testing.T, db *sql.DB) {
+	t.Helper()
+	if got := sqlString(t, db, "PRAGMA user_version"); got != "6" {
+		t.Fatalf("published database schema=%s, want schema6", got)
+	}
+	for _, table := range []string{"automation_policies", "automation_policy_revisions", "workflows", "workflow_steps", "workflow_plans", "workflow_questions", "workflow_attestations", "execution_capabilities", "workflow_reservations"} {
+		if sqlString(t, db, "SELECT count(*) FROM sqlite_schema WHERE type='table' AND name='"+table+"'") != "1" {
+			t.Fatalf("schema6 omitted automation table %s", table)
+		}
+		rows, err := db.Query("SELECT key,data FROM " + table + " LIMIT 0")
+		if err != nil {
+			t.Fatalf("schema6 automation columns missing in %s", table)
+		}
+		if err := rows.Close(); err != nil {
+			t.Fatal("automation storage inspection close failed")
+		}
+	}
+	if sqlString(t, db, "SELECT count(*) FROM automation_metadata") != "1" || sqlString(t, db, "SELECT version FROM automation_metadata WHERE id=1") != "1" {
+		t.Fatal("schema6 automation1 authority floor missing or changed")
+	}
+	for name, expected := range map[string]string{
+		"automation_step_execution": "CREATE UNIQUE INDEX automation_step_execution ON workflow_steps(json_extract(data,'$.workflow_id'),json_extract(data,'$.sequence'),json_extract(data,'$.attempt_no'))",
+		"automation_cap_attempt":    "CREATE UNIQUE INDEX automation_cap_attempt ON execution_capabilities(json_extract(data,'$.run_id'),json_extract(data,'$.generation'))",
+	} {
+		actual := sqlString(t, db, "SELECT sql FROM sqlite_schema WHERE type='index' AND name='"+name+"'")
+		if strings.TrimSpace(actual) != expected {
+			t.Fatalf("schema6 execution constraint %s missing or changed", name)
+		}
+	}
+}
+
 func migrationSnapshot(t *testing.T, b *board) string {
 	t.Helper()
 	paths, err := filepath.Glob(b.db + ".migrations/schema1-*.db")
@@ -93,7 +126,8 @@ func TestCatalogLegacySchemaProcessMigrationBackupRestart(t *testing.T) {
 	b.start() // This actual server process performs schema migration.
 	snapshot := migrationSnapshot(t, b)
 	db := inspectDatabase(t, b.db)
-	if sqlString(t, db, "PRAGMA user_version") != "5" || sqlString(t, db, "SELECT data FROM tasks WHERE key='T-2'") != taskRow || sqlString(t, db, "SELECT data FROM events WHERE cursor=1") != eventRow || sqlString(t, db, "SELECT response FROM idempotency WHERE key='synthetic-legacy-replay'") != replayRow {
+	assertSchema6AutomationAuthority(t, db)
+	if sqlString(t, db, "SELECT data FROM tasks WHERE key='T-2'") != taskRow || sqlString(t, db, "SELECT data FROM events WHERE cursor=1") != eventRow || sqlString(t, db, "SELECT response FROM idempotency WHERE key='synthetic-legacy-replay'") != replayRow {
 		t.Fatal("migration rewrote historical rows or exact replay payload")
 	}
 	if sqlString(t, db, "SELECT count(*) FROM sqlite_schema WHERE name IN ('agent_profiles','agent_profile_revisions')") != "2" {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"sort"
+	"time"
 
 	"agent-board/internal/core"
 )
@@ -30,6 +31,10 @@ func (e *Engine) Identity(ctx context.Context) (string, error) {
 // Consent is an explicit local operation. A browser cannot grant itself host
 // control or change the locally selected executable and workspace mapping.
 func (e *Engine) Consent(ctx context.Context) (core.ManagedHost, error) {
+	automation, err := automationHostConsent(e.config, time.Now())
+	if err != nil {
+		return core.ManagedHost{}, err
+	}
 	r, err := newRemote(e.config)
 	if err != nil {
 		return core.ManagedHost{}, err
@@ -56,7 +61,7 @@ func (e *Engine) Consent(ctx context.Context) (core.ManagedHost, error) {
 	if current == nil {
 		return core.ManagedHost{}, errors.New("local host is absent from the project")
 	}
-	input := core.ManagedHostUpdateInput{HostID: current.ID, Version: current.Version, State: "active", ManagedHostEnrollInput: core.ManagedHostEnrollInput{RequestID: randomID("consent_"), Name: e.config.Name, HostSecret: e.journal.HostSecret, Controllers: e.config.Controllers}}
+	input := core.ManagedHostUpdateInput{HostID: current.ID, Version: current.Version, State: "active", ManagedHostEnrollInput: core.ManagedHostEnrollInput{RequestID: randomID("consent_"), Name: e.config.Name, HostSecret: e.journal.HostSecret, Controllers: e.config.Controllers, Automation: automation}}
 	for alias := range e.config.Workspaces {
 		input.Workspaces = append(input.Workspaces, alias)
 	}

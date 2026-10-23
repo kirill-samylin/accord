@@ -48,19 +48,9 @@ func (s *Store) Transition(ctx context.Context, a core.Actor, in core.Transition
 			t.Lease = nil
 			t.State = "done"
 		case in.State == "ready" && t.State == "done":
-			if !reopenAllowed(sess.Role, t.Role) {
-				return core.Task{}, core.Fail("forbidden", "role cannot reopen this task")
+			if err := reopenTaskWithEvidence(b, sess.Role, t, in.EvidenceRef, in.Reason, now); err != nil {
+				return core.Task{}, err
 			}
-			if !bounded(in.Reason, 4096) {
-				return core.Task{}, core.Fail("invalid_input", "reopen requires reason")
-			}
-			reference := b.Tasks[in.EvidenceRef]
-			if reference == nil || reference.State != "done" || !hasEvidence(reference.Evidence) {
-				return core.Task{}, core.Fail("evidence_missing", "reopen requires existing defect evidence")
-			}
-			t.ReturnsCount++
-			t.State = "ready"
-			t.ReadyAt = now
 		case in.State == "cancelled" && (t.State == "ready" || t.State == "created"):
 			if !administrative(sess, t, a) {
 				return core.Task{}, core.Fail("forbidden", "only requester or coordinator may cancel")
@@ -97,6 +87,7 @@ func (s *Store) Transition(ctx context.Context, a core.Actor, in core.Transition
 			b.Events[len(b.Events)-1].Data = &core.EventData{TokensSpentTotal: &total, CorrectionDelta: &correction}
 		}
 		if t.Role == "human" && t.State == "done" {
+			automationHumanAnswered(b, t, now)
 			answer := t.Evidence.Answer
 			emit(b, now, "human_answered", t.Key, a.SessionID)
 			e := &b.Events[len(b.Events)-1]

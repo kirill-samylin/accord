@@ -208,3 +208,24 @@ Finalize/new post-copy ждут actual native GUI acceptance. Сначала п�
 продолжается диагностика, без молчаливого ослабления process ownership guards.
 Windows/native Claude и второй физический ПК — **NOT-RUN**; TASK013 целиком
 остаётся **IN PROGRESS**.
+
+## 23.10 — production finalize после реальной Mac приёмки
+
+Более поздний WORK195 на exact reviewed adapter: **PASS5** с реальными native
+Codex/MCP/README и UI Start/colleague Clarify+Stop/owner exact-session Resume.
+Два actual task claims имеют distinct board sessions и fencing1→2; run native
+conversation одна, managed generations1→2→3. GUI3316-file baseline сохранён,
+QA task/epic cancelled, temporary profile archived, worker pending reports0.
+Независимый169 EVIDENCE APPROVE получен. Ранние failures не переименованы;
+intermittent preparation root cause всё ещё не доказан.
+
+WORK196: existing capable273 finalize выполнен, journal **complete**; actual
+Linux owned Go/Next процессы, helper/capability floors и полный финальный backup
+подтверждены. Новый snapshot содержит все4 active проекта,9 runtime DB и5
+historical migration DB, registry inventory совпадает с live. Backup service
+успешен. Go/Next остаётся273, Mac diagnostic worker62e; schema6 автоматизация
+этим действием не поставляется. Прежний pending статус выше — история этапа.
+
+Mac/production часть TASK013 PASS; native Windows/Claude и второй физический
+ПК остаются NOT-RUN. TASK014 продолжается независимо с обязательным собственным
+source review, process/E2E/native QA и новым capable all-project upgrade.

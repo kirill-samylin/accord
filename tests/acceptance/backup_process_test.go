@@ -49,9 +49,13 @@ func TestCLIOnlineSnapshotAndOfflineRecovery(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if metadata.SchemaVersion != 5 || metadata.CreatedAt.IsZero() || metadata.SHA256 != fmt.Sprintf("%x", sha256.Sum256(data)) {
-		t.Fatal("snapshot checksum/schema metadata does not describe published file")
+	if metadata.SchemaVersion != 6 {
+		t.Fatalf("snapshot schema metadata=%d, want schema6", metadata.SchemaVersion)
 	}
+	if metadata.CreatedAt.IsZero() || metadata.SHA256 != fmt.Sprintf("%x", sha256.Sum256(data)) {
+		t.Fatal("snapshot timestamp/checksum metadata does not describe published file")
+	}
+	assertSchema6AutomationAuthority(t, inspectDatabase(t, snapshot))
 	if info, err := os.Stat(snapshot); err != nil || info.Mode().Perm() != 0600 {
 		t.Fatal("snapshot is not private0600")
 	}

@@ -101,3 +101,12 @@ func requireCode(t *testing.T, err error, code string) {
 		t.Fatalf("want %s; got %v", code, err)
 	}
 }
+
+func dropAutomationFixture(t *testing.T, s *Store) {
+	t.Helper()
+	for _, table := range append(append([]string{}, automationTables...), "automation_metadata") {
+		if _, err := s.db.Exec("DROP TABLE " + table); err != nil {
+			t.Fatal(err)
+		}
+	}
+}

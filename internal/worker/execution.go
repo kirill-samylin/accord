@@ -9,6 +9,9 @@ import (
 )
 
 func (e *Engine) launch(plan plan) error {
+	if plan.run.Automation != nil {
+		return e.launchAutomationLocked(plan)
+	}
 	run := e.journal.Runs[plan.run.ID]
 	run.LocalDiagnostic = ""
 	fail := func(message string) error {
@@ -115,6 +118,10 @@ func (e *Engine) prompt(plan plan) string {
 	if plan.run.TaskKey != "" {
 		fmt.Fprintf(&instruction, "Requested task: %s. If next does not grant this task, do not work under its identity.\n", plan.run.TaskKey)
 	}
+	if plan.run.Automation != nil {
+		a := e.config.Automation.Workspaces[plan.run.Workspace]
+		fmt.Fprintf(&instruction, "Local verification preset IDs only; use workflow_run_check and wait for the corresponding status resource to be completed before transitioning the task. Developer presets require a clean committed HEAD first. Approved artifact roots: %q. Test design artifact writes separately consented: %t. Reviewer/tester must preserve every reviewed source byte and full HEAD; a source change blocks the workflow. A .patch proposal in approved artifact roots is test_design/NOT-RUN, never PASSED.\n", a.ArtifactRoots, a.AllowTesterArtifactWrites)
+	}
 	instruction.WriteString("User request:\n")
 	instruction.WriteString(text)
 	return instruction.String()
@@ -162,6 +169,10 @@ func (e *Engine) observe(id string, child process) {
 		_ = child.Stop()
 	}
 	exitError := child.Wait()
+	if e.isAutomation(id) {
+		e.observeAutomationExit(id, child, readError, exitError)
+		return
+	}
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	run, active := e.journal.Runs[id], e.active[id]
@@ -215,46 +226,6 @@ func boundedText(text string, limit int) string {
 		limit--
 	}
 	return text[:limit]
-}
-
-func (e *Engine) StopAll(reason string) error {
-	e.mu.Lock()
-	e.stopEpoch++
-	var children []process
-	for id, active := range e.active {
-		active.stop = true
-		e.journal.Runs[id].State = "stopping"
-		e.journal.Runs[id].Error = reason
-		children = append(children, active.process)
-	}
-	err := e.save()
-	e.mu.Unlock()
-	err = errors.Join(err, e.stopBatch(children))
-	done := make(chan struct{})
-	go func() { e.wg.Wait(); close(done) }()
-	select {
-	case <-done:
-	case <-time.After(5 * time.Second):
-		err = errOwnership
-	}
-	return err
-}
-
-func (e *Engine) Close() error {
-	e.mu.Lock()
-	closed := e.closed
-	e.mu.Unlock()
-	if closed {
-		return nil
-	}
-	err := e.StopAll("local worker is stopping")
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	if !e.closed {
-		e.closed = true
-		e.disk.close()
-	}
-	return err
 }
 
 func outputLines(receipt Receipt) []string {

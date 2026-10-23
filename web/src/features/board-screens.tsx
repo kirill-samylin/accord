@@ -13,6 +13,7 @@ import { SessionControls } from "./mutations/SessionControls";
 import { ProfilesScreen } from "./profiles/profiles-screen";
 import { ProfileDetail } from "./profiles/profile-detail";
 import { ManagedScreen } from "./managed/managed-screen";
+import { AutomationScreen } from "./automation/automation-screen";
 import { ManagedDetail } from "./managed/managed-detail";
 export function BoardScreen({
   page,
@@ -37,6 +38,21 @@ export function BoardScreen({
       </div>
     );
   switch (page.view || page.name) {
+    case "automation":
+    case "workflow":
+    case "automation-policy":
+      return (
+        <AutomationScreen
+          key={
+            page.workflow?.workflow.id ??
+            page.automation_policy?.policy.id ??
+            "automation"
+          }
+          page={page}
+          refresh={refresh}
+          onSuccess={onSuccess}
+        />
+      );
     case "managed":
       return (
         <ManagedScreen page={page} refresh={refresh} onSuccess={onSuccess} />

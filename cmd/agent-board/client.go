@@ -116,6 +116,12 @@ func takeString(fields map[string]json.RawMessage, name string) (string, error) 
 func clientRoute(operation string, fields map[string]json.RawMessage) (string, string, []byte, error) {
 	method, path := "POST", ""
 	switch operation {
+	case "automation_policy_create", "automation_policy_update", "automation_policy_revoke", "automation_policy_get":
+		path = "/api/v1/automation/policies/" + strings.TrimPrefix(operation, "automation_policy_")
+	case "workflow_submit", "workflow_command", "workflow_plan", "workflow_question", "workflow_answer", "workflow_list", "workflow_get", "workflow_report", "workflow_attest":
+		path = "/api/v1/automation/" + strings.TrimPrefix(operation, "workflow_")
+	case "execution_capability_register":
+		path = "/api/v1/automation/capabilities/register"
 	case "managed_list", "managed_run", "managed_start", "managed_command", "managed_poll", "managed_report":
 		path = "/api/v1/managed/" + strings.TrimPrefix(operation, "managed_")
 	case "managed_host_enroll", "managed_host_update", "managed_host_disable":

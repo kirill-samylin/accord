@@ -24,6 +24,7 @@ type windowsProcess struct {
 	result   error
 	finished bool
 	forced   bool
+	exitCode *int
 }
 
 func startProcess(spec launchSpec) (process, error) {
@@ -131,6 +132,10 @@ func (p *windowsProcess) reap() {
 	if err == nil {
 		err = windows.GetExitCodeProcess(p.process, &code)
 	}
+	if err == nil {
+		observed := int(code)
+		p.exitCode = &observed
+	}
 	closeProcessError := windows.CloseHandle(p.process)
 	forced, treeError := finishWindowsJob(p.job)
 	p.forced = p.forced || forced
@@ -158,3 +163,12 @@ func (p *windowsProcess) Stop() error {
 }
 
 func (p *windowsProcess) Forced() bool { p.mu.Lock(); defer p.mu.Unlock(); return p.forced }
+
+func (p *windowsProcess) ExitCode() (int, bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.exitCode == nil {
+		return 0, false
+	}
+	return *p.exitCode, true
+}

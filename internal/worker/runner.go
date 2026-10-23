@@ -31,8 +31,16 @@ func (e *Engine) run(ctx context.Context, pollPeriod, acquisitionGrace time.Dura
 	if err = e.reconcile(ctx, r); err != nil {
 		return err
 	}
+	e.mu.Lock()
+	e.automationTransport = r.post
+	e.automationReadTransport = r.request
+	e.asyncApply = true
+	e.mu.Unlock()
 	running, cancel := context.WithCancel(ctx)
 	defer cancel()
+	deliveryDone := make(chan struct{})
+	go func() { defer close(deliveryDone); e.automationDelivery(running) }()
+	defer func() { cancel(); <-deliveryDone }()
 	watchDone := make(chan struct{})
 	go func() { defer close(watchDone); e.watchdog(running) }()
 	defer func() { cancel(); <-watchDone; _ = e.StopAll("worker connection is stopping") }()
@@ -99,7 +107,7 @@ func (e *Engine) run(ctx context.Context, pollPeriod, acquisitionGrace time.Dura
 				}
 				break
 			}
-			if err = e.Ack(*receipt); err != nil {
+			if err = e.AckReport(*receipt, response); err != nil {
 				return err
 			}
 		}
@@ -138,7 +146,7 @@ func pollDeadline(requestStart time.Time) time.Time { return requestStart.Add(25
 func (e *Engine) pollInput(requestID string) core.ManagedPollInput {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	return core.ManagedPollInput{RequestID: requestID, HostID: e.journal.HostID, HostSecret: e.journal.HostSecret, WorkerID: e.journal.WorkerID, WorkerEpoch: e.journal.Epoch}
+	return core.ManagedPollInput{RequestID: requestID, HostID: e.journal.HostID, HostSecret: e.journal.HostSecret, WorkerID: e.journal.WorkerID, WorkerEpoch: e.journal.Epoch, WorkerCapabilities: automationCapabilities(e.config)}
 }
 
 func (e *Engine) watchdog(ctx context.Context) {
@@ -151,6 +159,13 @@ func (e *Engine) watchdog(ctx context.Context) {
 		case <-ticker.C:
 		}
 		e.mu.Lock()
+		for _, active := range e.active {
+			if active.automation != nil && !active.stop && !active.automation.deadline.IsZero() && !time.Now().Before(active.automation.deadline) {
+				active.stop = true
+				active.automation.cancel()
+				go e.stopOwnedByDeadline(active)
+			}
+		}
 		expired := !e.deadline.IsZero() && !time.Now().Before(e.deadline) && len(e.active) > 0
 		fatal := e.fatal != nil && len(e.active) > 0
 		e.mu.Unlock()

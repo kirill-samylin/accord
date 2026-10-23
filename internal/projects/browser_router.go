@@ -165,12 +165,6 @@ func (r *Registry) serveNative(w http.ResponseWriter, req *http.Request) {
 		fail(w, core.Fail("unauthorized", "bearer required"))
 		return
 	}
-	who, e := r.Authenticate(req.Context(), fields[1])
-	if e != nil {
-		fail(w, core.Fail("unauthorized", "bearer required"))
-		return
-	}
-	ctx := accountContext(req.Context(), who)
 	pid, path, scoped := projectRoute(req.URL.Path, "/api/v1/")
 	if strings.HasPrefix(req.URL.Path, "/mcp/p/") {
 		pid = strings.TrimPrefix(req.URL.Path, "/mcp/p/")
@@ -180,6 +174,11 @@ func (r *Registry) serveNative(w http.ResponseWriter, req *http.Request) {
 	if !scoped {
 		pid = r.defaultID
 		path = req.URL.Path
+	}
+	ctx, who, e := r.nativeIdentity(req.Context(), fields[1], pid, path, scoped)
+	if e != nil {
+		fail(w, core.Fail("unauthorized", "bearer required"))
+		return
 	}
 	if _, e = transaction(r, ctx, func(tx *sql.Tx) (access, error) { return r.access(ctx, tx, who, pid, false) }); e != nil {
 		fail(w, e)

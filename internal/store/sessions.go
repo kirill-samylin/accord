@@ -9,6 +9,13 @@ import (
 func (s *Store) Describe(ctx context.Context, p core.Principal, in core.OpenSession) (core.SessionView, error) {
 	return mutate(s, ctx, core.Actor{Principal: p}, in.RequestID, "describe", in, func(b *board, _ *core.Session, now time.Time) (core.SessionView, error) {
 		var zero core.SessionView
+		if ident, ok := ExecutionIdentityFromContext(ctx); ok {
+			for _, existing := range b.Sessions {
+				if existing.ExecutionCapabilityID == ident.Capability.ID {
+					return zero, core.Fail("conflict", "Capability уже имеет native board session")
+				}
+			}
+		}
 		if !core.ValidRole(in.Role) || !bounded(in.RunID, 128) || in.Machine != p.Machine {
 			return zero, core.Fail("invalid_input", "valid role, run_id and token machine required")
 		}
@@ -39,6 +46,12 @@ func (s *Store) Describe(ctx context.Context, p core.Principal, in core.OpenSess
 			generation = b.Roles[in.Role]
 		}
 		v := core.SessionView{ManagedRunID: in.ManagedRunID, ManagedGeneration: in.ManagedGeneration, Profile: profile, SessionID: id, Role: in.Role, RoleGeneration: generation, ExpiresAt: now.Add(s.cfg.SessionTTL), Project: s.cfg.Project}
+		if ident, ok := ExecutionIdentityFromContext(ctx); ok {
+			v.ExecutionCapabilityID = ident.Capability.ID
+			v.WorkflowID = ident.Capability.WorkflowID
+			v.WorkflowStepID = ident.Capability.StepID
+			v.WorkflowControlEpoch = ident.Capability.ControlEpoch
+		}
 		s.sessionTiming(&v)
 		b.Sessions[id] = &core.Session{SessionView: v, PrincipalID: p.ID, RunID: in.RunID, Machine: in.Machine, Owner: p.Owner}
 		emit(b, now, "session_opened", "", id)

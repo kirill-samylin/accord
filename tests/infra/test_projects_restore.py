@@ -23,7 +23,7 @@ class ProjectsRestore(ProjectsFixture, unittest.TestCase):
     def test_new_staging_contains_all_projects_and_keeps_boot_guard(self):
         snapshot = self.snapshot()
         before = (snapshot / 'manifest.json').read_bytes()
-        with patch.object(restore, 'require_capable'), patch.object(restore.subprocess, 'run') as run, \
+        with patch.object(restore, 'verify_restored'), patch.object(restore, 'require_capable'), patch.object(restore.subprocess, 'run') as run, \
                 patch.object(restore.LEGACY, 'sync_dir', wraps=restore.LEGACY.sync_dir) as sync:
             run.return_value.stdout = b'{"restored_state_reset":true}'
             run.return_value.stderr = b''
@@ -42,7 +42,7 @@ class ProjectsRestore(ProjectsFixture, unittest.TestCase):
 
     def test_failed_reset_keeps_staging_blocked_without_complete_marker(self):
         snapshot = self.snapshot()
-        with patch.object(restore, 'require_capable'), patch.object(restore.subprocess, 'run',
+        with patch.object(restore, 'verify_restored'), patch.object(restore, 'require_capable'), patch.object(restore.subprocess, 'run',
                 side_effect=subprocess.CalledProcessError(1, 'synthetic')):
             with self.assertRaises(subprocess.CalledProcessError):
                 restore.restore(snapshot, self.output, self.binary)
@@ -62,7 +62,7 @@ class ProjectsRestore(ProjectsFixture, unittest.TestCase):
     def test_tampered_snapshot_never_reaches_native_reset(self):
         snapshot = self.snapshot()
         (snapshot / 'default/board.db').write_bytes(b'changed')
-        with patch.object(restore, 'require_capable'), patch.object(restore.subprocess, 'run') as run:
+        with patch.object(restore, 'verify_restored'), patch.object(restore, 'require_capable'), patch.object(restore.subprocess, 'run') as run:
             with self.assertRaises(RuntimeError):
                 restore.restore(snapshot, self.output, self.binary)
             run.assert_not_called()
@@ -70,9 +70,19 @@ class ProjectsRestore(ProjectsFixture, unittest.TestCase):
 
     def test_zero_exit_without_explicit_reset_confirmation_keeps_guard(self):
         snapshot = self.snapshot()
-        with patch.object(restore, 'require_capable'), patch.object(restore.subprocess, 'run') as run:
+        with patch.object(restore, 'verify_restored'), patch.object(restore, 'require_capable'), patch.object(restore.subprocess, 'run') as run:
             run.return_value.stdout, run.return_value.stderr = b'{"restored_state_reset":false}', b''
             with self.assertRaisesRegex(RuntimeError, 'not confirmed'):
+                restore.restore(snapshot, self.output, self.binary)
+        self.assertTrue((self.output / 'RESTORE_REQUIRES_RESET').exists())
+        self.assertFalse((self.output / 'RESTORE_AUTH_RESET_COMPLETE').exists())
+
+    def test_reset_ack_without_verified_database_effects_keeps_staging_blocked(self):
+        snapshot = self.snapshot()
+        with patch.object(restore, 'require_capable'), patch.object(restore.subprocess, 'run') as run, \
+                patch.object(restore, 'verify_restored', side_effect=RuntimeError('fixture unchanged authority')):
+            run.return_value.stdout, run.return_value.stderr = b'{"restored_state_reset":true}', b''
+            with self.assertRaisesRegex(RuntimeError, 'unchanged authority'):
                 restore.restore(snapshot, self.output, self.binary)
         self.assertTrue((self.output / 'RESTORE_REQUIRES_RESET').exists())
         self.assertFalse((self.output / 'RESTORE_AUTH_RESET_COMPLETE').exists())

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"sync"
 	"time"
 
 	"agent-board/internal/client"
@@ -16,10 +17,11 @@ import (
 )
 
 type remote struct {
-	client  *http.Client
-	origin  *url.URL
-	project string
-	session core.SessionView
+	sessionMu sync.RWMutex
+	client    *http.Client
+	origin    *url.URL
+	project   string
+	session   core.SessionView
 }
 
 type statusError struct{ code int }
@@ -67,8 +69,9 @@ func (r *remote) request(ctx context.Context, method, path string, input, output
 	if method != http.MethodGet {
 		request.Header.Set("Content-Type", "application/json")
 	}
-	if r.session.SessionID != "" {
-		request.Header.Set("X-Session", r.session.SessionID)
+	session := r.sessionSnapshot()
+	if session.SessionID != "" {
+		request.Header.Set("X-Session", session.SessionID)
 	}
 	response, err := r.client.Do(request)
 	if err != nil {
@@ -90,21 +93,39 @@ func (r *remote) request(ctx context.Context, method, path string, input, output
 
 func (r *remote) open(ctx context.Context, config Config, workerID string) error {
 	input := core.OpenSession{RequestID: randomID("session_"), Role: "human", RunID: workerID, Machine: config.Machine}
-	return r.post(ctx, "/session", input, &r.session)
+	var session core.SessionView
+	err := r.post(ctx, "/session", input, &session)
+	if err == nil {
+		r.sessionMu.Lock()
+		r.session = session
+		r.sessionMu.Unlock()
+	}
+	return err
 }
 
 func (r *remote) enrollSession(ctx context.Context, config Config, id string) error {
 	input := core.OpenSession{RequestID: id + "_session", Role: "human", RunID: id, Machine: config.Machine}
-	return r.post(ctx, "/session", input, &r.session)
+	var session core.SessionView
+	err := r.post(ctx, "/session", input, &session)
+	if err == nil {
+		r.sessionMu.Lock()
+		r.session = session
+		r.sessionMu.Unlock()
+	}
+	return err
 }
 
 func (r *remote) heartbeat(ctx context.Context) error {
-	input := core.HeartbeatInput{RequestID: randomID("heartbeat_"), RoleGeneration: r.session.RoleGeneration}
+	input := core.HeartbeatInput{RequestID: randomID("heartbeat_"), RoleGeneration: r.sessionSnapshot().RoleGeneration}
 	var response core.SessionView
 	return r.post(ctx, "/heartbeat", input, &response)
 }
 
 func (e *Engine) Enroll(ctx context.Context) (core.ManagedHost, error) {
+	automation, err := automationHostConsent(e.config, time.Now())
+	if err != nil {
+		return core.ManagedHost{}, err
+	}
 	if err := e.probe(e.config); err != nil {
 		return core.ManagedHost{}, err
 	}
@@ -121,7 +142,7 @@ func (e *Engine) Enroll(ctx context.Context) (core.ManagedHost, error) {
 		return core.ManagedHost{}, errors.New("this state directory is already enrolled; use worker run")
 	}
 	if e.journal.Enrollment == nil {
-		input := core.ManagedHostEnrollInput{RequestID: e.journal.EnrollRequestID, Name: e.config.Name, HostSecret: e.journal.HostSecret, Controllers: e.config.Controllers}
+		input := core.ManagedHostEnrollInput{RequestID: e.journal.EnrollRequestID, Name: e.config.Name, HostSecret: e.journal.HostSecret, Controllers: e.config.Controllers, Automation: automation}
 		for alias := range e.config.Workspaces {
 			input.Workspaces = append(input.Workspaces, alias)
 		}
@@ -150,4 +171,10 @@ func (e *Engine) Enroll(ctx context.Context) (core.ManagedHost, error) {
 	e.journal.HostID = host.ID
 	e.journal.OwnerPrincipalID = host.OwnerPrincipalID
 	return host, e.save()
+}
+
+func (r *remote) sessionSnapshot() core.SessionView {
+	r.sessionMu.RLock()
+	defer r.sessionMu.RUnlock()
+	return r.session
 }

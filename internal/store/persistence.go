@@ -52,6 +52,11 @@ func loadBoard(ctx context.Context, tx *sql.Tx) (*board, error) {
 			return nil, err
 		}
 	}
+	if schema >= 6 {
+		if err := loadAutomation(ctx, tx, b); err != nil {
+			return nil, err
+		}
+	}
 	rows, err := tx.QueryContext(ctx, `SELECT role,generation FROM role_generations`)
 	if err != nil {
 		return nil, err
@@ -89,6 +94,9 @@ func loadEntities[T any](ctx context.Context, tx *sql.Tx, table string, target m
 	return rows.Err()
 }
 func saveBoard(ctx context.Context, tx *sql.Tx, b *board) error {
+	if err := saveAutomation(ctx, tx, b); err != nil {
+		return err
+	}
 	if err := saveEntities(ctx, tx, "managed_hosts", b.ManagedHosts); err != nil {
 		return err
 	}

@@ -149,6 +149,7 @@ func (r *proofReader) Read(data []byte) (int, error) {
 			r.owner.mu.Lock()
 			r.owner.proof = &proof
 			r.owner.mu.Unlock()
+			return r.Read(data)
 		}
 		n := copy(data, fragment)
 		r.buffer = append(r.buffer[:0], fragment[n:]...)
@@ -157,3 +158,12 @@ func (r *proofReader) Read(data []byte) (int, error) {
 	return 0, err
 }
 func (r *proofReader) Close() error { return r.source.Close() }
+
+func (p *supervisedProcess) ExitCode() (int, bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.proof == nil || !p.proof.Proven || p.proof.ExitCode == nil {
+		return 0, false
+	}
+	return *p.proof.ExitCode, true
+}

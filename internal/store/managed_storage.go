@@ -13,15 +13,18 @@ import (
 )
 
 type managedHostRecord struct {
-	Host       core.ManagedHost `json:"host"`
-	SecretHash string           `json:"secret_hash"`
-	WorkerID   string           `json:"worker_id"`
+	Host              core.ManagedHost `json:"host"`
+	SecretHash        string           `json:"secret_hash"`
+	WorkerID          string           `json:"worker_id"`
+	AutomationVersion int64            `json:"automation_version"`
 }
 type managedCommandRecord struct {
-	Command      core.ManagedCommand `json:"command"`
-	WorkerID     string              `json:"worker_id"`
-	WorkerEpoch  int64               `json:"worker_epoch"`
-	CreatorEpoch int64               `json:"creator_epoch"`
+	Command       core.ManagedCommand `json:"command"`
+	WorkerID      string              `json:"worker_id"`
+	WorkerEpoch   int64               `json:"worker_epoch"`
+	CreatorEpoch  int64               `json:"creator_epoch"`
+	TerminalPhase string              `json:"terminal_phase,omitempty"`
+	TerminalAt    *time.Time          `json:"terminal_at,omitempty"`
 }
 type managedEpochKey struct{}
 type managedPrincipalsKey struct{}
@@ -41,6 +44,15 @@ func managedCreatorAllowed(ctx context.Context, b *board, h *managedHostRecord, 
 	return managedPrincipalAllowed(ctx, b, id, epoch, now)
 }
 func managedCommandAllowed(ctx context.Context, b *board, h *managedHostRecord, c *managedCommandRecord, now time.Time) bool {
+	if authority, ok := AutomationAuthorityFromContext(ctx); ok && !authority.Writable && c.Command.Kind != "stop" {
+		return false
+	}
+	if r := b.ManagedRuns[c.Command.RunID]; r != nil && r.Automation != nil && c.Command.Kind != "stop" {
+		w := b.Automation.Workflows[r.Automation.WorkflowID]
+		if w == nil || w.State != "running" || w.ControlEpoch != r.Automation.ControlEpoch || h.Host.WorkerCapabilities["automation"] < 1 || authorizeWorkflow(ctx, b, w, now) != nil {
+			return false
+		}
+	}
 	if !managedCreatorAllowed(ctx, b, h, c.Command.CreatedBy, c.CreatorEpoch, now) {
 		return false
 	}

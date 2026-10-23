@@ -118,3 +118,12 @@ func (p *unixProcess) Stop() error {
 }
 
 func (p *unixProcess) Forced() bool { p.mu.Lock(); defer p.mu.Unlock(); return p.forced }
+
+func (p *unixProcess) ExitCode() (int, bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if !p.finished || p.cmd.ProcessState == nil {
+		return 0, false
+	}
+	return p.cmd.ProcessState.ExitCode(), true
+}

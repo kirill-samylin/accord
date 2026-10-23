@@ -38,6 +38,10 @@ type OpenSession struct {
 	Machine           string `json:"machine"`
 }
 type SessionView struct {
+	ExecutionCapabilityID string            `json:"execution_capability_id,omitempty"`
+	WorkflowID            string            `json:"workflow_id,omitempty"`
+	WorkflowStepID        string            `json:"workflow_step_id,omitempty"`
+	WorkflowControlEpoch  int64             `json:"workflow_control_epoch,omitempty"`
 	ManagedRunID          string            `json:"managed_run_id,omitempty"`
 	ManagedGeneration     int64             `json:"managed_generation,omitempty"`
 	Profile               *ProfileSnapshot  `json:"profile,omitempty"`

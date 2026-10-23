@@ -94,7 +94,14 @@ func (s *Store) ManagedStart(ctx context.Context, a core.Actor, in core.ManagedS
 				}
 			}
 		}
-		if len(b.ManagedRuns) >= 128 || active >= 8 {
+		if b.Automation != nil {
+			for _, reservation := range b.Automation.Reservations {
+				if reservation.HostID == in.HostID && reservation.Workspace == in.Workspace {
+					return out, core.Fail("conflict", "Workspace зарезервирован workflow")
+				}
+			}
+		}
+		if len(b.ManagedRuns)+workflowReservedRuns(b) >= 128 || active >= 8 {
 			return out, core.Fail("conflict", "Достигнут предел запусков")
 		}
 		id, err := managedID("mr_")
@@ -115,6 +122,9 @@ func (s *Store) ManagedCommand(ctx context.Context, a core.Actor, in core.Manage
 	return managedMutate(s, ctx, a, in.RequestID, "command", in, func(b *board, _ time.Time) error { _, e := managedAllowed(b, a, "", in.RunID, false); return e }, func(b *board, now time.Time) (core.ManagedResult, error) {
 		var out core.ManagedResult
 		r := b.ManagedRuns[in.RunID]
+		if r.Automation != nil {
+			return out, core.Fail("forbidden", "Управляйте этим запуском через workflow controls")
+		}
 		h := b.ManagedHosts[r.HostID]
 		if r.Version != in.Version {
 			return out, core.Fail("conflict", "Версия запуска изменилась")

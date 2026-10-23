@@ -1,7 +1,7 @@
 import { projectID } from "./projects.ts";
 
 const screens =
-  /^(?:\/(?:overview|tasks(?:\/[A-Za-z0-9_-]+)?|questions|agents(?:\/[A-Za-z0-9_-]+)?|profiles(?:\/ap_[a-f0-9]{32})?|projects|designs|history|activity|stats|settings|team|managed(?:\/runs\/[A-Za-z0-9_-]+)?|login))?\/?$/;
+  /^(?:\/(?:overview|tasks(?:\/[A-Za-z0-9_-]+)?|questions|agents(?:\/[A-Za-z0-9_-]+)?|profiles(?:\/ap_[a-f0-9]{32})?|projects|designs|history|activity|stats|settings|team|automation(?:\/host-scope|\/workflows\/[A-Za-z0-9_-]+|\/policies\/[A-Za-z0-9_-]+)?|managed(?:\/runs\/[A-Za-z0-9_-]+)?|login))?\/?$/;
 const base = "https://accord.invalid";
 function internal(path: string): URL {
   if (

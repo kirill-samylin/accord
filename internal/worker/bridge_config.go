@@ -1,6 +1,8 @@
 package worker
 
 import (
+	"agent-board/internal/automationipc"
+	"agent-board/internal/core"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -12,11 +14,13 @@ import (
 )
 
 type BridgeConfig struct {
-	ManagedRunID      string `json:"managed_run_id"`
-	ManagedGeneration int64  `json:"managed_generation"`
-	Server            string `json:"server"`
-	Project           string `json:"project"`
-	TokenFile         string `json:"token_file"`
+	Automation            *automationipc.Config `json:"automation,omitempty"`
+	ExecutionCapabilityID string                `json:"execution_capability_id,omitempty"`
+	ManagedRunID          string                `json:"managed_run_id"`
+	ManagedGeneration     int64                 `json:"managed_generation"`
+	Server                string                `json:"server"`
+	Project               string                `json:"project"`
+	TokenFile             string                `json:"token_file"`
 }
 
 // ReadBridgeConfig is used only by a per-run stdio bridge child. The host proof
@@ -37,6 +41,15 @@ func ReadBridgeConfig(path string) (BridgeConfig, string, error) {
 		return config, "", errors.New("managed bridge requires an immutable execution binding")
 	}
 	token, err := ReadToken(config.TokenFile)
+	if err == nil && config.Automation != nil {
+		b := config.Automation.Binding
+		if b.RunID != config.ManagedRunID || b.Generation != config.ManagedGeneration || b.WorkflowID == "" || b.StepID == "" || b.ControlEpoch < 1 || len(config.Automation.Nonce) != 64 || config.Automation.Endpoint == "" || len(config.ExecutionCapabilityID) != 35 || !strings.HasPrefix(config.ExecutionCapabilityID, "ec_") || !strings.HasPrefix(token, core.ExecutionTokenPrefix) || len(token) != len(core.ExecutionTokenPrefix)+64 {
+			return config, "", errors.New("invalid scoped automation bridge")
+		}
+	}
+	if err == nil && config.Automation == nil && config.ExecutionCapabilityID != "" {
+		return config, "", errors.New("unexpected execution capability")
+	}
 	return config, token, err
 }
 
@@ -70,7 +83,16 @@ func (e *Engine) bridgeArgs(run RunState) ([]string, error) {
 		return nil, preparationFailureAt("prepare_attempt_directory", err)
 	}
 	path := filepath.Join(dir, "bridge.json")
-	data, _ := json.Marshal(BridgeConfig{ManagedRunID: run.ID, ManagedGeneration: run.Generation, Server: e.config.Server, Project: e.config.Project, TokenFile: e.config.TokenFile})
+	bridgeConfig := BridgeConfig{ManagedRunID: run.ID, ManagedGeneration: run.Generation, Server: e.config.Server, Project: e.config.Project, TokenFile: e.config.TokenFile}
+	if run.Automation != nil {
+		if !run.Automation.Registered || run.Automation.IPC == nil {
+			return nil, preparationFailureAt("prepare_binding", nil)
+		}
+		bridgeConfig.TokenFile = run.Automation.TokenFile
+		bridgeConfig.ExecutionCapabilityID = run.Automation.CapabilityID
+		bridgeConfig.Automation = run.Automation.IPC
+	}
+	data, _ := json.Marshal(bridgeConfig)
 	if err := immutableBridgeFile(path, data); err != nil {
 		return nil, preparationFailureAt("prepare_bridge_file", err)
 	}

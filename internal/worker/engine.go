@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"context"
 	"errors"
 	"path/filepath"
 	"sync"
@@ -10,6 +11,7 @@ import (
 )
 
 type plan struct {
+	epoch   uint64
 	command core.ManagedCommand
 	run     core.ManagedRun
 }
@@ -22,26 +24,36 @@ type activeRun struct {
 	observed      bool
 	uncertain     bool
 	workspaceLock *workspaceLock
+	automation    *automationRuntime
 }
 
 // Engine never reconstructs a process ownership handle from a persisted PID.
 type Engine struct {
-	mu               sync.Mutex
-	wg               sync.WaitGroup
-	config           Config
-	disk             *disk
-	journal          journal
-	active           map[string]*activeRun
-	plans            map[string]plan
-	deadline         time.Time
-	fatal            error
-	closed           bool
-	stopEpoch        uint64
-	start            func(launchSpec) (process, error)
-	discover         func(string, string) ([]mcpConnector, error)
-	verifyMCP        func(string, string, []string, string, []string) error
-	workspaceLockDir string
-	probe            func(Config) error
+	attestMu                sync.Mutex
+	mu                      sync.Mutex
+	wg                      sync.WaitGroup
+	config                  Config
+	disk                    *disk
+	journal                 journal
+	active                  map[string]*activeRun
+	plans                   map[string]plan
+	deadline                time.Time
+	fatal                   error
+	closed                  bool
+	closing                 bool
+	stopCalls               int
+	beforeApply             func()
+	stopEpoch               uint64
+	start                   func(launchSpec) (process, error)
+	discover                func(string, string) ([]mcpConnector, error)
+	verifyMCP               func(string, string, []string, string, []string) error
+	workspaceLockDir        string
+	probe                   func(Config) error
+	automationTransport     func(context.Context, string, any, any) error
+	automationReadTransport func(context.Context, string, string, any, any) error
+	automationGit           func(context.Context, AutomationWorkspace, string) (gitProof, error)
+	automationDeadlines     map[string]time.Time
+	asyncApply              bool
 }
 
 func Open(config Config) (*Engine, error) {
@@ -102,6 +114,9 @@ func (e *Engine) Accept(command core.ManagedCommand, run core.ManagedRun) error 
 	if e.fatal != nil {
 		return e.fatal
 	}
+	if e.closed || e.closing || e.stopCalls > 0 {
+		return errors.New("worker is stopping; new dispatch is refused")
+	}
 	if command.Kind != "stop" && !e.allowedController(command.CreatedBy) {
 		return errors.New("command issuer is not included in this machine's explicit local consent")
 	}
@@ -153,7 +168,7 @@ func (e *Engine) Accept(command core.ManagedCommand, run core.ManagedRun) error 
 	receipt := &Receipt{RequestID: randomID("report_"), CommandID: command.ID, RunID: run.ID, DispatchID: command.DispatchID, Generation: command.Generation, Phase: "accepted"}
 	e.journal.Receipts[command.ID] = receipt
 	e.enqueue(*receipt)
-	e.plans[command.ID] = plan{command: command, run: run}
+	e.plans[command.ID] = plan{command: command, run: run, epoch: e.stopEpoch}
 	if command.Kind == "stop" {
 		local.State = "stopping"
 	}
@@ -195,27 +210,6 @@ func (e *Engine) Pending() *Receipt {
 	return &copy
 }
 
-func (e *Engine) Ack(receipt Receipt) error {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	if len(e.journal.Pending) == 0 || e.journal.Pending[0].RequestID != receipt.RequestID {
-		return errors.New("report receipt is not current")
-	}
-	e.journal.Pending = e.journal.Pending[1:]
-	if receipt.Phase == "completed" || receipt.Phase == "failed" || receipt.Phase == "stopped" || receipt.Phase == "recovered_stopped" {
-		if stored := e.journal.Receipts[receipt.CommandID]; stored != nil {
-			stored.Output = ""
-		}
-	}
-	if err := e.save(); err != nil {
-		return err
-	}
-	if receipt.Phase == "accepted" {
-		return e.apply(receipt.CommandID)
-	}
-	return nil
-}
-
 func (e *Engine) apply(id string) error {
 	plan, ok := e.plans[id]
 	if !ok {
@@ -223,6 +217,14 @@ func (e *Engine) apply(id string) error {
 	}
 	delete(e.plans, id)
 	run := e.journal.Runs[plan.run.ID]
+	if plan.command.Kind != "stop" && (plan.epoch != e.stopEpoch || e.closing || e.stopCalls > 0) {
+		if run.State != "stopped" {
+			run.State = "failed"
+		}
+		run.Error = "cancelled before native launch by local failsafe"
+		e.reportFor(id, "failed", run, run.Error, "")
+		return e.save()
+	}
 	if plan.command.Kind != "stop" && !e.allowedController(plan.command.CreatedBy) {
 		run.State = "failed"
 		run.Error = "local controller consent was revoked"
@@ -235,6 +237,14 @@ func (e *Engine) apply(id string) error {
 			return e.save()
 		}
 		if active := e.active[run.ID]; active != nil {
+			if run.Automation != nil && run.Automation.NativeExited && run.Automation.ExitDurable && !active.uncertain {
+				active.stop = true
+				active.stopCommand = id
+				run.State = "stopped"
+				e.bindAutomationStopProofLocked(run, e.journal.Receipts[id])
+				e.reportFor(id, "stopped", run, "", "")
+				return e.save()
+			}
 			active.stop = true
 			active.stopCommand = id
 			go e.stopOwned(run.ID, active, id)

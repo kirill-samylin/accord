@@ -49,7 +49,7 @@ func managedEnrollValid(in core.ManagedHostEnrollInput) error {
 			return err
 		}
 	}
-	if err := managedValues(in.Workspaces, 16, false); err != nil {
+	if err := managedValues(in.Workspaces, 32, false); err != nil {
 		return err
 	}
 	return managedValues(in.Providers, 2, true)
@@ -61,6 +61,9 @@ func (s *Store) ManagedHostEnroll(ctx context.Context, a core.Actor, in core.Man
 	secret := in.HostSecret
 	in.HostSecret = managedHash(secret)
 	return managedMutate(s, ctx, a, in.RequestID, "host_enroll", in, func(*board, time.Time) error { return nil }, func(b *board, now time.Time) (core.ManagedHost, error) {
+		if err := automationConsentValid(in.Automation, in.Workspaces, in.Providers, now); err != nil {
+			return core.ManagedHost{}, err
+		}
 		if len(b.ManagedHosts) >= 32 {
 			return core.ManagedHost{}, core.Fail("conflict", "Достигнут предел32компьютера")
 		}
@@ -68,7 +71,10 @@ func (s *Store) ManagedHostEnroll(ctx context.Context, a core.Actor, in core.Man
 		if err != nil {
 			return core.ManagedHost{}, err
 		}
-		h := &managedHostRecord{SecretHash: managedHash(secret), Host: core.ManagedHost{ID: id, OwnerPrincipalID: a.Principal.ID, OwnerAccessEpoch: managedEpoch(ctx), Name: in.Name, State: "active", Version: 1, Controllers: in.Controllers, Workspaces: in.Workspaces, Providers: in.Providers}}
+		h := &managedHostRecord{SecretHash: managedHash(secret), Host: core.ManagedHost{ID: id, OwnerPrincipalID: a.Principal.ID, OwnerAccessEpoch: managedEpoch(ctx), Name: in.Name, State: "active", Version: 1, Controllers: in.Controllers, Workspaces: in.Workspaces, Providers: in.Providers, Automation: in.Automation}}
+		if in.Automation != nil {
+			h.AutomationVersion = in.Automation.Version
+		}
 		b.ManagedHosts[id] = h
 		emit(b, now, "managed_host_enrolled", "", a.SessionID)
 		return managedHostView(h, a), nil
@@ -89,6 +95,9 @@ func (s *Store) ManagedHostUpdate(ctx context.Context, a core.Actor, in core.Man
 	}
 	return managedMutate(s, ctx, a, in.RequestID, "host_update", in, check, func(b *board, now time.Time) (core.ManagedHost, error) {
 		h := b.ManagedHosts[in.HostID]
+		if err := automationConsentValid(in.Automation, in.Workspaces, in.Providers, now); err != nil {
+			return core.ManagedHost{}, err
+		}
 		if h.Host.Version != in.Version {
 			return core.ManagedHost{}, core.Fail("conflict", "Версия компьютера изменилась")
 		}
@@ -100,6 +109,19 @@ func (s *Store) ManagedHostUpdate(ctx context.Context, a core.Actor, in core.Man
 				return core.ManagedHost{}, core.Fail("conflict", "Сначала остановите все процессы компьютера")
 			}
 		}
+		watermark := h.AutomationVersion
+		if h.Host.Automation != nil && h.Host.Automation.Version > watermark {
+			watermark = h.Host.Automation.Version
+		}
+		if !reflect.DeepEqual(h.Host.Automation, in.Automation) && in.Automation != nil && in.Automation.Version <= watermark {
+			return core.ManagedHost{}, core.Fail("conflict", "Automation consent version должен увеличиться")
+		}
+		if in.Automation != nil {
+			h.AutomationVersion = in.Automation.Version
+		} else {
+			h.AutomationVersion = watermark
+		}
+		h.Host.Automation = in.Automation
 		h.Host.Name = in.Name
 		h.Host.State = in.State
 		h.Host.Controllers = in.Controllers
@@ -128,6 +150,9 @@ func (s *Store) ManagedList(ctx context.Context, a core.Actor, in core.ManagedLi
 		if err := readActor(ctx, b, a, now); err != nil {
 			return out, err
 		}
+		if in.Workspace != "" && in.HostID == "" {
+			return out, core.Fail("validation", "Workspace filter требует host_id")
+		}
 		if in.HostID != "" {
 			if _, err := managedHost(b, in.HostID); err != nil {
 				return out, err
@@ -135,12 +160,27 @@ func (s *Store) ManagedList(ctx context.Context, a core.Actor, in core.ManagedLi
 		}
 		for _, h := range b.ManagedHosts {
 			if in.HostID == "" || in.HostID == h.Host.ID {
-				out.Hosts = append(out.Hosts, managedHostView(h, a))
+				host := managedHostView(h, a)
+				if h.Host.Automation != nil {
+					summary, err := managedAutomationProjection(h.Host.Automation, in.Workspace)
+					if err != nil {
+						return out, err
+					}
+					host.Automation = summary
+				} else if in.Workspace != "" {
+					return out, core.Fail("not_found", "Workspace automation scope не найден")
+				}
+				out.Hosts = append(out.Hosts, host)
 			}
 		}
 		for _, r := range b.ManagedRuns {
 			if in.HostID == "" || r.HostID == in.HostID {
 				v := *r
+				if r.Automation != nil {
+					binding := *r.Automation
+					binding.Checks = nil
+					v.Automation = &binding
+				}
 				v.Prompt = ""
 				v.Output = []string{}
 				if r.Profile != nil {
@@ -235,4 +275,25 @@ func (s *Store) ManagedAuthority(ctx context.Context, a core.Actor, host, run st
 		}
 		return managedHostView(h, a), nil
 	})
+}
+
+func managedAutomationProjection(consent *core.AutomationHostConsent, workspace string) (*core.AutomationHostConsent, error) {
+	out := *consent
+	out.Scopes = map[string]core.AutomationWorkspaceScope{}
+	out.Checks = nil
+	out.Workspaces = nil
+	out.Roles = nil
+	out.Providers = nil
+	out.MaxStepSeconds = 0
+	if workspace == "" {
+		out.ScopesTruncated = len(consent.Scopes) > 0
+		return &out, nil
+	}
+	scope, ok := consent.Scopes[workspace]
+	if !ok {
+		return nil, core.Fail("not_found", "Workspace automation scope не найден")
+	}
+	out.Scopes[workspace] = scope
+	out.ScopesTruncated = false
+	return &out, nil
 }

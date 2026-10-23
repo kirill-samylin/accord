@@ -15,6 +15,7 @@ func TestCoordinationSchema3MigrationPreservesRowsAndRejectsDamaged4(t *testing.
 	if err := f.s.db.QueryRow(`SELECT data FROM tasks WHERE key=?`, task.Key).Scan(&before); err != nil {
 		t.Fatal(err)
 	}
+	dropAutomationFixture(t, f.s)
 	for _, q := range []string{`DROP TABLE managed_hosts`, `DROP TABLE managed_runs`, `DROP TABLE managed_commands`, `DROP TABLE managed_metadata`, `DROP TABLE coordination_metadata`} {
 		if _, err := f.s.db.Exec(q); err != nil {
 			t.Fatal(err)

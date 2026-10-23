@@ -91,6 +91,10 @@ export async function readPage<T extends PageData | CatalogPage = PageData>(
             can_update: false,
             can_manage_profiles: false,
             can_coordinate: false,
+            can_manage_automation: false,
+            workflow: result.page.workflow
+              ? { ...result.page.workflow, can_control: false }
+              : undefined,
             managed: result.page.managed
               ? {
                   ...result.page.managed,
@@ -116,7 +120,7 @@ export async function submitAction<
   if (/^\/web\/p\/[^/]+\/login$/.test(path))
     throw new Error("Вход выполняется через общий адрес");
   if (
-    !/^\/web\/(?:p\/p_[a-f0-9]{32}\/)?(?:login|logout|heartbeat|session\/continue|tasks(?:\/[A-Za-z0-9_-]+\/(?:claim|answer|release|update|assign|link|transition|checks|duplicate))?|profiles(?:\/ap_[a-f0-9]{32}\/(?:update|archive))?|managed\/(?:start|command|disable)|designs)$/.test(
+    !/^\/web\/(?:p\/p_[a-f0-9]{32}\/)?(?:login|logout|heartbeat|session\/continue|tasks(?:\/[A-Za-z0-9_-]+\/(?:claim|answer|release|update|assign|link|transition|checks|duplicate))?|profiles(?:\/ap_[a-f0-9]{32}\/(?:update|archive))?|automation\/(?:submit|command|answer|policies\/(?:create|update|revoke))|managed\/(?:start|command|disable)|designs)$/.test(
       path,
     ) &&
     !/^\/web\/catalog\/(?:switch|projects(?:\/p_[a-f0-9]{32}\/(?:update|members|repositories(?:\/[A-Za-z0-9_-]+)?))?)$/.test(

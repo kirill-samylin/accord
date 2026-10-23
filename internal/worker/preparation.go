@@ -17,6 +17,7 @@ func (e *Engine) prepareBridgeLocked(plan plan, run *RunState) ([]string, error)
 	snapshot := *run
 	config := snapshotConfig(e.config)
 	epoch := e.stopEpoch
+	active := e.active[run.ID]
 	preparer := &Engine{config: config, discover: e.discover, verifyMCP: e.verifyMCP}
 	var args []string
 	var prepareError error
@@ -38,7 +39,7 @@ func (e *Engine) prepareBridgeLocked(plan plan, run *RunState) ([]string, error)
 	if !time.Now().Before(e.deadline) {
 		return nil, preparationFailureAt("prepare_deadline", prepareError)
 	}
-	if e.stopEpoch != epoch || e.active[run.ID] != nil || !e.allowedController(plan.command.CreatedBy) || !reflect.DeepEqual(e.config, config) {
+	if e.stopEpoch != epoch || e.active[run.ID] != active || !e.allowedController(plan.command.CreatedBy) || !reflect.DeepEqual(e.config, config) {
 		return nil, preparationFailureAt("prepare_authorization", prepareError)
 	}
 	if err := e.checkPins(run.Provider, run.Workspace); err != nil {
@@ -49,6 +50,7 @@ func (e *Engine) prepareBridgeLocked(plan plan, run *RunState) ([]string, error)
 
 func snapshotConfig(config Config) Config {
 	copy := config
+	copy.Automation = cloneAutomation(config.Automation)
 	copy.Controllers = snapshotStrings(config.Controllers)
 	if config.Executables != nil {
 		copy.Executables = make(map[string]string, len(config.Executables))

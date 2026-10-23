@@ -24,3 +24,12 @@ type launchSpec struct {
 	env        []string
 	prompt     string
 }
+
+// Native verification needs the observed OS exit status, not a fabricated code
+// derived from success/failure. Older test seams need not implement this method.
+func processExitCode(child process) (int, bool) {
+	if status, ok := child.(interface{ ExitCode() (int, bool) }); ok {
+		return status.ExitCode()
+	}
+	return 0, false
+}

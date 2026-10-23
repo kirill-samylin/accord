@@ -61,7 +61,7 @@ def apply(work, state, resume=False):
             if saved.parent != Path('/var/backups/accord-web') or host.sha(saved / 'manifest.json') != state['pre_manifest_sha256']:
                 raise RuntimeError('immutable pre-update snapshot differs')
             manifest = validate_snapshot(saved)
-            # Install the managed-agent/schema5 floor while the owned cold-boot
+            # Install the automation/schema6 floor while the owned cold-boot
             # marker still blocks every restart, before any board DDL occurs.
             install_helpers(state['helpers'])
             require_helpers(state, after=True)

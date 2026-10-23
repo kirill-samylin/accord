@@ -266,6 +266,10 @@ export interface DesignAsset {
   preview_url?: string;
 }
 export interface PageData {
+  automation?: import("./automation.ts").WorkflowListPage;
+  workflow?: import("./automation.ts").WorkflowPage;
+  automation_policy?: import("./automation.ts").AutomationPolicyPage;
+  can_manage_automation?: boolean;
   managed?: import("./managed-agents.ts").ManagedPage;
   managed_run?: import("./managed-agents.ts").ManagedRunPage;
   coordination?: TaskCoordination;

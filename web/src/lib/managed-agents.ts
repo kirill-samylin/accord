@@ -1,5 +1,7 @@
 import type { ProfileSnapshot, ProfileSummary } from "./agent-profiles.ts";
 export interface ManagedHost {
+  automation?: import("./automation.ts").AutomationHostConsent;
+  worker_capabilities?: Record<string, number>;
   id: string;
   owner_principal_id: string;
   name: string;

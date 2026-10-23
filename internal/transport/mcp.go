@@ -54,6 +54,7 @@ func mcpHandler(ops []operation, service Service, externalHostPolicy bool, desig
 	addProfileResources(server, service)
 	addCoordinationResource(server, service)
 	addDedupResources(server, service)
+	addAutomationResources(server, service)
 	if designs != nil {
 		addDesignResources(server, designs)
 	}

@@ -77,12 +77,14 @@ func NewHandlerWithOptions(s Service, ready func(context.Context) error, options
 		})
 	}
 	admission := newAdmission(options)
-	ops := operations(s)
+	ops := append(operations(s), automationTools(s)...)
 	all := append(append([]operation(nil), ops...), readOperations(s)...)
 	all = append(all, profileOperations(s)...)
 	all = append(all, coordinationOperations(s)...)
 	all = append(all, dedupOperations(s)...)
 	all = append(all, managedOperations(s)...)
+	all = append(all, automationOperations(s)...)
+	all = append(all, localAutomationOperations(s)...)
 	byName := make(map[string]operation, len(all))
 	for _, op := range all {
 		byName[op.name] = op
@@ -90,7 +92,7 @@ func NewHandlerWithOptions(s Service, ready func(context.Context) error, options
 	mux := http.NewServeMux()
 	mux.Handle("/mcp", mcpHandler(ops, s, options.ExternalHost != "", options.Designs))
 	mux.HandleFunc("GET /metrics", admission.metrics)
-	for _, r := range routes {
+	for _, r := range append(append([]route(nil), routes...), automationRoutes...) {
 		op := byName[r.name]
 		if op.run == nil {
 			continue
@@ -215,7 +217,7 @@ func requestBody(w http.ResponseWriter, r *http.Request, route route) ([]byte, e
 		}
 		return readQuery(route.name, r.URL.RawQuery)
 	}
-	if (route.name == "assign" || route.name == "check_create" || route.name == "duplicate" || route.name == "similar" || strings.HasPrefix(route.name, "managed_")) && r.URL.RawQuery != "" {
+	if (route.name == "assign" || route.name == "check_create" || route.name == "duplicate" || route.name == "similar" || strings.HasPrefix(route.name, "managed_") || strings.HasPrefix(route.name, "workflow_") || route.name == "execution_capability_register" || strings.HasPrefix(route.name, "automation_policy_")) && r.URL.RawQuery != "" {
 		return nil, core.Fail("validation", "unexpected query parameters")
 	}
 	media, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
@@ -318,7 +320,7 @@ func methodsForPath(path string) []string {
 	}
 	var methods []string
 	actual := strings.Split(path, "/")
-	for _, route := range routes {
+	for _, route := range append(append([]route(nil), routes...), automationRoutes...) {
 		expected := strings.Split(route.path, "/")
 		if len(actual) != len(expected) {
 			continue

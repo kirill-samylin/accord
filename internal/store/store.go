@@ -21,6 +21,7 @@ type replay struct {
 	Response json.RawMessage `json:"response"`
 }
 type board struct {
+	Automation       *automationBoard                 `json:"automation,omitempty"`
 	ManagedHosts     map[string]*managedHostRecord    `json:"managed_hosts"`
 	ManagedRuns      map[string]*core.ManagedRun      `json:"managed_runs"`
 	ManagedCommands  map[string]*managedCommandRecord `json:"managed_commands"`

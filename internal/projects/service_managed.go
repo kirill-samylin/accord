@@ -4,101 +4,34 @@ import (
 	"agent-board/internal/core"
 	"agent-board/internal/store"
 	"context"
-	"database/sql"
 )
 
 // managedCall keeps the registry guard through the selected board transaction.
 // Host grants augment membership; a project editor cannot control arbitrary PCs.
 func managedCall[I, O any](s *service, ctx context.Context, a core.Actor, in I, host, run string, write bool, call func(context.Context, core.Actor, I) (O, error)) (O, error) {
-	return transaction(s.registry, ctx, func(tx *sql.Tx) (O, error) {
+	return automationCall(s, ctx, a, in, write, func(inner context.Context, actor core.Actor, input I) (O, error) {
 		var zero O
-		who, err := accountFrom(ctx)
-		if err != nil {
-			return zero, err
-		}
-		access, err := s.registry.access(ctx, tx, who, s.projectID, write)
-		if err != nil {
-			return zero, err
-		}
-		if a.Principal != access.principal {
+		authority, current := store.AutomationAuthorityFromContext(inner)
+		if principal, ok := authority.Principals[actor.Principal.ID]; !current || !ok || principal.Principal != actor.Principal {
 			return zero, denied()
 		}
-		if err = s.registry.sessionAllowed(ctx, tx, access, a.SessionID); err != nil {
-			return zero, err
-		}
-		type issuer struct {
-			local, identity, source, token, owner, machine string
-			epoch                                          int64
-		}
-		issuers := []issuer{}
-		rows, err := tx.QueryContext(ctx, `SELECT m.local_id,m.identity_id,m.access_epoch,i.source,i.token_id,i.owner,i.machine FROM memberships m JOIN identities i ON i.id=m.identity_id WHERE m.project_id=? AND m.active=1 AND m.role IN ('owner','editor')`, s.projectID)
-		if err != nil {
-			return zero, err
-		}
-		for rows.Next() {
-			var v issuer
-			if err = rows.Scan(&v.local, &v.identity, &v.epoch, &v.source, &v.token, &v.owner, &v.machine); err != nil {
-				rows.Close()
+		if host != "" || run != "" {
+			h, err := s.board.ManagedAuthority(inner, actor, host, run)
+			if err != nil {
 				return zero, err
 			}
-			issuers = append(issuers, v)
-		}
-		err = rows.Err()
-		rows.Close()
-		if err != nil {
-			return zero, err
-		}
-		grants := map[string]store.ManagedPrincipalGrant{}
-		legacy := []core.Principal{}
-		for _, v := range issuers {
-			if v.source == "legacy" {
-				legacy = append(legacy, core.Principal{ID: v.token, Owner: v.owner, Machine: v.machine})
-			} else if _, e := s.registry.identity(ctx, tx, v.identity); e == nil {
-				grants[v.local] = store.ManagedPrincipalGrant{Epoch: v.epoch}
+			grant, exists := authority.Principals[h.OwnerPrincipalID]
+			if !current || !exists || grant.Epoch != h.OwnerAccessEpoch {
+				return zero, core.Fail("unauthorized", "Владелец компьютера должен повторно подключить worker")
 			}
 		}
-		var out O
-		invoke := func(valid map[string]bool) error {
-			scoped := map[string]store.ManagedPrincipalGrant{}
-			for id, v := range grants {
-				scoped[id] = v
-			}
-			for _, v := range issuers {
-				if v.source == "legacy" && (valid == nil || valid[v.token]) {
-					g := store.ManagedPrincipalGrant{Epoch: v.epoch}
-					if valid == nil {
-						g.LegacyTokenID = v.token
-					}
-					scoped[v.local] = g
-				}
-			}
-			inner := store.WithManagedEpoch(store.WithManagedPrincipals(ctx, scoped), access.member.Epoch)
-			if host != "" || run != "" {
-				h, e := s.board.ManagedAuthority(inner, a, host, run)
-				if e != nil {
-					return e
-				}
-				grant, ok := scoped[h.OwnerPrincipalID]
-				if !ok || grant.Epoch != h.OwnerAccessEpoch {
-					return core.Fail("unauthorized", "Владелец компьютера должен повторно подключить worker")
-				}
-			}
-			out, err = call(inner, a, in)
-			return err
-		}
-		if s.projectID == s.registry.defaultID || len(legacy) == 0 {
-			err = invoke(nil)
-		} else {
-			required := ""
-			if access.identity.Source == "legacy" {
-				required = access.identity.TokenID
-			}
-			err = s.registry.options.Default.GuardManagedCredentials(ctx, required, legacy, invoke)
-		}
-		return out, err
+		return call(inner, actor, input)
 	})
 }
 func (s *service) ManagedList(ctx context.Context, a core.Actor, in core.ManagedListInput) (core.ManagedPage, error) {
+	if err := automationOperationAllowed(ctx, "managed_list"); err != nil {
+		return core.ManagedPage{}, err
+	}
 	return withAccess(s, ctx, false, a.SessionID, func(ctx context.Context, access access) (core.ManagedPage, error) {
 		if a.Principal != access.principal {
 			return core.ManagedPage{}, denied()
@@ -119,7 +52,7 @@ func (s *service) ManagedList(ctx context.Context, a core.Actor, in core.Managed
 	})
 }
 func (s *service) ManagedRun(ctx context.Context, a core.Actor, in core.ManagedRunInput) (core.ManagedRunPage, error) {
-	return actorCall(s, ctx, a, in, false, s.board.ManagedRun)
+	return nativeActorCall(s, ctx, a, in, false, "managed_run", s.board.ManagedRun)
 }
 func (s *service) ManagedHostEnroll(ctx context.Context, a core.Actor, in core.ManagedHostEnrollInput) (core.ManagedHost, error) {
 	return managedCall(s, ctx, a, in, "", "", true, s.board.ManagedHostEnroll)
@@ -137,10 +70,10 @@ func (s *service) ManagedCommand(ctx context.Context, a core.Actor, in core.Mana
 	return managedCall(s, ctx, a, in, "", in.RunID, true, s.board.ManagedCommand)
 }
 func (s *service) ManagedPoll(ctx context.Context, a core.Actor, in core.ManagedPollInput) (core.ManagedPollResult, error) {
-	return managedCall(s, ctx, a, in, in.HostID, "", true, s.board.ManagedPoll)
+	return managedCall(s, ctx, a, in, in.HostID, "", false, s.board.ManagedPoll)
 }
 func (s *service) ManagedReport(ctx context.Context, a core.Actor, in core.ManagedReportInput) (core.ManagedResult, error) {
-	return managedCall(s, ctx, a, in, in.HostID, "", true, s.board.ManagedReport)
+	return managedCall(s, ctx, a, in, in.HostID, "", false, s.board.ManagedReport)
 }
 func (s *service) ManagedPermission(ctx context.Context, a core.Actor, in core.ManagedPermissionInput) (core.ManagedHost, error) {
 	return managedCall(s, ctx, a, in, in.HostID, in.RunID, true, s.board.ManagedPermission)

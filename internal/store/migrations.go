@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-const SchemaVersion = 5
+const SchemaVersion = 6
 
 // migrate is the sole DDL owner. A schema1 snapshot is published before any
 // schema2 transaction; unsupported future versions are rejected before DDL.
@@ -23,7 +23,7 @@ func migrate(ctx context.Context, db *sql.DB, path string) error {
 	if version == SchemaVersion {
 		return validateSchema(ctx, db, version)
 	}
-	if version >= 1 && version <= 4 {
+	if version >= 1 && version <= 5 {
 		if err := validateSchema(ctx, db, version); err != nil {
 			return err
 		}
@@ -70,7 +70,7 @@ func migrate(ctx context.Context, db *sql.DB, path string) error {
 	if version == SchemaVersion {
 		return nil
 	}
-	if version < 0 || version > 4 {
+	if version < 0 || version > 5 {
 		return fmt.Errorf("unsupported migration source")
 	}
 	queries := []string{
@@ -97,7 +97,11 @@ func migrate(ctx context.Context, db *sql.DB, path string) error {
 	if version < 4 {
 		queries = append(queries, `CREATE TABLE coordination_metadata (id INTEGER PRIMARY KEY CHECK(id=1),version INTEGER NOT NULL CHECK(version=1))`, `INSERT INTO coordination_metadata VALUES(1,1)`)
 	}
-	queries = append(queries, `CREATE TABLE managed_hosts (key TEXT PRIMARY KEY,data TEXT NOT NULL)`, `CREATE TABLE managed_runs (key TEXT PRIMARY KEY,data TEXT NOT NULL)`, `CREATE TABLE managed_commands (key TEXT PRIMARY KEY,data TEXT NOT NULL)`, `CREATE TABLE managed_metadata (id INTEGER PRIMARY KEY CHECK(id=1),version INTEGER NOT NULL CHECK(version=1))`, `INSERT INTO managed_metadata VALUES(1,1)`, `PRAGMA user_version=5`)
+	if version < 5 {
+		queries = append(queries, `CREATE TABLE managed_hosts (key TEXT PRIMARY KEY,data TEXT NOT NULL)`, `CREATE TABLE managed_runs (key TEXT PRIMARY KEY,data TEXT NOT NULL)`, `CREATE TABLE managed_commands (key TEXT PRIMARY KEY,data TEXT NOT NULL)`, `CREATE TABLE managed_metadata (id INTEGER PRIMARY KEY CHECK(id=1),version INTEGER NOT NULL CHECK(version=1))`, `INSERT INTO managed_metadata VALUES(1,1)`)
+	}
+	queries = append(queries, automationDDL()...)
+	queries = append(queries, `PRAGMA user_version=6`)
 	for _, q := range queries {
 		if _, err = tx.ExecContext(ctx, q); err != nil {
 			return fmt.Errorf("migrate database: %w", err)

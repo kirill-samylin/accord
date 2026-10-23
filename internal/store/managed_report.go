@@ -119,7 +119,15 @@ func (s *Store) ManagedReport(ctx context.Context, a core.Actor, in core.Managed
 			if !managedSessionID.MatchString(in.ProviderSessionID) || r.ProviderSessionID != "" && r.ProviderSessionID != in.ProviderSessionID {
 				return out, core.Fail("conflict", "Native session ID не совпадает")
 			}
+			if r.Automation != nil {
+				for _, other := range b.ManagedRuns {
+					if other.ID != r.ID && other.Provider == r.Provider && other.ProviderSessionID == in.ProviderSessionID && other.Automation != nil {
+						return out, core.Fail("rule_violation", "Automation роли требуют отдельные native conversations")
+					}
+				}
+			}
 			r.ProviderSessionID = in.ProviderSessionID
+			automationRunStarted(b, r, now)
 			if r.State != "stopping" {
 				r.State = "running"
 			}
@@ -181,9 +189,12 @@ func (s *Store) ManagedReport(ctx context.Context, a core.Actor, in core.Managed
 			return out, core.Fail("validation", "Неизвестная фаза worker report")
 		}
 		if in.Phase == "completed" || in.Phase == "stopped" || in.Phase == "failed" || in.Phase == "recovered_stopped" {
+			automationRunTerminal(b, r, now)
 			if err := managedCloseSessions(b, r, h, in.Phase, now); err != nil {
 				return out, err
 			}
+			c.TerminalPhase = in.Phase
+			c.TerminalAt = &now
 		}
 		if in.Phase == "started" || in.Phase == "failed" {
 			for _, related := range b.ManagedCommands {

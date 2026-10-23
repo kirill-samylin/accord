@@ -9,6 +9,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { APIError, pageQueryKey, readPage, webToApp } from "@/lib/api";
+import { automationPollInterval } from "@/lib/automation";
 import { managedPollInterval } from "@/lib/managed-agents";
 import {
   projectRoute,
@@ -92,7 +93,9 @@ function ControlContent() {
     queryKey: pageQueryKey(location),
     queryFn: ({ signal }) => readPage<PageData | CatalogPage>(location, signal),
     refetchInterval: (query) =>
-      managedPollInterval(
+      (path.includes("/automation")
+        ? automationPollInterval
+        : managedPollInterval)(
         path,
         scope.locked,
         query.state.data && !isCatalogPage(query.state.data)
@@ -196,9 +199,18 @@ function ControlContent() {
             ? result.error.message
             : "Проверьте соединение и повторите попытку."}
         </p>
-        <button className="button" onClick={() => result.refetch()}>
-          Повторить
-        </button>
+        {result.error instanceof APIError &&
+        result.error.status === 409 &&
+        path.includes("/automation") &&
+        search.has("cursor") ? (
+          <a className="button" href={scope.app(path)}>
+            Открыть начало истории
+          </a>
+        ) : (
+          <button className="button" onClick={() => result.refetch()}>
+            Повторить
+          </button>
+        )}
         <a href="/app/projects">Все проекты</a>
       </main>
     );

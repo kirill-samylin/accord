@@ -72,7 +72,7 @@ func verifySchema(ctx context.Context, db *sql.DB) error {
 	if version < 1 || version > SchemaVersion {
 		return fmt.Errorf("backup requires a supported schema version")
 	}
-	return nil
+	return validateSchema(ctx, db, version)
 }
 
 // Backup makes a consistent online SQLite snapshot without copying live WAL.

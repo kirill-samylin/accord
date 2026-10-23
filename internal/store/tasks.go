@@ -15,6 +15,11 @@ func (s *Store) Create(ctx context.Context, a core.Actor, in core.CreateInput) (
 }
 
 func (s *Store) createInBoard(b *board, sess *core.Session, a core.Actor, in core.CreateInput, now time.Time) (core.Task, error) {
+	return s.createAsRoleInBoard(b, sess.Role, a, in, now)
+}
+
+// Shared domain constructor takes an explicit authorized role, never a fabricated session.
+func (s *Store) createAsRoleInBoard(b *board, role string, a core.Actor, in core.CreateInput, now time.Time) (core.Task, error) {
 	var zero core.Task
 	if !validTitle(in.Title) || len(in.Description) > 16384 || in.Priority < 0 || in.Priority > 100 {
 		return zero, core.Fail("invalid_input", "invalid title, description or priority")
@@ -27,7 +32,7 @@ func (s *Store) createInBoard(b *board, sess *core.Session, a core.Actor, in cor
 		t.Priority = 2
 	}
 	if in.Type == "epic" {
-		if sess.Role != "coordinator" && sess.Role != "human" {
+		if role != "coordinator" && role != "human" {
 			return zero, core.Fail("forbidden", "epic creation requires coordinator or human")
 		}
 		t.Key = fmt.Sprintf("E-%d", b.Sequence)
@@ -110,6 +115,9 @@ func (s *Store) Get(ctx context.Context, a core.Actor, in core.GetInput) (core.T
 		if _, err := sessionFor(b, a, now); err != nil {
 			return core.Task{}, err
 		}
+		if err := executionGuard(ctx, b, a, "get", in, now); err != nil {
+			return core.Task{}, err
+		}
 		t, err := taskFor(b, in.TaskKey)
 		if err != nil {
 			return core.Task{}, err
@@ -130,7 +138,7 @@ func (s *Store) Next(ctx context.Context, a core.Actor, in core.NextInput) (core
 			if epic == nil || epic.Type != "epic" || epic.State != "open" {
 				continue
 			}
-			if t.Type == "task" && t.Role == sess.Role && t.State == "ready" && t.Lease == nil && !blocked(b, t) && assignmentMatches(b, t, sess) && (in.TaskKey == "" || in.TaskKey == t.Key) && (in.EpicKey == "" || in.EpicKey == t.EpicKey) {
+			if t.Type == "task" && t.Role == sess.Role && t.State == "ready" && t.Lease == nil && !blocked(b, t) && assignmentMatches(b, t, sess) && automationTaskClaimAllowed(ctx, b, sess, t, now) && (in.TaskKey == "" || in.TaskKey == t.Key) && (in.EpicKey == "" || in.EpicKey == t.EpicKey) {
 				candidates = append(candidates, t)
 			}
 		}
@@ -159,6 +167,7 @@ func (s *Store) Next(ctx context.Context, a core.Actor, in core.NextInput) (core
 		t.State = "in_progress"
 		t.Lease = &core.Lease{SessionID: a.SessionID, Generation: t.Generation, ExpiresAt: now.Add(s.cfg.LeaseTTL)}
 		t.Attempts = append(t.Attempts, core.Attempt{SessionID: a.SessionID, PrincipalID: a.Principal.ID, RunID: sess.RunID, Machine: sess.Machine, Generation: t.Generation, StartedAt: now})
+		automationTaskClaimed(b, t, sess)
 		emit(b, now, "claimed", t.Key, a.SessionID)
 		v := viewTask(b, t)
 		return core.Claim{Task: &v, Lease: t.Lease, EpicNotes: scopeNotes(b, "epic", t.EpicKey), Queue: sessionQueueSummary(b, sess), Warnings: claimWarnings(b, t, now)}, nil

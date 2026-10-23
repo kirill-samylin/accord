@@ -24,7 +24,10 @@ func (b *bridge) mirrorResources(ctx context.Context) error {
 			return errors.New("too many resource templates")
 		}
 		switch template.URITemplate {
-		case "accord://notes{?session_id,scope_type,scope_id,limit,cursor,include_deleted}",
+		case "accord://workflows{?session_id,workflow_id,state,cursor,limit}",
+			"accord://workflow{?session_id,workflow_id,state,cursor,limit}",
+			"accord://workflow-report{?session_id,workflow_id,state,cursor,limit}",
+			"accord://notes{?session_id,scope_type,scope_id,limit,cursor,include_deleted}",
 			"accord://designs{?session_id,scope,scope_key,design_id,limit,cursor}",
 			"accord://designs/{asset_id}{?session_id}",
 			"accord://profiles{?session_id,state}",
@@ -32,6 +35,9 @@ func (b *bridge) mirrorResources(ctx context.Context) error {
 			"accord://similar{?session_id,title,description,type,role}",
 			"accord://team{?session_id}":
 		default:
+			continue
+		}
+		if b.executionCapabilityID != "" && template.URITemplate != "accord://workflow{?session_id,workflow_id,state,cursor,limit}" && template.URITemplate != "accord://workflow-report{?session_id,workflow_id,state,cursor,limit}" {
 			continue
 		}
 		copy := *template
@@ -48,7 +54,7 @@ func (b *bridge) readNotes(ctx context.Context, request *mcp.ReadResourceRequest
 		return nil, errors.New("NO_SESSION: call describe first")
 	}
 	u, err := url.Parse(request.Params.URI)
-	if err != nil || u.Scheme != "accord" || (u.Host != "notes" && u.Host != "designs" && u.Host != "profiles" && u.Host != "profile" && u.Host != "coordination" && u.Host != "similar" && u.Host != "team") || (u.Host != "designs" && u.Path != "") || (u.Host == "designs" && strings.Contains(strings.TrimPrefix(u.Path, "/"), "/")) || u.User != nil || u.Fragment != "" {
+	if err != nil || u.Scheme != "accord" || (u.Host != "notes" && u.Host != "designs" && u.Host != "profiles" && u.Host != "profile" && u.Host != "coordination" && u.Host != "similar" && u.Host != "team" && u.Host != "workflows" && u.Host != "workflow" && u.Host != "workflow-report") || (u.Host != "designs" && u.Path != "") || (u.Host == "designs" && strings.Contains(strings.TrimPrefix(u.Path, "/"), "/")) || u.User != nil || u.Fragment != "" {
 		return nil, errors.New("invalid notes resource URI")
 	}
 	query, err := url.ParseQuery(u.RawQuery)

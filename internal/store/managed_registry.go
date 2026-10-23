@@ -4,6 +4,7 @@ import (
 	"agent-board/internal/core"
 	"context"
 	"errors"
+	"time"
 )
 
 // GuardManagedCredentials snapshots all legacy issuers while holding the same
@@ -53,4 +54,43 @@ func managedTarget(input any) (string, string) {
 		return v.HostID, ""
 	}
 	return "", ""
+}
+
+// GuardAutomationCredentials returns current credential deadlines while keeping
+// the legacy authority lock across the target-board transaction.
+func (s *Store) GuardAutomationCredentials(ctx context.Context, required string, principals []core.Principal, call func(map[string]time.Time) error) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err = tx.ExecContext(ctx, `UPDATE metadata SET sequence=sequence WHERE id=1`); err != nil {
+		return err
+	}
+	valid := map[string]time.Time{}
+	now := s.clock().UTC()
+	for _, p := range principals {
+		err = authenticatePrincipal(context.WithValue(ctx, executionIdentityKey{}, struct{}{}), &board{tx: tx}, p, now)
+		if err != nil {
+			var domain *core.Error
+			if !errors.As(err, &domain) {
+				return err
+			}
+			continue
+		}
+		var expiry int64
+		if err = tx.QueryRowContext(ctx, `SELECT expires FROM tokens WHERE id=?`, p.ID).Scan(&expiry); err != nil {
+			return err
+		}
+		valid[p.ID] = time.Unix(0, expiry).UTC()
+	}
+	if required != "" {
+		if _, ok := valid[required]; !ok {
+			return core.Fail("unauthorized", "Legacy credential отозван")
+		}
+	}
+	if err = call(valid); err != nil {
+		return err
+	}
+	return tx.Commit()
 }

@@ -20,7 +20,6 @@ import (
 	"agent-board/internal/transport"
 	"agent-board/internal/web"
 	"agent-board/internal/webui"
-	"encoding/json"
 )
 
 func main() {
@@ -42,7 +41,7 @@ func run(args []string, in io.Reader, out io.Writer) error {
 		if len(args) != 1 && !(len(args) == 2 && args[1] == "--json") {
 			return errors.New("capabilities accepts only --json")
 		}
-		return json.NewEncoder(out).Encode(map[string]any{"project_registry": 1, "project_acl": 1, "registry_schema": []int{1}, "agent_profiles": 1, "coordination": 1, "deduplication": 1, "managed_agents": 1, "board_schema": []int{5}})
+		return printCapabilities(out)
 	case "projects":
 		return projectCommand(args[1:], out)
 	case "serve":
@@ -198,6 +197,7 @@ func serve(args []string, out io.Writer) error {
 	defer s.Close()
 	options := transport.HandlerOptions{ExternalHost: *externalHost}
 	ready := s.Ready
+	var automationRegistry *projects.Registry
 	if *webOrigin != "" {
 		if *webData == "" {
 			return errors.New("web-data required when web-origin is set")
@@ -217,6 +217,7 @@ func serve(args []string, out io.Writer) error {
 				return fmt.Errorf("cannot initialize project registry: %w", err)
 			}
 			defer registry.Close()
+			automationRegistry = registry
 			options.ProjectRouter = registry
 			ready = func(ctx context.Context) error {
 				if err := registry.Ready(ctx); err != nil {
@@ -241,22 +242,27 @@ func serve(args []string, out io.Writer) error {
 	server := &http.Server{Handler: transport.NewHandlerWithOptions(s, ready, options), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: time.Minute, MaxHeaderBytes: 16 << 10}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	done := make(chan struct{})
-	defer close(done)
+	automationDone := startAutomation(ctx, stop, automationRegistry)
+	defer func() { stop(); <-automationDone }()
+	shutdownDone := make(chan struct{})
 	go func() {
-		select {
-		case <-ctx.Done():
-			shutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-			_ = server.Shutdown(shutdown)
-		case <-done:
+		defer close(shutdownDone)
+		<-ctx.Done()
+		shutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := server.Shutdown(shutdown); err != nil {
+			_ = server.Close()
 		}
 	}()
 	fmt.Fprintln(out, "agent-board listening on http://"+listener.Addr().String())
-	if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	serveError := server.Serve(listener)
+	stop()
+	<-shutdownDone
+	automationError := <-automationDone
+	if serveError != nil && !errors.Is(serveError, http.ErrServerClosed) {
 		return errors.New("HTTP server stopped unexpectedly")
 	}
-	return nil
+	return automationError
 }
 
 func envOr(name, fallback string) string {

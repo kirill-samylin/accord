@@ -9,14 +9,11 @@ import (
 
 var ansi = regexp.MustCompile("\x1b(?:\\[[0-?]*[ -/]*[@-~]|\\][^\x07]*(?:\x07|\x1b\\\\))")
 var urlPattern = regexp.MustCompile(`https?://[^\s<>]+`)
+var executionSecret = regexp.MustCompile(`ac_exec1_[a-f0-9]{64}`)
+
 var labeledSecret = regexp.MustCompile(`(?i)(bearer\s+|(?:token|api[_-]?key|secret|password)\s*[:=]\s*)[^\s,;]+`)
 
 func cleanOutput(text string, secrets ...string) string {
-	for _, secret := range secrets {
-		if secret != "" {
-			text = strings.ReplaceAll(text, secret, "[redacted]")
-		}
-	}
 	text = ansi.ReplaceAllString(text, "")
 	text = strings.Map(func(r rune) rune {
 		if r < 32 && r != '\n' && r != '\t' || r == 127 {
@@ -24,6 +21,12 @@ func cleanOutput(text string, secrets ...string) string {
 		}
 		return r
 	}, text)
+	for _, secret := range secrets {
+		if secret != "" {
+			text = strings.ReplaceAll(text, secret, "[redacted]")
+		}
+	}
+	text = executionSecret.ReplaceAllString(text, "[redacted execution credential]")
 	text = labeledSecret.ReplaceAllString(text, "${1}[redacted]")
 	text = urlPattern.ReplaceAllStringFunc(text, func(value string) string {
 		parsed, err := url.Parse(value)
@@ -49,6 +52,11 @@ func cleanOutput(text string, secrets ...string) string {
 
 func (e *Engine) outputSecrets() []string {
 	secrets := []string{e.journal.HostSecret}
+	for _, run := range e.journal.Runs {
+		if run.Automation != nil && run.Automation.IPC != nil {
+			secrets = append(secrets, run.Automation.IPC.Nonce)
+		}
+	}
 	if token, err := ReadToken(e.config.TokenFile); err == nil {
 		secrets = append(secrets, token)
 	}

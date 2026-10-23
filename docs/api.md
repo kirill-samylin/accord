@@ -1,5 +1,44 @@
 # API пилота — v1
 
+> TASK014 добавляет ограниченный автоматический цикл, контракт —
+> [automation.md](automation.md), текущая проверка — [TASK014](TASK-014-automation.md).
+> Эти endpoints реализованы в source; установка и native приёмка отдельно.
+> В registry-режиме MCP дополнен четырьмя tools: `workflow_submit`,
+> `workflow_command`, `workflow_plan`, `workflow_question`. Исторический лимит
+>12 относится к прежним этапам и standalone board без registry authority.
+
+Scoped REST `/api/v1/p/{projectID}/automation/` принимает POST JSON с обычным
+`X-Session`: `submit`, `command`, `plan`, `question`, `answer`, `list`, `get`,
+`report`. Generic CLI `call workflow_<operation>` использует тот же контракт.
+Требование без policy сохраняется как `awaiting_authorization`, без запуска.
+`command` использует текущую version, поддерживает pause/resume/stop/clarify
+и явный replan остановленного цикла. Доставка уточнений — на следующем turn;
+статусы очереди не подтверждают применение или остановку процесса.
+
+Owner CLI REST `policies/create|update|revoke` принимает отдельное поле
+`host_proof` (revoke также `host_consent_version`). Сервер проверяет актуальный
+локальный proof владельца и consent, создаёт typed approval внутри authority
+guard; proof не сохраняется в policy/receipt. `policies/get` читает ревизии.
+`cursor/limit` ограничивают историю; `next_cursor` продолжает её при неизменной
+текущей версии. `policy` всегда содержит действующее состояние политики.
+Generic CLI: `call automation_policy_create|update|revoke|get`. Это не MCP tools.
+Веб подтверждает policy через отдельные CSRF/action проверки.
+
+Worker-only POST `capabilities/register` и `attest` требуют текущую human owner
+session, host proof и точную dispatched попытку. Child получает отдельный
+execution credential, не owner bearer. Child не имеет catalog/browser/admin,
+intake/control/host доступа. Read resources —
+`accord://workflows`, `accord://workflow`, `accord://workflow-report` с query
+`session_id,workflow_id,state,cursor,limit`; child читает только свой workflow.
+Локальный bridge предоставляет `workflow_run_check {request_id,preset_id}` и
+status-only `accord://workflow-check{?request_id,preset_id,session_id}`.
+Пути, команды, аргументы и чужая task/session/generation моделью не передаются.
+В ACK `attest` поле `attestation.control_epoch` сохраняет исходную попытку;
+верхнее `control_epoch` — текущие сведения workflow. Более новый epoch в
+terminal ACK после pause не предоставляет права продолжить исполнение.
+`observations.check_aborted=true` исключает успешную проверку даже при exit0.
+
+
 > TASK013 расширяет scoped REST/browser API управлением добровольно
 > подключёнными workers. Host proof и native controller ACL не заменяют
 > project/board session auth. MCP остаётся12tools. DTO, monotonic command

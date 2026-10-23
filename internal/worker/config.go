@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"agent-board/internal/transport"
 )
@@ -24,6 +25,7 @@ type Workspace struct {
 // Config is a local allowlist. Remote commands cannot supply executable paths,
 // working directories, environment, provider flags, or permission overrides.
 type Config struct {
+	Automation             *AutomationConfig    `json:"automation,omitempty"`
 	NativeMCPApprovedTools map[string][]string  `json:"native_mcp_approved_tools,omitempty"`
 	Server                 string               `json:"server"`
 	Project                string               `json:"project"`
@@ -115,7 +117,10 @@ func (c Config) Validate() error {
 			}
 		}
 	}
-	return nil
+	if err := validateAutomation(c.Automation, c.Workspaces, c.Executables, time.Now()); err != nil {
+		return err
+	}
+	return validateAutomationNativeConsent(c)
 }
 
 func (c Config) launch(provider, alias string) (string, string, error) {

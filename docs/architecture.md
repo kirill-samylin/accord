@@ -1,5 +1,12 @@
 # Архитектура пилота
 
+> TASK014: durable workflow выполнения требования описывается в
+> [automation.md](automation.md); канонический статус — [TASK014](TASK-014-automation.md).
+> Это новое прямо порученное расширение ручного цикла. Автоматические решения
+> требуют отдельной ограниченной делегации с текущими registry/credential epochs
+> и host-local consent; fake human/coordinator sessions и сохранение bearer для
+> scheduler недопустимы. До независимого review контракт не реализуется.
+
 > TASK013: управляемый outbound-only local worker и durable project-local
 > host/run/command state описаны в [managed-agents.md](managed-agents.md).
 > Board schema5 и permanent managed_agents1 floor добавляются поверх прежних

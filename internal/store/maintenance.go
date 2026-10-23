@@ -116,6 +116,7 @@ func (s *Store) RecoverState(ctx context.Context, reason string) (core.RecoveryR
 			return err
 		}
 		b.Events[len(b.Events)-1].Reason = reason
+		resetAutomation(b, now)
 		for _, sess := range b.Sessions {
 			if sess.ExpiresAt.After(now) {
 				sess.ExpiresAt = now

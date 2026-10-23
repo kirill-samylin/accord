@@ -10,6 +10,7 @@ import subprocess
 from guard import require_capable
 from layout import LEGACY, copy_file
 from validate import validate
+from restore_authority import verify_restored
 
 
 def copy_tree(source, target):
@@ -73,9 +74,10 @@ def restore(source, target, binary):
         raise RuntimeError('unexpected offline reset output; staging remains blocked')
     if json.loads(result.stdout).get('restored_state_reset') is not True:
         raise RuntimeError('offline reset was not confirmed; staging remains blocked')
+    verify_restored(source, target, manifest)
     LEGACY.sync_dir(projects)
     LEGACY.sync_dir(target / 'web')
-    marker(target / 'RESTORE_AUTH_RESET_COMPLETE', json.dumps({'registry_schema': 1, 'auth_reset': True}))
+    marker(target / 'RESTORE_AUTH_RESET_COMPLETE', json.dumps({'registry_schema': 1, 'board_schema': 6, 'automation': 1, 'auth_reset': True}))
     # Keep the boot guard even after reset: replacement credentials and isolated
     # logical-data/runtime checks are distinct mandatory operator steps.
     return target

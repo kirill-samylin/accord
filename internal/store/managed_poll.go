@@ -90,6 +90,7 @@ func (s *Store) ManagedPoll(ctx context.Context, a core.Actor, in core.ManagedPo
 		if previousWorker == in.WorkerID && in.WorkerEpoch != 0 && in.WorkerEpoch != h.Host.WorkerEpoch {
 			return out, core.Fail("conflict", "worker epoch устарел")
 		}
+		h.Host.WorkerCapabilities = in.WorkerCapabilities
 		h.WorkerID = in.WorkerID
 		h.Host.LastSeenAt = now
 		h.Host.LeaseExpiresAt = now.Add(30 * time.Second)

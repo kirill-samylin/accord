@@ -7,15 +7,24 @@ Go7892/Next7893/nginx/accord-web-backup уже должны работать. О
 
 ## Следующие capable релизы после TASK009
 
-TASK013 в рабочей ветке добавляет board schema5 и `managed_agents:1`.
-Перед schema5 writer обязателен новый independent permanent floor вместе
-с registry/ACL/profiles/coordination/deduplication. Установленный TASK012 VPS
-остаётся schema4 до отдельной проверенной поставки. Предыдущий schema4 binary
-не допускается поверх новой БД. Existing capability marker/ACL не переписываются.
-Managed host credentials/epochs, runs и commands входят в тот же полный format2
-snapshot; restore выполняется только offline с отзывом managed authority.
-Исторические schema4 migration snapshots сохраняются с checksum. При неудаче
-только roll-forward, без накладывания старого snapshot на новые записи.
+TASK014 добавляет board schema6 и permanent `automation:1` вместе с прежними
+registry/ACL/profiles/coordination/deduplication/managed_agents floors. Guard требует
+точно `board_schema:[6]` до открытия writer; schema5 binary запрещён. Source helpers
+не доказывают production update: установленный VPS273 остаётся schema5 до отдельно
+проверенной capable поставки. Сначала owned startup hold, полный immutable format2
+backup всех проектов, install нового guard, затем offline additive migration6.
+
+Format2 сохраняет historical board schemas2–5 и schema6, migration snapshots1–5 с
+checksum. Объявленный schema6 требует все automation tables, metadata(1,1) и точные
+UNIQUE execution indexes; incomplete/future storage не чинится автоматически.
+Политики/steps/plans/questions/attestations/capability history и reservations входят
+в тот же полный snapshot. Restore только в новый offline staging с capable6:
+credentials/session epochs/host proofs отзываются; policies и execution capabilities
+revoked, unfinished workflow needs_recovery с новым control epoch. История и
+reservations сохраняются: истечение lease не доказывает остановку процесса. Helper
+проверяет эти эффекты на SQLite до RESET_COMPLETE; boot guard остаётся. Возобновление
+требует отдельного human recovery и нового согласия. При неудаче только roll-forward,
+без накладывания старого snapshot на новые записи.
 
 Для уже активированного registry использовать **`upgrade.py`**, а не initial
 `operate.py apply`. Аргументы stage те же immutable Go/Next hashes/revision/

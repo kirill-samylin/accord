@@ -96,6 +96,14 @@ func (s *Store) ListTokens(ctx context.Context) ([]core.TokenInfo, error) {
 }
 
 func authenticatePrincipal(ctx context.Context, b *board, p core.Principal, now time.Time) error {
+	if ident, ok := ExecutionIdentityFromContext(ctx); ok {
+		if ident.Principal != p {
+			return core.Fail("unauthorized", "Execution principal mismatch")
+		}
+		if err := executionCurrent(ctx, b, b.Automation.Capabilities[ident.Capability.ID], now); err != nil {
+			return err
+		}
+	}
 	var owner, machine string
 	var expires int64
 	err := b.tx.QueryRowContext(ctx, `SELECT owner,machine,expires FROM tokens WHERE id=? AND revoked=0`, p.ID).Scan(&owner, &machine, &expires)
