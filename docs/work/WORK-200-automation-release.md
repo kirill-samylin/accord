@@ -104,3 +104,41 @@ WORK207 готовит отдельную закрытую диагностик�
 до SOURCE APPROVE и отдельного root GO никаких новых config RPC нет.
 Native commit/OS-negative/full pipeline, schema6 activation и Test worker
 enrollment остаются обязательной незавершённой работой.
+
+## Final208 candidate a32db22
+
+После FINAL SOURCE APPROVE202 на10cd3… и нового полного Go race PASS создан
+`a32db22973d5b43d4fb227a89337bf5b82a4969f`. Root275 source pins unchanged,
+manifest d203adea…; store102.499s, worker13.022s, acceptance33.705s.
+14 подготовленных code/docs files:2 known local token scan +provider/private-key
+patterns findings0. In-flight203/209 cards и unrelated deploy-task012.command
+исключены из commit; чужие изменения сохранены. Remote ещё не менялся.
+
+Clean detached checkout a32db22, vcs.modified=false. Linux/macOS/Windows и Next
+собраны. Начальная параллельная подготовка output parent конфликтовала с
+Windows mkdir до Go build; helper исправлен на допуск только Windows sibling,
+Go/Next/mac preexisting outputs по-прежнему запрещены. Это build setup failure,
+не native QA; итоговые сборки и manifests отдельно подтверждены.
+
+| Артефакт | SHA256 / состояние |
+| --- | --- |
+| Linux amd64 Go | `f06b3985dabebcb2c380485cb3abcf4470de9f68d6ffd6598425989e2a5487ba` |
+| macOS arm64 Go | `e9fcade02b8ea4b8e6acdb70d315e77b5e955ef27743920f96b33662f9afcaec` |
+| Windows amd64 Go | `3f32bc98b4a30ba6cd30f6ec0c24a9c4adadbff472a680c547995e7ca338843f`; native NOT-RUN |
+| Go bundle manifest | `08db03baf9b4623608ed7ce741e409eac486b8c3a9de0b94e9ae352502aa1638` |
+| Next manifest | `fee16e36de27a95028f763de409c3d53e75a88dab82b6cdd892f7338a7ec85a2` |
+| Next build ID | `1tnR9bTxsi1TBLZ3mgtCe` |
+
+Inactive upload55Go/1256Next verified для отдельного a32 release. Оба transfer
+proof имеют active_changed:false: services/symlinks/helpers/DB не переключались.
+Production273/schema5 и GUI worker62e сохраняются. QA209A получил conditional
+source approval с missing-pin guard; actual candidate binding review/GO впереди.
+
+## Documentation checkpoint boundaries
+
+TASK014 и append-only WORK202 превышают ориентир300строк: это исключение для
+канонического checkpoint/неизменяемой цепочки review/evidence, а не executable
+модулей. Текущий статус расположен в начале TASK; старые FAIL/границы/GO сохраняются
+в истории без переписывания. Активные QA cards фиксируются автором отдельно.
+Приватные runtime/raw/config/token files остаются в ignored .local либо own HOME,
+не в Git. Чужой deploy-task012.command не включается в наши commits.
