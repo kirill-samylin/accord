@@ -33,7 +33,7 @@ export function ManagedScreen({
       <AgentNavigation current="managed" />
       <PageHeading
         title="Управление агентами"
-        description="Запускайте работу на подключённых компьютерах и передавайте уточнения."
+        description="Передайте новое требование команде или управляйте отдельными агентами по существующим задачам."
         actions={
           <>
             <button
@@ -43,13 +43,16 @@ export function ManagedScreen({
               <RefreshCw size={14} />
               Обновить
             </button>
+            <Link href="/app/automation" className="button button-sm">
+              <Plus size={14} />
+              Выполнить требование
+            </Link>
             <button
-              className="button button-sm"
+              className="button button-secondary button-sm"
               disabled={!canStart || scope.locked}
               onClick={() => setStart(true)}
             >
-              <Plus size={14} />
-              Запустить агента
+              Ручной запуск агента
             </button>
           </>
         }

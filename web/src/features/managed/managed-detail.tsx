@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { PageHeading, EmptyState, Fact } from "@/components/common";
 import { ProjectLink as Link } from "@/components/project-link";
 import { date } from "@/lib/format";
@@ -12,6 +13,8 @@ import {
 import type { MutationResult, PageData } from "@/lib/types";
 import { AgentNavigation } from "../profiles/agent-navigation";
 import { RunControls } from "./run-controls";
+import { RequirementDialog } from "./requirement-dialog";
+import { useProjectScope } from "../projects/project-context";
 export function ManagedDetail({
   page,
   onSuccess,
@@ -19,6 +22,8 @@ export function ManagedDetail({
   page: PageData;
   onSuccess: (result: MutationResult) => void;
 }) {
+  const [requirement, setRequirement] = useState(false);
+  const scope = useProjectScope();
   const detail = page.managed_run;
   if (!detail)
     return (
@@ -84,6 +89,26 @@ export function ManagedDetail({
         <div className="notice error-notice break" role="alert">
           {run.last_error}
         </div>
+      ) : null}
+      {!run.task_key ? (
+        <section className="notice screen-stack">
+          <p>
+            Эта работа запущена без задачи. Изменение файлов требует задачи и
+            аренды. Завершённый шаг процесса сам по себе не подтверждает
+            результат.
+          </p>
+          <p>
+            Чтобы выполнить поручение с созданием задач, разработкой,
+            независимым ревью и проверкой, отправьте его команде.
+          </p>
+          <button
+            className="button"
+            disabled={page.project?.can_write === false || scope.locked}
+            onClick={() => setRequirement(true)}
+          >
+            Выполнить исходное требование
+          </button>
+        </section>
       ) : null}
       <div className="detail-layout">
         <div className="screen-stack">
@@ -224,6 +249,14 @@ export function ManagedDetail({
           </details>
         </aside>
       </div>
+      {requirement ? (
+        <RequirementDialog
+          key={scope.key}
+          prompt={run.prompt}
+          onClose={() => setRequirement(false)}
+          onSuccess={onSuccess}
+        />
+      ) : null}
     </div>
   );
 }

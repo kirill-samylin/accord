@@ -15,6 +15,7 @@ import {
   type StartDraft,
 } from "@/lib/managed-agents";
 import { label } from "@/lib/format";
+import { ProjectLink as Link } from "@/components/project-link";
 import {
   actionBody,
   actionID,
@@ -82,11 +83,13 @@ export function StartDialog({
         aria-describedby="managed-start-help"
       >
         <DialogHeader>
-          <DialogTitle>Запустить агента</DialogTitle>
+          <DialogTitle>Ручной запуск агента</DialogTitle>
         </DialogHeader>
         <p className="form-help" id="managed-start-help">
-          Агент запустится на выбранном компьютере. Профиль сохранится с
-          выбранной версией инструкций.
+          Для изменения файлов нужна существующая задача и её аренда агентом.
+          Новое поручение с созданием задач, разработкой, ревью и проверкой
+          отправьте через{" "}
+          <Link href="/app/automation">«Выполнить требование»</Link>.
         </p>
         <form className="mutation-form" onSubmit={submit}>
           <fieldset disabled={action.locked || !canWrite}>
@@ -181,10 +184,37 @@ export function StartDialog({
               />
               <FieldError name="prompt" errors={fields} />
             </label>
+            <label className="automation-check">
+              <input
+                type="checkbox"
+                checked={Boolean(draft.read_only)}
+                onChange={(event) => {
+                  const readOnly = event.target.checked;
+                  setDraft((previous) => ({
+                    ...previous,
+                    read_only: readOnly,
+                  }));
+                  setErrors((previous) => ({ ...previous, task_key: "" }));
+                }}
+              />
+              <span>
+                Без задачи, только чтение и диагностика без изменения файлов
+              </span>
+            </label>
+            {draft.read_only ? (
+              <p className="form-help">
+                Это ограничение в инструкции агенту, не изоляция операционной
+                системы. Для создания и изменения файлов используйте выполнение
+                требования.
+              </p>
+            ) : null}
             <label className="form-field">
-              Задача в Accord, если есть
+              Существующая задача в Accord
               <input
                 value={draft.task_key}
+                disabled={Boolean(draft.read_only)}
+                required={!draft.read_only}
+                aria-invalid={Boolean(fields.task_key)}
                 onChange={(event) => change("task_key", event.target.value)}
                 placeholder="Например, T-12"
               />
@@ -204,7 +234,11 @@ export function StartDialog({
                 type="submit"
                 disabled={!actionID(action.page, "managed:start")}
               >
-                {action.busy ? "Отправляем…" : "Запустить"}
+                {action.busy
+                  ? "Отправляем…"
+                  : draft.read_only
+                    ? "Запустить только чтение"
+                    : "Запустить по задаче"}
               </button>
             </div>
           </fieldset>

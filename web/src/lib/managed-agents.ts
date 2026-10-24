@@ -67,7 +67,7 @@ export const runLabels: Record<string, string> = {
   running: "Работает",
   stopping: "Останавливается",
   stopped: "Остановлен",
-  completed: "Завершил шаг",
+  completed: "Шаг процесса завершён",
   failed: "Ошибка",
   needs_recovery: "Требует проверки на компьютере",
 };
@@ -164,6 +164,13 @@ export interface StartDraft {
   profile: string;
   prompt: string;
   task_key: string;
+  read_only?: boolean;
+}
+export function startPrompt(draft: StartDraft) {
+  return draft.read_only
+    ? "Режим без задачи: только чтение и диагностика. Не изменяй файлы, не создавай коммиты и не выполняй команды с изменяющими последствиями. Не запрашивай и не захватывай задачи и аренды Accord. Если поручение требует изменений, объясни, что его нужно отправить через «Выполнить требование».\n\n" +
+        draft.prompt
+    : draft.prompt;
 }
 export function profileOption(profile: ProfileSummary) {
   return `${profile.id}:${profile.version}`;
@@ -208,9 +215,12 @@ export function startErrors(
     errors.profile = "Провайдер профиля не соответствует выбранному агенту.";
   if (
     !draft.prompt.trim() ||
-    new TextEncoder().encode(draft.prompt).length > 16384
+    new TextEncoder().encode(startPrompt(draft)).length > 16384
   )
     errors.prompt = "Опишите работу: до 16 КиБ текста.";
+  if (!draft.read_only && !draft.task_key.trim())
+    errors.task_key =
+      "Укажите существующую задачу. Новое поручение отправьте через «Выполнить требование».";
   return errors;
 }
 export function startFields(draft: StartDraft, profile: ProfileSummary) {
@@ -220,8 +230,10 @@ export function startFields(draft: StartDraft, profile: ProfileSummary) {
     provider: draft.provider,
     profile_id: profile.id,
     profile_version: String(profile.version),
-    prompt: draft.prompt,
-    ...(draft.task_key.trim() ? { task_key: draft.task_key.trim() } : {}),
+    prompt: startPrompt(draft),
+    ...(!draft.read_only && draft.task_key.trim()
+      ? { task_key: draft.task_key.trim() }
+      : {}),
   };
 }
 export function messageError(text: string, required = false) {

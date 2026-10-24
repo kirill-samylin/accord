@@ -1,0 +1,211 @@
+# WORK282 — architecture/security review запуска без задачи
+
+24.10.2026. Независимый reviewer, read-only source/runtime/server.
+Source baseline `d2af9c882683da7067056351f72218b03b141659`.
+Область записи: только эта карточка. Реализация не выполнялась.
+
+## Диагноз
+
+Private `.local/task017-taskless-launch/run-before.private.json` подтверждает:
+`mr_93545b960e7c112be4e7a6e87c37cd22` completed, task_key отсутствует,
+native UUID `01a16e47-17e1-78c1-aa74-a83489a55c8b`.
+Текст результата прямо сообщает `task: null`, отсутствие lease и отказ создавать
+root `c1.js`; commit и проверки не выполнялись. Это успешное завершение native
+turn с корректным отказом писать без задачи, а не исполненное требование.
+
+`managed-agents.md` и `execution.go:prompt` определяют optional task reference
+как контекст, который не выдаёт lease. Перед записью агент получает задачу через
+describe/next; несовпадение requested task запрещает работу под её identity.
+`ManagedStart` не является intake планирования, не создаёт task автоматически.
+Текущая форма `start-dialog.tsx` принимает свободный текст и optional task,
+практически обещая больше, чем этот механизм выполняет.
+
+## Bounded architecture verdict — APPROVE UX repair при условиях
+
+1. На экране управления явно предложить project-scoped переход
+   «Выполнить требование» в существующий `/app/automation`:
+   анализ → разработка → независимый review → QA. Использовать ProjectLink,
+   не терять выбранный проект. Не отправлять requirement при навигации.
+2. Использовать существующий RequirementForm и явный выбор действующей policy
+   с exact current version. Нет policy — черновик/объяснение, без скрытого создания
+   policy, owner consent, расширения grants, бюджетов или продления expiry.
+   Stale/revoked/expired/foreign policy fail closed обычным server путём.
+3. Обычный manual запуск объяснить как работу по существующей задаче.
+   Для намерения редактировать UI требует task reference, но ясно сообщает:
+   это ещё не lease; агент отдельно получает именно эту задачу.
+   TASK013 wire contract optional task не меняется этим UX исправлением.
+4. Taskless путь показывать только как явно выбранный запрос без изменения
+   файлов. Не пытаться угадать намерение по словам prompt или output.
+   Требовать осознанный выбор/подтверждение такого режима вместо случайного
+   пустого task input. Это UX restriction, не новая OS sandbox гарантия:
+   текущий manual native sandbox остаётся локально согласованным workspace-write.
+   Если реализация обещает технически enforced read-only, потребуется отдельный
+   end-to-end контракт server/run mode/worker native flags и независимый review.
+5. Состояние completed прямо назвать завершением процесса/шага и рядом показать,
+   что выполнение поручения не проверено автоматически. Applied start означает
+   запуск; текст модели «успех» или exit0 не становятся task done/review approve.
+   Не переписывать исторический completed в failed по NLP-анализу output.
+6. Формы сохраняют текущие CSRF/action_id/idempotency/version/project guards,
+   snapshot профиля и exact scope. Переходы/подсказки не открывают обход ACL.
+   Перед реализацией учитывается ответ пользователя о выбранном пути.
+
+Уточнённый вариант автора также APPROVE: RequirementDialog загружает существующий
+project-scoped readPage(`/app/automation`) и использует RequirementForm с
+initialText. Primary CTA — полный цикл, secondary — manual. Исходный текст
+передаётся только в памяти, без URL/localStorage. Захваченный project ID
+проверяется при получении async response; поздний ответ другого проекта
+игнорируется. Dialog размонтируется при смене проекта, переход/закрытие
+блокируются во время sending/uncertain в соответствии с useAction.
+
+Рекомендуемая минимальная область реализации: managed screen/start dialog/detail
+и существующая общая managed validation/copy при необходимости. Никакого нового
+scheduler, shell исполнения, security bypass, автосоздания task или скрытой
+конвертации completed run в workflow не требуется.
+
+## Повтор exact c1.js через существующий workflow — BLOCKED текущим scope
+
+Selective read-only текущего worker config показывает local source roots:
+`src`, `tests`, `tools`, `README.md`, `AGENTS.md`, `.gitignore`.
+Файл `c1.js` в корне не входит ни в один из них. `sourceManifest` в
+`automation_manifest.go` отклоняет tracked source вне approved roots.
+После local commit с root c1.js Git proof будет rejected; завершённый workflow
+с таким результатом в прежнем consent безопасно обещать нельзя.
+
+Недопустимо молча заменить путь на `src/c1.js`, добавить широкое `.` в roots,
+отключить manifest, поменять SHA gates или выдать новые права за прежнюю policy.
+Здесь нет architecture approve исполнения exact root c1.js старым workflow.
+
+До дальнейшего уточнения рассмотрены следующие пути:
+
+- Manual: создать/назначить обычную developer task на exact root c1.js,
+  выполнить после actual task lease с существующим локальным manual consent.
+  Это отдельный управляемый запуск, не полный принятый workflow.
+- Automation: отдельное явное согласие владельца на минимальный root `c1.js`,
+  пересчёт затронутых preset consent digests/версий и нужный current host/policy
+  grant через штатные механизмы. Это расширение scope, не часть данного review.
+
+### Уточнение пользователя: выбран полный автоматический цикл
+
+Пользователь повторно поручил exact root c1.js и выбрал полный цикл автоматически.
+Это основание для минимального расширения source scope только этим файлом;
+повторный вопрос о тех же полномочиях не нужен. Не следует применять старый
+consent, под которым файл запрещён. Bounded план восстановления — APPROVE:
+
+1. Подготовить private draft: добавить единственный exact root `c1.js`.
+   Повысить automation host/workspace/check versions по требованиям контракта,
+   пересчитать затронутые TrustedOwnerConsent digest; current files/source
+   этому не изменять. Предъявить reviewer конкретный diff/hash до apply.
+2. Все остальные controllers, native tools, providers, paths, model permissions,
+   roots, deadlines, checks/args, budgets/expiry сохранить. Не добавлять `.`.
+3. Проверить отсутствие active/uncertain attempts и pending; private backup;
+   штатно остановить только Test_internet worker; применить обычный local
+   config/worker consent, restart. Не править pins/journal/server DB вручную.
+4. Обновить существующую policy через новый current revision и exact consent/
+   check refs. Roles/profiles/intake/controllers/expiry/лимиты прежние.
+   Предпочесть update, чтобы не создавать дублирующий активный grant.
+   До согласованного host/policy checkpoint новый workflow не submit.
+5. Один новый workflow и request ID на исходное требование; current auth/
+   policy/grant guards обязательны. Старые workflows автоматически не resume.
+
+Это architecture APPROVE плана, не доказательство применённого consent или
+успешного запуска; конкретный draft и фактические receipts проверяются отдельно.
+
+### Concrete draft review — APPROVE перед apply
+
+Reviewer независимо сравнил private `worker-c1.draft.private.json` с текущим
+live config. Exact SHA256 draft:
+`d89d76e939693ceb21c37ef56c8962f48af5c7e7c42281e0b1e9c9a5969fa305`.
+Mode0600. Полный structural diff содержит только пять путей:
+
+- automation.version1→2;
+- test_internet workspace.version1→2;
+- project-tests.version1→2;
+- source_roots append единственного `c1.js`;
+- project-tests.trusted_owner_consent →
+  `7ad47fbced84c365d97769035effefa53bd908bc2e820a7d73074a7ce748ec49`.
+
+Других изменений нет. Existing installed worker preview подтверждает applied=false,
+requires_local_apply=true и тот же digest при workspace identity
+`1000011-55cc618`; Git/runtime executable hashes остаются прежними.
+Preview путь по source не открывает Engine/credentials/state/network.
+
+APPROVE применения именно этого draft после повторного idle/pending0 и private
+backup; atomic config replacement сохраняет mode/UID/GID. Штатные consent/restart
+только Test worker, без ручного journal update. Если current config изменился с
+момента review, пересравнить его с draft до замены, сохранив чужие изменения.
+
+APPROVE следующего bounded update ТОЛЬКО существующей policy
+`apolicy_ca6a1de12e24aefd97a96f42d85960fd`, version1→2:
+HostConsentVersion2 и exact check preset/version2/local_digest, полученный из
+применённого host workspace snapshot. Остальные policy settings должны быть
+полностью равны прежним, включая expiry `2026-10-25T01:05:15.4Z`, budgets,
+role/profile bindings, intake/control principals и client-intake. Не клонировать.
+Current owner CLI HostProof передаётся только в памяти через штатный
+AutomationPolicyLocalUpdate; source transport отделяет proof от idempotency
+payload. Тело запроса/ошибки/proof не журналировать. Public result/settings
+сравнить после apply. Все три прежние workflows completed, не refresh/resume.
+
+Это разрешение конкретного ограниченного применения координатором, не
+утверждение, что reviewer менял или уже проверил установленный runtime.
+
+Если выбранный путь позволяет exact файл, ограничить результат одним новым файлом
+`c1.js` с `console.log(1)` и одним local commit, без dependencies/push/merge/deploy.
+Предварительно проверить чистоту checkout/отсутствие c1.js и чужих изменений;
+не выполнять auto stash/reset/clean. Reviewer проверяет exact commit/blob/diff,
+QA сохраняет SHA/generation gates и честные evidence.
+
+Текущий единственный preset `project-tests` выполняет Python
+`-B tools/run_checks.py`; его existing tests не доказывают JS runtime output.
+Их PASS можно предъявлять как regression evidence; exact blob проверяется
+reviewer отдельно. Выполнение Node-проверки не включено в нынешний preset:
+native workflow роли не получают права direct shell verification.
+После workflow completed отдельный независимый QA вправе проверить exact
+reviewed blob через уже установленный Node, без установки зависимостей,
+с совпадением target SHA и проверкой stdout `1\n`/exit0/неизменности checkout.
+Это отдельная QA evidence, а не выдуманный workflow preset результат.
+Если Node недоступен, JS runtime check остаётся NOT-RUN; read-only exact blob
+и existing tests подтверждают только заявленный ими объём.
+
+## Статус и пределы
+
+UX architecture/security план — APPROVE с перечисленными условиями.
+Root c1.js workflow со старым local source scope запускать нельзя; пользователь
+выбрал полный цикл, узкий план нового source consent выше APPROVE условно
+до конкретного draft review и штатного применения.
+### Source implementation review — APPROVE
+
+Независимо прочитан полный diff managed screen/start/detail, shared managed
+validation/copy, RequirementForm optional props, новый RequirementDialog и новый
+unit regression. QueryBoundary уже обеспечивает unmount/cancel по project scope;
+readPage проверяет expectedProjectID; useAction замораживает pending payload и
+синхронно сообщает lock через ref. Исходный prompt остаётся только в component
+state/prop; policy не выбирается и submission не происходит автоматически.
+Основной CTA на списке ведёт в существующий automation screen; в run detail
+диалог переносит исходный prompt. Manual editing требует task reference;
+taskless диагностический prefix также запрещает захват задач/аренд.
+OS read-only гарантия не заявляется. Отображение completed явно process-only.
+
+После замечания reviewer автор усилил diagnostic prefix запретом task/lease
+acquisition и добавил соответствующий regression assertion. Новые tests
+проверяют обязательность task, explicit taskless choice, no retained task leakage,
+allowlist/workspace exclusion и byte quota с диагностическим prefix.
+
+Exact inspected SHA256:
+
+- `managed-agents.ts`:
+  `105278d1a5f2f4862a031ac984f12516c3df7020a2367081bb3c61af4606ab7a`;
+- `managed-agents.test.ts`:
+  `b400eb81a2e0b45d1c53da7f6f6e9a1d2844853e543c5664cd4ec37788d331f0`;
+- `requirement-dialog.tsx`:
+  `a8e728e5d2477145ea36b4fdadbe6859d5005d1971f910f75a2b93949a538ddb`.
+
+Reviewer применил vercel-react-best-practices; существенных performance замечаний
+нет. Независимо выполнены Node24.19.0 typecheck — PASS, 23 targeted unit tests
+managed-agents/automation/mutation contracts — PASS, git diff check — PASS.
+Стандартный MODULE_TYPELESS_PACKAGE_JSON warning не связан с изменением;
+package/dependencies не менялись.
+
+Production rollout, browser/process/E2E и выполнение пользовательского c1.js —
+NOT-RUN этим reviewer. Независимый QA вправе начинать после данного approve.
+Reviewer не менял runtime/server/config и не запускал native агентов.
+Historical failed/completed runs сохраняются.

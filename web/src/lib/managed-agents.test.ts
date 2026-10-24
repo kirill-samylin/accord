@@ -15,6 +15,7 @@ import {
   selectedProfile,
   startErrors,
   startFields,
+  startPrompt,
   workspaceBusy,
   managedPollInterval,
 } from "./managed-agents.ts";
@@ -219,6 +220,42 @@ test("workspace remains busy through starting, stopping and uncertain ownership"
   assert.equal(
     workspaceBusy([{ ...run(), state: "stopped" }], "mh_test", "gui"),
     false,
+  );
+});
+test("manual editing requires a task; taskless diagnostics require explicit read-only choice", () => {
+  const data = { observed_at: observedAt, hosts: [host()], runs: [] };
+  const taskless = { ...draft(), task_key: "  " };
+  assert.match(
+    startErrors(taskless, data, [profile()], true).task_key,
+    /задачу/,
+  );
+  const readOnly = { ...taskless, read_only: true };
+  assert.deepEqual(startErrors(readOnly, data, [profile()], true), {});
+  const fields = startFields(readOnly, profile());
+  assert.equal("task_key" in fields, false);
+  assert.match(fields.prompt, /Не изменяй файлы/);
+  assert.match(fields.prompt, /не захватывай задачи и аренды Accord/);
+  assert.ok(fields.prompt.endsWith(taskless.prompt));
+  assert.equal(startPrompt(draft()), draft().prompt);
+  assert.equal(
+    "task_key" in startFields({ ...draft(), read_only: true }, profile()),
+    false,
+    "read-only choice cannot send a retained task reference",
+  );
+  assert.ok(startErrors(readOnly, data, [profile()], false).host_id);
+  assert.ok(
+    startErrors(readOnly, { ...data, runs: [run()] }, [profile()], true)
+      .workspace,
+    "diagnostics retain the existing workspace exclusion",
+  );
+  assert.ok(
+    startErrors(
+      { ...readOnly, prompt: "a".repeat(16384) },
+      data,
+      [profile()],
+      true,
+    ).prompt,
+    "the diagnostic instruction counts towards the server prompt quota",
   );
 });
 test("text quotas count UTF-8 bytes and retain original valid clarification", () => {

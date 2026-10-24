@@ -6,11 +6,19 @@ import { useAction } from "../mutations/useAction";
 import { ActionNotice, FieldError } from "../mutations/ActionNotice";
 import { requirementError } from "@/lib/automation";
 import { date } from "@/lib/format";
-export function RequirementForm({ page, onSuccess }: MutationProps) {
-  const [text, setText] = useState(page.draft?.text ?? "");
+export function RequirementForm({
+  page,
+  onSuccess,
+  initialText,
+  onLockChange,
+}: MutationProps & {
+  initialText?: string;
+  onLockChange?: (locked: boolean) => void;
+}) {
+  const [text, setText] = useState(initialText ?? page.draft?.text ?? "");
   const [selection, setSelection] = useState("");
   const [error, setError] = useState("");
-  const action = useAction(page, onSuccess);
+  const action = useAction(page, onSuccess, "action", onLockChange);
   const policies = action.page.automation?.policies ?? [];
   const policy = policies.find(
     (p) => `${p.id}:${p.version}` === selection && p.state === "active",
