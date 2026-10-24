@@ -209,3 +209,105 @@ Production rollout, browser/process/E2E и выполнение пользова
 NOT-RUN этим reviewer. Независимый QA вправе начинать после данного approve.
 Reviewer не менял runtime/server/config и не запускал native агентов.
 Historical failed/completed runs сохраняются.
+
+### Clean candidate source и предварительный ops review
+
+Candidate `d80040cf546ff92320eccac0f84ca586a3b4b6f6` независимо проверен в clean
+worktree. Full source manifest охватывает1260tracked regular files; каждый
+проверен против Git blob и SHA256. Backend/infra/dependencies относительно
+accepted4ae не менялись; runtime source delta — семь web файлов с unit test.
+Private source receipt `review/source-approval.json`, kind
+`independent-task017-source`, runtime_go=false, APPROVE:
+
+- receipt SHA256 `d257ea3354fa99dc9485c69939b42dcc39cd3d408b1bc9d468454e32d9e625b0`;
+- full source manifest `18ac77960e7bec49efe0d82658238174fb79719fb05273d41bcda58c7b9ea856`;
+- immutable report `621a6f780ae5f8e685f89971af51220758b5f066d0c4c1908bafe510f3d5d310`.
+
+WORK284/ops WIP прочитан полностью: adapter delta к accepted268, все семь
+скриптов, source-wip manifest и pinned local references. AST7 PASS, все manifest
+members/local refs exact. Предварительных blocking findings нет. Capability/
+inventory/history/WAL-aware UID999/closed readers/UNKNOWN receipts/per-phase GO/
+canonical all-project roll-forward guards сохранены. Исполнимого manifest ещё
+нет, build_ready=false; WIP безопасно блокирует транспорт. Build и окончательный
+ops approval остаются NOT-RUN до actual build/QA pins и immutable source freeze.
+
+### Actual build review — APPROVE
+
+Независимо проверены actual файлы coherent Go+Next candidate d80040c:
+55Go members и1256Next members, exact set+каждый hash, regular-only;
+все packaged infra assets равны candidate. Actual Go buildinfo readback равен
+saved: go1.27.2/Linux amd64/CGO0/full revision/vcs.modified=false. ELF и SOURCE
+проверены. Next SOURCE/lock/BUILD_ID/rewrite upstream7892 и Node checksum
+согласованы с actual bundle. Producer logs exact hashes:104web tests PASS,
+typecheck/Go build/production Next build/package PASS. Initial package refusal
+по dev upstream3101 сохранён отдельно, не выдан за PASS или установленный output.
+
+Private `review/build-approval.json`, kind `independent-task017-build`,
+runtime_go=false, APPROVE, exact d80040cf546ff92320eccac0f84ca586a3b4b6f6:
+
+- receipt `1deec12be571f82b201f4e0fb30407115307bc15d22a3797ffa4b54b215dbc09`;
+- immutable report `7ec0583e42888814d9f3eb44a61951435d44687c75e8ffca2be703974f5a98a0`;
+- Go binary `f46e5365231c29a3843003810701d53f9a25add7f6023fd9e57d931f98e26e95`;
+- Go manifest `e42f92c0d172473a3fdf8ab371169369a3d2c6e32ae948b1bed3f7348e42ccb4`;
+- Next manifest `9cb3472434620b810aef19622717d70a085659539df2e1574ec7583f3a140019`;
+- BUILD_ID `JhofWwPcTj3Bzr4jsJ4Hh`;
+- Node `bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12`.
+
+Build receipt не разрешает runtime execution. Browser/HTTPS/native workflow и
+production-проверки не подменены build или unit tests.
+
+### Final frozen operational source — APPROVE
+
+Exact ops manifest `a577b0b141187a3dc5262215b00422b9e986b69a2b72be5116978ef1e4080d52`:
+12frozen members/16local refs independently exact; весь delta и7scripts прочитаны,
+AST PASS. Source/build/QA original receipt chains/report hashes/pins проверены,
+QA reviewer metadata присутствует; predeploy browser NOT-RUN сохранён.
+Все56Go и1257Next USTAR member paths/types/hashes прочитаны независимо:
+regular-only exact set, без symlink/traversal/PAX; archive/manifests exact.
+
+Private `review/ops-source-approval.json`, independent-task017-ops-source,
+reviewer=review_repair, exactd800, runtime_go=false:
+
+- receipt `f6f4fb288fae4764c89f97dc21a527bbdbab1dbbbcac3732c1442d21cbceb9d3`;
+- report `437b3d59a6969a82613c116554faf9db315c6cccbef622e1dd0ec7c08e891a9f`.
+
+Это SOURCE APPROVE, не phase GO. Quiet window/native c1 terminal/all-project busy0,
+actual preflight/owned process/journal guards и independent external HTTPS newUI
+gate перед finalize обязательны. Таймаут остаётся UNKNOWN без auto retry.
+Phase main/SSH/HTTP/SQLite/service/native reviewer не выполнял.
+
+### Native c1 workflow final audit — PASS/APPROVE
+
+Независимо проверены QA283 report/snapshots,4real native transcripts/session_meta,
+Git/filesystem, current installed worker buildinfo/config и OS children.
+Underlying server4ae, workerdfcef clean Darwin arm64/SHAf629; этот кейс не retag
+candidate d800 UI. `wf_80c5b653534825ea69f11a5a2bbcd715` completed25,4distinct UUID,
+policy2/consent2/check2; один local commit489c123250237254608e8a16bdd492b60c8d6ee5,
+только A c1.js exact `console.log(1)\n`, прежние8tracked bytes сохранены/clean.
+Current/latest/successful review+QA exactSHA/gen1,2JUnit по8passed; separate
+Node QA stdout1/exit0 — отдельное evidence, не workflow preset. Все5ACK каждой
+попытки/pending0/no leases/reservations/owned children. Exact full server scope
+read после submit честно сохранён как ограничение preflight evidence.
+
+Private `review/native-approval.json`, runtime_go=false, original server4ae:
+receipt `e257b0340d06391b87af1b55ca58ed5f91991cb43a194fe47b1bb55279149825`,
+report `33a6f2fbffde5fc70c1898ff699f5d5b1938a8efdd78c97d04194f7bac27f8ae`,
+25input manifest `21cfeec3a9c2440d7b7bc1f441566e592e48ac5b82e9e96f69bf7c183e5f5386`.
+Native/browser candidate d800 и release installation этим receipt не доказаны.
+
+### Final production acceptance — PASS/APPROVE
+
+Actual d800 coherent Go+Next release: canonical finalize/final-audit complete,
+owned runtime, exact logical rows9DB/schema6 preserved, format2final backup всех
+4projects/9runtimeDB/9historicalDB validated; final backup manifest
+`93f29fd5bb33f7197d7b5f4174a7d45ed8ba43c81d0eaf5f887ac6c44004fb81`.
+Actual external HTTPS/Safari newUI gate независимо принят; original QA512672…
+и own HTTPS reviewe960… сохранены отдельно, readonly/error/новый dialog submit
+NOT-RUN честно остаются ограничениями. Native case4ae не retag d800.
+Все9actual operation results/UNKNOWN attempt pairs и frozeninputs exact.
+Private final-approval.json, independent-finaldelivery-audit/runtime_go=false:
+`49eb418e6256cfa7189dd331addd159ff0c427b794f75dbc75cf6d90cd3397d3`;
+report `333baa5ef76de8fb9e024b8f13a534c9209944eb760a44e4a28331a534544a8b`;
+37input manifest `e19ed5a17fcb0735fddb6e19f37f906f4522661e43926039f7d69e9bad062ff5`.
+Исключение300строк: карточка сохраняет последовательные независимые source,
+consent, build, native и production verdicts; полные immutable receipts в .local.
