@@ -144,6 +144,11 @@ func (s *Store) workflowStartOrContinue(ctx context.Context, b *board, w *core.W
 				}
 				return s.workflowAdvanceAfter(ctx, b, w, st, now)
 			}
+			// Human waiting does not renew the pinned step deadline, even if no
+			// native conversation was created before interruption.
+			if !st.DeadlineAt.After(now) {
+				return core.Fail("step_timeout", "Срок этапа истёк; нужны pause и явный replan")
+			}
 			r := b.ManagedRuns[st.ManagedRunID]
 			if r == nil || managedActive(r.State) {
 				return core.Fail("conflict", "Предыдущая native попытка не завершена")
@@ -244,8 +249,11 @@ func workflowContinueTurn(ctx context.Context, b *board, w *core.Workflow, st *c
 	if w.Counters.Invocations >= w.Grant.Limits.NativeInvocations || w.ReservedRuns <= 0 || st.Continuations >= w.Grant.Limits.ContinuationPerStep {
 		return core.Fail("budget_exhausted", "Бюджет continuation исчерпан")
 	}
-	if !managedSessionID.MatchString(r.ProviderSessionID) || managedActive(r.State) || !st.DeadlineAt.After(now) {
-		return core.Fail("conflict", "Exact native resume требует terminal attempt и действующий deadline")
+	if !st.DeadlineAt.After(now) {
+		return core.Fail("step_timeout", "Срок этапа истёк; нужны pause и явный replan")
+	}
+	if !managedSessionID.MatchString(r.ProviderSessionID) || managedActive(r.State) {
+		return core.Fail("conflict", "Exact native resume требует terminal attempt и native conversation")
 	}
 	if b.ManagedHosts[w.HostID].Host.WorkerCapabilities["automation"] < 1 {
 		return core.Fail("worker_incompatible", "Worker не поддерживает automation:1")
