@@ -10,9 +10,12 @@
 каждая из двух проверок действительно выполнила 2 теста, все прошли.
 Первый анализ был прерван и затем явно перепланирован; история сохранена.
 Рабочая веб-проверка прошла, поставка сервера завершена с сохранением проектов.
-Отдельный launcher WORK269 установлен для Codex; реальный CLI-каталог проверен:
-включён только точный accord_test. Claude отдельно заблокирован до проверки.
-Интерактивная модель через этот launcher ещё не запускалась. ID и закрытые пути оператор
+Отдельный launcher WORK272 установлен для Codex: реальная модель отправила
+требование через MCP, цикл завершился независимыми review/QA и двумя проверками
+по5passed. Пауза, уточнение и продолжение того же native диалога из Accord
+проверены. Claude отдельно заблокирован: bundled CLI найден, но входа пока нет.
+Полная проверка двух клиентов остаётся незавершённой; см. [TASK015](TASK-015-client-intake.md).
+ID и закрытые пути оператор
 передаёт лично. Версии: сервер/Next 4ae5292, Mac worker dfcef4b.
 Текущий checkpoint: [TASK014](TASK-014-automation.md).
 
@@ -147,18 +150,37 @@ consent/policy явно выберите актуальное разрешени
 ## Отправить требование из нового Codex / Claude
 
 Это отдельный CLI-процесс с MCP, не автоматическое подключение текущего desktop-чата.
-На подготовленном Mac установлен Codex-only launcher WORK269:
+На подготовленном Mac установлен Codex-only launcher WORK272:
 
 ```sh
 python3 -I -B "$HOME/.config/accord-test-internet/client/launch-client.py" codex
 ```
 
+В открывшемся клиенте поручите отправить требование в Accord/Test_internet
+по действующему разрешению команды. Попросите только координацию: клиент создаёт
+workflow, а код пишет подключённая команда. На запросы `describe` и
+`workflow_submit` выберите разовое **Allow**; постоянное разрешение не требуется.
+Откройте новую карточку в **«Выполнить требование»** и управляйте работой там.
+Ответ вида `accord://workflow/...` — MCP-ссылка; для браузера используйте карточку
+в приложении или полную HTTPS-ссылку `/app/p/PROJECT_ID/automation/workflows/WORKFLOW_ID`.
+
+Это реально проверено для Codex на Mac: новый subtract, один локальный commit,
+полный цикл до completed и два JUnit по5passed. Настройки прав/глобальные MCP не
+менялись. Интерактивный Codex сохранил два служебных TUI-поля первого запуска;
+после закрытия процессов точный прежний config восстановлен с backup и readback.
+
 Нужен Python3.11+. Оператор проверяет executable paths/SHA, реальную policy,
 `launch_ready`, отдельный literal-true provider flag и effective MCP-каталог.
-Claude на этом Mac заблокирован; его проверяют и включают отдельно.
+Claude на этом Mac заблокирован; сначала владелец выполняет обычный `claude auth login`
+своим настоящим CLI. Если `claude` отсутствует в PATH, оператор передаёт точный
+проверенный путь bundled executable. Пароли и коды вводятся владельцем в браузере/
+терминале, не в чате. После подтверждения входа оператор отдельно проверяет MCP,
+включает provider gate и выполняет настоящий intake. Одного входа недостаточно
+для объявления Claude PASS; второй цикл multiply пока NOT-RUN.
 Launcher не меняет global registration;
-Codex-координатор получает read-only sandbox. У Claude остаются обычные approvals,
-что само по себе не является read-only ОС-изоляцией.
+Codex-координатор получает read-only sandbox. Подготовленный Mac Claude использует
+`--restricted --tools '' --strict-mcp-config`: только заданные MCP, без builtin
+shell/read/edit, с обычными approvals. Это не новая ОС sandbox и не проверка Windows.
 
 Поддержанная команда stdio bridge (подставьте значения из подключения):
 
@@ -241,8 +263,10 @@ finally { Remove-Item Env:\AGENT_BOARD_TOKEN -ErrorAction SilentlyContinue }
 
 Подробнее: [автоматизация](automation-guide.md), [worker](automation-worker-setup.md),
 [WORK224](work/WORK-224-test-internet-onboarding.md),
-[Mac launcher WORK269](work/WORK-269-client-provider-activation-candidate.md).
-Mac-каталог проверен на Codex CLI `0.163.0-alpha.11.1`; интерактивный intake этим
-launcher ещё NOT-RUN. Примеры Windows/Claude — инструкции, не подтверждение запуска.
+[Mac launcher WORK272](work/WORK-272-client-intake-author.md),
+[native intake TASK015](TASK-015-client-intake.md).
+Mac Codex CLI `0.163.0-alpha.11.1` прошёл настоящий интерактивный intake.
+Claude Code `2.1.308` найден, auth status без входа; модель и второй цикл NOT-RUN.
+Примеры Windows/Claude — инструкции, не подтверждение запуска.
 Исходные справочные ссылки: [Codex CLI](https://learn.chatgpt.com/docs/developer-commands),
 [Codex MCP](https://learn.chatgpt.com/docs/extend/mcp?surface=cli), [Claude CLI](https://code.claude.com/docs/en/cli-reference).

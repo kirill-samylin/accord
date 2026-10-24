@@ -82,6 +82,17 @@ interactive intake NOT-RUN. Windows4ae x64 crossbuild есть, native Windows/C
 
 ## Работа
 
+Продолжение24.10.2026 — `docs/TASK-015-client-intake.md`: настоящий Mac Codex
+интерактивно отправил требование через MCP в Test_internet. Цикл completed32,
+один local commit2a2a530, две реальные проверки по5passed; UI pause/clarify/resume
+того же native UUID подтверждены. Это не новый Windows/Claude/второйПК PASS.
+Найденный Claude Code2.1.308 не авторизован; provider gate остаётся false,
+реальный Claude intake и второй цикл NOT-RUN. Native TUI добавил два служебных
+поля global config; после закрытия own Test процессов выполнено отдельно
+проверенное восстановление точного baseline. Не утверждай bytes-unchanged за
+весь запуск. Прямой local5ACK snapshot первого analyst generation не архивирован
+до resume; последующий gen2/exit evidence не выдавай за такой snapshot.
+
 - Пользователь 18.10.2026 поручил переработать ТЗ и начать реализацию в отдельном
   каталоге. Переданный затем origin — `https://github.com/kirill-samylin/accord.git`;
   его начальная история и MIT LICENSE сохранены.
