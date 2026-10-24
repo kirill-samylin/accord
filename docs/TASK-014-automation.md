@@ -31,25 +31,153 @@ lease, access epoch, idempotency, независимость проверок, S
 
 ## Состояние
 
-**IN PROGRESS / NOT READY.** Рабочий candidate — a32db22973d5b43d4fb227a89337bf5b82a4969f;
-source review и полный Go race PASS, новый Next build PASS. Реальные foundation
-проверки: normal product permission proof209A PASS, OS positive/negative216 PASS5,
-native write+commit218 PASS с побайтно сохранёнными настройками. Исторический209B
-overall FAIL из-за config drift сохраняется. Будущая точечная trust metadata
-только temporary QA разрешена пользователем; reviewed контракт219, checker/source
-adapters готовятся. Последний203V7 setup trial — FAIL в UI до native0, exact UI
-cause пока не наблюдалась; права fixture уже исправлены. Полный native
-four-role/fix/control цикл ещё NOT-RUN. Проспективный221 уточняет QA Next stop130
-как known closure отдельно от operation_success и добавляет bounded UI diagnostics.
+Актуальный срез 24.10.2026, 02:01 UTC: `origin/main` опубликован fast-forward
+до `be95daed7153f4abeb72012286cc748d0596b479`; вся прежняя история сохранена.
+Все девять обязательных release gates приняты независимо. VPS работает на
+a32/schema6; HTTPS220V6 actual PASS8763acea независимо принят e886182b.
+Проверены шесть страниц, owner identity, TLS, формы и11servedasset hashes,
+строго квалифицированные навигационные отмены, все joins/Chrome0/stdio.
+Старые HTTPS FAIL сохранены, правила V6 не применяются к ним ретроактивно.
+Canonical finalize1792807130857378000 и final-audit1792807176550772000 exit0:
+journal complete, новый validated format2 backup9runtime+9historicalDB,
+четыре проекта/schema6/logical rows/history сохранены. Independent ops258 final
+APPROVE/PASS a0db8214 принят; старый binary/БД rollback запрещён. Timer config
+сохранён, backup service success подтверждён; новый scheduled tick NOT-RUN.
 
-На VPS остаётся finalized273ccbb15c99dfac91c37f34d2926abf01ca866f/schema5:
-all-project backup4проектов/9runtimeDB проверен; a32 файлы только загружены в
-неактивный release. Новая автоматизация не установлена. Linux migration199 PASS7;
+Фактическое подключение Mac/Test_internet независимо принято WORK253: daemon
+online/epoch3, четыре профиля и ограниченное owner-only разрешение. Python-цикл
+сохранён без запуска и ожидает отдельного ответа владельца о доверии Codex к
+постоянной папке Test_internet. Ниже сохранена история проверок; более ранние
+формулировки «ожидает review» не заменяют этот актуальный срез.
+Standalone client установлен тремя проверенными файлами; оба флага запуска
+false, native client runtime пока NOT-RUN. WORK257 независимо подтвердил install.
+
+**IN PROGRESS / NOT READY, checkpoint 24.10.2026.** Сервер/Next/внешний QA
+supervisor candidate — a32db22973d5b43d4fb227a89337bf5b82a4969f. Проверки normal
+product permission proof209A, OS positive/negative216 PASS5 и native write+commit218
+PASS сохранены с точным старым binary. Исторические209B и203V6–V11 FAIL не
+переписываются; reviewed219 разрешает только точную trust-вставку temporary QA.
+
+Реальный203V11 прошёл обычный UI четырёх профилей/согласия/policy, UI intake и
+настоящий stdio MCP replay одного workflow. Аналитик и разработчик завершили
+работу: один реальный commit, два пройденных теста/JUnit. Ревьюер задал вопрос
+после отказа локальной проверки; approve и тестировщик отсутствуют. Независимый
+evidence verdict — FAIL; очистка/ACK/leases/pending и допустимая trust-вставка
+проверены. Source-причина: общий worker prompt требовал check у всех ролей,
+тогда как существующий ACL разрешает его только developer/tester.
+
+WORK222 исправляет только роль prompt и регрессионные unit-тесты, без расширения
+прав. Commit worker — be95daed7153f4abeb72012286cc748d0596b479; SOURCE APPROVE202,
+полный Go race PASS с canonical private TMPDIR. Первый запуск с системным
+macOS temp FAIL сохранён. WORK223 CONTRACT/BUILD APPROVE202 явно разделяет
+неизменный a32 server/Next/QA supervisor и новый worker/self-exec supervisor/bridge.
+Mac binary SHA9755ed0fb0de869751635ba4e5adf1a4d742b0a202e6659e871d337fceed27ff;
+Windows/Linux cross-build не является native QA. Provenance V3 и неизменный
+contract snapshot проверены отдельно. Новый203V13 завершился FAIL из-за limit100 при public list max50;
+его данные и независимый диагноз сохранены. Composite R14 оставлен SOURCE WIP,
+не запускался: выбран один новый полный прогон вместо сложного восстановления.
+
+**203V14 actual PASS + independent EVIDENCE APPROVE.** Runtime
+`pipeline203-1792796395902673000`, четыре настоящих Codex native/board sessions:
+аналитик создал план, разработчик commit `ad76196d9e0f7644826c23cd5102614f52860a41`,
+отдельный reviewer approve, tester passed точного SHA/generation1. Два настоящих
+check exit0, каждый JUnit2passed. UI intake и реальный stdio MCP same-id replay
+создали ровно один workflow; финальный UI completed4/4 проверен снимком.
+Все четыре terminal ACK/locks, pending/leases/reservations/questions0,
+конечный epic done; success cleanup и shared219 точная QA trust-вставка проверены.
+Report ebce126f892d9d6165ea56b735a824620243a37dca2abcb91734f28d96b5261a;
+independent ops review9a29b227867a8b9cdbc5a29d5348be22585af7508a06666cee0ce3a20433f4d8,
+WORK-203-V14-independent-evidence-qa.md. Это synthetic Mac/Codex, не production.
+
+Отдельные gates ещё открыты. F6V8 FAIL: native summary1161bytes превысил1024;
+при отказе агент задал вопрос. Независимый WORK229 подтвердил незавершённый
+business stop/ACK этого исторического QA, outer cleanup не подменяет его.
+F6V9 FAIL: reviewer остановился из-за xcrun cache EPERM системного Git.
+F6V10 SOURCE APPROVE202: прямой pinned read-only Git, прежние права/лимиты;
+новый trial runtime pipeline210-f6-1792797958472115000 завершился FAIL8d0a07be:
+R1 genuine changes_requested создал D2, но D2 не внёс исправление/не завершил
+задачу, workflow blocked/EVIDENCE_MISSING. Независимый WORK236 диагностирует
+причину: D2 запросил чужую T-4, получил правильный FORBIDDEN_ROLE и соблюдал
+refusal-stop; вопрос со stale workflow version1 получил CONFLICT. Все4native
+ACK/pending0, closedDB cancelled/no leases/reservations. WORK237 исправляет только
+profile data: доставленные findings/точная область GET/текущая workflow version;
+F6V11 и onboardV5 SOURCE APPROVE202, binary/ACL/CAS неизменны. Один свежий
+F6V11 runtime pipeline210-f6-1792798761726100000 actual PASS1ff6815c:
+A/D1/R1changes_requested/D2/R2approve/Tpassed,6native, commits49f38b→5506d9,
+actual check1→0→0. Независимая приёмка WORK238 APPROVEa30ea2029731c13d19d42a9d293026aea875d9a0455d3d184368a275534495d0;
+192boundedfiles, Git/JUnit/rawDB/journal/219/closure проверены. C2V10 FAIL до native: неподдерживаемый workflow_get в tools.
+C2V11 exact7tools исправлен, но actual FAIL AssertionError после pause/early
+resume409. WORK233 независимо подтвердил positive stop/все5ACK/pending0;
+исторический applied start сервер после epoch fence сохранил delivery_unknown.
+Независимый202 не подтвердил safety defect: QA incorrectly требовал все start/stop
+applied и пустой исторический last_error. WORK235 готовит narrow predicate только
+при prior applied proof, current authority и distinct strict stop; unknown не
+переименовывается applied. Observer пока NOT_OBSERVED в историческом V11. C2V12 свежий actual trial
+runtime pipeline210-c2-1792799294739330000 actual PASSde87cc2c, native_control_proven,
+observer OBSERVED/literal exact resume/sameconversation/ownership true; 202 независимая
+приёмка APPROVEd46b8d33d053f95badd8ac1b1560c63ba656fcc886c0d4bb09a65cabcebc718b. B2V8 actual FAIL194534e1: gen1stop и genuine gen2canaryquestion
+получены, но mandatory observer NOT_OBSERVED. Причина OS наблюдения не архивирована;
+WORK240 исключил stale pregrant anchor, business closure pending1/lease1/reservation1
+не подтверждён, outer cleanup не подменяет его. H1V8 actual FAIL58843ae9 TypeError:
+QA использовал .profile вместо поддержанного .profile_snapshot; WORK241 подготовил
+H1V9manifest509c1b81/89members, oldTypeError/newPASS/15negative DTO cases PASS;
+exact SOURCE APPROVE202dbe07016. Один свежий H1V9 trial
+runtime pipeline210-h1-1792800028668391000 actual PASS034c7ed9: настоящий вопрос,
+human UI answer/resume=false/replay/409/cancel/terminalACK без extra native.
+Независимая приёмка WORK243 APPROVEd07daaf2c0cf02b4082c74331ee9e613d5cb768cc47eb63a2e21d4cdc20729c9. WORK242 safe enum diagnostics для observer NOT_OBSERVED SOURCE APPROVE;
+WORK245 compiler-only PASS/binary1d6c6907/independentBUILD APPROVE9b24f635,
+helper ещё не запускался. B2V9manifestdf368afe/97members SOURCE APPROVE2024896acce:
+fresh gen2 live/session/lease readiness перед одним20s observer, прежние bounds/
+crypto/argv/authority/stopguards сохраняются. Один свежий B2V9 actual trial
+runtime pipeline210-b2-1792801102978184000 завершился FAIL5387edbd, rootGO03e090ea:
+пять checks/full real controls/2stops/own literalargv OBSERVED/finalcancel прошли;
+последний assert ожидал internal error text вместо публичного403/FORBIDDEN_ROLE/
+«Недостаточно прав для этого действия». WORK246 независимо подтвердил final durable no-mutation/closed data; исходный
+V9 FAIL сохранён. WORK247 V10 исправляет только точный public literal,
+без изменения прав/бинарных файлов/остальных guards; SOURCE APPROVE202031b5dfa.
+Свежий B2V10 runtime pipeline210-b2-1792801588013379000 завершился exit0,
+actual PASS09e0c64aad4b74c615132bea1edefbc7694e12118b64e5e3b153812a649b7b4d/6checks.
+Immediate post-denial equality assertions пройдены; WORK248 независимо принял
+полный actual native/control/OS/revoke/closure evidence: APPROVE745c4526…/198files.
+ClosedDB exact/no-mutation, обе остановки/5ACK, lease/question/reservation/pending0,
+ownV5literalOSresume подтверждены. Raw immediate API packets NOT_ARCHIVED; source
+assertions executed и closedDB corroboration разделены. Root controls aggregate
+b775638b… связывает три раздельных C2/H1/B2 approval, малое review202 впереди. Новые case GO только после review. B2V7/H1V7 HOLD runtime; WORK235 подготовил
+C2V12/B2V8/H1V8, теперь exact SOURCE APPROVE202/pure50 PASS; остальные guards/лимиты сохраняются. Full203/F6/C2/H1 независимо приняты; B2V10 actual PASS ожидает независимого
+вердикта. Два principal на одном Mac не являются двумя физическими ПК.
+Production gates не ослаблены.
+
+Пользователь выбрал Python-пример. Реальный checkout
+`/Users/shagi/Developer/Test_internet` подготовлен из пустой432615b:
+шесть новых файлов, настоящий red baseline2errors/NotImplementedError,
+локальный bootstrap commit6ea8676ad93d2c274a41a7d8765114af71a2cafb, clean.
+Remote push не выполнялся. WORK230 фиксирует факт; owner trust для этого
+постоянного checkout запрошен отдельно и пока ожидает ответа. Старое разрешение
+на temporary QA не используется как разрешение Test. WORK224V4 onboarding SOURCE
+APPROVE, V5 уточняет task scope, SOURCE APPROVE202. Client231V2 SOURCE APPROVE202,
+pure5accepted/18rejected/2boundary PASS; установка и реальные клиенты NOT-RUN.
+
+VPS обновлён canonical capable212 до a32/schema6: stage1792802453528860000 и
+apply1792802482019211000 actual exit0. Postapply audit1792802526839384000 подтверждает
+4проекта/9runtimeDB, logical rows/history сохранены, validated schema5 prebackup,
+own Go/Next a32. Journal пока pending-https-smoke; независимое audit review,
+strict HTTPS220 и finalize/новый schema6 backup впереди. Предыдущий finalized273
+сохранён как historical baseline; DB/binary rollback запрещён. Linux migration199 PASS7;
 отдельная preflight215 V3 FAIL классифицирована, исправленный V4 SOURCE APPROVE,
-новый runtime Linux PASS5 и local signal PASS / EVIDENCE APPROVE202. Разрешён
-только readonly212 preflight; stage/apply gate закрыт до полной приёмки.
-GUI Mac worker подключён и195 real native PASS5; Test_internet membership PASS,
-worker ещё не enrolled. Ни Windows/Claude, ни второй физический ПК не проверены.
+новый runtime Linux PASS5 и local signal PASS / EVIDENCE APPROVE202. Все9formal gates приняты, controls aggregate SOURCE APPROVE202969aa5c5;
+root stage/apply выполнены после свежих preflight. Граница readiness остаётся
+NOT READY до HTTPS/finalize/Test подключения и реального примера.
+GUI Mac worker подключён и195 real native PASS5. Test_internet: WORK251 actual
+identity/enrollment, четыре точных profile1 и owner-only policy1 active, отдельный
+background worker be95/9755 на связи epoch3/automation1/runs0. Первые автозапуски
+без lease сохранены как диагностика; normal foreground подтвердил epoch2, затем
+закрыт exit0. HOME-only не помог; private600 копия того же own Mac token в HOME
+worker и token_file-only configs привели к подтверждённому daemon poll. Исходный
+Desktop файл сохранён; TCC/глобальные права не менялись, точный syscall path не
+доказан. Python requirement [workflow ID в private receipt] создан genuine UI
+без policy, awaiting_authorization/version1/steps0/reserved0. Native Test запуск
+ждёт отдельного ответа на запрос trusted для постоянного checkout. Ни Windows/
+Claude, ни второй физический ПК не проверены.
 
 Таблица ниже сохраняет исходное распределение реализации; актуальные QA/gates
 и evidence записаны в последующих checkpoint разделах и WORK203/210/215/219.

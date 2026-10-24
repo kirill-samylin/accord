@@ -1,0 +1,10 @@
+# WORK252 — HTTPS220 V2: exact bundled Node hash size bound
+
+24.10.2026. Root narrow SOURCE GO after ONE actual WORK220 preflight FAIL,
+BEFORE browser. Original report SHA `7389b3b8605e28943004e12fdd47a3d70ae360180426c0df0106037d604bc5a6` and source10 remain immutable. Cause: bundled Next `node` regular file125989464bytes exceeds private.hash default64MiB; all other1255 files fit. This is a QA preflight size bound, not evidence of source/library drift or an HTTPS failure.
+
+New `.local/task014/https220/v2/` copied exactly the original10 members (including pins/library; no runtime dirs). Only two code changes: both preflight.validate and unchanged Next manifest file hash calls explicitly select `name === 'node' ? 128 << 20 : 64 << 20`. Default/private streaming SHA, no-follow/regular/inode/dev/mtime checks, complete manifest comparison and every file remain mandatory. No skip/cache. Nine other parent members byteexact. Served-asset8MiB/64MiB limits and browser/network/native bounds unchanged.
+
+Frozen13members manifest `96a3e6665190bfbf7672c8b8169ee22ca5a407676b941802e274e7e58471ee5e`; lineage/static/diff included. Static reverse-patch equals original; pure dispatch8 boundary cases PASS (node exact128MiB accepted, >128 rejected, nested/name variants keep64MiB). Read-only Python streaming hash verifies all1256 Next files and1457 total reference/tool/library inputs against existing pins; only node exceeds old cap, exact125989464B. No token read, Node/CJS/syntax-helper/browser/HTTP/network/provider/native/runtime execution by author. CJS syntax check explicitly NOT-RUN under root's no-Node scope; only exact argument substitution text proof.
+
+Source approval kind/input/rootGO schema unchanged; new exact source manifest/source202 receipt and separate fresh root input/GO are required. Future main uses v2 as its own base/new run folder; original failed run is not reused. Root owns actual pending-HTTPS audit freshness (30min) and future HTTPS execution. **SOURCE READY202, actual220 PASS not claimed.**

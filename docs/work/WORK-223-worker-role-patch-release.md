@@ -67,3 +67,13 @@ worker, который прошёл эти тесты. Текущий GUI checko
 
 До независимого CONTRACT APPROVE и source APPROVE WORK222 этот документ не
 разрешает менять descriptors, собирать release или запускать новые модели.
+
+## Уточнение о supervisor после source review
+
+Старый a32 supervisor — внешний supervisor QA harness. Внутри нового worker
+`supervised_unix.go` и `bridge_config.go` используют `os.Executable()`: его
+дочерние supervisor/bridge получают тот же новый worker executable/revision.
+Эти исходники побайтно совпадают с a32, но физический бинарный файл новый.
+Их фактические выходы и MCP проверяются новым native циклом. Старые foundations
+остаются проверками точного a32 baseline и не маркируются запуском этих новых
+дочерних процессов. Отчёты отдельно различают QA supervisor и worker self-exec.

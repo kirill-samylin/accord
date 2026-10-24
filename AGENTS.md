@@ -57,6 +57,21 @@ SDK/stub/cross-build за real native Windows или второй физичес
 SHA/generation gates, isolation и capable all-project roll-forward сохраняются.
 Наличие контракта не означает, что автоматизация или native GUI запуск работают.
 
+24.10.2026 TASK014 поставлен capable updater до server/Next release
+`a32db22973d5b43d4fb227a89337bf5b82a4969f`, schema6/floor `automation:1`.
+HTTPS220V6 independently PASS; canonical finalize и final-audit завершены,
+journal complete, format2 backup всех4проектов/9runtimeDB и история сохранены.
+Прежний273 — историческая версия, откат старого binary/БД запрещён.
+Mac worker `be95daed7153f4abeb72012286cc748d0596b479` установлен отдельно:
+Test_internet online, четыре профиля и owner-only policy созданы. Реальное
+Python-требование пока awaiting_authorization без запусков: доверие постоянной
+папке Test_internet ожидает отдельного ответа владельца. Временный QA trust сюда
+не переносится. Windows/Claude/второй физический ПК NOT-RUN. Подробности и
+независимые receipts — TASK014/WORK249/251/258; общий этап ещё не закрыт.
+По поручению пользователя текущий код и история всех26локальных веток включены
+в `main` репозитория `https://github.com/DenisShagi/accord.git`; прежняя история
+и MIT LICENSE сохранены. Это поручение разрешает соответствующую публикацию.
+
 ## Работа
 
 - Пользователь 18.10.2026 поручил переработать ТЗ и начать реализацию в отдельном
