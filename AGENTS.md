@@ -85,9 +85,14 @@ interactive intake NOT-RUN. Windows4ae x64 crossbuild есть, native Windows/C
 Продолжение24.10.2026 — `docs/TASK-015-client-intake.md`: настоящий Mac Codex
 интерактивно отправил требование через MCP в Test_internet. Цикл completed32,
 один local commit2a2a530, две реальные проверки по5passed; UI pause/clarify/resume
-того же native UUID подтверждены. Это не новый Windows/Claude/второйПК PASS.
-Найденный Claude Code2.1.308 не авторизован; provider gate остаётся false,
-реальный Claude intake и второй цикл NOT-RUN. Native TUI добавил два служебных
+того же native UUID подтверждены. Claude Desktop3.6556.2 затем отправил через
+accord_test второй workflow wf_fb2f6400fad6a5c326b178f6a357eb8a: completed25,
+commitbf77b6d, две реальные проверки по8passed, четыре Codex-роли. Add-only
+Desktop MCP применён с backup/readback, прежние настройки/UID/GID0600 сохранены;
+обычный Desktop login использован без CLI OAuth. Final QA/review второго пакета
+фиксируются в TASK015. Это не новый Windows/Claude execution/второйПК PASS.
+Найденный Claude Code2.1.308 CLI не авторизован; provider gate остаётся false.
+Native TUI Codex добавил два служебных
 поля global config; после закрытия own Test процессов выполнено отдельно
 проверенное восстановление точного baseline. Не утверждай bytes-unchanged за
 весь запуск. Прямой local5ACK snapshot первого analyst generation не архивирован

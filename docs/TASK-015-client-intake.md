@@ -6,7 +6,8 @@
 
 ## Объём проверки
 
-- Настоящий Codex CLI, затем настоящий Claude Code на этом Mac. В каждом
+- Настоящий Codex CLI, затем настоящий Claude Desktop на этом Mac по уточнению
+  пользователя: приложение уже открыто и авторизовано. В каждом
   модель сама вызывает MCP submit и получает ID нового workflow.
 - Для Codex: добавить `subtract` и три unit-теста в Test_internet; для Claude:
   после завершения первого цикла добавить `multiply` и ещё три unit-теста.
@@ -20,7 +21,7 @@
 
 Текущие policy, local consent, ACL, fixed checks и права сохраняются.
 Нет push/merge/deploy примера, зависимости не устанавливаются. Координаторы
-не редактируют код. Авторизация Claude — обычный вход владельца в браузере;
+не редактируют код. Для Desktop используется существующий вход владельца;
 коды/токены не передаются в чат или Git. Глобальный approval/sandbox не меняется.
 Отказ native approval фиксируется как отказ; обход не является проверкой.
 
@@ -34,7 +35,8 @@ review — WORK273, отдельная process/E2E QA — WORK274. Root ведё
 
 ## Фактический результат24.10.2026
 
-**Codex case PASS; TASK015 PARTIAL до настоящего Claude intake.** Установлен
+**Codex CLI case PASS; Claude Desktop создал второй completed-цикл.** Claude
+Code CLI остаётся отдельной непроверенной поверхностью. Установлен
 reviewed WORK272 launcher: worker/native executable SHA проверяются отдельно,
 Codex сохраняет read-only sandbox и обычные разовые подтверждения инструментов.
 Вызовы describe и workflow_submit разрешены по одному, без session/always allow.
@@ -78,13 +80,55 @@ sandbox и global MCP semantics не расширялись; informational prove
 Дополнительный просроченный observer read409 не изменял workflow; свежая обычная
 human session дала полный report без cursor и непрерывную историю.
 
-Claude Code2.1.308 найден в bundled desktop installation; auth status без входа.
-Provider gate остаётся false. Подготовлены exact executable pin и MCP-only
-`--restricted --tools '' --strict-mcp-config`; это source readiness, не запуск.
-Root login был закрыт; управление системным Terminal отклонено средой. Владельцу
-передана команда обычного auth login для своего терминала, без пересылки кодов.
-До его входа настоящая модель Claude, второй workflow multiply/8tests NOT-RUN.
-Windows/второй физический ПК и Claude execution-role также NOT-RUN.
+## Claude Desktop: фактический второй цикл
+
+Пользователь уточнил, что уже использует Desktop. В Claude Desktop3.6556.2
+сохранён существующий вход; CLI OAuth не запускался. WORK275 подготовил
+add-only `mcpServers.accord_test`, independent273 одобрил source и QA-план.
+После штатного закрытия Desktop root один раз применил helper: exit0, exact
+entry, все прежние JSON values/bytes и UID/GID0600 сохранены; private backup
+есть. Independent274 проверил readback в памяти. Конфигурация/токен не хешировались,
+значение токена не копировалось: bridge использует существующий token-file.
+
+После перезапуска UI показал accord_test «Выполняется» и включённый connector.
+Root столкнулся с устаревшим снимком окна; владелец открыл окно, после чего
+требование отправлено из нового обычного чата. Настоящая модель вызвала
+Describe с coordinator/run_id/machine и получила board session, затем один
+Workflow submit с исходным request_id, policyv1 и полным текстом требования.
+Chat ID виден в UI: `f7492c7f-be7f-4ddf-b025-dd2bd5fb34dc`. В карточках сохранены
+настоящие request/response: сохранённые AX-файлы карточек содержат только
+«no change» и не служат доказательством аргументов. Describe с board session,
+полный Submit и returned workflow/intake_hash проверены по скриншотам. Ответ
+модели завершён. Desktop
+сохранил существующий режим «Авто»; разовых approval dialogs в этом случае
+не наблюдалось. Новое always/session-разрешение не выдавалось.
+
+Новый workflow `wf_fb2f6400fad6a5c326b178f6a357eb8a`: completed/version25,
+четыре Codex native invocation, одна задача, исправлений0, вопросов0.
+Аналитик → developer → независимые reviewer/tester прошли последовательно.
+Один локальный commit `bf77b6db0fadfc5a18da3045f0f4fd5bf510a314`, parent
+`2a2a530c50c51290eb7653bcfadb979956f772ff`; изменены только src/math_ops.py и
+новый tests/test_multiply.py. Два настоящих project-tests/JUnit на этом SHA
+дали по8passed/0errors/0failures/0skipped, review approve, tester passed.
+Четыре текущих run: native_exited/exit_durable/managed_ack/exit_ack/lock_released
+true, pending0, reservations0. Рабочее дерево чистое, шесть защищённых файлов
+byte-exact, AST add/subtract сохранён. Test repo не отправлялся в remote.
+
+Финальный пакет `.local/task015/claude-desktop-root/final-1792847822075850000`,
+manifest `97555579ca719f70c60968e6e02a2b401ae6740adf197e7ac32861579d4ae39e`.
+Независимая финальная QA WORK274: PASS, receipt
+`458c48b624bc580a0cff9d8a8e30d312ed71c97e53b353a070bee63c2c1741e6`.
+Финальный independent review WORK273: APPROVE, receipt
+`710b652d4b721888c7e0c06a0f356a4b63273a776e29c712c952e16061291b8e`.
+Выбранный пользователем объём Codex CLI + Claude Desktop: PASS с указанными
+выше границами Codex capture; отдельный Claude Code CLI этим не закрывается.
+Управление pause/clarify/resume переиспользует ранее проверенный Codex case;
+второй раз в Desktop-цикле эти действия не выполнялись. Карточка нового цикла
+доступна в Accord с теми же controls/can_control=true.
+
+Claude Code2.1.308 CLI не авторизован; отдельный provider gate остаётся false.
+Это не ограничивает проверенный Desktop intake. Реальное исполнение ролей
+Claude, native Windows и второй физический ПК остаются NOT-RUN.
 
 Сервер/Next остаётся4ae5292, Mac worker dfcef4b; новой поставки/миграции в TASK015
 не было. Policyv1/срок25.10.2026 04:05МСК/лимиты300с-этап/1800с-цикл/12запусков

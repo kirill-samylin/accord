@@ -213,3 +213,116 @@ Global Codex config во время native TUI НЕ был unchanged: два о�
 или новая native проверка. ПервыйTERM=dumbFAIL и ранний expiredobserver409 capture
 не переписаны. Автор QA не выполнял API/provider/process/Git/test/control/import;
 только сохранённые exact packets/ownnativeJSONL, finite projections и hashes.
+
+## Новый явно выбранный target: запущенный Claude Desktop
+
+Пользователь выбрал повторную проверку через уже вошедший **Claude Desktop**.
+Это новый target второго случая, не фиктивное завершение Claude Code CLI auth:
+CLI остаётся NOT-RUN. Codex actual273 PASS и controls не повторяются. До этого
+append точный прежний WORK274 сохранён private immutable snapshot в
+`.local/task015/claude-desktop-qa/WORK274-before-desktop-plan.md`.
+
+PLAN READY only, actual NOT-RUN: private source manifest SHA
+`538676bc8c56cb409ba44e8bc9682a81048813f0651a4a54a2db1730e31f2a7f` (3members),
+plan SHA `7724c296263395252199e841cd67d6b5cf2a4152612d95222230da00e9886cba`.
+Никакого runner/нового executable/helper/CLI/model/UI управления автором не создано
+или запущено. Root делает настоящие CUA действия в собственном новом testchat
+только после additive MCP source275/independent273 и fresh rootGO/preflight.
+
+Неиспользованный prompt17d17598/request_id сохраняются exact. Реальная модель
+Desktop должна вызвать Describe/coordinator и workflow_submit с exact args,
+получить boardSession/workflowID/state/link и закончить turn. Снимки только своих
+toolcards/ответов + fresh scoped API sameID/requester/grant/intakehash и текущая
+Accord карточка доказывают origin; регистрация MCP/список tools не заменяют вызов.
+Native conversationID берётся только если штатно виден в ownchat; иначе честное
+NOT_EXPOSED, не случайный UUID/boardSession и не чтение caches/чужих чатов.
+Root сохраняет только own test content, исключая sidebar/account/credentials.
+Для Desktop не требуется закрытие самого приложения; CLIexit N/A этому target.
+
+Далее существующая Codexкоманда: multiply+3ordinaryunitcases/всего8, один localcommit
+parent2a2a530…, exactSHA/generation reviewapprove+QApased, developer/tester настоящие
+JUnit8/0/0/0 и strict source/digest/terminal5ACK/pending0/reservations0/leasesclosed.
+Защищены add/subtract/ранние tests/runner/AGENTS/README/.gitignore; scopes/policy/
+consent/worker/server/300s/1800s/12native не меняются. Дополнительный controltrial
+не нужен: используются принятые Codex pause/clarify/sameUUID proof, а новый workflow
+наблюдается в том же Accord. No push/merge/deploy/новых разрешений/autoapprove.
+
+Новая Desktop actual приёмка и итог TASK015 — отдельное решение root+273 после
+всех фактических доказательств. Claude role execution, Windows/физический второйПК
+и Claude Code CLI этим Desktop случаем не подтверждаются.
+
+## Desktop MCP apply — независимый readonly readback PASS
+
+После approved275/root helper actualexit0 выполнено только чтение exact known
+baseline/backup/candidate/текущего Desktop config. Сравнения произведены в памяти:
+baseline равен saved beforebackup; текущие bytes равны approved candidate и exact
+additive transform. Единственное добавление — одна mcpServers.accord_test entry
+с точными approved command/args. Все прежние JSON fields равны, исходные bytes
+сохранены вставкой перед final brace; UID/GID/0600 сохранены. Duplicate JSON keys,
+необычный file/owner/mode/drift отвергались; фактический readback их не обнаружил.
+
+Private finite receipt `.local/task015/claude-desktop-qa/apply-readback.private.json`,
+SHA `d249203a64a6f07e24072528dbe829966aa5af1dc0609dfabd91c64ab9aec5b8`:
+**PASS_ADD_ONLY_CONFIG_APPLY_DESKTOP_INTAKE_NOT_RUN**. Hash baseline/candidate/
+Desktop configuration/token НЕ вычислялся, token не открывался; preferences/user
+paths/content не копировались в receipt или публичный отчёт. Helper/module/app/
+provider/model/network/CLI автором QA не запускались; никакой новый harness.
+
+Root сообщил stale/недоступное рабочее окно и попросил владельца вывести Claude
+на передний план. Установка config сама по себе не доказывает загруженный MCP
+catalog, actualmodel Describe/Submit или multiply workflow. Все эти Desktop
+runtime gates пока **NOT-RUN**; новых workflow/role/test результатов не заявлено.
+CLI Claude остаётся отдельным NOT-RUN target, прежний Codex PASS не повторялся.
+
+## Claude Desktop actual — independent QA PASS
+
+Принят frozen final-1792847822075850000: manifest SHA
+`97555579ca719f70c60968e6e02a2b401ae6740adf197e7ac32861579d4ae39e`,
+все32 member hashes проверены. Compact independent receipt
+`.local/task015/claude-desktop-qa/final-actual-qa.private.json` SHA
+`458c48b624bc580a0cff9d8a8e30d312ed71c97e53b353a070bee63c2c1741e6`:
+**PASS_CLAUDE_DESKTOP_NATIVE_INTAKE_AND_CODEX_ROLE_PIPELINE**.
+Root после обновления canonical docs передаёт отдельную final evidence review273;
+эта QA не подменяет итоговое root/273 решение TASK015.
+
+Непосредственно просмотрены pixels пяти собственных chat screenshots: Describe,
+Submit head/start/tail и финальный ответ. Видны actual Describe exactrequest/
+coordinator/run_id/machine+возвращённая boardSession/project; actual Submit
+original request/policyv1/полный exactmultiplytext и queued/version1 workflowID/
+intakehash. Их server completed payload содержит тот же текст/hash/requester/grant.
+Собственный Desktop chatID виден в native AX receipt; модель закончила turn и
+вернула фактический ID. Это не MCP catalog/source/SDK simulation.
+
+Граница capture уточнена по independent273 readback: оба сохранённых файла
+**describe.ax.txt и submit.ax.txt** содержат только stale «nochange»/focused control,
+без полного набора аргументов. Утверждение о Text500 не подтверждается именно
+архивированным AX и не используется как evidence. Точные Describe args/session
+проверены по describe.png; полный Submit text/request/policy/returned ID/hash —
+по submit-response-head/start pixels и server exacttext/hash. UI режим «Авто»
+остался прежним; individual per-call dialogs не наблюдались, отдельное нажатие
+Allow не приписывается. Model display — только UI label, не серверная attestation
+конкретного underlying model. Аккаунты/auth/cache/чужие чаты не читались.
+
+Workflow completed/version25/epoch1:4 роли/4nativeUUID/4invocations/0fix, все tasks
+и epic done; независимые4author sessions. Полные commandpages, start applied,
+все4 current local native_exited/exit_durable/managedACK/exitACK/lockrelease=true,
+pending0/reservations0/leasesabsent/questions0. Нового Desktop pause trial не было
+и не требуется: принимается уже подтверждённое Codex управление с сохранённой
+gen1 capture оговоркой; тот тест не повторялся и не переименован в Desktop control.
+
+Developer commit `bf77b6db0fadfc5a18da3045f0f4fd5bf510a314`, parent
+`2a2a530c50c51290eb7653bcfadb979956f772ff`, clean; только src/math_ops.py и новый
+tests/test_multiply.py. Saved baseline/after AST add/subtract сравнены независимо,
+6 protected файлов совпали, новый тест содержит3ordinary methods. Reviewapprove
+и testerpassed относятся к T-16generation1/exactSHA, author sessions независимы.
+
+Два настоящих persisted developer/tester XML прочитаны: **8+8testcases**, ни
+failure/error/skipped; reportSHA совпали с local check и public attestation.
+Typedexit0/literalfalse truncation/source_clean/manifest/target/run/gen/epoch1/
+project-tests-v1 digest сверены. Saved Codexconfig равен принятому c17baseline;
+Claude CLI gate false. SHA Desktopconfig/token не вычислялись, новых config writes,
+provider/UI/API/network/process/test/helper/model действий QA не выполнял.
+
+Новый подтверждённый клиент — **Claude Desktop**, роли — прежние Codex на одном
+Mac. Claude Code CLI auth/nativeintake, Claude execution roles, Windows и второй
+физический ПК остаются NOT-RUN. No push/merge/deploy; обе прежние истории сохранены.

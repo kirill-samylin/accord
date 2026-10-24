@@ -130,3 +130,50 @@ Final private verdict/report и exact семь document hashes находятс�
 `.local/task015/review/`. Новый server/worker release, control call, model/test
 или иные runtime этой независимой проверкой не запускались. Codex scope принят;
 Claude/Windows/физический второй ПК/Claude execution roles им не подтверждаются.
+
+## Claude Desktop — actual final verdict и завершение выбранного scope
+
+24.10.2026 пользователь выбрал уже авторизованный Claude Desktop вместо отдельного
+Claude Code CLI. **APPROVE — PASS_CLAUDE_DESKTOP_INTAKE_AND_CODEX_PIPELINE**.
+Совместно с ранее принятым Codex case принят текущий TASK015 scope: два настоящих
+клиента подали требования, оба полных цикла завершены; управление переиспользует
+прежний Codex pause/clarify/resume с его объявленным gen1 capture ограничением.
+Это не повторное испытание управления из Desktop и не общий V1/platform PASS.
+
+Независимо проверены все32 members immutable Desktop packet по manifest
+`97555579ca719f70c60968e6e02a2b401ae6740adf197e7ac32861579d4ae39e`.
+Просмотрены собственные screenshots Describe, Submit head/start и законченный
+ответ модели. Видны actual Describe coordinator/request/run/machine и выданная
+boardSession/project, actual Submit request/policyv1/полный текст/queued workflow
+и intakehash. Те же текст/hash/requester/grant/workflow совпали с server report.
+Сохранённые describe.ax.txt **и** submit.ax.txt — только stale/nochange notices;
+они не являются доказательством arguments/fulltext. Неверный AX pointer исходной
+metadata не переписан: достаточное первичное подтверждение содержат PNG.
+
+Desktop model turn завершён; CLI exit к нему N/A. В UI сохранён существующий
+режим «Авто», individual dialogs не наблюдались; нового Always/permission режима
+не приписываем. CLI OAuth/gate этим не включены. Apply source/ordinary root exit0
+и readback подтверждают add-only bridge; reviewer не читал/не хешировал Desktop
+preferences/config/token/authcache. Desktop chat — клиент подачи; все роли Codex.
+
+Server workflow completed/version25/epoch1; четыре независимых роли/nativeUUID,
+четыре invocation, одна задача, fixes0, этапы завершены до своих deadline.
+Review approve/tester passed привязаны к exact commit/generation. Два immutable
+JUnit независимо разобраны: по8testcases, failures/errors/skips0; typedexit0,
+literalfalse truncation, source_clean/manifest/target/preset-v1 digest и actual
+attestations согласованы. Current4run5ACK true, pending/reservation/questions0,
+полные applied command pages, tasks/epic done и leasesclosed.
+
+Известные локальные Git objects прочитаны без Git CLI: один parent — принятый
+Codex commit, один новый commit; только math_ops.py и новый multiply test.
+Шесть защищённых файлов совпали; AST add/subtract неизменён, три новых ordinary
+метода теста. Working bytes совпали с committed tree, saved Git status clean.
+Новых тестов/моделей/API/UI/helper/network/control/поставки reviewer не выполнял.
+
+Независимая QA274 receipt SHA
+`458c48b624bc580a0cff9d8a8e30d312ed71c97e53b353a070bee63c2c1741e6`.
+Final273 private verdict — `.local/task015/review/claude-desktop-final273.json`.
+Claude Code CLI authentication/nativeintake, Claude execution roles, Windows и
+физический второй ПК остаются NOT-RUN; исходные FAIL/ограничения не переоценены.
+Сервер/worker/ACL/consent/checks/лимиты не менялись этим review. Root canonical
+receipts-only итоговая строка после этого verdict не расширяет принятый scope.
