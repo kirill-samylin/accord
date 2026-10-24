@@ -109,7 +109,7 @@ func (e *Engine) prompt(plan plan) string {
 		text = plan.command.Text
 	}
 	var instruction strings.Builder
-	instruction.WriteString("This is an explicitly managed Accord native run. Use only the accord_managed MCP connector for this run. Before editing, call describe with a fresh request_id and the following fields, then acquire work with next. A task reference is context, never an ownership grant. Stop edits immediately on LEASE_UNCERTAIN or LEASE_LOST; do not bypass permissions. ")
+	instruction.WriteString("This is an explicitly managed Accord native run. For MCP calls, use only the accord_managed connector; this limits the MCP namespace. Available native project file and shell tools remain governed by the existing local sandbox, saved role instructions and current task lease. This instruction grants no additional tools or permissions. If a required tool is unavailable or denied, report the blocker instead of inventing evidence. Before editing, call describe with a fresh request_id and the following fields, then acquire work with next. A task reference is context, never an ownership grant. Stop edits immediately on LEASE_UNCERTAIN or LEASE_LOST; do not bypass permissions. ")
 	instruction.WriteString("The per-attempt bridge injects the fixed managed run/generation and the server binds its immutable saved profile snapshot. Profile edits do not rewrite this conversation; current task assignment and lease gates still apply. ")
 	fmt.Fprintf(&instruction, "run_id=%q, machine=%q. ", plan.run.ID, e.config.Machine)
 	if profile := plan.run.Profile; profile != nil {
@@ -123,14 +123,16 @@ func (e *Engine) prompt(plan plan) string {
 		if profile := plan.run.Profile; profile != nil {
 			switch profile.Role {
 			case "developer", "tester":
-				instruction.WriteString("Run the required owner-approved local verification preset IDs through workflow_run_check. Wait for each corresponding status resource to be completed and inspect its actual result before transitioning the task. Queued/running, failed, NOT-RUN and N/A are never PASSED. ")
+				instruction.WriteString("Run the required owner-approved local verification preset IDs only through workflow_run_check; do not execute verification commands directly through native shell tools. Wait for each corresponding status resource to be completed and inspect its actual result before transitioning the task. Queued/running, failed, NOT-RUN and N/A are never PASSED. ")
 				if profile.Role == "developer" {
-					instruction.WriteString("Developer presets require a clean committed HEAD first. ")
+					instruction.WriteString("Use available native project file and shell tools to edit assigned files and create the required local commit within the existing developer scope. Developer presets require a clean committed HEAD first. ")
+				} else {
+					instruction.WriteString("Use available native project file-reading and read-only shell/Git tools to inspect sources and evidence. Do not edit reviewed source or HEAD; separately consented test design artifact rules still apply. ")
 				}
 			case "analyst":
-				instruction.WriteString("Create the structured plan through workflow_plan under your own task lease. Use workflow_question when requirements need human clarification. Planning does not require starting local verification presets. ")
+				instruction.WriteString("Use available native project file-reading and read-only shell/Git tools to inspect repository instructions, sources and tests. Do not edit files, commit or run verification commands as the analyst. Create the structured plan through workflow_plan under your own task lease. Use workflow_question when requirements need human clarification. Planning does not require starting local verification presets. ")
 			case "reviewer":
-				fmt.Fprintf(&instruction, "Perform a read-only review of the assigned exact target SHA %q and its diff, using available qualified verification evidence. Report approve, changes_requested or blocked honestly; ask workflow_question if missing evidence requires human clarification. Do not start local verification presets as the reviewer. ", plan.run.Automation.TargetSHA)
+				fmt.Fprintf(&instruction, "Use available native project file-reading and read-only shell/Git tools to inspect the assigned sources and evidence. Perform a read-only review of the assigned exact target SHA %q and its diff, using available qualified verification evidence. Report approve, changes_requested or blocked honestly; ask workflow_question if missing evidence requires human clarification. Do not edit files, commit or run verification commands as the reviewer. Do not start local verification presets as the reviewer. ", plan.run.Automation.TargetSHA)
 			}
 		}
 		fmt.Fprintf(&instruction, "Approved artifact roots: %q. Test design artifact writes separately consented: %t. Reviewer/tester must preserve every reviewed source byte and full HEAD; a source change blocks the workflow. A .patch proposal in approved artifact roots is test_design/NOT-RUN, never PASSED.\n", a.ArtifactRoots, a.AllowTesterArtifactWrites)
