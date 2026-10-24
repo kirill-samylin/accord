@@ -3779,3 +3779,516 @@ SHA `5d2dad3ce150b2a290f82958f0ff81cae8a45202b5cfebe6f4bd8f42ef1ce20d`.
 DOCverdictAPPROVE/runtime_go:false/overallIN_PROGRESS_NOT_READY. No code/provider/
 CLI/browser/network/native/helper/config/token/DB/SSH/service operations or test
 suite rerun. Docs-only publication remains root action under existing user scope.
+
+
+## WORK260 single real-Test trust helper — SOURCE APPROVE, pure transform PASS
+
+После нового явного owner разрешения root поручил exact permanentTest trust
+source review; прежнее temporaryQA219 permission сюда не переносится. Frozen5
+manifest `ff3ed0fc9caaa28672541375a867099dd91802f72a6fc19e0e8291da4be246c9`,
+plan `040aaf4af0a41effa290c88e8c3eb9236012f86d35f2905582eb9e3b32648e63`,
+helper `001dc075339771fa64aab2002a0eaf5c9e1b7b1deb86f2975c7a1b3d6dd79fc5`.
+Только точная ownTest project trust_level=trusted insertion; originalbytesprefix
+и полное parsedTOML equality остальных настроек. Existingtrusted noop, другой/
+ambiguous/duplicate/unsupportedsealed/invalid state stops. Нет adjacent auth/
+MCP/profile/globalapproval/model/token changes.
+
+Source checks: fixedproject/config/exactplanGO, bounded ownsinglelinkNOFOLLOW600/
+uidgid/readback; private exclusive originalbackup+UNKNOWN attempt fsynced before
+atomicreplace; temporary600 bytes/metadata validated, immediate originalfd/path/
+bytes/parent checks и finalreadback. Root quiescence/advisoryflock required, no
+universalCAS againstnoncooperatingwriter claimed. Existing noACL/flags/security-
+xattr guards conservative; explicit informationalcom.apple.provenance-only loss
+accepted without reading itsvalue. No added metadata-preservation framework.
+UNKNOWN outcome staysmanual, no automaticretry/delete/rollback; internal
+replace_happened flag alone is not proof configunchanged on interruption.
+
+Reviewed AST-onlyfixture before execution. Independent pinnedPython3.14 -I-B in
+fresh0700scratch:3unittestmethods,8append/3noop/11reject syntheticcases plusappend
+idempotence allPASS/exit0. Only extracted transform AST compiled; helpermodule/
+apply/currentconfig/token/native/network not imported/read/executed. Five source
+hashes/private600/modes and pinnedPython unchanged. No blocking findings.
+
+Fresh `.local/task014/root-go/trust260-source202.json`, SHA
+`be8fd7320c231608e2828cf98b2291d4f86be520a8252c1c382c623c5a3218ca`;
+report `.local/review202-trust260-pure-_8v8wak7/source-review.json`, SHA
+`b126ffecc316e3e6df28ae44bd7bf2207d7e7f57b409b1f7ef736879bb3c1ee7`;
+pure receipt `a585b362946b9e60312e43962dae2c7913491d939ed3f8df5987b33df41ed774`.
+SOURCE-only/runtime_go:false; actualapply/rootGO and recorded nativeTest cycle
+remain separate. Parent/root executor owns those already user-authorized actions.
+No reviewer config/process/provider/CLI/browser/HTTP/DB/service action occurred.
+
+
+## WORK260 actual trust — independent APPROVE
+
+После explicitusertrust/rootGO helper actual APPEND_ONE_PROJECT/manualfalse.
+По отдельному root разрешению202 прочитал только private originalbackup и current
+config для bounded NOFOLLOW stable byte/semantic comparison в памяти. Секретные
+значения не выводились/не копировались в review; других auth/provider/tokenfiles
+не читал. Currentconfig точно originalprefix+один reviewed suffix, полный TOML
+равен deepcopy(original)+единственная exact Test absent→trusted entry; прочие
+settings/bytes неизменны. Currenthash c17a7952 соответствует helperreceipt;
+originalhash94c70a3c соответствует immutableplan. UID/GID/mode600/singlelink сохранены,
+fd read stable; informational provenance preservation отдельно не требовалась.
+Reviewer не записывал config и не запускал provider/native/control/CLI.
+
+Freshactual `.local/task014/root-go/trust260-actual202.json`, SHA
+`413b89a56de370cb91238eab1e7155cbc5dba2bd9cd86daf27489677f53f5c89`;
+private review `.local/review202-trust260-actual-prjzm9hn/review.json`, SHA
+`634957baf6d99c84d0590d24b0a1b776286a63c14f0e3eb1d75562e265182bef`.
+Это independently verified ownerauthorized trust delta, не completednativeTest.
+Root сообщил genuineUI existingdraft Continue once и actual running;202 не
+выполнял submit/resume/pause/poll/OSactions и не делает businessPASS по сообщению.
+
+## WORK261 production evidence PLAN — APPROVE, actual verdict pending
+
+Exactpublicplan `a3ee4ad33aad1b350fc1a239ae2f7c654883dc4a1ce5515b70dfd7df730beff8`,
+privateplan `fb66e31c785207df14bad6eb1751b6eb8c0bbc2b00fdc96e24ad9999e88aab15`,
+three savedbaseline scopedAPI hashes verified. Actualservera32/workerbe95/project-
+testsv1/digest/policy12/actualepoch+generation+history required, no fixture4/epoch1/
+syntheticpreset substitution. Independent reviewer/testerUUID+boardSession,
+exactdeveloperSHA/generation/sourceclean/real immutableattemptJUnit2tests and
+five literalterminalACK/leases/questions/reservation/pending0 gates appropriate.
+Receipt.phase not treated asserverACK, nonexistentnumericnativeexit not invented.
+Production rawjournal/IPCnonce/hostsecret/bridge/executiontoken/providertranscript
+must not be copied; only bounded scopedrun whitelist/knownreportpaths. Report
+pagination and failedDTO saved beforeassert;120s collection plus optional60s
+passiveACK-only, no modelretry/control or daemonstop byQA.
+
+Wireclarification: core.WorkflowObservations.CheckAborted boolomitempty allows
+absent or literalfalse, not malformednonbool/true. Typedcheck_exit_code0 required,
+outcome_bytes_truncated literalfalse required. Existingplan !check_aborted wording
+is consistent; no source expansion required. Reviewer completedPlan/source only,
+actualworkflow acceptance pending terminal immutablepackage, not implied byUI.
+
+Fresh `.local/task014/root-go/qa261-plan202.json`, SHA
+`83f92ba28b1dd030e809c79b96f002c4dfad02ca37be3d0726734bdad9a29f88`;
+actual frozen review `/Users/shagi/Desktop/Project/agent-board/.local/review202-plan261-vy4uq238/review.json`, SHA
+`a15a44e6ef6ad2287c008e788cf771a5eecb98ec97af4ebe86025c0a299aed95`.
+Runtime_go:false/actual_workflow_acceptance:false. No rawproductionjournal/
+provider/token/config/native/HTTP/DB/control read/action in this Plan review.
+
+
+## WORK263 prompt clarification — SOURCE APPROVE
+
+Independent202 fully read the narrow Engine.prompt string delta and role/manual/
+continuation regression tests. MCP restriction now applies only to the connector
+namespace; available native project tools remain governed by existing sandbox,
+saved role and lease. Analyst/reviewer remain read-only; developer assigned edits/
+local commit and tester source/HEAD/artifact-consent boundaries remain explicit.
+Verification commands only through approved workflow_run_check for developer/tester;
+no analyst/reviewer check authority or new OS/MCP/consent/config/server permission.
+Builtin absence is NOT PROVEN; ambiguity is a plausible explanation, not an actual
+native success claim. No blocking source/test findings.
+
+Frozen manifest `6fb901baa5723c8101c30abd81fab76f1c0056202e71d66fafd97bd3ccfe777d`,
+final pins `c5ac8f0ac808b3e967a1a1c37b6982d6c926de922f004c324c872c81b3c71c13`
+verified; frozen/live/committed revision dfcef4b source2 equal. Production diff
+against be95 contains only execution.go and role_check_prompt_test.go. Targeted
+three author unit functions exit0/2.712s, proof a3baeffe/log131043ff/toolchain hashes
+independently verified; no duplicate suite or native execution by reviewer.
+
+Fresh SOURCE-only `.local/task014/root-go/worker263-source202.json`, SHA
+`3da2a4b0d2d267830f6f84ad2d7468c1a4b6fb51308d50a5ad80687cafaab441`;
+frozen report `.local/review202-worker263-hh4k4xdw/review.json`, SHA
+`1ea59efee844fd953c049ca2e44e7b307b96b89654e8bb5bd1df4e703d795191`.
+Runtime_go:false; build/install/same-UUID resume/native behavior remain root actions
+and require actual evidence. Reviewer did not run worker/provider/control/config.
+
+## WORK261 collector-v1 — REQUEST CHANGES, no execution
+
+Full source read of manifest fbf38498 found two narrow P2 whitelist/parser gaps:
+local capture directly serializes exit_unreportable and check.id/status instead of
+requiring typed boolean and bounded scalar strings, allowing malformed nested
+journal values around the otherwise strict projection; ASCII byte DTD/ENTITY guard
+misses UTF16/32 XML, so require strict UTF8 before keyword guard and XML parsing.
+Complete batch sent author and root; no source receipt or collector execution.
+16MiB root-approved journal input extension accepted. Current-step/current-attempt
+capture is partial evidence only; historical attempts/full report remain separate
+root package requirements, never an inferred final verdict.
+
+
+## WORK263 clean Mac worker build — APPROVE
+
+Exact dfcef4b worker binary SHA
+`f6291d57963620554da09f50f8908ec4b0fe735cc6e04d23aba160016780dadb` verified
+regular/owner/singlelink/executable. Pinned Go metadata inspector version-m read
+actual binary without executing worker; exact retained buildinfo confirms Go1.27.2,
+CGO0/darwinarm64/trimpath/VCSdfcef4b/modifiedfalse; build stderr empty. Reviewed
+frozen/live/committed source2 match. Server/Next a32 unchanged; worker internal
+self-exec follows new worker, not old QA outer. Availability/resume result remains
+unproven until root actual run; no build/install/native/control by reviewer.
+
+Receipt `.local/task014/root-go/worker263-build202.json`, SHA
+`9b7602a82bc970238327b715630d669b0557f9b3ef7fcfc805cfb5ecee861afc`;
+report `.local/review202-worker263-build-0p_wcqb5/review.json`, SHA
+`7f9018339f399b7155eb093de35e3825df623fe681f43059a204f99b87d6feee`.
+
+## WORK261 collector-v2 — SOURCE APPROVE
+
+Exact manifest db30c4efd6bf3e80ae2525f01b1f5ae99e45a0b9cdb1f333c10091843f020998,
+five members/private600 and three ASTs verified. Both prior P2 resolved: exactbool
+and bounded string guards before serialization; strictUTF8+NUL rejection before
+DTD/entity check and XML parsing. Bootstrap/io byteexactV1, root separate snapshot/
+priorattempt/Git/fullhistory obligations explicit; compactedhash omission not
+misrepresented as absence. No remaining blocking finding. No source imports,
+collector execution or production journal/report read by reviewer.
+
+Fresh fixed `.local/task014/root-go/qa261-collector-source202.json`, SHA
+`192dbf4c330694d459ff565af8f65d5d040ab606966fb02238ec954636c868d0`;
+report `.local/review202-collector261-v2-ts6znpzz/review.json`, SHA
+`8da661063d7fe89525e8b6c73f3a639923c6cdf2dc7df12d36b97d3f08edae13`.
+Runtime_go:false; only root separately authorizes bounded30s collection. Capture
+status is not final workflow acceptance; original V1 REQUESTCHANGES preserved.
+
+
+## WORK264 expired interrupted step — SOURCE APPROVE
+
+Exact five-member source cfcf4d715d20ccf9dff7e085b4ec5d92d7139edce5d77630a8466ba9b339e998
+and three live source hashes verified. Full scheduler/error rollback/start/continue
+chain reviewed. Expired incomplete interrupted steps and continuations now return
+STEP_TIMEOUT and use existing blocked handler, avoiding queued CONFLICT/version
+churn. Completed-task evidence/SHA branch remains before new deadline guard;
+transient CONFLICT handling, pinned step/workflow deadline, continuation/invocation
+limits, grants, reservations, authority, recovery and CAS/epoch fences unchanged.
+UI only existing step_timeout text, with actual Pause/Replan labels and existing
+case-normalized reason lookup. No blocking findings.
+
+Two new unit functions reviewed, including started human-question and undispatched
+cases, exact deadline, unchanged tasks/commands/budget/grant, repeated stable ticks
+and explicit pause/replan preserving bounds. Author targeted6 exit0/0.543s and full
+internal/store exit0/7.473s proof is explicitly observed tool output, not a raw
+subprocess archive; reviewer verified its pinned bytes and did not repeat tests.
+Initial raw-versus-redacted test assertion failure remains documented honestly.
+
+Fresh `.local/task014/root-go/store264-source202.json`, SHA
+`b47eb60db806b4ab837bcf61d5714a7a1b9e159ff09798691a0fbf81a0656320`;
+report `.local/review202-store264-qqb1pvv9/review.json`, SHA
+`9cea677c17258009e7e7fb1a2731e487f651622a26dd60c7d9242626c1ee7726`.
+Runtime_go:false; production deployment/browser/native validation NOT-RUN by
+reviewer. Prior real queued/history evidence is not relabelled as PASS.
+
+
+## WORK265 locked client candidate — SOURCE APPROVE only
+
+Five-member exact30bbaa88 source and private600 metadata verified. Independent
+comparison to actual installed locked metadata confirms exactly three changed
+fields: third process-only MCP disable key plus worker dfcef4b/f629 pins. Launcher
+and Claude config byteexact accepted installation; both activation flags literal
+false and inventory NOT_PROVEN marker unchanged. Installed three files remain
+byteexact before/after review; worker installed binary hash and263 install/source/
+build receipt reference hashes verified. Launcher AST only; three exact TOML
+false leaves parsed without importing launcher. No blocking findings.
+
+Fresh `.local/task014/root-go/client265-source202.json`, SHA
+`8e6a8ced06ea0d9abda685d5435da2354adc58a42c2f6f3c684dd62be0fc9238`;
+report `.local/review202-client265-hdvkwzib/review.json`, SHA
+`478113df85a693b6dd07101a51abc709cac171425f6fedfd5e03916f1ad224d9`.
+No token contents/global provider config/worker state/module/provider CLI/model/
+network read or execution. Source approval authorizes neither installation nor
+activation. Root separate replacement/read-only namespace check and later actual
+activation acceptance required; prior262 FAIL and incomplete isolation preserved.
+
+
+## WORK267 disabled known stdio table — SOURCE/pure APPROVE
+
+Exact6 manifest639eb59f and referenced source/metadata hashes verified. New builder
+accepts only the exact known cua_repl singleton and emits enabled=false with the
+same verified worker executable and emptyargs. Existing main verifies worker SHA
+before builder; no arbitrary namespace/fallback, URL transport, grant/approval/
+model/global mutation or duplicate workflow. Actual installed metadata unchanged
+before/after; candidate changes only known disable metadata and launcher builder,
+Claude byteexact. Both readiness flags remain false, inventory unproven.
+
+Independent pure unit with pinned Python3.14 -I-B in own0700 scratch: two exact TOML/
+argv positives and13 wrong server sets rejected, exit0/stderr0. Only reviewed
+function AST executed, synthetic metadata used; launcher module/main/provider
+never executed. Original parser failures remain failures; future inventory check
+NOT-RUN by reviewer and installation/activation separately required.
+
+Fresh `.local/task014/root-go/client267-source202.json`, SHA
+`240e5f6808093e9580b3d66d8cba838e614f858418de93a26a74577296780607`;
+report `.local/review202-client267-oowtaldj/review.json`, SHA
+`30d55da72d2b9a3465d84f4e86cb36011a54333326f1a662139afcefd10a69b5`.
+Runtime_go:false; no token/globalconfig/worker state/provider/runtime access.
+
+
+## WORK267 actual locked install / Codex catalog — scoped APPROVE
+
+Installed three files ordinary/owner/singlelink600 and byteexact267 source;
+two private backups equal prior265 inputs. Both readiness flags still false.
+Independent parsing of retained actual CLI stdout confirms six unique entries,
+all enabled values typedbool, only accord_test enabled, zero other enabled; exact
+stdio command and full bridge arguments match installed metadata, worker hash
+matches263. Stderr empty. Root process receipt records exit0/no timeout/drained/
+model0/globalconfigbytes unchanged; reviewer did not open global/provider config.
+No duplicate actual provider/process or model executed by reviewer.
+
+Fresh `root-go/client267-actual202.json`, SHA
+`ca04a620bc2f57cc93c575b08844514481513022137f45f3446d9b1ccd8ce4d8`;
+report `.local/review202-client267-actual-jyew7jrz/review.json`, SHA
+`7f9f1388f5055af519022839c6672706b7868285b18d69b36f3deb968dd796c9`.
+Scope is exact override invocation catalog and locked install, not interactive
+Codex/Claude/native intake or unrestricted plugin/profile isolation. Prior first
+parser exit UNKNOWN and repeat exit1 remain unchanged. Activation still forbidden
+by these receipts. Recommended separate strict selected-provider flag defaultfalse
+alongside common gate, so future Codex activation cannot implicitly enable Claude;
+no automatic launch/intake/global permission or approval mutation.
+
+
+## WORK261 real Python cycle — final independent APPROVE/PASS
+
+Accepted author-independent report afade37d and41-file index65cf0735;202 verified
+all41 hashes/metadata before/after and directly checked saved public workflow107/
+epoch6 completed before original deadline, four current role steps, five UUIDs and
+four distinct current board authors. Five literal terminal ACK flags/run, scoped
+pending/reservation/openquestion/taskleases0; current completed local receipts match
+applied public command/dispatch/generation/native tuples. Both actual immutable
+attempt XMLs match typed completed check attestations:2 tests each,0fail/error/
+skip, typed exit0, exactSHA/manifest/nottruncated. Profile snapshots match grant.
+
+Read-only own Git objects/files independently prove developer exact commit
+fc5cc89925c071fac17907c9676d6e5a7ef02451, one parent, only math implementation
+changed and current tracked content byteexact; protected five files unchanged.
+Reviewer and tester bind same SHA/generation; developer permission proof matches
+native executable hash and actual Git directory dev/inode identity. No Git CLI,
+tests/provider/native/control/API/DB action or raw production journal read by202.
+
+Historical first analyst remains interrupted/forced stopped, start delivery_unknown
+and actual applied stop retained. This is a completed current four-role Mac cycle
+after explicit replan, five total distinct conversations; not first-attempt graceful
+happy path or same-UUID resume. Server a32, first worker be95, current worker dfcef4b;
+final UI completion observed by root only. Windows/Claude/physical second PC/push
+NOT-RUN. Real sample acceptance does not erase earlier failures or these limits.
+
+Fresh `root-go/qa261-final202.json`, SHA
+`17c039d21a8f476be30f8bc0e3286d07859608fc7eda7c2ad40ebf75ea707681`;
+report `.local/review202-qa261-final-_hhd8tg2/review.json`, SHA
+`18bf5328d7d9da6453388ed299e8f501a3799bfc4fa50d40f66087af2bd0fea7`.
+
+## WORK264 release build — independent APPROVE, runtime pending
+
+Clean candidate4ae529 source3 equals reviewed264 freeze; production delta from
+dfcef4b only those three paths. Independently hashed55 Linux release members and
+1256 Next files: Linux b1fd3d51, Nextmanifest3c82cd79/build2pJACN5gVnLvpKVlP6-js,
+nodebc17c508 exact. Metadata-only pinned Go version-m confirms actual embedded
+Linuxamd64/CGO0/trimpath/VCS4ae529/modifiedfalse buildinfo. No candidate/node/Next
+execution. Root storeRACE102.888/typecheck/Nextbuild exit0 accepted as observed
+results, explicitly no raw subprocess log archive claim. No prior nine QA gates
+rerun/relabelled and no production permission implied.
+
+Fresh `root-go/build264-source202.json`, SHA
+`a611ae988b840747d1c20141c13b8af24267ce4359e07584deda8b89c9990df7`;
+report `.local/review202-build264-svvrhww4/review.json`, SHA
+`7dc1803753fe3d63d803dd0e4fff6f3e71943123e26f37d5b281488712d1143a`.
+
+## WORK269 Codex-only activation source — APPROVE/pure PASS
+
+Six-member exact2e82cd3f frozen sources/refs verified; metadata only commonready+
+reviewednamespace true and new per-provider map Codextrue/Claudefalse. Strict
+selected-provider literaltrue gate precedes every worker Path/hash access; missing/
+false/malformed/unknown denied. Rest267 namespace/worker/readonlysandbox/normal
+provider approval/auth unchanged, Claude config byteexact and still blocked.
+Actual267 catalog reused only for exact process configuration, not universal
+future plugin/profile isolation; unproven inventory marker retained.
+
+Independent pinnedPython pure AST guard+synthetic main:1 ready Codex and27negative
+cases PASS, zero denied worker accesses; positive stops at synthetic Path sentinel.
+No real launcher module/provider/worker/model/file/token/globalconfig access.
+Installed bytes unchanged. Candidate source allows root separately manual exact
+Codex-only installation; interactive runtime remains NOT-RUN, no automatic launch,
+workflow intake or Claude activation implied.
+
+Fresh `root-go/client269-source202.json`, SHA
+`716421f7c0d3675f545964e2fbb026a0a1c0a7f349e94f23395d1b9b03ad5e04`;
+report `.local/review202-client269-1oq2di01/review.json`, SHA
+`0d399b2add749c12aa308916560bd57b1e4ead9987b4249b5ee6abf05a0cae6c`.
+
+
+## WORK268 narrow capable follow-up — SOURCE APPROVE
+
+Exact e8acec650ce394f96627680921cdf7f8996b06e61709bdcf500295ca6b71bb7b,
+12 members/7PythonAST and allrefs verified. Entire source/delta read; old212 origin
+and versions unchanged. Source263/264/build264 and actual261 approvals retain
+original authority/version, no fake old9gate retagging. Schema6→6 all-project
+canonical updater with logical9DB/marker/history exact preservation; no invented
+extra migration backups. Stored JSON query paths match owning product types.
+WAL-aware existing-private UID999 queries close connections; workflow/task/run/
+command/check/reservation quiescence before stage/apply and finalize, root must
+hold operational quiet window. No source cancellation of active work.
+
+New upload limited to fresh inactive safe-root dirs with exact55Go/1256Next regular
+archive contents independently checked without extraction/execution. Activea32
+pointers checked beforeafter; no DB/service operation. Existing UNKNOWN/file+dir
+fsync before SSH, timeout/signal manual inspection, noauto retry/rollback/resume
+retained. Fresh120s preflight and new4ae HTTPS approval beforefinalize remain gates.
+No blocking finding. Reviewer no imports/SSH/DB/phase/provider/native actions.
+
+Fresh `root-go/ops268-source202.json`, SHA
+`4cc4422d7e65da8b859cad110fd86e649374d1ea8bb9916caae1d45709112558`;
+report `.local/review202-ops268-n_vv_1ks/review.json`, SHA
+`779ee121469182de4783f468375bb09533030b1eb552a309f1d2a06b85539ccb`.
+Runtime_go:false; each upload/preflight/stage/apply/audit/finalize phase needs
+separate root GO, no production permission implied by source approval.
+
+## WORK269 actual Codex-only install — readback APPROVE
+
+Installed metadata/launcher/Claude config exact269, ordinary owner/singlelink600;
+two backups exact267. Common+Codex readiness true, Claude selected-provider false
+and unchanged Claude JSON. Root install receipt agrees no interactive model yet.
+No launcher/provider/CLI/token/globalconfig/state execution or read by reviewer.
+Scope exact installed selected-provider guard, not actual native intake or Claude.
+
+Fresh `root-go/client269-installed202.json`, SHA
+`63cf816191883dda8e1c5703faac185fc78f3a930f5153a7f85b0b53b0272396`;
+report `.local/review202-client269-installed-8p2f4im0/review.json`, SHA
+`cc0e47fe242eb96cdc7b984edaa0e24ba0f969076e879f31191bf5dfca39dc39`.
+Interactive runtime NOT-RUN; no automatic workflow/client/model launch by202.
+
+
+## WORK268 actual postapply — APPROVE/PASS, pending HTTPS
+
+Saved upload55Go/1256Next, stage, two preflights, apply and audit bind exact reviewed
+ops e8acec65 and original source/build/actual261 delta proofs. Provisional UNKNOWN
+receipts retained. Both stage/apply use own preflight within120s; four boards,
+nine runtime/nine historical DB, all busy counts0, UID999 closed reads, ownedGoNext,
+units/space confirmed by frozen source-backed compact reports. Audit confirms
+4ae/schema6/logical9DB/history/pre-snapshot/nginx exact preservation, owned new
+runtime; canonical journal pending-https-smoke. No SSH/DB/service/action by202.
+No fabricated raw process archive: actual exit0 supplied by root, compact receipts
+come only after reviewed remote acceptance. Final delivery still needs HTTPS,
+canonicalfinalize/newbackup/finalaudit.
+
+Fresh `root-go/ops268-postapply202.json`, SHA
+`1fb0ae937b6b029cae9fac2508e38fd41d3c407bdbcbe830dd1f3808f4ce7705`;
+report `.local/review202-ops268-postapply-ttfc_6hr/review.json`, SHA
+`780bdbbe4bf5c18bc314f7b9a30948e0dabe247d2c7dba9bb66908fc59d56a0f`.
+Approval binds actual audit packet SHA741001936f6a3a175e22add8c884bb94816ffa398d407ef226d92fe532ad0517
+at its original creation time; no freshness waiver.
+
+## WORK270 HTTPS follow-up — SOURCE APPROVE/pure PASS
+
+Exact41-member9e1fa51e source,31byteexact acceptedV6 members,25references/179libs/
+1256Next entries+timeoutliteralasset verified. All finite A/A2/DATA/RSC/TLS/identity/
+POST/caps/asset/request/route/main/Chrome guards unchanged. Only new bounded own
+completed-workflow GET compares five persisted page fields to accepted261107;
+can_control dynamictypedbool, pagination complete, actual4completed+oldinterrupted/
+fiveinvocations/history7/zeroreservation mandatory. Public DTO chain verified.
+New shipped timeout text must be loaded and actual served hash matches manifest;
+no fake expired-case behavior claim. Independent pure2positive14negative PASS in
+own0700 scratch; pure helper/assert only, no browser/HTTP/token/config/native.
+
+Fresh `root-go/https270-source202.json`, SHA
+`a0f72fb970c65373fe3efb72011c464694532f0283fba1215bff49008ba3cf9e`;
+report `.local/review202-https270-source-kik926m1/review.json`, SHA
+`183b9605ddc251610c8fa66b74d1419e447c3013509cf29bc71f28bcddb4722f`.
+Runtime_go:false; source approval plus fresh audit permit only separately root-
+authorized actual smoke. No operational/native/complete result implied.
+
+
+## WORK270V2 token privacy delta — SOURCE APPROVE
+
+Exact4461fc57041ed8eb239fff1d57bdb46ad0842cfb2c672bd4ecf877cb16b4870c,
+41 members; only preflight changed,40byteexactV1. Two-line internal tokenSHA
+hash comparison replaced with Buffer copy of already regular/bounded token read
+and direct Buffer.equals on bounded reread. Neither value/fingerprint/Buffer is
+serialized; inherited main saves config.input only, diagnostics stay projected.
+No TLS/navigation/POST/asset/history/limits/closure guards changed. Prior pure2/14
+reused exact unchanged helper/test hashes; no unnecessary rerun. Reviewer no token/
+globalconfig/browser/network/native access or operational execution.
+
+Fresh `root-go/https270-v2-source202.json`, SHA
+`7916f6e4ca4dc29cbeca798086a41b8d3300b11d9a747261ed3836f3c2110327`;
+report `.local/review202-https270-v2-source-unqay3bu/review.json`, SHA
+`ad27e15caac311939abdf55a16d6b609504279c43acf45c661e73cd1e0a5ac7f`.
+Runtime_go:false; new hash requires fresh root GO. V1 source approval/NOT-RUN
+status retained; no actual smoke/complete result implied.
+
+
+## WORK270V3 transport delta — SOURCE APPROVE
+
+Exact44-member45f68b00, four inherited changes and37unchanged verified. Two redundant
+out-of-navigation browser GETs removed; no abort exception/guard/budget weakening.
+Forms reuse already consumed automation NAV_JSON200 packet with saved SHA/context/
+sealed-witness join; actual save/sealNavigation return shapes confirmed. Separate
+fresh root-native HTTPS readback93d79088 validates exact origin/project/path/status/
+TLS/no-redirect/postaudit approval/time before credential login. Raw saved five
+persisted sections independently equal accepted261107; dynamiccan_control typed.
+Root API read is not claimed as browser observation. All six pages/DOM/assets/
+request/closure rules and Buffer-only credential comparison retained. Prior2/14
+pure helper proof reused exactbyte; no extra runtime/token/config/network by202.
+
+Fresh `root-go/https270-v3-source202.json`, SHA
+`9384b2b885ec3b3574708125dac49f41b0b9ad653d3c49f0f8bdb08d59183fff`;
+report `.local/review202-https270-v3-source-uqe4otu4/review.json`, SHA
+`5ace85189bdc3c2b93b3c3f670b47506740cf7c01c267a23c80ccf22bd8f956b`.
+Runtime_go:false. V2 actual FAIL/two fatal aborted reads remain FAIL, no causal
+certainty or retroactive acceptance claimed; fresh root GO required.
+
+## WORK264 Windows artifact — build metadata only APPROVE
+
+Actual .exe SHA67e1490b verified; metadata-only pinnedGo version-m exactly matches
+retained Go1.27.2/CGO0/windowsamd64/trimpath/VCS4ae529/modifiedfalse sidecar.
+Root crossbuild exit0, no executable launched. Macworker263 unchanged. This is
+only crossbuild/artifact provenance, Windows/Claude/physical secondPC NOT-RUN.
+
+Fresh `root-go/worker4ae-windows-build202.json`, SHA
+`dec477a2f2519ba5c8f684dfbed193ddcfe6891529b1298de812739d665db327`;
+report `.local/review202-windows264-build-7m2szsq4/review.json`, SHA
+`cb043423c9a24ed1eeaa99dd14e1548dc766032175d0958322b90a6cd83e76e9`.
+
+
+## WORK270V3 actual HTTPS — independent APPROVE/PASS
+
+Exact4ae actualreport dee83183258cb1bbb29ae558dce6b0b4e9e91319c322bd535a300e0008e08edc,
+source45f68b00. Independent202 verified40private artifacts, six scoped JSON200/
+rightproject/source-backed uniqueDOM, originalMac owner identity/membership, strict
+TLS/noignore, read-only forms, loginPOST1/switchPOST1/business0. Eleven served asset
+digests match newNextmanifest, including actual loaded timeoutcopy chunk. Exact
+NAVautomation packet SHA/context/sealedwitness reused for form flags. Separate
+fresh nativeHTTPS wrapper93d790 preserves accepted261107 five sections/current4+
+oldinterrupted history; not claimed as browser-nativeAPI or graceful firsttrial.
+
+OwnedChrome actual0/nosignal/stdio closed; contexts/server/route/tracker/scope/main
+joins positive,83terminalrequests/active0/manualfalse. All10 rawFAILED remain raw:
+A1=1/A2=1/DATA3/RSC5 actual path/context/status/queryflags/sequences/witness/probe
+boundaries independently checked, presaved rawerror tuples unchanged. No FATAL,
+new exception or causal certainty. Screenshot PNGs retained/hashed; DOM assertions
+are source-backed executed proof, not separate reviewer pixel inspection. Reviewed
+harness source/input/tokenBuffer equality passed; reviewer did not open/hash token,
+read globalconfig, launch browser/network/native/model or change production.
+
+Formal `.local/task014/root-go/https270-v3-evidence202.json`, SHA
+`7b4c66493e6e739e79772f7c73d051e86cbdd3f08ad295d4d2248089bf5aae65`;
+review `.local/review202-https270-v3-evidence-n_uz1cop/review.json`, SHA
+`337de7db5519a569f039b4f554dc92e99a64f8b8a2ff88c049987da8305f3d21`.
+V2 actual FAIL retained. This HTTPS acceptance permits only separately authorized
+canonicalfinalize; new fullbackup/finalaudit still required for completed4ae delivery.
+
+
+## WORK268 final delivery4ae — independent APPROVE/PASS
+
+Reviewed actual canonicalfinalize packet SHA
+`4e7edfa1d6739844be8832c0ae08ea28cc968e3ffc7db6e82bb51a13436f4c1b`
+and finalaudit SHA
+`cd497de5e13703ceae7463760f1f6cc589781440abe2840096a6add68bcf0c62`.
+Exactsourcee8acec65/4ae529/delta proofs unchanged; provisional UNKNOWN records
+retained. Finalize follows accepted fresh4ae HTTPS7b4c, journal now complete.
+Finalaudit validates owned4ae Go/Next, unchanged nginx, presnapshot85a274fe/history,
+upgrade logicalnine runtimeDB/fourpublishedboards/schema6 preservation. New
+format2 backup manifest6ef4810a122ff4ce55ef6d18dfef00cbbb385287a0c9eaac1cb1ddbbaa2b66cf
+validated with9runtime/9historicalDB/exactinventory; immutable presnapshot/history
+retained. Frozen actualaudit source also enforces exact migrationhistoryset and
+backupservice Resultsuccess/ExecMainStatus0. Compact source-backed receipt scope,
+no extra SSH/DB/service/backup/control action by reviewer.
+
+Formal `.local/task014/root-go/ops268-final202.json`, SHA
+`28afab674abc1de2a8d68b2b13ed7123da46a76c3249b544815ef9779edd935c`;
+review `.local/review202-ops268-final-8k2s3cin/review.json`, SHA
+`a0323870e903add4e57218201f54c965c108099138c6ee5c7d5166a129430636`.
+Delivery4ae accepted in this scope. Timer configuration/service success do not
+prove fresh scheduled timer tick: scheduledtick NOT-RUN. Windows/Claude/physical
+second-PC runtime NOT-RUN; Windows artifact only crossbuild. Standalone Codex
+selected-provider install is not interactiveclient/intake proof. Real261 sample
+ran on a32 with worker263 after preserved old interruption/replan; it is not
+retagged as an actual4ae fullpipeline run. No unqualified all-platform/V1 closure.

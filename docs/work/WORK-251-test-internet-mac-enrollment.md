@@ -102,3 +102,25 @@ Receipt `client-locked-install.private.json`, SHA af1bd4c5a827055e0a795d9d55e14f
 
 Независимый actual readback WORK257 — APPROVE59cdda98…: установлены ровно три
 утверждённых файла, оба флага false; токен и runtime не проверялись этим QA.
+
+## 24.10.2026 — последующее рабочее подключение
+
+После отдельного разрешения пользователя WORK260 exact Test trust применён и
+принят actual202413b89a5; прочие config bytes/права сохранены. WORK263 Mac worker
+dfcef4b/f629 заменил be95 после positive own daemon exit0; config/state/host/
+consent1 сохранены, daemon epoch4/fresh lease подтверждены. Первый analyst
+forced stopped с5ACK; после истёкшего deadline выполнен explicit UI replan.
+Реальный Python A/D/R/T completed107 до общего deadline, commitfc5cc899,
+два JUnit по2passed, approve/testerpassed exactSHA/gen1, все5ACK/pending0.
+QA261 final independent20217c039d2 PASS, старая прерванная попытка сохранена.
+
+Standalone267 actual catalog проверен:6entries, onlyexactaccord_testenabled,
+others0/config unchanged. WORK269 source/pure+installed20263cf8161 приняты:
+общий gate и Codex provider true, Claude strictfalse до executable. Файлы3/600,
+папка700, backupsprivate; global MCP/provider/settings не изменены. Interactive
+launcher intake по-прежнему NOT-RUN; сам текущий desktop chat не подключается.
+
+Server follow-up268/270 canonical finalized4ae/schema6/backupall4projects,
+final20228afab67 PASS. После финализации root API повторно подтвердил own host,
+consent1/epoch4/freshlease/can_controltrue/active runs0. Полный V1/Windows/Claude/
+второй физический ПК не заявляются. Актуальные действия — accord-user-guide.md.

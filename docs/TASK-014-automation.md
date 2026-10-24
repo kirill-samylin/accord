@@ -31,9 +31,10 @@ lease, access epoch, idempotency, независимость проверок, S
 
 ## Состояние
 
-Актуальный срез 24.10.2026, 02:01 UTC: `origin/main` опубликован fast-forward
-до `be95daed7153f4abeb72012286cc748d0596b479`; вся прежняя история сохранена.
-Все девять обязательных release gates приняты независимо. VPS работает на
+Актуальный срез 24.10.2026, 06:52 UTC: рабочий код
+`4ae529272e1542e8473902de26d68349af266d1d` опубликован в `main`; вся прежняя
+история сохранена. Документационные коммиты отдельно от runtime revision.
+Все девять первоначальных release gates приняты независимо для первой поставки
 a32/schema6; HTTPS220V6 actual PASS8763acea независимо принят e886182b.
 Проверены шесть страниц, owner identity, TLS, формы и11servedasset hashes,
 строго квалифицированные навигационные отмены, все joins/Chrome0/stdio.
@@ -45,14 +46,56 @@ APPROVE/PASS a0db8214 принят; старый binary/БД rollback запре
 сохранён, backup service success подтверждён; новый scheduled tick NOT-RUN.
 
 Фактическое подключение Mac/Test_internet независимо принято WORK253: daemon
-online/epoch3, четыре профиля и ограниченное owner-only разрешение. Python-цикл
-сохранён без запуска и ожидает отдельного ответа владельца о доверии Codex к
-постоянной папке Test_internet. Ниже сохранена история проверок; более ранние
+online/epoch3, четыре профиля и ограниченное owner-only разрешение. Владелец
+отдельно разрешил доверие постоянной папке Test_internet: WORK260 actual trust
+независимо принят202, все прочие config bytes/settings и права сохранены.
+Existing Python workflow запущен через настоящий UI, первый native analyst
+задал вопрос без чтения checkout. Его stop/все5ACK/pending0 подтверждены.
+WORK263 устраняет вероятную двусмысленность MCP-only prompt без расширения
+прав; новый worker dfcef4b/f629 установлен, own daemon завершён exit0 перед
+заменой, прежний host/consent сохранены, epoch4/fresh lease подтверждены.
+Первый step deadline истёк во время исправления: UI answer сохранён, native
+resume не стартовал. После штатной паузы и явного UI replan новый аналитик,
+разработчик, независимые reviewer/tester завершили требование до общего deadline.
+Local commit `fc5cc89925c071fac17907c9676d6e5a7ef02451`, parent bootstrap6ea,
+изменён только src/math_ops.py; tests/runner/AGENTS/README/.gitignore byteexact.
+Два настоящих check/JUnit: по2passed/0failures/errors/skipped, exit0, точный SHA/gen1.
+Workflow completed107,4current done+1historical interrupted,5distinct UUID,
+все5ACK/pending/reservations/leases0, вопрос отвечен. Старый forced stop и
+delivery_unknown не переименованы в graceful/applied; same-UUID resume здесь
+не доказан. QA261 actual afade37d и independent202 17c039d2 APPROVE/PASS.
+Полный global config после native точно совпал с принятым trusted baseline.
+Ниже сохранена история проверок; более ранние
 формулировки «ожидает review» не заменяют этот актуальный срез.
-Standalone client установлен тремя проверенными файлами; оба флага запуска
-false, native client runtime пока NOT-RUN. WORK257 независимо подтвердил install.
+Standalone client WORK269 установлен тремя проверенными файлами: Codex разрешён,
+Claude отдельно заблокирован строгим provider gate до доступа к executable.
+WORK267 actual CLI catalog: единственный enabled accord_test/exact binding,
+остальные0; global config не изменён. Source/pure/actual install приняты202.
+Интерактивный native intake этим launcher пока NOT-RUN.
 
-**IN PROGRESS / NOT READY, checkpoint 24.10.2026.** Сервер/Next/внешний QA
+WORK264 устраняет бесконечный queued/CONFLICT для истёкшего interrupted step:
+STEP_TIMEOUT/stable blocked и явная подсказка pause/replan, без обновления срока,
+бюджета или прав. Targeted/store unit и root full store race PASS, typecheck и
+Next production build PASS. Build264 независимо принят a611ae98. WORK268 capable
+follow-up a32/schema6→4ae/schema6: inactive uploads/stage/fresh all-board busy0/
+apply/audit exit0. Postapply202 1fb0ae93 подтвердил4boards/9runtimeDB/logical rows,
+точную прежнюю историю9DB и новый pre-backup/owned Go+Next. Новый сервер4ae активен.
+HTTPS270V3 actual PASS dee83183, independent2027b4c6649:6pages/11assets/strictTLS/
+owner/readonly forms/cleanup, плюс отдельный свежий native API readback сохраняет
+точные5workflow sections107. V2 FAIL сохранён: два лишних browser GET вне witness;
+V3 использует уже прочитанный NAV_JSON и отдельный API proof, правила ошибок
+не расширены. Canonical268 finalize1792824436028442000 и final-audit1792824486170036000
+exit0/journalcomplete; новый validated format2 backup6ef4810a,9runtime+9history,
+logical rows/inventory сохранены, backup service success/exit0. Final independent202
+28afab67 APPROVE/PASS. После финализации own Mac host/consent1/epoch4/freshlease/
+can_control true/active runs0 подтверждены обычным API. Windows4ae x64 crossbuild
+67e1490b независимо проверен dec477a2, native Windows/Claude/2PC NOT-RUN.
+Проверенный production Mac/UI контур — PASS; интерактивный standalone intake
+и полный V1 не заявлены. Прежние9release
+gates не retagged как новые прогоны; ops268 сохраняет исходные версии receipts.
+
+**История промежуточных проверок.** Ранний IN PROGRESS / NOT READY checkpoint:
+сервер/Next/внешний QA
 supervisor candidate — a32db22973d5b43d4fb227a89337bf5b82a4969f. Проверки normal
 product permission proof209A, OS positive/negative216 PASS5 и native write+commit218
 PASS сохранены с точным старым binary. Исторические209B и203V6–V11 FAIL не

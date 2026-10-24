@@ -57,17 +57,25 @@ SDK/stub/cross-build за real native Windows или второй физичес
 SHA/generation gates, isolation и capable all-project roll-forward сохраняются.
 Наличие контракта не означает, что автоматизация или native GUI запуск работают.
 
-24.10.2026 TASK014 поставлен capable updater до server/Next release
-`a32db22973d5b43d4fb227a89337bf5b82a4969f`, schema6/floor `automation:1`.
-HTTPS220V6 independently PASS; canonical finalize и final-audit завершены,
-journal complete, format2 backup всех4проектов/9runtimeDB и история сохранены.
+24.10.2026 текущий TASK014 server/Next release —
+`4ae529272e1542e8473902de26d68349af266d1d`, schema6/floor `automation:1`.
+Capable follow-up WORK268 после первой поставки a32: HTTPS270V3 independently
+PASS, canonical finalize/final-audit завершены, independent final20228afab67.
+Journal complete, новый format2 backup всех4проектов/9runtimeDB/9historicalDB,
+точные logical rows и история сохранены. Прежний HTTPS220V6/a32 принят отдельно.
 Прежний273 — историческая версия, откат старого binary/БД запрещён.
-Mac worker `be95daed7153f4abeb72012286cc748d0596b479` установлен отдельно:
-Test_internet online, четыре профиля и owner-only policy созданы. Реальное
-Python-требование пока awaiting_authorization без запусков: доверие постоянной
-папке Test_internet ожидает отдельного ответа владельца. Временный QA trust сюда
-не переносится. Windows/Claude/второй физический ПК NOT-RUN. Подробности и
-независимые receipts — TASK014/WORK249/251/258; общий этап ещё не закрыт.
+Mac worker `dfcef4b88f695942d2b0b8dbf59e4e587f45f1d9` установлен отдельно:
+Test_internet online/epoch4, четыре профиля и owner-only policy созданы. Реальное
+Python-требование завершено и независимо принято WORK261/202: аналитик,
+разработчик, отдельные reviewer/tester, один local commit, два JUnit по2passed,
+все5terminal ACK/pending0. Первоначальный analyst был forced stopped; после
+истечения deadline выполнен явный replan. Это НЕ same-UUID resume proof.
+WORK260 exact project trust и WORK263 prompt не расширили другие права/settings.
+WORK264 timeout/stable-block установлен в4ae; сроки, бюджеты и права не расширены.
+Mac standalone WORK269 установлен Codex-only; catalog/guard/install проверены,
+interactive intake NOT-RUN. Windows4ae x64 crossbuild есть, native Windows/Claude/
+второй физический ПК NOT-RUN. Mac UI production-контур PASS, полный V1 не заявлен.
+Подробности и receipts — TASK014/WORK249/251/258/261/268/270.
 По поручению пользователя текущий код и история всех26локальных веток включены
 в `main` репозитория `https://github.com/DenisShagi/accord.git`; прежняя история
 и MIT LICENSE сохранены. Это поручение разрешает соответствующую публикацию.

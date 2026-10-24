@@ -495,3 +495,50 @@ freshenabled/active/nextscheduledtick NOT-RUN (no new query/inference).
 Server delivery closed; realTest/nativeclient/Windows/Claude/physical2PC notcredited.
 Publication working-doc scan:52files/fourknowncredentials/zero findings;
 scope modified/untracked docs+AGENTS, not full historical credential audit.
+
+## 24.10 — рабочий Test и узкое follow-up обновление
+
+Owner отдельно разрешил exact Test trusted: WORK260 actual202413b89a5,
+прочие config bytes/settings и права сохранены. WORK263 source/build202 приняты;
+Macworker dfcef4b/f629 установлен после own daemon positive exit0, host/consent
+сохранены, epoch4/fresh lease. Первоначальный analyst остановлен forced/5ACK;
+во время исправления истёк step deadline. UI answer сохранён, same-UUID resume
+не стартовал; обычная API pause + genuineUI explicit replan сохранили историю,
+бюджет12 и workflow deadline. Новый цикл A/D/R/T завершён до deadline.
+
+QA261 actual afade37d + independent20217c039d2 PASS: completed107,4completed+
+1historical interrupted,5UUID/4authors, один commit fc5cc899(parent6ea), только
+src/math_ops.py, защищённые5файлов byteexact. Два actual JUnit по2passed/0errors/
+failures/skipped, exactSHA/gen1 approve+passed, все5ACK/pending/lease/reservation0.
+Старые forced/delivery_unknown сохранены; новый результат не заменяет их.
+Global config после native совпал с exact trusted baseline; Test push не выполнялся.
+
+WORK264 source/unit+full store race102.888s/typecheck/Next build PASS. Commit4ae,
+Linuxb1fd3d51/Nextmanifest3c82cd79/BUILD_ID2pJACN5gVnLvpKVlP6-js. Build202a611ae98.
+Origin/main fast-forward4ae, all earlier branch history сохраняется.
+WORK268 source2024cc4422d, uploads Go55/Next1256 inactive, stage/apply/audit exit0.
+Postapply2021fb0ae93: новый4ae/schema6 active,4boards/9runtimeDB/logical rows/
+history9 preserved. NewHTTPS270 и finalize/finalbackup ещё pending.
+
+Standalone231→265 namespace probe обнаружил лишний enabled cua_repl;265 actual
+parser exit1 сохранён отдельно. WORK267 полный disabledstdio table исправил
+конфигурацию; actual catalog0/6entries/единственный exact accord_test/others0,
+global config unchanged. WORK269 source202716421f7 и installed20263cf8161:
+Codex-only ready, Claudefalse до executable; интерактивный launcher runtime NOT-RUN.
+Текущие необработанные operational результаты хранятся только в ignored .local.
+Эта WORK >300строк сохраняет исторический журнал release; новые исполняемые
+файлы ограничены отдельно и ревьюятся по своим immutable manifests.
+
+Final follow-up факты: HTTPS270V3 actual PASS dee83183, independent2027b4c6649.
+6pages/11servedassets/timeoutcopy/TLS/identity/readonly forms; все joins/Chrome0/
+stdio0/active0/business0/manualfalse. V2 FAIL15raw/13qualified2fatal сохранён;
+V3 убирает два лишних GET, сохраняет6NAV_JSON и проверяет историю отдельным
+fresh strictTLS nativeAPI93d79088. Новых exception для abort не добавлено.
+Canonical268 finalize1792824436028442000 и final-audit1792824486170036000 exit0.
+Final20228afab67 APPROVE/PASS: journalcomplete/owned4ae/schema6/logical9/history9,
+validatedformat2 manifest6ef4810a runtime9/history9/inventorytrue, backupservice
+success/exit0. Scheduled timer tick по-прежнему NOT-RUN, старые gates не retagged.
+После backup own worker API подтвердил прежний host/consent1/epoch4/freshlease/
+can_controltrue/runsactive0; новые процессы/controls не запускались.
+Windows4ae x64 binary67e1490b buildmetadata accepted202dec477a2, nativeWindows/
+Claude/physical2PC NOT-RUN. User guide обновлён; standalone interactive NOT-RUN.
