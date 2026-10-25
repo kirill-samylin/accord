@@ -80,6 +80,24 @@ func (s *Server) preauthName() string {
 func (s *Server) loginPage(w http.ResponseWriter, r *http.Request, message string, status int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	// A second login tab must not invalidate the form already open in the
+	// first one: a live preauth of this browser (one cookie, at least a minute
+	// left) is reused with the same CSRF and only its expiry is renewed. A
+	// missing, expired or consumed one is replaced as before.
+	if cookies := r.CookiesNamed(s.preauthName()); len(cookies) == 1 && cookies[0].Value != "" {
+		var csrf string
+		expiry := time.Now().Add(10 * time.Minute)
+		err := s.db.QueryRowContext(r.Context(), `UPDATE preauth SET expires=? WHERE hash=? AND expires>? RETURNING csrf`, expiry.UnixNano(), digest(cookies[0].Value), time.Now().Add(time.Minute).UnixNano()).Scan(&csrf)
+		if err == nil {
+			s.cookie(w, s.preauthName(), cookies[0].Value, expiry)
+			s.render(w, status, "login", Page{Title: "Вход в Accord", Error: message, CSRF: csrf})
+			return
+		}
+		if !errors.Is(err, sql.ErrNoRows) {
+			s.fail(w, r, nil, err)
+			return
+		}
+	}
 	secret, err := randomID()
 	if err != nil {
 		s.fail(w, r, nil, err)

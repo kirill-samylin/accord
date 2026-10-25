@@ -205,6 +205,10 @@ func (s *Store) AutomationPermission(ctx context.Context, a core.Actor, in core.
 				}
 				return true, validateAutomationPolicy(ctx, b, p.AutomationPolicySettings, now)
 			}
+			// Same answer as WorkflowCommand for a draft without a grant.
+			if (in.CommandKind == "resume" || in.CommandKind == "replan") && w.Grant == nil {
+				return false, core.Fail("validation", workflowDraftMessage)
+			}
 			if in.CommandKind == "resume" || in.CommandKind == "replan" {
 				return true, authorizeWorkflow(ctx, b, w, now)
 			}

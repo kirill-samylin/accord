@@ -15,7 +15,12 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import type { Agent, BoardEvent, Task } from "@/lib/types";
-import { date, initial, label, statusHint } from "@/lib/format";
+import { date, eventTitle, initial, label, statusHint } from "@/lib/format";
+import {
+  actorLabel,
+  profileReasonText,
+  type NamedProfile,
+} from "@/lib/event-display";
 import { AssignmentLabel } from "@/features/coordination/assignment-label";
 import { PersonChip } from "@/components/people";
 import { cn } from "@/lib/utils";
@@ -226,12 +231,17 @@ export function AgentRow({ agent }: { agent: Agent }) {
     </Link>
   );
 }
+// EventRows renders board/audit events with Russian titles; profile revision
+// refs and session hashes are replaced by names or neutral labels, keeping the
+// raw identifier only in a title attribute.
 export function EventRows({
   events,
   decisions = false,
+  profiles,
 }: {
   events: BoardEvent[];
   decisions?: boolean;
+  profiles?: readonly NamedProfile[];
 }) {
   if (!events.length)
     return (
@@ -254,7 +264,7 @@ export function EventRows({
               <span>
                 {decisions
                   ? (event.data?.question_title ?? "Ответ на вопрос")
-                  : label(event.type)}
+                  : eventTitle(event.type)}
               </span>
               {event.task_key ? (
                 <Link
@@ -269,12 +279,16 @@ export function EventRows({
             {decisions && event.data?.answer !== undefined ? (
               <p className="answer-text">{event.data.answer}</p>
             ) : null}
-            {event.reason ? <p className="muted">{event.reason}</p> : null}
+            {event.reason ? (
+              <EventReason reason={event.reason} profiles={profiles} />
+            ) : null}
             <div className="event-meta muted">
-              {event.data?.owner ? (
-                <PersonChip owner={event.data.owner} />
-              ) : event.session_id ? (
-                `Сессия ${event.session_id.slice(0, 12)}`
+              {event.data?.owner || event.actor ? (
+                <PersonChip owner={(event.data?.owner || event.actor)!} />
+              ) : event.session_id || event.data?.machine ? (
+                <span title={event.session_id}>
+                  {actorLabel(undefined, event.data?.machine, event.session_id)}
+                </span>
               ) : (
                 "Автор не записан"
               )}
@@ -297,6 +311,22 @@ export function EventRows({
         </div>
       ))}
     </div>
+  );
+}
+function EventReason({
+  reason,
+  profiles,
+}: {
+  reason: string;
+  profiles?: readonly NamedProfile[];
+}) {
+  const profile = profileReasonText(reason, profiles);
+  return profile ? (
+    <p className="muted" title={reason}>
+      {profile}
+    </p>
+  ) : (
+    <p className="muted">{reason}</p>
   );
 }
 export function Fact({ name, value }: { name: string; value?: ReactNode }) {

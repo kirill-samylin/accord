@@ -19,6 +19,9 @@ export const roleLabels: Record<string, string> = {
   tester: "Тестировщик",
   human: "Человек",
 };
+// Russian titles for every event type the server records: board events
+// (internal/store emit), automation/managed events and project/admin audit
+// rows. An unknown type falls back to a neutral title, never the raw code.
 export const eventLabels: Record<string, string> = {
   token_created: "Доступ выдан",
   token_revoked: "Доступ отозван",
@@ -50,7 +53,99 @@ export const eventLabels: Record<string, string> = {
   note_created: "Заметка создана",
   note_deleted: "Заметка удалена",
   blocked_changed: "Блокировка изменена",
+  profile_created: "Профиль агента создан",
+  profile_updated: "Профиль агента обновлён",
+  profile_state_changed: "Состояние профиля изменено",
+  automation_policy_created: "Политика автоматизации создана",
+  automation_policy_updated: "Политика автоматизации обновлена",
+  automation_history_archived: "История автоматизации перенесена в архив",
+  workflow_submitted: "Требование отправлено",
+  workflow_plan_submitted: "План работы предложен",
+  workflow_question_answered: "Ответ на вопрос автоматизации",
+  workflow_completed: "Требование выполнено",
+  workflow_pause: "Автоматизация приостановлена",
+  workflow_cancel: "Автоматизация отменена",
+  workflow_resume: "Автоматизация продолжена",
+  workflow_clarify: "Уточнение отправлено",
+  workflow_replan: "Запрошен новый план",
+  managed_host_enrolled: "Компьютер подключён",
+  managed_host_updated: "Компьютер обновлён",
+  managed_host_disabled: "Компьютер отключён",
+  managed_start_queued: "Запуск агента запрошен",
+  managed_stop_queued: "Остановка агента запрошена",
+  managed_resume_queued: "Продолжение агента запрошено",
+  managed_clarify_queued: "Уточнение агенту отправлено",
+  managed_session_closed: "Сессия агента закрыта",
+  managed_report_accepted: "Компьютер принял команду",
+  managed_report_started: "Агент запущен",
+  managed_report_completed: "Агент завершил работу",
+  managed_report_stopped: "Агент остановлен",
+  managed_report_failed: "Запуск агента не удался",
+  managed_report_recovered_stopped: "Остановка агента восстановлена",
+  managed_report_delivery_unknown: "Доставка команды не подтверждена",
+  project_created: "Проект создан",
+  project_updated: "Проект обновлён",
+  member_grant: "Участник добавлен",
+  member_set: "Роль участника изменена",
+  member_revoke: "Участник удалён",
+  repository_add: "Репозиторий добавлен",
+  repository_update: "Репозиторий обновлён",
+  repository_remove: "Репозиторий удалён",
+  person_created: "Человек добавлен",
+  person_updated: "Данные человека обновлены",
+  person_activated: "Человек снова активен",
+  person_deactivated: "Человек отключён",
+  identity_linked: "Доступ привязан к человеку",
+  credential_issued: "Доступ выдан",
+  credential_revoked: "Доступ отозван",
+  admin_bootstrapped: "Администратор назначен",
+  offline_owner_recovery: "Владелец восстановлен офлайн",
+  offline_restore: "Данные восстановлены из копии",
+  logout: "Выход из системы",
+  design_uploaded: "Материал загружен",
+  design_upload_aborted: "Загрузка материала прервана",
 };
+// The board activity filter accepts only this recorded vocabulary
+// (core.ValidControlEventType); other types are display-only.
+export const eventFilterTypes = [
+  "token_created",
+  "token_revoked",
+  "tokens_revoked_all",
+  "session_opened",
+  "task_created",
+  "task_updated",
+  "task_assigned",
+  "check_created",
+  "task_duplicate",
+  "claimed",
+  "released",
+  "commented",
+  "linked",
+  "unlinked",
+  "task_ready",
+  "task_in_progress",
+  "task_done",
+  "task_cancelled",
+  "human_answered",
+  "epic_open",
+  "epic_done",
+  "epic_cancelled",
+  "epic_reopened",
+  "lease_expired",
+  "lease_recovered",
+  "attempt_recovered",
+  "database_recovered",
+  "note_created",
+  "note_deleted",
+  "blocked_changed",
+  "profile_created",
+  "profile_updated",
+  "profile_state_changed",
+] as const;
+// eventTitle never shows a raw snake_case code to people.
+export function eventTitle(type: string) {
+  return eventLabels[type] ?? (type ? "Событие" : "—");
+}
 export const outcomeLabels: Record<string, string> = {
   approve: "Одобрено",
   changes_requested: "Нужны исправления",
@@ -90,12 +185,14 @@ export function duration(seconds: number) {
       ? `${number(seconds / 60)} мин`
       : `${number(seconds / 3600)} ч`;
 }
+// bytes uses binary units with the Russian decimal comma; files under 1 МиБ
+// are shown in КиБ so a small upload never reads as "0,0 МиБ".
 export function bytes(value: number) {
   return value < 1024
     ? `${value} Б`
     : value < 1048576
-      ? `${number(value / 1024)} КБ`
-      : `${number(value / 1048576)} МБ`;
+      ? `${number(value / 1024)} КиБ`
+      : `${number(value / 1048576)} МиБ`;
 }
 export function initial(value: string) {
   return value.trim().slice(0, 2).toUpperCase() || "A";

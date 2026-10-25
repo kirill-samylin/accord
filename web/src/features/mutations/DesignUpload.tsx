@@ -6,8 +6,16 @@ import { actionID, uploadBody, type MutationProps } from "./contracts";
 import { ActionNotice, FieldError } from "./ActionNotice";
 import { useAction } from "./useAction";
 import { uploadDraft } from "./uploadDraft";
+import { bytes } from "@/lib/format";
 
 const LIMIT = 50 * 1024 * 1024;
+// The design id is opaque; people recognise a material by its title.
+function designName(
+  designs: { design_id: string; title: string }[] | undefined,
+  id: string,
+) {
+  return designs?.find((v) => v.design_id === id)?.title ?? "без названия";
+}
 export function DesignUpload({
   page,
   onSuccess,
@@ -110,7 +118,10 @@ export function DesignUpload({
           ) : null}
           {draft.design_id ? (
             <div className="form-help">
-              <p>Материал {draft.design_id}. Предыдущие версии сохранятся.</p>
+              <p title={draft.design_id}>
+                Материал «{designName(page.designs, draft.design_id)}».
+                Предыдущие версии сохранятся.
+              </p>
               <button
                 className="button button-secondary"
                 type="button"
@@ -137,9 +148,7 @@ export function DesignUpload({
           </label>
           <p className="form-help" id="upload-help">
             PNG, JPEG, WEBP, PDF, ZIP, HTML или SVG · до 50 МиБ
-            {file
-              ? ` · ${(file.size / 1024 / 1024).toFixed(1)} МиБ выбрано`
-              : ""}
+            {file ? ` · выбрано ${bytes(file.size)}` : ""}
           </p>
           <button
             className="button"

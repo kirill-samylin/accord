@@ -2,6 +2,7 @@
 import type { CatalogPage } from "@/lib/projects";
 import type { CatalogMutationResult } from "@/lib/types";
 import { RegistryForm } from "./registry-form";
+import { validateRepository } from "@/lib/registry-validation";
 import { Disclosure } from "@/components/disclosure";
 export function ProjectRepositories({
   page,
@@ -37,9 +38,12 @@ export function ProjectRepositories({
                   version: String(repository.version),
                 }}
                 onSuccess={onSuccess}
+                validate={validateRepository}
               >
                 <label className="form-field">
-                  URL репозитория
+                  <span>
+                    URL репозитория<span className="required-mark"> *</span>
+                  </span>
                   <input
                     name="url"
                     required
@@ -89,9 +93,12 @@ export function ProjectRepositories({
             endpoint={endpoint}
             title="Подключить репозиторий"
             onSuccess={onSuccess}
+            validate={validateRepository}
           >
             <label className="form-field">
-              URL репозитория
+              <span>
+                URL репозитория<span className="required-mark"> *</span>
+              </span>
               <input
                 name="url"
                 required

@@ -3,11 +3,13 @@ import { useState } from "react";
 import { ProjectLink as Link } from "@/components/project-link";
 import { Fact } from "@/components/common";
 import {
+  assignmentText,
   canCoordinate,
   transitionChoices,
   type CoordinationOperation,
   type CoordinationReason,
 } from "@/lib/coordination";
+import { actorLabel } from "@/lib/event-display";
 import { date, label } from "@/lib/format";
 import type { MutationProps } from "../mutations/contracts";
 import { CoordinationDialog } from "./coordination-dialog";
@@ -73,13 +75,10 @@ export function CoordinationPanel({
                     className="inline-link"
                     href={`/app/profiles/${task.assignment.profile_id}?version=${task.assignment.profile_version}`}
                   >
-                    {task.assignment.profile_name} · версия{" "}
-                    {task.assignment.profile_version}
+                    {assignmentText(task)}
                   </Link>
-                ) : task.role === "human" ? (
-                  "Вопрос человеку"
                 ) : (
-                  "Общая очередь роли"
+                  assignmentText(task)
                 )
               }
             />
@@ -90,10 +89,14 @@ export function CoordinationPanel({
                 task.lease ? (
                   <Link
                     prefetch={false}
-                    className="mono break"
+                    title={task.lease.session_id}
                     href={`/app/agents/${task.lease.session_id}`}
                   >
-                    {task.lease.session_id}
+                    {actorLabel(
+                      task.holder_owner,
+                      task.holder_machine,
+                      task.lease.session_id,
+                    )}
                   </Link>
                 ) : (
                   "Не взята"

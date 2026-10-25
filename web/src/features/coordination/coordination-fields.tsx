@@ -94,14 +94,17 @@ export function CoordinationFields({
           </Select>
         </label>
         <label className="form-field">
-          Исходная задача
-          <input
+          <span>
+            Исходная задача
+            <span className="required-mark" aria-hidden>
+              {" "}
+              *
+            </span>
+          </span>
+          <TaskKeyInput
             name="from"
-            required
-            pattern="T-[1-9][0-9]*"
-            placeholder="T-…"
             value={draft.from}
-            onChange={(event) => change("from", event.target.value)}
+            change={(value) => change("from", value)}
             list="coordination-linked-tasks"
           />
           <datalist id="coordination-linked-tasks">
@@ -172,14 +175,17 @@ export function CoordinationFields({
       ) : null}
       {reopeningTask ? (
         <label className="form-field">
-          Задача с доказательством дефекта
-          <input
+          <span>
+            Задача с доказательством дефекта
+            <span className="required-mark" aria-hidden>
+              {" "}
+              *
+            </span>
+          </span>
+          <TaskKeyInput
             name="evidence_ref"
-            required
-            pattern="T-[1-9][0-9]*"
-            placeholder="T-…"
             value={draft.evidence_ref}
-            onChange={(event) => change("evidence_ref", event.target.value)}
+            change={(value) => change("evidence_ref", value)}
           />
           <span className="form-help">
             Нужна существующая завершённая задача с доказательством дефекта.
@@ -204,7 +210,13 @@ function Reason({
 }) {
   return (
     <label className="form-field">
-      Причина
+      <span>
+        Причина
+        <span className="required-mark" aria-hidden>
+          {" "}
+          *
+        </span>
+      </span>
       <textarea
         name="reason"
         rows={3}
@@ -214,5 +226,42 @@ function Reason({
         onChange={(event) => change(event.target.value)}
       />
     </label>
+  );
+}
+// Task keys are typed as T-12; lowercase input is upper-cased as typed and a
+// mismatch shows a Russian message instead of the browser's generic one.
+function TaskKeyInput({
+  name,
+  value,
+  change,
+  list,
+}: {
+  name: string;
+  value: string;
+  change: (value: string) => void;
+  list?: string;
+}) {
+  return (
+    <input
+      name={name}
+      required
+      pattern="T-[1-9][0-9]*"
+      placeholder="T-…"
+      autoCapitalize="characters"
+      spellCheck={false}
+      value={value}
+      list={list}
+      onChange={(event) => {
+        event.currentTarget.setCustomValidity("");
+        change(event.target.value.trim().toUpperCase());
+      }}
+      onInvalid={(event) =>
+        event.currentTarget.setCustomValidity(
+          event.currentTarget.validity.valueMissing
+            ? "Укажите ключ задачи, например T-12"
+            : "Ключ задачи пишется как T- и номер, например T-12",
+        )
+      }
+    />
   );
 }

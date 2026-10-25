@@ -3,6 +3,7 @@ import { Select } from "@/components/ui/select";
 import type { CatalogPage } from "@/lib/projects";
 import type { CatalogMutationResult } from "@/lib/types";
 import { RegistryForm } from "./registry-form";
+import { validateMember } from "@/lib/registry-validation";
 import { Disclosure } from "@/components/disclosure";
 const roleNames: Record<string, string> = {
   owner: "Владелец",
@@ -92,15 +93,19 @@ export function ProjectMembers({
           title="Предоставить доступ"
           fields={{ action: "grant" }}
           onSuccess={onSuccess}
+          validate={validateMember}
         >
           <label className="form-field">
-            ID учётной записи
+            <span>
+              ID учётной записи<span className="required-mark"> *</span>
+            </span>
             <input
               name="identity_id"
               required
               maxLength={160}
               autoComplete="off"
               spellCheck={false}
+              placeholder="i_…"
             />
           </label>
           <label className="form-field">

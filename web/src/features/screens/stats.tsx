@@ -20,6 +20,14 @@ export function StatsScreen({ page }: { page: PageData }) {
       </div>
     );
   const totals = stats.totals;
+  // An empty key collects work outside any group (no epic, no role holder).
+  const emptyGroup: Record<string, string> = {
+    epic: "Без эпика",
+    role: "Без роли",
+    owner: "Без исполнителя",
+  };
+  const groupName = (key: string) =>
+    key ? label(key) : (emptyGroup[stats.group_by] ?? "Без группы");
   const maximum = Math.max(
     1,
     ...stats.groups.map((group) => group.metrics.first_completions),
@@ -62,11 +70,14 @@ export function StatsScreen({ page }: { page: PageData }) {
           </label>
         </div>
       </div>
-      {stats.incomplete_data ? (
+      {stats.incomplete_events > 0 ? (
         <div className="notice" role="status">
-          Часть исторических данных неполная: {stats.incomplete_events}{" "}
-          {plural(stats.incomplete_events, "событие", "события", "событий")}
-          без полного учёта.
+          {`Часть исторических данных неполная: ${stats.incomplete_events} ${plural(stats.incomplete_events, "событие", "события", "событий")} без полного учёта.`}
+        </div>
+      ) : stats.incomplete_data ? (
+        <div className="notice" role="status">
+          Часть исторических данных неполная: показатели за период могут быть
+          занижены.
         </div>
       ) : null}
       <div className="metrics-grid">
@@ -101,14 +112,14 @@ export function StatsScreen({ page }: { page: PageData }) {
               aria-label={stats.groups
                 .map(
                   (group) =>
-                    `${label(group.key)}: ${group.metrics.first_completions}`,
+                    `${groupName(group.key)}: ${group.metrics.first_completions}`,
                 )
                 .join(", ")}
             >
               {stats.groups.map((group) => (
                 <div className="group-bar-row" key={group.key}>
                   <span className="truncate" title={group.key}>
-                    {label(group.key)}
+                    {groupName(group.key)}
                   </span>
                   <div className="bar-track">
                     <GrowBar
@@ -165,7 +176,7 @@ export function StatsScreen({ page }: { page: PageData }) {
             <tbody>
               {stats.groups.map((group) => (
                 <tr key={group.key}>
-                  <td>{label(group.key)}</td>
+                  <td>{groupName(group.key)}</td>
                   <td>{group.metrics.first_completions}</td>
                   <td>{group.metrics.rework_completions}</td>
                   <td>{group.metrics.returns}</td>

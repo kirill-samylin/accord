@@ -28,6 +28,10 @@ func validateProfile(v core.ProfileSettings) error {
 			return core.Fail("validation", "Имя и модель не должны содержать управляющие символы")
 		}
 	}
+	// Multi-line texts follow the shared task-description rule.
+	if !plainText(v.Description, true) || !plainText(v.Instructions, true) {
+		return core.Fail("validation", "Описание и инструкции могут содержать переносы строк и табуляцию, но не другие управляющие символы")
+	}
 	switch v.Provider {
 	case "unconfigured", "openai", "anthropic", "local", "custom":
 	default:

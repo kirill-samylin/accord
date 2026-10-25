@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { ScrollText } from "lucide-react";
 import type { AdminPage } from "@/lib/projects";
+import { plural } from "@/lib/format";
 import {
   auditDetails,
   actorName,
@@ -18,7 +19,7 @@ export function AuditList({ page }: { page: AdminPage }) {
       <div className="admin-section-head">
         <h2 id="admin-audit-title">Журнал</h2>
         <span className="muted">
-          Последние {page.audit.length} записей · новые первыми
+          {`${plural(page.audit.length, "Последняя", "Последние", "Последние")} ${page.audit.length} ${plural(page.audit.length, "запись", "записи", "записей")} · новые первыми`}
         </span>
       </div>
       {entries.length ? (

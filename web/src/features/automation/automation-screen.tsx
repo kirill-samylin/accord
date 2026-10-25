@@ -90,10 +90,14 @@ export function AutomationScreen({
             detail={detail}
             managed={page.managed}
             delivery={page.managed_run}
+            paged={Boolean(page.draft?.cursor || detail.next_cursor)}
           />
           <WorkflowQuestions page={page} onSuccess={onSuccess} />
           <WorkflowControls page={page} onSuccess={onSuccess} />
-          <WorkflowReports detail={detail} />
+          <WorkflowReports
+            detail={detail}
+            paged={Boolean(page.draft?.cursor || detail.next_cursor)}
+          />
           {detail.next_cursor ? (
             <Link
               className="button button-secondary"
@@ -178,8 +182,17 @@ export function AutomationScreen({
               </div>
             ) : (
               <EmptyState
-                title="На этой странице требований нет"
-                description="Просмотрите другие страницы истории, если они доступны, или опишите новое требование выше."
+                {...(page.draft?.cursor
+                  ? {
+                      title: "На этой странице требований нет",
+                      description:
+                        "Просмотрите другие страницы истории или вернитесь к началу списка.",
+                    }
+                  : {
+                      title: "Требований пока нет",
+                      description:
+                        "История появится после первых действий: опишите требование выше.",
+                    })}
               />
             )}
             {page.automation?.next_cursor ? (

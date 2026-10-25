@@ -97,19 +97,24 @@ func (s *Store) ControlTeam(ctx context.Context, a core.Actor) (core.TeamView, e
 					member(v.CreatedBy).CreatedRecent++
 				}
 			}
+			// Completion is credited to the person behind the completing attempt,
+			// including human answers; the attempt is already closed here, so
+			// the open-attempt helper currentAttempt does not apply.
 			if t.State == "done" {
-				if at := currentAttempt(t); at != nil && at.EndedAt != nil && now.Sub(*at.EndedAt) < teamWindow {
-					if author := b.Sessions[t.AuthorSession]; author != nil {
-						member(author.Owner).DoneRecent++
+				if at := completedAttempt(t); at != nil && now.Sub(*at.EndedAt) < teamWindow {
+					owner := ""
+					if sess := b.Sessions[at.SessionID]; sess != nil {
+						owner = sess.Owner
 					}
+					if owner == "" {
+						owner = credentials[at.PrincipalID].owner
+					}
+					member(owner).DoneRecent++
 				}
 			}
-			if t.State == "ready" && t.Lease == nil && !blocked(b, t) && assignmentAvailable(b, t) && t.Role != "human" {
-				epic := b.Tasks[t.EpicKey]
-				if epic != nil && epic.State == "open" {
-					view.UnclaimedTotal++
-					view.Unclaimed = append(view.Unclaimed, viewTask(b, t))
-				}
+			if teamUnclaimed(b, t) {
+				view.UnclaimedTotal++
+				view.Unclaimed = append(view.Unclaimed, viewTask(b, t))
 			}
 		}
 		sort.Slice(view.Unclaimed, func(i, j int) bool {
@@ -158,4 +163,25 @@ func (s *Store) ControlTeam(ctx context.Context, a core.Actor) (core.TeamView, e
 		}
 		return view, nil
 	})
+}
+
+// teamUnclaimed is "waiting for an executor": ready, unleased, not blocked by
+// unfinished dependencies, assignable, not a human question, in an open epic.
+// The Team screen and the overview's tasks_available share this predicate.
+func teamUnclaimed(b *board, t *core.Task) bool {
+	if t.Type != "task" || t.State != "ready" || t.Lease != nil || t.Role == "human" || blocked(b, t) || !assignmentAvailable(b, t) {
+		return false
+	}
+	epic := b.Tasks[t.EpicKey]
+	return epic != nil && epic.State == "open"
+}
+
+// completedAttempt is the closed attempt that moved a done task to done.
+func completedAttempt(t *core.Task) *core.Attempt {
+	for i := len(t.Attempts) - 1; i >= 0; i-- {
+		if at := &t.Attempts[i]; at.EndedAt != nil && at.Reason == "completed" {
+			return at
+		}
+	}
+	return nil
 }

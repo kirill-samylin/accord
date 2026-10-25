@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Moon, Sun, Plus, FolderKanban, ArrowLeft } from "lucide-react";
 import { ProjectLink as Link } from "@/components/project-link";
@@ -16,16 +16,26 @@ import { webToApp } from "@/lib/api";
 import { useAppearance } from "../hooks/use-appearance";
 import { useProjectScope } from "./project-context";
 import { RegistryForm } from "./registry-form";
+import { validateProjectFields } from "@/lib/registry-validation";
 import { OpenProject } from "./open-project";
 import { ProjectDetails } from "./project-details";
 import { projectRole } from "./project-members";
 export default function CatalogWorkspace({ page }: { page: CatalogPage }) {
   const [create, setCreate] = useState(false);
-  const [archived, setArchived] = useState(false);
   const appearance = useAppearance();
   const scope = useProjectScope();
   const router = useRouter();
   const search = useSearchParams();
+  const path = usePathname();
+  // The archived toggle lives in ?archived=1 (client-only) so reload and Back
+  // keep it.
+  const archived = search.get("archived") === "1";
+  function setArchived(value: boolean) {
+    const next = new URLSearchParams(search.toString());
+    if (value) next.set("archived", "1");
+    else next.delete("archived");
+    router.push(`${path}${next.size ? `?${next}` : ""}`);
+  }
   const justCreated = search.get("created") === "1";
   const client = useQueryClient();
   const projects = page.registry.projects ?? [];
@@ -42,7 +52,9 @@ export default function CatalogWorkspace({ page }: { page: CatalogPage }) {
         return;
       }
       setCreate(false);
-      router.replace(target);
+      // Re-navigating to the page already shown remounts its forms and drops
+      // keyboard focus; refreshing the data is enough there.
+      if (target !== path) router.replace(target);
     }
     void client.invalidateQueries();
   }
@@ -223,7 +235,7 @@ export default function CatalogWorkspace({ page }: { page: CatalogPage }) {
             endpoint="/web/catalog/projects"
             title="Создать проект"
             onSuccess={created}
-            validate={validateProject}
+            validate={validateProjectFields}
           >
             <label className="form-field">
               <span>
@@ -276,16 +288,4 @@ function saveProjectName(value: string) {
   } catch {
     // Draft persistence is optional.
   }
-}
-function validateProject(values: URLSearchParams) {
-  const errors: Record<string, string> = {};
-  const name = (values.get("name") ?? "").trim();
-  if (!name) errors.name = "Введите название проекта";
-  else if (name.length > 200)
-    errors.name = "Название длиннее 200 символов — сократите его";
-  const url = (values.get("repository_url") ?? "").trim();
-  if (url && !/^(https:\/\/[^\s@]+\/\S+|ssh:\/\/git@[^\s/]+\/\S+)$/.test(url))
-    errors.repository_url =
-      "Адрес репозитория: https://github.com/owner/repo.git или ssh://git@host/owner/repo.git";
-  return errors;
 }

@@ -12,6 +12,7 @@ import { isAdminPage, isCatalogPage, type AdminPage } from "./projects.ts";
 import {
   auditTime,
   personProjects,
+  samePersonName,
   tokenFileName,
   unlinkedIdentities,
   validateCredential,
@@ -179,4 +180,11 @@ test("people see their projects through identities, unlinked identities surface 
   assert.notEqual(auditTime(1761350400), "—");
   assert.notEqual(auditTime("2026-10-25T00:00:00Z"), "—");
   assert.equal(auditTime(1761350400), auditTime("2026-10-25T00:00:00Z"));
+});
+
+test("a person with the same name only warns", () => {
+  const people = [{ name: "Анна  Иванова" }];
+  assert.equal(samePersonName(people, " анна иванова "), true);
+  assert.equal(samePersonName(people, "Анна"), false);
+  assert.equal(samePersonName(people, "   "), false);
 });

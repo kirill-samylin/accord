@@ -103,9 +103,12 @@ func (s *Server) mutate(w http.ResponseWriter, r *http.Request, b *browserSessio
 			return
 		}
 	case "create":
-		priority, err := strconv.Atoi(r.PostForm.Get("priority"))
-		if err != nil && r.PostForm.Get("priority") != "" {
-			s.mutationError(w, r, b, core.Fail("validation", "Приоритет должен быть числом"))
+		priority, err := formPriority(r.PostForm.Get("priority"))
+		if err == nil {
+			err = formTextError(r.PostForm, []string{"title"}, []string{"description", "force_reason"})
+		}
+		if err != nil {
+			s.mutationError(w, r, b, err)
 			return
 		}
 		areas := []string{}
@@ -140,6 +143,12 @@ func (s *Server) mutate(w http.ResponseWriter, r *http.Request, b *browserSessio
 		if op == "release" && (strings.TrimSpace(lease.Reason) == "" || len(lease.Reason) > 4096) {
 			s.mutationError(w, r, b, core.Fail("validation", "Укажите причину до 4 КиБ"))
 			return
+		}
+		if op != "heartbeat" {
+			if err := formTextError(r.PostForm, nil, []string{"answer", "reason"}); err != nil {
+				s.mutationError(w, r, b, err)
+				return
+			}
 		}
 		if op == "answer" {
 			input = core.TransitionInput{LeaseInput: lease, State: "done", Evidence: &core.Evidence{Answer: r.PostForm.Get("answer")}}
@@ -238,50 +247,4 @@ func (s *Server) mutationError(w http.ResponseWriter, r *http.Request, b *browse
 		}
 	}
 	s.render(w, errorStatus(err), name, p)
-}
-
-func fieldErrors(r *http.Request, err error) map[string]string {
-	fields := map[string]string{}
-	if errorStatus(err) != 400 {
-		return fields
-	}
-	values := r.PostForm
-	switch {
-	case r.URL.Path == "/web/tasks":
-		if strings.TrimSpace(values.Get("title")) == "" || len([]rune(values.Get("title"))) > 200 {
-			fields["title"] = "Введите заголовок до 200 символов"
-		}
-		if values.Get("type") == "task" && strings.TrimSpace(values.Get("description")) == "" || len(values.Get("description")) > 16384 {
-			fields["description"] = "Введите описание до 16 КиБ"
-		}
-		if values.Get("type") == "task" && values.Get("epic_key") == "" {
-			fields["epic_key"] = "Выберите эпик"
-		}
-		if values.Get("type") == "task" && !core.ValidRole(values.Get("role")) {
-			fields["role"] = "Выберите роль"
-		}
-		if values.Get("role") == "reviewer" || values.Get("role") == "tester" {
-			if values.Get("target_key") == "" {
-				fields["target_key"] = "Укажите проверяемую задачу разработчика"
-			}
-			if len(values.Get("target_commit")) != 40 {
-				fields["target_commit"] = "Укажите полный commit SHA"
-			}
-		}
-	case strings.HasSuffix(r.URL.Path, "/answer"):
-		fields["answer"] = publicError(err)
-	case strings.HasSuffix(r.URL.Path, "/release"):
-		fields["reason"] = publicError(err)
-	case strings.HasSuffix(r.URL.Path, "/update"):
-		if strings.TrimSpace(values.Get("title")) == "" || len([]rune(values.Get("title"))) > 200 {
-			fields["title"] = "Введите заголовок до 200 символов"
-		}
-		if len(values.Get("description")) > 16384 {
-			fields["description"] = "Введите описание до 16 КиБ"
-		}
-	}
-	if len(fields) == 0 {
-		fields["title"] = publicError(err)
-	}
-	return fields
 }

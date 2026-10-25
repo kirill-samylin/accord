@@ -28,7 +28,7 @@ const instructions: Record<AutomationRole, string> = {
   developer:
     "Выполни назначенную задачу, сохрани ограничения проекта и чужую работу. Проверь изменения, создай локальный commit и передай точный SHA и evidence в Accord. Не делай push, merge или deploy без отдельного поручения.",
   reviewer:
-    "Независимо проверь назначенный точный SHA, корректность, безопасность и тесты. Не меняй исходники. Дай approve, changes_requested либо blocked с конкретными evidence и местами исправления. Не считай выход CLI подтверждением результата.",
+    "Независимо проверь назначенный точный SHA, корректность, безопасность и тесты. Не меняй исходники. Подтверди (approve), запроси исправления (changes_requested) либо заблокируй (blocked) с конкретными evidence и местами исправления. Не считай выход CLI подтверждением результата.",
   tester:
     "Проверь только назначенный SHA после положительного ревью. Запусти разрешённые реальные проверки через Accord, прочитай их результаты и передай evidence. Невыполненные тесты обозначай NOT-RUN; ошибки возвращай разработчику.",
 };
@@ -84,13 +84,23 @@ function TeamRole({
     );
   }
   return (
-    <section className="automation-card screen-stack">
+    <section
+      className="automation-card screen-stack"
+      data-created={created || undefined}
+    >
       <h3>
         {stageLabels[role]} {created ? "· профиль создан" : ""}
       </h3>
+      {/* A created profile is read-only here; edit it in Профили. */}
       <fieldset disabled={created || action.locked || scope.locked}>
         <label className="form-field">
-          Название
+          <span>
+            Название
+            <span className="required-mark" aria-hidden>
+              {" "}
+              *
+            </span>
+          </span>
           <input
             value={draft.name}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
@@ -102,7 +112,7 @@ function TeamRole({
             value={draft.provider}
             onChange={(e) => setDraft({ ...draft, provider: e.target.value })}
           >
-            <option value="unconfigured">Выбрать при настройке запуска</option>
+            <option value="unconfigured">Выбрать позже</option>
             <option value="openai">Codex</option>
             <option value="anthropic">Claude Code</option>
           </Select>
@@ -130,7 +140,11 @@ function TeamRole({
           >
             Создать профиль
           </button>
-        ) : null}
+        ) : (
+          <p className="form-help" role="status">
+            Профиль создан. Изменить его можно в разделе «Профили».
+          </p>
+        )}
       </fieldset>
       <ActionNotice
         message={action.message}
@@ -168,9 +182,9 @@ export function TeamSetup({
           <DialogTitle>Подготовить команду</DialogTitle>
         </DialogHeader>
         <p id="team-setup-help" className="form-help">
-          Четыре редактируемых профиля. Каждый создаётся отдельно;
-          подтверждённых: {created} из 4. Подключение компьютера и согласие
-          владельца на запуск настраиваются отдельно.
+          Четыре редактируемых профиля. Каждый создаётся отдельно; создано в
+          этом окне: {created} из 4. Подключение компьютера и согласие владельца
+          на запуск настраиваются отдельно.
         </p>
         <div className="automation-team">
           {automationRoles.map((role) => (

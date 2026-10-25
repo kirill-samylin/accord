@@ -1,13 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readPage, submitAction } from "./api.ts";
-import { clearSessionDrafts } from "./session-drafts.ts";
+import {
+  answerDraftKey,
+  clearSessionDrafts,
+  loadAnswerDraft,
+  saveAnswerDraft,
+} from "./session-drafts.ts";
 
 const privateKeys = [
   "accord:create-draft:default",
   "accord:create-draft:p_" + "a".repeat(32),
   "accord:pending-task:default",
   "accord:create-project-name",
+  "accord:answer-draft:default:T-1",
 ];
 
 async function withDrafts(run: (values: Map<string, string>) => Promise<void>) {
@@ -102,6 +108,33 @@ test("storage denial does not interrupt authentication cleanup", () => {
   } finally {
     if (previousWindow)
       Object.defineProperty(globalThis, "window", previousWindow);
+    else Reflect.deleteProperty(globalThis, "window");
+  }
+});
+
+test("answer drafts are scoped by project and question", () => {
+  const previous = Object.getOwnPropertyDescriptor(globalThis, "window");
+  const values = new Map<string, string>();
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    value: {
+      sessionStorage: {
+        getItem: (key: string) => values.get(key) ?? null,
+        setItem: (key: string, value: string) => values.set(key, value),
+        removeItem: (key: string) => values.delete(key),
+      },
+    },
+  });
+  try {
+    const a = "p_" + "a".repeat(32);
+    saveAnswerDraft(a, "T-1", "да");
+    assert.equal(loadAnswerDraft(a, "T-1"), "да");
+    assert.equal(loadAnswerDraft("default", "T-1"), "");
+    assert.equal(answerDraftKey(a, "T-2") === answerDraftKey(a, "T-1"), false);
+    saveAnswerDraft(a, "T-1", "");
+    assert.equal(values.size, 0);
+  } finally {
+    if (previous) Object.defineProperty(globalThis, "window", previous);
     else Reflect.deleteProperty(globalThis, "window");
   }
 });

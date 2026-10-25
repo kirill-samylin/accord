@@ -9,6 +9,17 @@ import { catalogBody } from "@/lib/catalog-action";
 import { withMutationDeadline } from "../mutations/deadline";
 import { useProjectScope } from "./project-context";
 type Phase = "idle" | "sending" | "uncertain" | "blocked" | "settled";
+// A definitive field rejection (400 VALIDATION, a well-formed id that does
+// not exist, or a conflict the server marks editable such as a duplicate)
+// leaves the form editable with the message shown. The action id may already
+// be bound to the rejected payload, so the next send first reads a fresh page
+// (new action ids) instead of replaying the old one.
+function definitiveFieldError(result: CatalogMutationResult) {
+  const code = result.error?.code?.toUpperCase() ?? "";
+  return (
+    result.editable === true || code === "VALIDATION" || code === "NOT_FOUND"
+  );
+}
 export function useCatalogAction(
   initialPage: CatalogPage,
   onSuccess: (value: CatalogMutationResult) => void,
@@ -26,6 +37,7 @@ export function useCatalogAction(
   const mounted = useRef(true);
   const sending = useRef(false);
   const pending = useRef<{ path: string; body: URLSearchParams } | null>(null);
+  const staleAction = useRef(false);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -76,28 +88,55 @@ export function useCatalogAction(
       onSuccess(result);
       return;
     }
-    setPhase(result.retry_same_action ? "uncertain" : "blocked");
+    const editable = !result.retry_same_action && definitiveFieldError(result);
+    if (editable) staleAction.current = true;
+    setPhase(
+      result.retry_same_action ? "uncertain" : editable ? "idle" : "blocked",
+    );
     setErrors(result.field_errors ?? result.page?.field_errors ?? {});
     setMessage(result.error?.message ?? "Не удалось сохранить изменения");
   }
-  function send(endpoint: string, key: string, values: URLSearchParams) {
+  async function readFresh() {
+    const fresh = await readPage<CatalogPage>(
+      refreshPath ?? path,
+      undefined,
+      scope.key,
+    );
+    setPage(fresh);
+    client.setQueryData(pageQueryKey(refreshPath ?? path), fresh);
+    return fresh;
+  }
+  async function send(endpoint: string, key: string, values: URLSearchParams) {
     if (phase !== "idle" || scope.locked || pending.current || sending.current)
       return;
-    const body = catalogBody(page, key, values);
-    if (!body.get("action_id") || !body.get("csrf")) return;
+    let source = page;
+    if (staleAction.current) {
+      setPhase("sending");
+      try {
+        source = await readFresh();
+        staleAction.current = false;
+      } catch {
+        if (!mounted.current) return;
+        setPhase("idle");
+        setMessage("Не удалось обновить форму. Ваши поля сохранены.");
+        return;
+      }
+      if (!mounted.current) return;
+      setPhase("idle");
+    }
+    const body = catalogBody(source, key, values);
+    if (!body.get("action_id") || !body.get("csrf")) {
+      setMessage("Действие сейчас недоступно. Обновите страницу.");
+      return;
+    }
     void dispatch({ path: endpoint, body });
   }
   async function refresh() {
     if (pending.current || sending.current) return;
     try {
       setPhase("sending");
-      const fresh = await readPage<CatalogPage>(
-        refreshPath ?? path,
-        undefined,
-        scope.key,
-      );
-      setPage(fresh);
-      client.setQueryData(pageQueryKey(refreshPath ?? path), fresh);
+      await readFresh();
+      staleAction.current = false;
       void client.invalidateQueries({ queryKey: ["project-catalog"] });
       onRefresh?.();
       setPhase("idle");
@@ -120,5 +159,13 @@ export function useCatalogAction(
     retry: () => {
       if (pending.current) void dispatch(pending.current);
     },
+    // Editing a field withdraws its stale rejection.
+    clearError: (name: string) =>
+      setErrors((current) => {
+        if (!(name in current)) return current;
+        const next = { ...current };
+        delete next[name];
+        return next;
+      }),
   };
 }

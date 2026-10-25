@@ -17,6 +17,7 @@ import { AuditList } from "./audit-list";
 import {
   identitySource,
   personViews,
+  samePersonName,
   unlinkedIdentities,
   validatePerson,
 } from "./admin-model";
@@ -28,6 +29,7 @@ export default function AdminScreen({ page }: { page: AdminPage }) {
   const client = useQueryClient();
   const [selected, setSelected] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [duplicateName, setDuplicateName] = useState(false);
   const people = personViews(page);
   const unlinked = unlinkedIdentities(page);
   const person = page.people.find((item) => item.id === selected);
@@ -118,7 +120,26 @@ export default function AdminScreen({ page }: { page: AdminPage }) {
                   <span>
                     Имя<span className="required-mark"> *</span>
                   </span>
-                  <input name="name" maxLength={64} autoComplete="off" />
+                  <input
+                    name="name"
+                    maxLength={64}
+                    autoComplete="off"
+                    aria-describedby="person-name-warning"
+                    onInput={(event) =>
+                      setDuplicateName(
+                        samePersonName(page.people, event.currentTarget.value),
+                      )
+                    }
+                  />
+                  <span
+                    id="person-name-warning"
+                    className="form-help"
+                    role="status"
+                  >
+                    {duplicateName
+                      ? "Человек с таким именем уже есть — это другой человек? Добавить всё равно можно."
+                      : ""}
+                  </span>
                 </label>
                 <label className="form-field">
                   Глобальная роль

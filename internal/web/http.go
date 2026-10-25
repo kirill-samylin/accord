@@ -205,26 +205,6 @@ func errorStatus(err error) int {
 		return 409
 	}
 }
-func publicError(err error) string {
-	var e *core.Error
-	if !errors.As(err, &e) {
-		return "Сервис временно недоступен. Результат действия не подтверждён; повторите ту же отправку"
-	}
-	switch e.Code {
-	case "UNAUTHORIZED":
-		return "Доступ истёк или отозван. Войдите снова"
-	case "FORBIDDEN_ROLE":
-		return "Недостаточно прав для этого действия"
-	case "NOT_FOUND":
-		return "Не найдено"
-	case "LEASE_LOST":
-		return "Время ответа истекло. Текст сохранён на этой странице. Обновите состояние вопроса"
-	case "LEASE_HELD":
-		return "Задачу сейчас выполняет другой участник или агент. Обновите страницу и дождитесь освобождения"
-	default:
-		return e.Message
-	}
-}
 func (s *Server) fail(w http.ResponseWriter, r *http.Request, b *browserSession, err error) {
 	browserErrorCode(w, err)
 	p := Page{Title: "Действие не выполнено", Error: publicError(err), Draft: draft(r)}

@@ -189,6 +189,9 @@ export interface Overview {
   tasks_total: number;
   tasks_created: number;
   tasks_ready: number;
+  // Ready, unblocked and unclaimed (store/team.go predicate); optional for
+  // older servers.
+  tasks_available?: number;
   tasks_in_progress: number;
   tasks_done: number;
   tasks_cancelled: number;
@@ -205,6 +208,8 @@ export interface BoardEvent {
   task_key?: string;
   session_id?: string;
   reason?: string;
+  /** Person owning the event's session (browser activity projection only). */
+  actor?: string;
   at: string;
   data?: {
     answer?: string;
@@ -360,6 +365,9 @@ export interface CatalogMutationResult extends Omit<MutationResult, "page"> {
   person?: Person;
   identity?: AdminIdentity;
   issued?: IssuedCredential;
+  /** The rejection depends only on the submitted fields (a duplicate, a
+   * limit): the form stays editable instead of asking for a reload. */
+  editable?: boolean;
 }
 export interface DashboardData {
   overview: Overview;

@@ -141,6 +141,14 @@
 .popover[data-state="closed"] {
   animation: pop-out 100ms ease-in forwards;
 }
+/* Select and dropdown menus are modal layers: while Presence keeps them
+   mounted for an exit animation, Radix leaves body pointer-events: none, so
+   the first click after choosing an option was swallowed. They close
+   instantly instead. */
+.select-content[data-state="closed"],
+.menu-content[data-state="closed"] {
+  animation: none;
+}
 @keyframes pop-in {
   from {
     opacity: 0;

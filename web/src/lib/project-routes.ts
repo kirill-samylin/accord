@@ -58,8 +58,13 @@ export function screenPath(path: string): string {
   const route = projectRoute(path);
   return route ? `/app${route.tail || ""}` : internal(path).pathname;
 }
+// View state kept only in the app URL (tabs, toggles) so reload and Back keep
+// it. The Go page handlers reject unknown query parameters, so these never
+// reach /web/.
+export const clientOnlyParams = ["tab", "archived"] as const;
 export function appToWebRoute(path: string): string {
   const url = internal(path);
+  for (const name of clientOnlyParams) url.searchParams.delete(name);
   const route = projectRoute(path);
   if (route) {
     if (!url.pathname.startsWith("/app/"))

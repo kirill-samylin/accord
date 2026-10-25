@@ -5,7 +5,7 @@ import type { MutationProps } from "../mutations/contracts";
 import { actionBody, actionID } from "../mutations/contracts";
 import { ActionNotice } from "../mutations/ActionNotice";
 import { useAction } from "../mutations/useAction";
-import { workflowControlReason } from "@/lib/automation";
+import { resumePolicyReason, workflowControlReason } from "@/lib/automation";
 import { messageError } from "@/lib/managed-agents";
 export function WorkflowControls({ page, onSuccess }: MutationProps) {
   const action = useAction(page, onSuccess);
@@ -20,6 +20,17 @@ export function WorkflowControls({ page, onSuccess }: MutationProps) {
   const flow = detail.workflow;
   const stale =
     flow.id !== page.workflow?.workflow.id || flow.version !== expectedVersion;
+  const chosenPolicy = (action.page.automation?.policies ?? []).some(
+    (p) => `${p.id}:${p.version}` === refreshPolicy && p.state === "active",
+  );
+  const resumeHint =
+    !stale &&
+    workflowControlReason(
+      "resume",
+      detail,
+      action.page.project?.can_write !== false,
+      chosenPolicy,
+    ) === resumePolicyReason;
   function send(kind: string) {
     if (!detail) return;
     const invalid = messageError(text, kind === "clarify" || kind === "replan");
@@ -105,6 +116,7 @@ export function WorkflowControls({ page, onSuccess }: MutationProps) {
               kind,
               detail,
               action.page.project?.can_write !== false,
+              chosenPolicy,
             );
             return (
               <button
@@ -123,6 +135,12 @@ export function WorkflowControls({ page, onSuccess }: MutationProps) {
             );
           })}
         </div>
+        {resumeHint ? (
+          <p className="form-help" role="note">
+            «Продолжить» недоступно: у требования нет действующего разрешения.
+            Выберите политику выше — продолжение запустит работу по ней.
+          </p>
+        ) : null}
       </fieldset>
       {stale ? (
         <div className="notice">

@@ -2,6 +2,7 @@
 import type { CatalogPage } from "@/lib/projects";
 import type { CatalogMutationResult } from "@/lib/types";
 import { RegistryForm } from "./registry-form";
+import { validateProjectName } from "@/lib/registry-validation";
 import { ProjectRepositories } from "./project-repositories";
 import { ProjectMembers, projectRole } from "./project-members";
 import { OpenProject } from "./open-project";
@@ -48,14 +49,18 @@ export function ProjectDetails({
               actionKey="update"
               endpoint={`/web/catalog/projects/${project.id}/update`}
               title="Сохранить название"
+              savedMessage="Название сохранено"
               fields={{
                 version: String(project.version),
                 state: project.state,
               }}
               onSuccess={onSuccess}
+              validate={validateProjectName}
             >
               <label className="form-field">
-                Название проекта
+                <span>
+                  Название проекта<span className="required-mark"> *</span>
+                </span>
                 <input
                   name="name"
                   required
@@ -87,10 +92,17 @@ export function ProjectDetails({
                   }
                   onSuccess={onSuccess}
                 />
-                <p className="form-help">
-                  Проект нельзя архивировать, пока агенты выполняют в нём
-                  задачи. Архив сохраняет историю и доступ для чтения.
-                </p>
+                {project.state === "archived" ? (
+                  <p className="form-help">
+                    Проект в архиве: история и доступ для чтения сохранены.
+                    Восстановите его, чтобы снова создавать задачи.
+                  </p>
+                ) : (
+                  <p className="form-help">
+                    Проект нельзя архивировать, пока агенты выполняют в нём
+                    задачи. Архив сохраняет историю и доступ для чтения.
+                  </p>
+                )}
               </>
             ) : (
               <p className="form-help">

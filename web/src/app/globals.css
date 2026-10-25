@@ -94,6 +94,27 @@
   --amber: #f0b84a;
   --red: #ff6b9a;
 }
+/* Until the theme script (layout.tsx, next/script beforeInteractive) sets
+   data-theme, follow the OS preference so a dark system never flashes light.
+   Keep these tokens in sync with the block above. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --background: #141414;
+    --foreground: var(--paper);
+    --surface: #1f1d1a;
+    --primary: var(--paper);
+    --primary-foreground: var(--ink);
+    --muted: #2a2723;
+    --muted-foreground: #bdb4a6;
+    --edge: var(--paper);
+    --link-hover: #8fa8ff;
+    --sidebar: #141414;
+    --green: #5fd38a;
+    --amber: #f0b84a;
+    --red: #ff6b9a;
+  }
+}
 * {
   box-sizing: border-box;
   border-color: var(--border);
@@ -165,14 +186,22 @@ h3,
 p {
   margin: 0;
 }
+/* Headings wrap between words and hyphenate (lang="ru") instead of breaking
+   mid-word at any character; `.break` (overflow-wrap: anywhere) stays for
+   code and opaque ids only. The size scales down on narrow screens. */
+h1,
+h2,
+h3 {
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
 h1 {
   font-family: var(--font-display);
-  font-size: 36px;
-  line-height: 1;
+  font-size: clamp(22px, 2.4vw + 14px, 36px);
+  line-height: 1.05;
   font-weight: 900;
   letter-spacing: -0.01em;
   text-transform: uppercase;
-  overflow-wrap: anywhere;
 }
 h2 {
   font-family: var(--font-display);

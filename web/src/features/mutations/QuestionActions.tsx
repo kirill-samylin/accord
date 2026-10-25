@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { loadAnswerDraft, saveAnswerDraft } from "@/lib/session-drafts";
+import { useProjectScope } from "../projects/project-context";
 import type { Task } from "@/lib/types";
 import { actionBody, actionID, type MutationProps } from "./contracts";
 import { ActionNotice, FieldError } from "./ActionNotice";
@@ -13,9 +15,33 @@ export function QuestionActions({
   onSuccess,
   onLockChange,
 }: MutationProps & { task?: Task; onLockChange?: (locked: boolean) => void }) {
-  const action = useAction(page, onSuccess, "action", onLockChange);
+  const scope = useProjectScope();
+  const draftKey = (page.task ?? suppliedTask)?.key ?? "";
+  const lastOperation = useRef("");
+  // Set after a confirmed answer: the draft is cleared and success shown
+  // instead of the "saved draft / refresh" recovery card.
+  const [answered, setAnswered] = useState(false);
+  const action = useAction(
+    page,
+    (result) => {
+      if (lastOperation.current === "answer") {
+        setAnswer("");
+        saveAnswerDraft(scope.key, draftKey, "");
+        setAnswered(true);
+      }
+      onSuccess(result);
+    },
+    "action",
+    onLockChange,
+  );
   const task = action.page.task ?? suppliedTask;
-  const [answer, setAnswer] = useState(page.draft?.answer ?? "");
+  const [answer, setAnswer] = useState(
+    () => page.draft?.answer || loadAnswerDraft(scope.key, draftKey),
+  );
+  function changeAnswer(text: string) {
+    setAnswer(text);
+    saveAnswerDraft(scope.key, draftKey, text);
+  }
   const [reason, setReason] = useState(page.draft?.reason ?? "");
   const [now, setNow] = useState(0);
   // This clock only changes presentation. Reading a question never claims it or
@@ -51,6 +77,7 @@ export function QuestionActions({
     fields: Record<string, string> = {},
   ) {
     if (!task) return;
+    lastOperation.current = operation;
     const values =
       operation === "claim"
         ? fields
@@ -104,15 +131,15 @@ export function QuestionActions({
                   rows={7}
                   required
                   value={answer}
-                  onChange={(event) => setAnswer(event.target.value)}
+                  onChange={(event) => changeAnswer(event.target.value)}
                   aria-invalid={Boolean(action.fieldErrors.answer)}
                   aria-describedby="answer-error answer-help"
                 />
                 <FieldError name="answer" errors={action.fieldErrors} />
               </label>
               <p className="form-help" id="answer-help">
-                Ответ сохранится в истории решений. Черновик хранится на этой
-                странице.
+                Ответ сохранится в истории решений. Черновик хранится в этой
+                вкладке и переживёт перезагрузку страницы.
               </p>
               <div className="form-actions">
                 <button
@@ -171,6 +198,10 @@ export function QuestionActions({
             </form>
           </Disclosure>
         </>
+      ) : answered ? (
+        <p className="notice" role="status">
+          Ответ сохранён в истории решений. Вопрос завершён.
+        </p>
       ) : answer ? (
         <div className="mutation-form">
           <p className="form-help">

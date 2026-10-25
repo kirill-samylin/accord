@@ -42,7 +42,9 @@ func (s *Store) checkCreateAsRoleInBoard(b *board, role string, a core.Actor, in
 	default:
 		return core.Task{}, core.Fail("validation", "Выберите reviewer или tester")
 	}
-	task, err := s.createAsRoleInBoard(b, role, a, core.CreateInput{RequestID: in.RequestID, Type: "task", EpicKey: target.EpicKey, Title: title, Description: fmt.Sprintf("Проверить результат %s: %s\nCommit: %s\nGeneration: %d", target.Key, target.Title, target.Evidence.Commit, target.Generation), Role: in.Role, Priority: target.Priority, TargetKey: target.Key, TargetCommit: target.Evidence.Commit, ProfileID: in.ProfileID, ProfileVersion: in.ProfileVersion}, now)
+	// A check inherits its target priority exactly, including P0.
+	priority := target.Priority
+	task, err := s.createAsRoleInBoard(b, role, a, core.CreateInput{RequestID: in.RequestID, Type: "task", EpicKey: target.EpicKey, Title: title, Description: fmt.Sprintf("Проверить результат %s: %s\nCommit: %s\nGeneration: %d", target.Key, target.Title, target.Evidence.Commit, target.Generation), Role: in.Role, Priority: &priority, TargetKey: target.Key, TargetCommit: target.Evidence.Commit, ProfileID: in.ProfileID, ProfileVersion: in.ProfileVersion}, now)
 	if err != nil {
 		return core.Task{}, err
 	}

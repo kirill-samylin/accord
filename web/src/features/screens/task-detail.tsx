@@ -12,6 +12,7 @@ import {
 } from "@/components/common";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { MutationResult, PageData } from "@/lib/types";
+import { actorLabel } from "@/lib/event-display";
 import { date, label } from "@/lib/format";
 import { QuestionActions } from "../mutations/QuestionActions";
 import { TaskProperties } from "./task-properties";
@@ -146,8 +147,15 @@ export function TaskDetail({
                     <h3>Комментарии</h3>
                     {task.comments.map((comment, index) => (
                       <div className="comment" key={index}>
-                        <div className="muted mono">
-                          {comment.session_id} · {date(comment.at)}
+                        <div className="muted">
+                          <span title={comment.session_id}>
+                            {actorLabel(
+                              undefined,
+                              undefined,
+                              comment.session_id,
+                            )}
+                          </span>{" "}
+                          · {date(comment.at)}
                         </div>
                         <p>{comment.text}</p>
                       </div>
@@ -164,7 +172,10 @@ export function TaskDetail({
               />
             </TabsContent>
             <TabsContent value="activity">
-              <EventRows events={page.activity ?? []} />
+              <EventRows
+                events={page.activity ?? []}
+                profiles={page.assignment_profiles ?? page.profiles}
+              />
               <Link
                 prefetch={false}
                 className="inline-link"
@@ -192,10 +203,14 @@ export function TaskDetail({
                           value={
                             <Link
                               prefetch={false}
-                              className="mono"
+                              title={attempt.session_id}
                               href={`/app/agents/${attempt.session_id}`}
                             >
-                              {attempt.session_id}
+                              {actorLabel(
+                                undefined,
+                                undefined,
+                                attempt.session_id,
+                              )}
                             </Link>
                           }
                         />

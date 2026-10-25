@@ -132,6 +132,22 @@ test("open epics and unfamiliar server states remain visible exactly once", () =
     "E-3",
   );
 });
+test("ready tasks waiting on a dependency are grouped after ready ones", () => {
+  const tasks = [
+    { key: "T-1", state: "ready", blocked: false },
+    { key: "T-2", state: "ready", blocked: true },
+    { key: "T-3", state: "in_progress", blocked: false },
+  ] as Task[];
+  const groups = groupTasks(tasks, ["created", "ready", "in_progress"]);
+  assert.deepEqual(
+    groups.map((group) => [group.state, group.tasks.map((task) => task.key)]),
+    [
+      ["ready", ["T-1"]],
+      ["blocked", ["T-2"]],
+      ["in_progress", ["T-3"]],
+    ],
+  );
+});
 test("revoked background page reads notify the identity cache boundary", async () => {
   let events = 0;
   const descriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
@@ -168,10 +184,10 @@ test("root dashboard JSON goes directly to canonical Go /web/ without accepting 
 test("nonroot trailing slashes preserve the canonical Go screen routes", () => {
   assert.equal(appToWeb("/app/"), "/web/");
   assert.equal(appToWeb("/app/login/"), "/web/login");
-  assert.equal(
-    appToWeb("/app/tasks/T-1/?tab=description"),
-    "/web/tasks/T-1?tab=description",
-  );
+  assert.equal(appToWeb("/app/tasks/T-1/"), "/web/tasks/T-1");
+  assert.equal(appToWeb("/app/tasks/?state=ready"), "/web/tasks?state=ready");
+  // ?tab= is client-only view state (project-routes.ts clientOnlyParams).
+  assert.equal(appToWeb("/app/tasks/T-1/?tab=description"), "/web/tasks/T-1");
   assert.equal(appToWeb("/app/agents/abc/"), "/web/agents/abc");
   assert.equal(
     appToWeb("/app/designs/?design_id=fixture"),

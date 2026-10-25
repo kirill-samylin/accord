@@ -5,6 +5,7 @@ import { EmptyState, PageHeading, Status, TaskRow } from "@/components/common";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { MutationResult, PageData, Task } from "@/lib/types";
 import { label } from "@/lib/format";
+import { createTaskBlock } from "@/lib/projects";
 import {
   ClearFilters,
   FilterMenu,
@@ -15,7 +16,7 @@ import {
 } from "../query-controls";
 import { TaskPeek } from "./task-peek";
 import { AssignmentLabel } from "../coordination/assignment-label";
-import { groupTasks } from "@/lib/task-groups";
+import { groupTasks, myQuestions, taskTab } from "@/lib/task-groups";
 export function TasksScreen({
   page,
   onCreate,
@@ -26,14 +27,16 @@ export function TasksScreen({
   onSuccess: (result: MutationResult) => void;
 }) {
   const filters = useFilters();
-  const canCreate = page.project?.can_write !== false && !page.can_continue;
+  const createBlock = createTaskBlock(page.project, page.can_continue, false);
+  const canCreate = !createBlock;
   const [peek, setPeek] = useState<Task | null>(null);
   const questions = page.view === "questions";
-  const [view, setView] = useState("all");
-  const source =
-    questions && view === "mine"
-      ? (page.my_questions ?? [])
-      : (page.tasks ?? []);
+  // The tab is part of the URL so reload and Back keep it.
+  const view = taskTab(filters.params.get("tab"), questions);
+  const setView = (tab: string) =>
+    filters.set({ tab: tab === "all" ? undefined : tab }, false);
+  const mine = questions ? myQuestions(page) : [];
+  const source = questions && view === "mine" ? mine : (page.tasks ?? []);
   const tasks =
     questions && view === "ready"
       ? source.filter(
@@ -99,6 +102,7 @@ export function TasksScreen({
               className="button button-secondary"
               onClick={onCreate}
               disabled={!canCreate}
+              title={createBlock || undefined}
             >
               <Plus size={14} />
               Новая задача
@@ -123,6 +127,7 @@ export function TasksScreen({
             onClick={onCreate}
             disabled={!canCreate}
             aria-label="Новая задача"
+            title={createBlock || undefined}
           >
             <Plus size={14} />
             <span className="desktop-label">Новая задача</span>
@@ -138,9 +143,7 @@ export function TasksScreen({
             <>
               <TabsTrigger value="mine">
                 Мои вопросы
-                {page.my_questions?.length
-                  ? ` · ${page.my_questions.length}`
-                  : ""}
+                {mine.length ? ` · ${mine.length}` : ""}
               </TabsTrigger>
               <TabsTrigger value="ready">Ждут ответа</TabsTrigger>
             </>

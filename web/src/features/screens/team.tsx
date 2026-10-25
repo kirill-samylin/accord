@@ -187,7 +187,9 @@ function Summary({ team }: { team: TeamView }) {
           ? "строгий режим: дубль не создать без причины"
           : team.duplicate_mode === "off"
             ? "проверка выключена"
-            : "агенты получают предупреждение",
+            : team.duplicates_total > 0
+              ? "агенты получают предупреждение"
+              : "совпадений не найдено",
       warn: team.duplicates_total > 0,
     },
   ];

@@ -142,6 +142,10 @@ export function validDashboard(value: unknown): value is ValidatedDashboard {
         Number.isSafeInteger(overview[key]) &&
         (overview[key] as number) >= 0,
     ) &&
+    // Optional newer count: absent on older servers, a count when present.
+    (overview.tasks_available === undefined ||
+      (Number.isSafeInteger(overview.tasks_available) &&
+        (overview.tasks_available as number) >= 0)) &&
     validDate(value.agents.observed_at) &&
     validDate(value.activity.observed_at) &&
     validList(value.agents.sessions, 6, validAgent) &&

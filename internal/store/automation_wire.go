@@ -94,7 +94,7 @@ func workflowPageWindow(full core.WorkflowPage, in core.WorkflowReadInput, names
 	if err != nil {
 		return core.WorkflowPage{}, err
 	}
-	out := core.WorkflowPage{Workflow: wireWorkflow(&full.Workflow, false), CanControl: full.CanControl, Steps: []core.WorkflowStep{}, Plans: []core.WorkflowPlanSnapshot{}, Questions: []core.WorkflowQuestionRecord{}, Attestations: []core.WorkflowAttestation{}}
+	out := core.WorkflowPage{Workflow: wireWorkflow(&full.Workflow, false), CanControl: full.CanControl, CanResume: full.CanResume, Steps: []core.WorkflowStep{}, Plans: []core.WorkflowPlanSnapshot{}, Questions: []core.WorkflowQuestionRecord{}, Attestations: []core.WorkflowAttestation{}}
 	if automationWireSize(out)+automationCursorReserve > automationWireBudget {
 		return out, core.Fail("response_capacity", "Сведения workflow превышают размер страницы")
 	}

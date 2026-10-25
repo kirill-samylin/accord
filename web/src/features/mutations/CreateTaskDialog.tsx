@@ -207,8 +207,9 @@ export function CreateTaskDialog({
     if (!draft.title?.trim()) found.title = "Введите название";
     else if (draft.title.trim().length > 200)
       found.title = "Название длиннее 200 символов — сократите его";
-    const priority = Number(draft.priority);
-    if (!Number.isInteger(priority) || priority < 0 || priority > 100)
+    // Empty priority means the server default (2); "0" is P0.
+    const priority = (draft.priority ?? "").trim();
+    if (priority && (!/^\d+$/.test(priority) || Number(priority) > 100))
       found.priority = "Приоритет — целое число от 0 до 100";
     if (isTask && !draft.description?.trim())
       found.description = "Опишите, что нужно сделать и каким будет результат";
@@ -239,6 +240,9 @@ export function CreateTaskDialog({
     for (const name of draftFields) fields[name] = draft[name] ?? "";
     fields.title = fields.title.trim();
     fields.description = fields.description.trim();
+    fields.priority = (fields.priority ?? "").trim();
+    if (!fields.priority) delete fields.priority;
+    else fields.priority = String(Number(fields.priority));
     fields.epic_key = fields.epic_key.trim().toUpperCase();
     if (!isTask) {
       fields.epic_key = "";
@@ -379,21 +383,17 @@ export function CreateTaskDialog({
                 </Select>
               </label>
               <label className="form-field">
-                <span>
-                  Приоритет
-                  <Required />
-                </span>
+                Приоритет
                 <input
                   type="number"
                   min="0"
                   max="100"
-                  required
                   aria-describedby="priority-help"
                   value={draft.priority}
                   onChange={(event) => change("priority", event.target.value)}
                 />
                 <span id="priority-help" className="form-help">
-                  0–100: меньшее число берут в работу раньше
+                  0–100: меньшее число берут в работу раньше; пусто — 2
                 </span>
                 <FieldError name="priority" errors={errors} />
               </label>

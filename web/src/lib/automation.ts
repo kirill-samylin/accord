@@ -204,6 +204,8 @@ export interface WorkflowPage {
   questions: WorkflowQuestion[];
   attestations: WorkflowAttestation[];
   can_control: boolean;
+  // Optional server hint: resume would pass authorization right now.
+  can_resume?: boolean;
   next_cursor?: string;
 }
 export interface AutomationPolicyPage {
@@ -257,10 +259,23 @@ export function requirementError(text: string) {
       ? "До 16 КиБ текста."
       : "";
 }
+// resumeNeedsPolicy mirrors the Go resume gate: without an explicit refresh
+// policy, resume re-authorizes the stored grant, so a draft, a requirement
+// still awaiting authorization, or one without a live grant gets a 403.
+// A server-provided can_resume wins over the local derivation.
+export function resumeNeedsPolicy(detail: WorkflowPage, now = Date.now()) {
+  if (detail.can_resume !== undefined) return !detail.can_resume;
+  const { state, grant } = detail.workflow;
+  if (state === "draft" || state === "awaiting_authorization") return true;
+  return !grant || Date.parse(grant.expires_at) <= now;
+}
+export const resumePolicyReason =
+  "Нет действующего разрешения: выберите политику в поле «Явно обновить разрешение при продолжении».";
 export function workflowControlReason(
   kind: string,
   detail: WorkflowPage,
   canWrite: boolean,
+  refreshPolicy = false,
 ) {
   if (!canWrite || !detail.can_control)
     return "У вас нет действующего разрешения на управление этим циклом.";
@@ -280,6 +295,8 @@ export function workflowControlReason(
     ].includes(state)
   )
     return "Дождитесь подтверждённой остановки.";
+  if (kind === "resume" && !refreshPolicy && resumeNeedsPolicy(detail))
+    return resumePolicyReason;
   if (
     kind === "clarify" &&
     ["pausing", "stopping", "needs_recovery"].includes(state)

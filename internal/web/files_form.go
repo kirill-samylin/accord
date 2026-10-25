@@ -56,6 +56,9 @@ func designParseUpload(reader *multipart.Reader) (designUpload, *multipart.Part,
 			if strings.TrimSpace(in.Title) == "" || utf8.RuneCountInString(in.Title) > 200 || !utf8.ValidString(in.Title) {
 				return in, nil, designFail(400, "VALIDATION", "Название должно содержать от 1 до 200 символов")
 			}
+			if !core.PlainText(in.Title, false) {
+				return in, nil, designFail(400, "VALIDATION", "Название не должно содержать управляющие символы")
+			}
 			if in.DesignID != "" && !designValidID(in.DesignID) {
 				return in, nil, designFail(400, "VALIDATION", "Неверный материал")
 			}

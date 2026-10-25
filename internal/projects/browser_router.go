@@ -20,8 +20,10 @@ func write(w http.ResponseWriter, status int, value any) {
 }
 func fail(w http.ResponseWriter, err error) {
 	code, message, status := "UNAVAILABLE", "Сервис временно недоступен", 503
+	editable := false
 	var domain *core.Error
 	if errors.As(err, &domain) {
+		editable = editableRejection(domain)
 		code = domain.Code
 		switch code {
 		case "UNAUTHORIZED":
@@ -40,8 +42,11 @@ func fail(w http.ResponseWriter, err error) {
 			status = 409
 			message = "Состояние изменилось: обновите форму"
 		}
+		if specific := registryMessage(domain); specific != "" {
+			message = specific
+		}
 	}
-	write(w, status, map[string]any{"ok": false, "error": map[string]string{"code": code, "message": message}, "retry_same_action": status >= 500})
+	write(w, status, map[string]any{"ok": false, "error": map[string]string{"code": code, "message": message}, "retry_same_action": status >= 500, "editable": editable})
 }
 func redirect(w http.ResponseWriter, req *http.Request, target string) {
 	if web.WantsBrowserJSON(req) {

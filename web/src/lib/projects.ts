@@ -111,3 +111,17 @@ export function isAdminPage(value: unknown): value is AdminPage {
     Array.isArray(value.audit)
   );
 }
+// createTaskBlock explains why "Новая задача" is disabled ("" = allowed).
+export function createTaskBlock(
+  project: Pick<Project, "state" | "can_write"> | undefined,
+  canContinue: boolean,
+  locked: boolean,
+) {
+  if (project?.state === "archived")
+    return "Проект в архиве — новые задачи создавать нельзя";
+  if (project?.can_write === false)
+    return "У вас доступ только для чтения в этом проекте";
+  if (canContinue) return "Сессия истекла — продолжите работу в меню справки";
+  if (locked) return "Дождитесь результата текущей отправки";
+  return "";
+}

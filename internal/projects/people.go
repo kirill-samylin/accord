@@ -15,10 +15,10 @@ import (
 // page does not exist for members) and appends admin_audit without secrets.
 func validPersonName(name string) bool {
 	n := utf8.RuneCountInString(name)
-	return utf8.ValidString(name) && strings.TrimSpace(name) == name && n >= 1 && n <= MaxPersonName && !strings.ContainsAny(name, "\r\n\x00")
+	return core.PlainText(name, false) && strings.TrimSpace(name) == name && n >= 1 && n <= MaxPersonName
 }
 func validPersonNote(note string) bool {
-	return utf8.ValidString(note) && utf8.RuneCountInString(note) <= MaxPersonNote && !strings.ContainsAny(note, "\x00")
+	return core.PlainText(note, true) && utf8.RuneCountInString(note) <= MaxPersonNote
 }
 func validPersonRole(role string) bool { return role == "member" || role == "admin" }
 func validIdentityID(id string) bool {

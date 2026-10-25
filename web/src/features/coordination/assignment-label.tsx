@@ -1,4 +1,7 @@
+import { assignmentText } from "@/lib/coordination";
 import type { Task } from "@/lib/types";
+// AssignmentLabel uses the same wording as the task detail; a live lease is
+// named by its holder, with the opaque session hash only in the tooltip.
 export function AssignmentLabel({ task }: { task: Task }) {
   const assignment = task.assignment;
   return (
@@ -6,25 +9,23 @@ export function AssignmentLabel({ task }: { task: Task }) {
       className="task-assignment"
       title={
         assignment
-          ? `${assignment.profile_name} · ${assignment.profile_id} · версия ${assignment.profile_version}`
+          ? `${assignment.profile_name} · версия ${assignment.profile_version}`
           : task.type === "epic"
             ? "Ответственный за эпик"
-            : "Задача доступна общей очереди роли"
+            : task.role === "human"
+              ? "Задача ждёт ответа человека"
+              : "Задача доступна общей очереди роли"
       }
     >
-      <span className="truncate">
-        {assignment
-          ? `${assignment.profile_name} · v${assignment.profile_version}`
-          : task.type === "epic"
-            ? task.owner || "Без ответственного"
-            : "Очередь роли"}
-      </span>
+      <span className="truncate">{assignmentText(task)}</span>
       {task.lease ? (
         <span
-          className="mono muted truncate"
-          title={`Аренда: ${task.lease.session_id}`}
+          className="muted truncate"
+          title={`Сессия: ${task.lease.session_id}`}
         >
-          Сессия {task.lease.session_id.slice(0, 8)}
+          {task.holder_owner
+            ? `Делает ${task.holder_owner}`
+            : "Взята сессией агента"}
         </span>
       ) : null}
     </span>

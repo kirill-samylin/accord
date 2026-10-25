@@ -18,7 +18,13 @@ import {
 } from "@/components/common";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { MutationResult, PageData } from "@/lib/types";
-import { date, duration, eventLabels, number } from "@/lib/format";
+import {
+  date,
+  duration,
+  eventFilterTypes,
+  eventLabels,
+  number,
+} from "@/lib/format";
 import {
   FilterMenu,
   Pagination,
@@ -86,9 +92,9 @@ export function ActivityScreen({
                 Тип события
                 <Select name="type" defaultValue={page.draft.type ?? ""}>
                   <option value="">Все события</option>
-                  {Object.entries(eventLabels).map(([type, title]) => (
+                  {eventFilterTypes.map((type) => (
                     <option key={type} value={type}>
-                      {title}
+                      {eventLabels[type]}
                     </option>
                   ))}
                 </Select>
@@ -110,7 +116,10 @@ export function ActivityScreen({
         </span>
       </div>
       <div className="list-surface">
-        <EventRows events={page.activity ?? []} />
+        <EventRows
+          events={page.activity ?? []}
+          profiles={page.profiles ?? page.assignment_profiles}
+        />
       </div>
       <Pagination cursor={page.next_cursor} />
     </div>
@@ -118,6 +127,7 @@ export function ActivityScreen({
 }
 export function HistoryScreen({ page }: { page: PageData }) {
   const filters = useFilters();
+  const filtered = Boolean(filters.params.get("epic_key"));
   return (
     <div className="page">
       <PageHeading
@@ -143,10 +153,34 @@ export function HistoryScreen({ page }: { page: PageData }) {
             defaultValue={page.epic_key}
           />
           <button className="button button-secondary">Показать</button>
+          {filtered ? (
+            <button
+              type="button"
+              className="button button-ghost button-sm"
+              onClick={filters.reset}
+            >
+              Сбросить фильтр
+            </button>
+          ) : null}
         </form>
       </div>
       <div className="list-surface">
-        <EventRows events={page.decisions ?? []} decisions />
+        {filtered && !page.decisions?.length ? (
+          <EmptyState
+            title="Решений по этому фильтру нет"
+            description={`Для эпика ${filters.params.get("epic_key")} сохранённых ответов не найдено.`}
+            action={
+              <button
+                className="button button-secondary"
+                onClick={filters.reset}
+              >
+                Сбросить фильтр
+              </button>
+            }
+          />
+        ) : (
+          <EventRows events={page.decisions ?? []} decisions />
+        )}
       </div>
       {page.legacy_decisions?.length ? (
         <section>

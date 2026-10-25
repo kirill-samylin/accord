@@ -225,6 +225,11 @@ select {
 .tab:hover {
   color: var(--foreground);
 }
+/* Ring only for keyboard focus (see components/ui/tabs.tsx). */
+.tab:focus:not(:focus-visible),
+.tab[data-pointer-focus]:focus-visible {
+  outline: none;
+}
 .tab[data-state="active"],
 .tab[aria-current="page"] {
   color: var(--ink);

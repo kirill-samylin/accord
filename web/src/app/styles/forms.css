@@ -184,3 +184,6 @@ label.form-field {
   font-size: 13px;
   line-height: 1.5;
 }
+.form-help:empty {
+  display: none;
+}

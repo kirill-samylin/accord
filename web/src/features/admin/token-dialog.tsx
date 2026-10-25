@@ -118,9 +118,21 @@ export function IssuedSecretDialog({
         if (!open) onClose();
       }}
     >
+      {/* A live secret is shown exactly once: Esc, an outside click and the ×
+          would silently lose it, so only the explicit button closes. */}
       <DialogContent
         className="secret-dialog"
         aria-describedby="issued-secret-description"
+        showCloseButton={!secret}
+        onEscapeKeyDown={(event) => {
+          if (secret) event.preventDefault();
+        }}
+        onPointerDownOutside={(event) => {
+          if (secret) event.preventDefault();
+        }}
+        onInteractOutside={(event) => {
+          if (secret) event.preventDefault();
+        }}
       >
         <DialogHeader>
           <DialogTitle>Токен выдан</DialogTitle>

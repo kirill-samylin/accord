@@ -10,6 +10,26 @@ import (
 func (r *Registry) login(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	if req.Method == "GET" || req.Method == "HEAD" {
+		// A second login tab must not invalidate the form already open in the
+		// first one: a live preauth of this browser is reused (same CSRF) and
+		// only its expiry is renewed. Only a missing or expired one is replaced.
+		if cookie, err := req.Cookie(r.preauthName()); err == nil && cookie.Value != "" {
+			expires := time.Now().Add(10 * time.Minute)
+			csrf, e := transaction(r, ctx, func(tx *sql.Tx) (string, error) {
+				var csrf string
+				err := tx.QueryRowContext(ctx, `SELECT csrf FROM preauth WHERE hash=? AND expires>?`, hash(cookie.Value), time.Now().Add(time.Minute).UnixNano()).Scan(&csrf)
+				if err != nil {
+					return "", err
+				}
+				_, err = tx.ExecContext(ctx, `UPDATE preauth SET expires=? WHERE hash=?`, expires.UnixNano(), hash(cookie.Value))
+				return csrf, err
+			})
+			if e == nil {
+				r.cookie(w, r.preauthName(), cookie.Value, expires)
+				r.options.Browser.LoginResponse(w, req, 200, csrf, "")
+				return
+			}
+		}
 		secret, e := random("", 32)
 		if e != nil {
 			fail(w, e)

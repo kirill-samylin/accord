@@ -166,9 +166,11 @@ type CreateInput struct {
 	Title          string   `json:"title"`
 	Description    string   `json:"description"`
 	Role           string   `json:"role"`
-	Priority       int      `json:"priority"`
-	TargetKey      string   `json:"target_key,omitempty"`
-	TargetCommit   string   `json:"target_commit,omitempty"`
+	// Priority is optional: omitted (nil) becomes the default 2, while an
+	// explicit 0 is a valid top priority (P0). Range 0..100.
+	Priority     *int   `json:"priority,omitempty"`
+	TargetKey    string `json:"target_key,omitempty"`
+	TargetCommit string `json:"target_commit,omitempty"`
 	// Force creates despite similar work under strict mode; ForceReason is
 	// required with it and recorded on the task.
 	Force       bool   `json:"force,omitempty"`
@@ -240,7 +242,10 @@ type Event struct {
 	SessionID string     `json:"session_id,omitempty"`
 	TokenID   string     `json:"token_id,omitempty"`
 	Reason    string     `json:"reason,omitempty"`
-	At        time.Time  `json:"at"`
+	// Actor is filled only in the browser activity projection: the person who
+	// owns the event's session. It is never stored with the event.
+	Actor string    `json:"actor,omitempty"`
+	At    time.Time `json:"at"`
 }
 type EventsInput struct {
 	SinceCursor int64    `json:"since_cursor"`

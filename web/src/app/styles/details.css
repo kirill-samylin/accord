@@ -6,7 +6,6 @@
   font-size: 30px;
   text-transform: none;
   line-height: 1.1;
-  overflow-wrap: anywhere;
 }
 .task-detail-kicker {
   display: flex;

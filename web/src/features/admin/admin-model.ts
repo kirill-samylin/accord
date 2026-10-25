@@ -4,7 +4,7 @@ import type {
   AuditEntry,
   Person,
 } from "../../lib/projects.ts";
-import { date } from "../../lib/format.ts";
+import { date, eventLabels } from "../../lib/format.ts";
 // Pure helpers for the administration screen (docs/admin.md). Nothing here
 // touches secrets: issued tokens live only in component state.
 const roleNames: Record<string, string> = {
@@ -17,7 +17,8 @@ const sourceNames: Record<string, string> = {
   catalog: "Каталог",
 };
 export const identitySource = (source: string) => sourceNames[source] ?? source;
-// Audit event names are not enumerated by the contract; unknown events fall
+// Audit event names are not enumerated by the contract; known board/project
+// events reuse the shared Russian titles and only a truly unknown event falls
 // back to the raw name so nothing is hidden.
 export const auditEvents: Record<string, string> = {
   person_created: "Человек добавлен",
@@ -26,10 +27,11 @@ export const auditEvents: Record<string, string> = {
   person_activated: "Человек активирован",
   credential_issued: "Токен выдан",
   credential_revoked: "Токен отозван",
-  identity_linked: "Identity привязана",
+  identity_linked: "Доступ привязан к человеку",
   admin_bootstrapped: "Назначен администратор (CLI)",
 };
-export const auditEvent = (event: string) => auditEvents[event] ?? event;
+export const auditEvent = (event: string) =>
+  auditEvents[event] ?? eventLabels[event] ?? event;
 // `at` may arrive as RFC 3339 text or as unix seconds / milliseconds.
 export function auditTime(at: string | number | undefined): string {
   if (at === undefined || at === "") return "—";
@@ -134,6 +136,18 @@ export function tokenFileName(owner: string, machine: string) {
   const clean = (value: string) =>
     value.replace(/[\\/\u0000-\u001f\u007f]+/g, "_").trim() || "token";
   return `${clean(owner)}-${clean(machine)}.token`;
+}
+// Two people may share a name, so a match only warns (case and spacing
+// insensitive); it never blocks creation.
+export function samePersonName(people: { name: string }[], name: string) {
+  const key = name.trim().replace(/\s+/g, " ").toLocaleLowerCase("ru");
+  return (
+    key !== "" &&
+    people.some(
+      (person) =>
+        person.name.trim().replace(/\s+/g, " ").toLocaleLowerCase("ru") === key,
+    )
+  );
 }
 export function validatePerson(values: URLSearchParams) {
   const errors: Record<string, string> = {};

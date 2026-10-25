@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-	"unicode"
 	"unicode/utf8"
 
 	"agent-board/internal/core"
@@ -189,21 +188,9 @@ func validTitle(value string) bool {
 	return strings.TrimSpace(value) != "" && utf8.RuneCountInString(value) <= 200 && plainText(value, false)
 }
 
-// plainText accepts only valid UTF-8 without Unicode control characters (C0,
-// DEL, C1), so stored text cannot carry NUL or terminal escape sequences to
-// logs, terminals or the UI. Multi-line bodies may also use \n, \t and CRLF.
-func plainText(value string, multiline bool) bool {
-	if !utf8.ValidString(value) {
-		return false
-	}
-	for i, r := range value {
-		if !unicode.IsControl(r) || multiline && (r == '\n' || r == '\t' || r == '\r' && strings.HasPrefix(value[i+1:], "\n")) {
-			continue
-		}
-		return false
-	}
-	return true
-}
+// plainText is the shared core.PlainText rule (no control characters except
+// \n, \t and CRLF in multi-line bodies).
+func plainText(value string, multiline bool) bool { return core.PlainText(value, multiline) }
 
 // inputText is the shared text boundary for externally supplied mutations;
 // internal constructors (automation) validate their own generated text.

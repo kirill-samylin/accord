@@ -1,5 +1,7 @@
 import { ProjectLink as Link } from "@/components/project-link";
 import { Fact, Status } from "@/components/common";
+import { assignmentText } from "@/lib/coordination";
+import { actorLabel } from "@/lib/event-display";
 import { date, label } from "@/lib/format";
 import type { Task } from "@/lib/types";
 import { PersonChip } from "@/components/people";
@@ -37,15 +39,10 @@ export function TaskProperties({ task }: { task: Task }) {
               className="inline-link"
               href={`/app/profiles/${task.assignment.profile_id}?version=${task.assignment.profile_version}`}
             >
-              {task.assignment.profile_name} · версия{" "}
-              {task.assignment.profile_version}
+              {assignmentText(task)}
             </Link>
-          ) : task.type === "epic" ? (
-            task.owner || "Без ответственного"
-          ) : task.role === "human" ? (
-            "Человек"
           ) : (
-            "Общая очередь роли"
+            assignmentText(task)
           )
         }
       />
@@ -79,10 +76,14 @@ export function TaskProperties({ task }: { task: Task }) {
             value={
               <Link
                 prefetch={false}
-                className="mono"
+                title={task.lease.session_id}
                 href={`/app/agents/${task.lease.session_id}`}
               >
-                {task.lease.session_id}
+                {actorLabel(
+                  task.holder_owner,
+                  task.holder_machine,
+                  task.lease.session_id,
+                )}
               </Link>
             }
           />

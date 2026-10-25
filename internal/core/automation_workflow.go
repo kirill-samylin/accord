@@ -138,7 +138,11 @@ type WorkflowPage struct {
 	Questions    []WorkflowQuestionRecord `json:"questions"`
 	Attestations []WorkflowAttestation    `json:"attestations"`
 	CanControl   bool                     `json:"can_control"`
-	NextCursor   string                   `json:"next_cursor,omitempty"`
+	// CanResume predicts whether a plain "resume" (without refresh_policy_id)
+	// would be accepted now. A draft (no grant yet) is false: it is started by
+	// choosing a team policy. Advisory only; the command stays authoritative.
+	CanResume  bool   `json:"can_resume"`
+	NextCursor string `json:"next_cursor,omitempty"`
 }
 type WorkflowAdvanceInput struct {
 	WorkflowID      string `json:"workflow_id"`

@@ -159,7 +159,11 @@ export function DesignsScreen({
                   <span>
                     v{asset.version} · {bytes(asset.size)}
                   </span>
-                  <span>{asset.scope_key || "Проект"}</span>
+                  <span title={asset.scope_key || undefined}>
+                    {asset.scope === "project" || !asset.scope_key
+                      ? (page.project?.name ?? "Проект")
+                      : asset.scope_key}
+                  </span>
                 </div>
                 <div className="asset-actions">
                   <Link

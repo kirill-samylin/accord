@@ -41,6 +41,9 @@ func (s *Store) ControlOverview(ctx context.Context, a core.Actor) (core.Control
 				p.TasksCreated++
 			case "ready":
 				p.TasksReady++
+				if teamUnclaimed(b, t) {
+					p.TasksAvailable++
+				}
 			case "in_progress":
 				p.TasksInProgress++
 			case "done":

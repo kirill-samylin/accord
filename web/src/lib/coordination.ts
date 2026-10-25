@@ -181,3 +181,13 @@ export function latestPositiveReview(coordination?: TaskCoordination) {
       check.outcome === "approve",
   );
 }
+// assignmentText is the one wording for "who may take this task", shared by
+// the task list, task properties and the coordination panel.
+export function assignmentText(
+  task: Pick<Task, "type" | "role" | "owner" | "assignment">,
+) {
+  if (task.assignment)
+    return `${task.assignment.profile_name} · версия ${task.assignment.profile_version}`;
+  if (task.type === "epic") return task.owner || "Без ответственного";
+  return task.role === "human" ? "Вопрос человеку" : "Общая очередь роли";
+}

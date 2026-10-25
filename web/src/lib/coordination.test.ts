@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import {
+  assignmentText,
   canCoordinate,
   coordinationDraft,
   coordinationFields,
@@ -222,4 +223,19 @@ test("check creation sends captured target version and role with optional exact 
     profile_id: profileID,
     profile_version: "3",
   });
+});
+
+test("assignment wording is the same for list and detail", () => {
+  const base = { type: "task", role: "human" } as Parameters<
+    typeof assignmentText
+  >[0];
+  assert.equal(assignmentText(base), "Вопрос человеку");
+  assert.equal(
+    assignmentText({ ...base, role: "developer" }),
+    "Общая очередь роли",
+  );
+  assert.equal(
+    assignmentText({ ...base, type: "epic", owner: "Анна" }),
+    "Анна",
+  );
 });

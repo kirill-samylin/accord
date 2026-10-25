@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { MutationResult, PageData } from "@/lib/types";
 import { label } from "@/lib/format";
+import { createTaskBlock } from "@/lib/projects";
 import dynamic from "next/dynamic";
 // cmdk and the search index load when the palette is first opened.
 const CommandPalette = dynamic(
@@ -73,6 +74,21 @@ export function Shell({
   useEffect(() => {
     setDrawerOpen(false);
   }, [path]);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  // Short viewports scroll the nav; keep the current section visible. The
+  // admin-only row appears after the access check resolves and pushes the
+  // items below it down, so scroll again once it is known.
+  useEffect(() => {
+    sidebarRef.current
+      ?.querySelector('.sidebar-nav [aria-current="page"]')
+      ?.scrollIntoView({ block: "nearest" });
+  }, [section.href, admin]);
+  const archived = page.project?.state === "archived";
+  const createBlock = createTaskBlock(
+    page.project,
+    page.can_continue,
+    scope.locked,
+  );
   function sidebar() {
     return (
       <aside className="sidebar" aria-label="Основная навигация">
@@ -81,11 +97,8 @@ export function Shell({
           <div className="nav-group">
             <button
               className="nav-row"
-              disabled={
-                page.can_continue ||
-                page.project?.can_write === false ||
-                scope.locked
-              }
+              disabled={Boolean(createBlock)}
+              title={createBlock || undefined}
               onClick={() => {
                 setDrawerOpen(false);
                 onCreate();
@@ -161,7 +174,12 @@ export function Shell({
   }
   return (
     <div className="control-shell">
-      <div className="desktop-sidebar">{sidebar()}</div>
+      <a className="skip-link" href="#main-content">
+        Перейти к содержимому
+      </a>
+      <div className="desktop-sidebar" ref={sidebarRef}>
+        {sidebar()}
+      </div>
       <Primitive.Root open={drawerOpen} onOpenChange={setDrawerOpen}>
         <Primitive.Portal>
           <Primitive.Overlay className="dialog-overlay" />
@@ -257,7 +275,13 @@ export function Shell({
             onCreate();
           }}
         />
-        <main id="main-content" className="main-scroll">
+        <main id="main-content" className="main-scroll" tabIndex={-1}>
+          {archived ? (
+            <div className="page-notice notice" role="status">
+              Проект в архиве — изменения недоступны. История доступна для
+              чтения.
+            </div>
+          ) : null}
           {scope.locked ? (
             <div className="page-notice notice" role="status">
               Сначала проверьте результат отправки. Переходы между проектами

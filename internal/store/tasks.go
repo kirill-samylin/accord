@@ -22,7 +22,12 @@ func (s *Store) createInBoard(b *board, sess *core.Session, a core.Actor, in cor
 // Shared domain constructor takes an explicit authorized role, never a fabricated session.
 func (s *Store) createAsRoleInBoard(b *board, role string, a core.Actor, in core.CreateInput, now time.Time) (core.Task, error) {
 	var zero core.Task
-	if !validTitle(in.Title) || len(in.Description) > 16384 || in.Priority < 0 || in.Priority > 100 {
+	// Omitted priority defaults to 2; an explicit 0 is P0, the most urgent.
+	priority := 2
+	if in.Priority != nil {
+		priority = *in.Priority
+	}
+	if !validTitle(in.Title) || len(in.Description) > 16384 || priority < 0 || priority > 100 {
 		return zero, core.Fail("invalid_input", "invalid title, description or priority")
 	}
 	if in.Type != "task" && in.Type != "epic" {
@@ -30,10 +35,7 @@ func (s *Store) createAsRoleInBoard(b *board, role string, a core.Actor, in core
 	}
 	// Git prints lowercase SHAs; gates compare commits exactly.
 	in.TargetCommit = strings.ToLower(in.TargetCommit)
-	t := &core.Task{CreatedAt: &now, Category: in.Category, Complexity: in.Complexity, ExternalID: in.ExternalID, Key: nextKey(b), Type: in.Type, Title: in.Title, Description: in.Description, Role: in.Role, State: "ready", EpicKey: in.EpicKey, Priority: in.Priority, Version: 1, Requester: a.Principal.ID, CreatedBy: a.Principal.Owner, ReadyAt: now, Areas: in.Areas}
-	if t.Priority == 0 {
-		t.Priority = 2
-	}
+	t := &core.Task{CreatedAt: &now, Category: in.Category, Complexity: in.Complexity, ExternalID: in.ExternalID, Key: nextKey(b), Type: in.Type, Title: in.Title, Description: in.Description, Role: in.Role, State: "ready", EpicKey: in.EpicKey, Priority: priority, Version: 1, Requester: a.Principal.ID, CreatedBy: a.Principal.Owner, ReadyAt: now, Areas: in.Areas}
 	if in.Type == "epic" {
 		if role != "coordinator" && role != "human" {
 			return zero, core.Fail("forbidden", "epic creation requires coordinator or human")

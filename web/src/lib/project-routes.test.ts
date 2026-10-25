@@ -15,8 +15,17 @@ const a = "p_" + "a".repeat(32),
 test("identical task keys keep their explicit project across page, redirect and mutation routes", () => {
   for (const id of [a, b]) {
     assert.equal(
-      appToWebRoute(`/app/p/${id}/tasks/T-1?tab=details`),
-      `/web/p/${id}/tasks/T-1?tab=details`,
+      appToWebRoute(`/app/p/${id}/tasks?cursor=2`),
+      `/web/p/${id}/tasks?cursor=2`,
+    );
+    // Client-only view state (tabs, toggles) never reaches the Go handlers.
+    assert.equal(
+      appToWebRoute(`/app/p/${id}/tasks?tab=epics&cursor=2`),
+      `/web/p/${id}/tasks?cursor=2`,
+    );
+    assert.equal(
+      appToWebRoute(`/app/p/${id}/questions?tab=mine`),
+      `/web/p/${id}/questions`,
     );
     assert.equal(
       webToAppRoute(`/web/p/${id}/tasks/T-1`),

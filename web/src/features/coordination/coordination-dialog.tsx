@@ -64,6 +64,9 @@ export function CoordinationDialog({
   function change(name: keyof CoordinationDraft, value: string) {
     setDraft((previous) => ({ ...previous, [name]: value }));
     setLocalError("");
+    // A settled rejection no longer describes the edited draft; an unknown
+    // outcome stays visible until its exact retry resolves it.
+    if (!pending) action.setMessage("");
   }
   function submit(event: FormEvent) {
     event.preventDefault();

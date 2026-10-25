@@ -45,6 +45,11 @@ func (s *Store) RecentEvents(ctx context.Context, a core.Actor, in core.RecentEv
 			}
 			// Token administration IDs are not needed in the browser projection.
 			e.TokenID = ""
+			// Web sessions are opaque hashes; name the person who opened it
+			// unless the event already records its own owner.
+			if sess := b.Sessions[e.SessionID]; sess != nil && sess.Owner != "" && (e.Data == nil || e.Data.Owner == "") {
+				e.Actor = sess.Owner
+			}
 			p.Events = append(p.Events, e)
 			p.NextCursor = e.Cursor
 		}

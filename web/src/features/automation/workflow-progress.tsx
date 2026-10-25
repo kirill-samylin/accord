@@ -8,14 +8,18 @@ import { workflowReason } from "@/lib/automation-reasons";
 import { date } from "@/lib/format";
 import type { ManagedRunPage, ManagedPage } from "@/lib/managed-agents";
 import { runLabels, providerName, deliveryLabels } from "@/lib/managed-agents";
+// `paged` is true when history spans several pages (a cursor is open or more
+// pages follow); only then does an empty section point at other pages.
 export function WorkflowProgress({
   detail,
   managed,
   delivery,
+  paged = false,
 }: {
   detail: WorkflowPage;
   managed?: ManagedPage;
   delivery?: ManagedRunPage;
+  paged?: boolean;
 }) {
   const flow = detail.workflow;
   return (
@@ -141,15 +145,22 @@ export function WorkflowProgress({
         </ol>
         {!detail.steps.length ? (
           <p className="form-help">
-            На этой странице шаги не показаны. Другие записи могут быть на
-            следующих или предыдущих страницах истории.
+            {paged
+              ? "На этой странице шаги не показаны. Другие записи могут быть на следующих или предыдущих страницах истории."
+              : "История появится после первых действий."}
           </p>
         ) : null}
       </section>
     </>
   );
 }
-export function WorkflowReports({ detail }: { detail: WorkflowPage }) {
+export function WorkflowReports({
+  detail,
+  paged = false,
+}: {
+  detail: WorkflowPage;
+  paged?: boolean;
+}) {
   return (
     <section className="screen-stack">
       <h2>Результаты и подтверждения</h2>
@@ -234,8 +245,9 @@ export function WorkflowReports({ detail }: { detail: WorkflowPage }) {
       })}
       {!detail.attestations.length ? (
         <p className="form-help">
-          На этой странице нет подтверждений выполненных проверок. Просмотрите
-          другие страницы истории, если они доступны.
+          {paged
+            ? "На этой странице нет подтверждений выполненных проверок. Просмотрите другие страницы истории, если они доступны."
+            : "Подтверждения проверок появятся, когда агенты выполнят первые проверки."}
         </p>
       ) : null}
       {detail.workflow.messages?.length ? (

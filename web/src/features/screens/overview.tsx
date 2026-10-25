@@ -260,7 +260,7 @@ export function OverviewScreen({
           <dl className="queue-summary">
             <div>
               <dt>Готовы к работе</dt>
-              <dd>{overview.tasks_ready}</dd>
+              <dd>{overview.tasks_available ?? overview.tasks_ready}</dd>
             </div>
             <div>
               <dt>Ждут зависимостей</dt>
@@ -323,7 +323,10 @@ export function OverviewScreen({
         <section className="min-w-0">
           <SectionHeading title="Активность" href="/app/activity" />
           <div className="list-surface">
-            <EventRows events={activity.slice(0, 5)} />
+            <EventRows
+              events={activity.slice(0, 5)}
+              profiles={page.profiles ?? page.assignment_profiles}
+            />
           </div>
         </section>
       </div>

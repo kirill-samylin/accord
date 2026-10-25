@@ -56,6 +56,9 @@ func (r *Registry) repository(ctx context.Context, who Identity, pid, rid, opera
 			if count >= MaxRepositories {
 				return false, core.Fail("conflict", "repository capacity reached")
 			}
+			if e = uniqueRepository(ctx, tx, pid, "", url, branch); e != nil {
+				return false, e
+			}
 			rid, e = random("r_", 16)
 			if e != nil {
 				return false, e
@@ -75,7 +78,7 @@ func (r *Registry) repository(ctx context.Context, who Identity, pid, rid, opera
 			}
 			if operation == "remove" {
 				_, e = tx.ExecContext(ctx, `DELETE FROM repositories WHERE id=? AND project_id=?`, rid, pid)
-			} else {
+			} else if e = uniqueRepository(ctx, tx, pid, rid, url, branch); e == nil {
 				_, e = tx.ExecContext(ctx, `UPDATE repositories SET url=?,branch=?,version=version+1 WHERE id=? AND project_id=?`, url, branch, rid, pid)
 			}
 		default:
@@ -90,4 +93,37 @@ func (r *Registry) repository(ctx context.Context, who Identity, pid, rid, opera
 		return true, finishCatalog(ctx, tx)
 	})
 	return err
+}
+
+// repositoryKey identifies one checkout target independent of spelling: host
+// case, scheme (https vs ssh://git@), default port, trailing slash and ".git"
+// do not make a different repository. Path case is kept: servers differ.
+func repositoryKey(raw, branch string) string {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return raw + "\x00" + branch
+	}
+	path := strings.TrimSuffix(strings.TrimRight(u.Path, "/"), ".git")
+	return strings.ToLower(u.Hostname()) + path + "\x00" + branch
+}
+
+// uniqueRepository rejects a second row of the same project for the same
+// normalised URL and branch; except excludes the row being updated.
+func uniqueRepository(ctx context.Context, tx *sql.Tx, pid, except, raw, branch string) error {
+	rows, err := tx.QueryContext(ctx, `SELECT id,url,branch FROM repositories WHERE project_id=?`, pid)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	key := repositoryKey(raw, branch)
+	for rows.Next() {
+		var id, other, otherBranch string
+		if err = rows.Scan(&id, &other, &otherBranch); err != nil {
+			return err
+		}
+		if id != except && repositoryKey(other, otherBranch) == key {
+			return core.Fail("conflict", "Этот репозиторий уже подключён")
+		}
+	}
+	return rows.Err()
 }

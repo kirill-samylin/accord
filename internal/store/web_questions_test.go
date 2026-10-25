@@ -11,7 +11,8 @@ func TestQuestionPagesUseGlobalQueueOrderAndDoNotRenew(t *testing.T) {
 	human := f.actor(t, "human")
 	old := f.task(t, "human")
 	f.clock.advance(time.Second)
-	urgent, err := f.s.Create(testContext, f.coord, core.CreateInput{RequestID: f.id(), Type: "task", EpicKey: f.epic.Key, Role: "human", Title: "Urgent", Description: "Synthetic urgent question", Priority: 1})
+	one := 1
+	urgent, err := f.s.Create(testContext, f.coord, core.CreateInput{RequestID: f.id(), Type: "task", EpicKey: f.epic.Key, Role: "human", Title: "Urgent", Description: "Synthetic urgent question", Priority: &one})
 	if err != nil {
 		t.Fatal(err)
 	}

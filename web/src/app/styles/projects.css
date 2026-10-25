@@ -75,6 +75,14 @@
   display: grid;
   gap: 14px;
 }
+/* Focus target for the send result (registry-form.tsx); no box when empty. */
+.registry-status {
+  display: grid;
+  gap: 12px;
+}
+.registry-status:empty {
+  display: none;
+}
 .registry-errors {
   color: var(--red);
   font-weight: 700;

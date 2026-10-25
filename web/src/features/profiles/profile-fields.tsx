@@ -25,7 +25,13 @@ export function ProfileFields({
   return (
     <>
       <label className="form-field">
-        Название
+        <span>
+          Название
+          <span className="required-mark" aria-hidden>
+            {" "}
+            *
+          </span>
+        </span>
         <input
           name="name"
           required

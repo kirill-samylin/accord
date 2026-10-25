@@ -5,20 +5,26 @@ import "time"
 // ControlOverview contains complete counts from one authoritative transaction.
 // Active sessions and leases require a currently valid credential.
 type ControlOverview struct {
-	ObservedAt          time.Time `json:"observed_at"`
-	Project             string    `json:"project"`
-	TasksTotal          int       `json:"tasks_total"`
-	TasksCreated        int       `json:"tasks_created"`
-	TasksReady          int       `json:"tasks_ready"`
-	TasksInProgress     int       `json:"tasks_in_progress"`
-	TasksDone           int       `json:"tasks_done"`
-	TasksCancelled      int       `json:"tasks_cancelled"`
-	TasksBlocked        int       `json:"tasks_blocked"`
-	OpenEpics           int       `json:"open_epics"`
-	ActiveAgentSessions int       `json:"active_agent_sessions"`
-	ActiveHumanSessions int       `json:"active_human_sessions"`
-	LeasedTasks         int       `json:"leased_tasks"`
-	LatestEventCursor   int64     `json:"latest_event_cursor"`
+	ObservedAt   time.Time `json:"observed_at"`
+	Project      string    `json:"project"`
+	TasksTotal   int       `json:"tasks_total"`
+	TasksCreated int       `json:"tasks_created"`
+	TasksReady   int       `json:"tasks_ready"`
+	// TasksAvailable is the subset of ready tasks someone can start now: not
+	// leased, not blocked by unfinished dependencies, in an open epic, with an
+	// available assignment and not a human question. It equals the Team
+	// screen's unclaimed_total; TasksReady stays the plain state count so the
+	// state columns keep summing to TasksTotal.
+	TasksAvailable      int   `json:"tasks_available"`
+	TasksInProgress     int   `json:"tasks_in_progress"`
+	TasksDone           int   `json:"tasks_done"`
+	TasksCancelled      int   `json:"tasks_cancelled"`
+	TasksBlocked        int   `json:"tasks_blocked"`
+	OpenEpics           int   `json:"open_epics"`
+	ActiveAgentSessions int   `json:"active_agent_sessions"`
+	ActiveHumanSessions int   `json:"active_human_sessions"`
+	LeasedTasks         int   `json:"leased_tasks"`
+	LatestEventCursor   int64 `json:"latest_event_cursor"`
 }
 
 // ControlSession describes recorded participation, not an OS process.

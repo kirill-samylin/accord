@@ -116,6 +116,7 @@ func (s *Server) automationPage(r *http.Request, b *browserSession, kind, id str
 	p.CanManageProfiles = canWrite
 	if p.Workflow != nil {
 		p.Workflow.CanControl = p.Workflow.CanControl && canWrite
+		p.Workflow.CanResume = p.Workflow.CanResume && canWrite
 	}
 	if canWrite {
 		operations := []string{"automation:submit"}

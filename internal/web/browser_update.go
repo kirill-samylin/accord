@@ -19,6 +19,9 @@ func browserUpdateInput(r *http.Request, id, key string) (core.UpdateInput, erro
 	if len(description) > 16384 {
 		return core.UpdateInput{}, core.Fail("validation", "Введите описание до 16 КиБ")
 	}
+	if err := formTextError(r.PostForm, []string{"title"}, []string{"description"}); err != nil {
+		return core.UpdateInput{}, err
+	}
 	var generation int64
 	if value := r.PostForm.Get("generation"); value != "" {
 		var err error

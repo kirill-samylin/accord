@@ -41,8 +41,11 @@ export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const nonce = (await headers()).get("x-nonce") ?? undefined;
-  // Applied before first paint so a dark preference never flashes light;
-  // use-appearance.ts keeps the same key and rules after hydration.
+  // Applied while the HTML is parsed, before first paint, so a stored dark or
+  // light choice never flashes the other theme; use-appearance.ts keeps the
+  // same key and rules after hydration. A raw inline script with the CSP nonce
+  // is deliberate: next/script's beforeInteractive runs only once the Next
+  // runtime boots (after paint). React logs a dev-only warning for it.
   const theme = `try{var s=localStorage.getItem("accord.appearance.v1");document.documentElement.dataset.theme=s==="dark"||(!s&&matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light"}catch(e){}`;
   return (
     <html

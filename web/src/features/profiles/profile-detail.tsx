@@ -6,6 +6,7 @@ import { ProjectLink as Link } from "@/components/project-link";
 import { Avatar, EmptyState, Fact, PageHeading } from "@/components/common";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { MutationResult, PageData } from "@/lib/types";
+import { actorLabel } from "@/lib/event-display";
 import { date, label } from "@/lib/format";
 import { providerLabels } from "@/lib/agent-profiles";
 import { actionBody, actionID } from "../mutations/contracts";
@@ -206,10 +207,10 @@ export function ProfileDetail({
                 </span>
                 <span className="muted">{date(revision.updated_at)}</span>
                 <span
-                  className="mono break muted"
-                  title="Сессия автора изменения"
+                  className="muted"
+                  title={`Сессия автора изменения: ${revision.updated_by}`}
                 >
-                  {revision.updated_by}
+                  {actorLabel(undefined, undefined, revision.updated_by)}
                 </span>
               </div>
             ))}

@@ -6,6 +6,8 @@ import {
   requirementError,
   workflowControlReason,
   type AutomationPolicy,
+  resumeNeedsPolicy,
+  type WorkflowGrant,
   type WorkflowPage,
 } from "./automation.ts";
 import { newPolicy, policyErrors } from "./automation-policy.ts";
@@ -210,14 +212,28 @@ test("control never resumes working or ambiguous stopping process and denies rea
       true,
     ),
   );
+  const grant = { expires_at: "2999-01-01T00:00:00Z" } as WorkflowGrant;
   assert.equal(
     workflowControlReason(
       "resume",
-      { ...detail, workflow: { ...detail.workflow, state: "paused" } },
+      { ...detail, workflow: { ...detail.workflow, state: "paused", grant } },
       true,
     ),
     "",
   );
+});
+test("resume of a draft or ungranted requirement needs an explicit policy", () => {
+  const draft = {
+    workflow: { state: "awaiting_authorization" },
+    can_control: true,
+  } as WorkflowPage;
+  assert.ok(resumeNeedsPolicy(draft));
+  assert.ok(workflowControlReason("resume", draft, true));
+  assert.equal(workflowControlReason("resume", draft, true, true), "");
+  const paused = { ...draft, workflow: { state: "paused" } } as WorkflowPage;
+  assert.ok(resumeNeedsPolicy(paused), "no grant");
+  assert.equal(resumeNeedsPolicy({ ...draft, can_resume: true }), false);
+  assert.equal(resumeNeedsPolicy({ ...paused, can_resume: false }), true);
 });
 test("intake bounds use bytes; automation polling respects project locks and errors", () => {
   assert.ok(requirementError("  "));

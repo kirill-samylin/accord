@@ -71,6 +71,28 @@ func workflowOwnedActive(b *board, w *core.Workflow) bool {
 	return false
 }
 func workflowTouch(w *core.Workflow, now time.Time) { w.Version++; w.UpdatedAt = now }
+
+const workflowDraftMessage = "Черновик ещё не запущен: выберите разрешение команды и нажмите «Начать выполнение»"
+
+// workflowResumable mirrors the structural checks of a plain "resume" (no
+// refresh policy) for the page's can_resume hint. Authorization is still
+// decided by WorkflowCommand; a draft without a grant is never resumable.
+func workflowResumable(b *board, w *core.Workflow) bool {
+	if w.Grant == nil || w.CancelRequested || w.ReasonCode == "clarification_after_completion" || workflowOwnedActive(b, w) {
+		return false
+	}
+	switch w.State {
+	case "paused", "awaiting_authorization", "blocked", "needs_recovery":
+	default:
+		return false
+	}
+	for _, q := range b.Automation.Questions {
+		if q.WorkflowID == w.ID && q.State == "open" {
+			return false
+		}
+	}
+	return true
+}
 func (s *Store) WorkflowCommand(ctx context.Context, a core.Actor, in core.WorkflowCommandInput) (core.WorkflowPage, error) {
 	check := func(b *board, now time.Time) error {
 		w, err := workflowFor(b, in.WorkflowID)
@@ -84,6 +106,12 @@ func (s *Store) WorkflowCommand(ctx context.Context, a core.Actor, in core.Workf
 			if w.Requester.ID != a.Principal.ID {
 				return core.Fail("forbidden", "Только инициатор авторизует draft")
 			}
+			// A saved draft has no delegation yet: only an explicit team policy
+			// starts it. Say so instead of a bare permission error; nothing is
+			// authorized by this branch.
+			if in.RefreshPolicyID == "" {
+				return core.Fail("validation", workflowDraftMessage)
+			}
 		} else if err = workflowController(ctx, b, a, w, now); err != nil {
 			return err
 		}
@@ -96,6 +124,9 @@ func (s *Store) WorkflowCommand(ctx context.Context, a core.Actor, in core.Workf
 				return err
 			}
 			return validateAutomationPolicy(ctx, b, p.AutomationPolicySettings, now)
+		}
+		if in.Kind == "replan" && w.Grant == nil {
+			return core.Fail("validation", workflowDraftMessage)
 		}
 		if in.Kind == "resume" || in.Kind == "replan" {
 			return authorizeWorkflow(ctx, b, w, now)
