@@ -281,6 +281,14 @@ GitHub sign-in/webhooks, runtime-configurable process rules,
 import/export, UI and the complete platform release matrix remain in the
 [roadmap](docs/roadmap.md). There is no placeholder web application.
 
+## Releases
+
+CI runs on every push; a SemVer tag builds the immutable release assets and
+the manual **Deploy** workflow rolls them out to the server through
+`infra/accord/rollout.py` and the capable updater. Versioning, secrets, the
+rollout phases and the old-release prune policy are described in
+[release-process.md](docs/release-process.md).
+
 ## Checks and license
 
 ```sh

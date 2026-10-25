@@ -166,3 +166,14 @@ Full Go/unit/race/vet, web109/type/format/build, infra174 и realprocess4/4
 Source/code опубликован в исходный origin/codex/native-preflight. Native GUI
 Windows/Claude execution/второй физическийПК/fullV1 не заявляются; точные границы
 и independent receipts — TASK019/WORK290–294.
+
+
+Продолжение25.10.2026 — релизы: по поручению пользователя добавлены GitHub
+Actions (`ci.yml` на каждый push/PR, `release.yml` по тегу `v*`, ручной
+`deploy.yml` в environment `production`) и драйвер
+`infra/accord/rollout.py` (upload/stage/apply/smoke/finalize/prune по SSH поверх
+canonical `projects/upgrade.py`). Процесс — `docs/release-process.md`.
+Релиз = SemVer тег на проверенном коммите; сервер по-прежнему знает только
+полный SHA. Старые каталоги релизов на VPS удаляет `prune` (активный и `--keep`
+предыдущих остаются); снимки данных и журналы не удаляются. Секреты выкатки
+(ключ SSH, known_hosts) в репозиторий и CI кладёт только пользователь.

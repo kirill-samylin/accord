@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+    tags-ignore: ['v*']
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Makefile honours these; the runner cache lives outside .local.
+  GOCACHE: /home/runner/.cache/go-build
+  GOMODCACHE: /home/runner/go/pkg/mod
+  NEXT_TELEMETRY_DISABLED: '1'
+
+jobs:
+  go:
+    name: Go (fmt, vet, test, race, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.2'
+          cache-dependency-path: go.sum
+      - run: make fmt-check vet test build
+      - run: make race
+
+  infra:
+    name: Infra (python unittest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: make infra-test
+
+  web:
+    name: Web (format, typecheck, test, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: make web-install
+      - run: make web-check

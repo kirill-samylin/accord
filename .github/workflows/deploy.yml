@@ -1,0 +1,83 @@
+name: Deploy
+
+# Manual, one rollout at a time, gated by the `production` environment.
+# Downloads the assets of a published release and drives
+# infra/accord/rollout.py over SSH: upload -> stage -> apply -> smoke -> finalize -> prune.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to deploy (vX.Y.Z)'
+        required: true
+      phase:
+        description: 'Rollout phase'
+        type: choice
+        default: all
+        options: [all, upload, stage, apply, smoke, finalize, prune, status]
+      keep:
+        description: 'Old release directories to keep next to the active one'
+        default: '1'
+      resume:
+        description: 'Continue an interrupted apply (upgrade.py resume)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  rollout:
+    name: Roll out ${{ inputs.tag }} (${{ inputs.phase }})
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.ACCORD_PUBLIC_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - name: Download release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "${{ inputs.tag }}" --repo "$GITHUB_REPOSITORY" --dir dist
+          (cd dist && sha256sum -c SHA256SUMS)
+          mkdir -p release/go release/next
+          tar -xzf "dist/accord-${{ inputs.tag }}-server-linux-amd64.tar.gz" -C release/go
+          tar -xzf "dist/accord-${{ inputs.tag }}-next-linux-x64.tar.gz" -C release/next
+          test "$(cat release/go/SOURCE)" = "$(cat dist/REVISION)"
+      - name: SSH identity
+        env:
+          SSH_KEY: ${{ secrets.ACCORD_VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.ACCORD_VPS_KNOWN_HOSTS }}
+        run: |
+          umask 077
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$SSH_KEY" > "$HOME/.ssh/accord_deploy"
+          printf '%s\n' "$KNOWN_HOSTS" > "$HOME/.ssh/accord_known_hosts"
+      - name: Roll out
+        run: |
+          extra=''
+          [ "${{ inputs.phase }}" = all ] && extra="$extra --prune"
+          [ "${{ inputs.resume }}" = true ] && extra="$extra --resume"
+          python3 infra/accord/rollout.py "${{ inputs.phase }}" \
+            --target "${{ vars.ACCORD_VPS_TARGET }}" \
+            --identity "$HOME/.ssh/accord_deploy" \
+            --known-hosts "$HOME/.ssh/accord_known_hosts" \
+            --go-release release/go --next-bundle release/next \
+            --public-url "${{ vars.ACCORD_PUBLIC_URL }}" \
+            --receipts receipts --keep "${{ inputs.keep }}" $extra
+      - name: Keep receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rollout-${{ inputs.tag }}-${{ inputs.phase }}-${{ github.run_id }}
+          path: receipts
+          if-no-files-found: ignore
+      - name: Remove SSH identity
+        if: always()
+        run: rm -f "$HOME/.ssh/accord_deploy" "$HOME/.ssh/accord_known_hosts"

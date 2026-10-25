@@ -1,9 +1,11 @@
 GO ?= $(if $(wildcard .local/toolchains/go/bin/go),$(CURDIR)/.local/toolchains/go/bin/go,go)
 GOFMT ?= $(if $(wildcard .local/toolchains/go/bin/gofmt),$(CURDIR)/.local/toolchains/go/bin/gofmt,gofmt)
 export GOTOOLCHAIN := local
-export GOCACHE := $(CURDIR)/.local/toolchains/cache/build
-export GOMODCACHE := $(CURDIR)/.local/toolchains/cache/mod
-export GOTMPDIR := $(CURDIR)/.local/toolchains/tmp
+# Caches default to the isolated .local runtime; CI points them at its own cache.
+GOCACHE ?= $(CURDIR)/.local/toolchains/cache/build
+GOMODCACHE ?= $(CURDIR)/.local/toolchains/cache/mod
+GOTMPDIR ?= $(CURDIR)/.local/toolchains/tmp
+export GOCACHE GOMODCACHE GOTMPDIR
 export NEXT_TELEMETRY_DISABLED := 1
 
 PYTHON ?= python3
@@ -12,7 +14,7 @@ NEXT_NODE ?= $(NODE)
 NPM ?= npm
 WEB_PORT ?= 3100
 
-.PHONY: build test infra-test race vet fmt-check check web-install web-format-check web-typecheck web-test web-build web-check web-dev web-start
+.PHONY: build test infra-test race vet fmt-check check web-install web-format-check web-typecheck web-test web-build web-check web-dev web-start release
 
 build:
 	@mkdir -p bin "$(GOTMPDIR)"
@@ -64,3 +66,8 @@ fmt-check:
 	fi
 
 check: fmt-check vet test infra-test race build web-check
+
+# Linux server release (Go + infra) and Linux Next bundle for the committed HEAD.
+release:
+	ACCORD_GO="$(GO)" infra/accord/build-release.sh
+	ACCORD_NODE="$(NEXT_NODE)" infra/accord/build-next.sh
