@@ -186,8 +186,8 @@ export function PersonDialog({
               <h3>Активность</h3>
               <p className="form-help">
                 {personActive(person)
-                  ? "При деактивации все identity человека перестают проходить проверку; токены не отзываются, повторная активация вернёт доступ."
-                  : "Человек выключен: его браузерные сессии и native-запросы отвергаются."}
+                  ? "При деактивации все доступы человека перестают работать; токены не отзываются, повторная активация вернёт доступ."
+                  : "Человек выключен: его вход в браузере и запросы его агентов отвергаются."}
               </p>
               <RegistryForm
                 page={page}
@@ -234,7 +234,7 @@ export function PersonDialog({
               )}
             </section>
             <section className="person-section">
-              <h3>Identity и токены</h3>
+              <h3>Доступы и токены</h3>
               {identities.length ? (
                 <div className="admin-identity-list">
                   {identities.map((identity) => (

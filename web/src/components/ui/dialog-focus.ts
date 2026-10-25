@@ -11,6 +11,7 @@ type FocusHandlers = {
   onOpenAutoFocus?: (event: Event) => void;
   onCloseAutoFocus?: (event: Event) => void;
   initialFocus?: InitialFocus;
+  returnFocus?: { current: HTMLElement | null };
 };
 function available(element: Element | null): element is HTMLElement {
   return (
@@ -23,12 +24,19 @@ function available(element: Element | null): element is HTMLElement {
     getComputedStyle(element).visibility !== "hidden"
   );
 }
-export function restoreDialogFocus(opener: Element | null) {
-  const target = available(opener)
-    ? opener
-    : Array.from(
-        document.querySelectorAll<HTMLElement>("[data-command-trigger]"),
-      ).find(available);
+// Return focus to the opener; when it is gone (a menu item, a submit button
+// replaced by the result), use an explicit target, then the page heading.
+export function restoreDialogFocus(
+  opener: Element | null,
+  fallback?: HTMLElement | null,
+) {
+  const heading = document.querySelector<HTMLElement>("#main-content h1");
+  if (heading && !heading.hasAttribute("tabindex")) heading.tabIndex = -1;
+  const target =
+    [opener, fallback ?? null, heading].find(available) ??
+    Array.from(
+      document.querySelectorAll<HTMLElement>("[data-command-trigger]"),
+    ).find(available);
   target?.focus({ preventScroll: true });
 }
 // Radix dispatches the mount-autofocus event on the focus-scope container,
@@ -54,7 +62,7 @@ export function useDialogFocusHandlers(handlers: FocusHandlers = {}) {
       handlers.onCloseAutoFocus?.(event);
       if (event.defaultPrevented) return;
       event.preventDefault();
-      restoreDialogFocus(opener.current);
+      restoreDialogFocus(opener.current, handlers.returnFocus?.current);
     },
   };
 }

@@ -162,3 +162,31 @@ export function auditSubject(page: AdminPage, entry: AuditEntry) {
   if (entry.identity_id) parts.push(identityName(page, entry.identity_id));
   return parts.join(" · ");
 }
+// admin_audit.details is short "key=value" text from the server; show it in
+// the interface language. Unknown keys stay as they are.
+const detailKeys: Record<string, string> = {
+  role: "роль",
+  machine: "компьютер",
+  project: "проект",
+};
+const detailValues: Record<string, string> = {
+  admin: "администратор",
+  member: "участник",
+  owner: "владелец",
+  editor: "редактор",
+  viewer: "наблюдатель",
+  legacy: "прежний токен",
+};
+export function auditDetails(details: string): string {
+  return details
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => {
+      const at = part.indexOf("=");
+      if (at < 0) return detailValues[part] ?? part;
+      const key = part.slice(0, at),
+        value = part.slice(at + 1);
+      return `${detailKeys[key] ?? key}: ${detailValues[value] ?? value}`;
+    })
+    .join(", ");
+}

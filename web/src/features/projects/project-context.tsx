@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { usePathname } from "next/navigation";
+import { notFound, usePathname } from "next/navigation";
 import {
   projectAppPath,
   projectRoute,
@@ -33,8 +33,14 @@ const ProjectContext = createContext<Scope>(fallback);
 export const useProjectScope = () => useContext(ProjectContext);
 export function ProjectProvider({ children }: { children: ReactNode }) {
   const path = usePathname();
-  const id = projectRoute(path)?.id;
-  const key = routeScope(path);
+  let id: string | undefined, key: string;
+  try {
+    id = projectRoute(path)?.id;
+    key = routeScope(path);
+  } catch {
+    // An unknown /app/p/{id}/... address is a missing page, not a crash.
+    notFound();
+  }
   const [locks, setLocks] = useState<Set<object>>(() => new Set());
   const lock = useCallback((owner: object, value: boolean) => {
     setLocks((previous) => {

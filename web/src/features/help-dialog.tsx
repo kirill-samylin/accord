@@ -10,14 +10,17 @@ export function HelpDialog({
   open,
   onOpenChange,
   onCreate,
+  returnFocus,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreate: () => void;
+  // The menu item that opened the dialog is gone; go back to its trigger.
+  returnFocus?: { current: HTMLElement | null };
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent aria-describedby="help-steps">
+      <DialogContent aria-describedby="help-steps" returnFocus={returnFocus}>
         <DialogHeader>
           <DialogTitle>Как начать работу</DialogTitle>
         </DialogHeader>

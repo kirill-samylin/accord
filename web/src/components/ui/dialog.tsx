@@ -12,17 +12,21 @@ export function DialogContent({
   children,
   showCloseButton = true,
   initialFocus = "content",
+  returnFocus,
   onOpenAutoFocus,
   onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof Primitive.Content> & {
   showCloseButton?: boolean;
   initialFocus?: InitialFocus;
+  // Focus target on close when the opener no longer exists.
+  returnFocus?: { current: HTMLElement | null };
 }) {
   const focus = useDialogFocusHandlers({
     onOpenAutoFocus,
     onCloseAutoFocus,
     initialFocus,
+    returnFocus,
   });
   return (
     <Primitive.Portal>

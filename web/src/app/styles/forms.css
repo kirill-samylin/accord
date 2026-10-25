@@ -4,6 +4,8 @@
 }
 .form-field {
   display: grid;
+  /* One shrinkable column: a long select value must not widen the field. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 6px;
   min-width: 0;
   font-size: 13px;

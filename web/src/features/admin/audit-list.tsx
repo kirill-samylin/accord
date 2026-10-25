@@ -2,7 +2,13 @@
 import { useState } from "react";
 import { ScrollText } from "lucide-react";
 import type { AdminPage } from "@/lib/projects";
-import { actorName, auditEvent, auditSubject, auditTime } from "./admin-model";
+import {
+  auditDetails,
+  actorName,
+  auditEvent,
+  auditSubject,
+  auditTime,
+} from "./admin-model";
 const pageSize = 40;
 export function AuditList({ page }: { page: AdminPage }) {
   const [limit, setLimit] = useState(pageSize);
@@ -27,7 +33,9 @@ export function AuditList({ page }: { page: AdminPage }) {
                   </span>
                 ) : null}
                 {entry.details ? (
-                  <span className="muted break">{entry.details}</span>
+                  <span className="muted break">
+                    {auditDetails(entry.details)}
+                  </span>
                 ) : null}
               </div>
               <div className="admin-audit-meta">

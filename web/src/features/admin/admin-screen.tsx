@@ -188,7 +188,7 @@ export default function AdminScreen({ page }: { page: AdminPage }) {
             aria-labelledby="admin-unlinked-title"
           >
             <div className="admin-section-head">
-              <h2 id="admin-unlinked-title">Непривязанные identity</h2>
+              <h2 id="admin-unlinked-title">Доступы без человека</h2>
               <span className="muted">
                 Исторические токены без человека. Привяжите их вручную.
               </span>

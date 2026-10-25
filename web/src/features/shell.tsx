@@ -53,6 +53,7 @@ export function Shell({
   const path = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const helpTrigger = useRef<HTMLButtonElement>(null);
   const menuTrigger = useRef<HTMLButtonElement | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { dark, toggle: toggleTheme } = useAppearance();
@@ -218,7 +219,11 @@ export function Shell({
             </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="icon-button" aria-label="Справка и сессия">
+                <button
+                  ref={helpTrigger}
+                  className="icon-button"
+                  aria-label="Справка и сессия"
+                >
                   <CircleHelp size={17} />
                 </button>
               </DropdownMenuTrigger>
@@ -244,6 +249,7 @@ export function Shell({
           </div>
         </header>
         <HelpDialog
+          returnFocus={helpTrigger}
           open={helpOpen}
           onOpenChange={setHelpOpen}
           onCreate={() => {

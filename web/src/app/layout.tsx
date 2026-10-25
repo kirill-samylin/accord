@@ -40,13 +40,19 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  await headers();
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  // Applied before first paint so a dark preference never flashes light;
+  // use-appearance.ts keeps the same key and rules after hydration.
+  const theme = `try{var s=localStorage.getItem("accord.appearance.v1");document.documentElement.dataset.theme=s==="dark"||(!s&&matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light"}catch(e){}`;
   return (
     <html
       lang="ru"
       suppressHydrationWarning
       className={`${display.variable} ${sans.variable} ${mono.variable} ${pixel.variable}`}
     >
+      <head>
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: theme }} />
+      </head>
       <body>{children}</body>
     </html>
   );

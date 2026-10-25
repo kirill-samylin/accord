@@ -26,8 +26,12 @@ export function TokenIssueForm({
   onIssued: (issued: IssuedCredential) => void;
   onSuccess: (result: CatalogMutationResult) => void;
 }) {
+  // A new form after each issue: the previous machine/days are not reused
+  // by accident for a second token.
+  const [round, setRound] = useState(0);
   return (
     <RegistryForm
+      key={round}
       page={page}
       actionKey={`admin:person:${person.id}:credential`}
       endpoint={`/web/catalog/admin/people/${person.id}/credentials`}
@@ -35,6 +39,7 @@ export function TokenIssueForm({
       validate={validateCredential}
       onSuccess={(result) => {
         if (result.issued) onIssued(result.issued);
+        setRound((value) => value + 1);
         onSuccess({ ...result, issued: undefined });
       }}
     >

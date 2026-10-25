@@ -241,6 +241,7 @@ select {
 /* Custom select (components/ui/select.tsx): same box as text inputs. */
 .select-trigger {
   width: 100%;
+  min-width: 0;
   min-height: 40px;
   display: flex;
   align-items: center;
