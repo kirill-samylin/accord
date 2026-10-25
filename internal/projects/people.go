@@ -15,10 +15,10 @@ import (
 // page does not exist for members) and appends admin_audit without secrets.
 func validPersonName(name string) bool {
 	n := utf8.RuneCountInString(name)
-	return strings.TrimSpace(name) == name && n >= 1 && n <= MaxPersonName && !strings.ContainsAny(name, "\r\n\x00")
+	return utf8.ValidString(name) && strings.TrimSpace(name) == name && n >= 1 && n <= MaxPersonName && !strings.ContainsAny(name, "\r\n\x00")
 }
 func validPersonNote(note string) bool {
-	return utf8.RuneCountInString(note) <= MaxPersonNote && !strings.ContainsAny(note, "\x00")
+	return utf8.ValidString(note) && utf8.RuneCountInString(note) <= MaxPersonNote && !strings.ContainsAny(note, "\x00")
 }
 func validPersonRole(role string) bool { return role == "member" || role == "admin" }
 func validIdentityID(id string) bool {
@@ -100,6 +100,25 @@ func (r *Registry) requireAnotherAdmin(ctx context.Context, tx *sql.Tx) error {
 	}
 	return nil
 }
+
+// requireAdminCredentialBesides refuses an operation that would leave no
+// usable credential of an active admin: the identity being revoked or moved
+// away is excluded from the count. Legacy tokens count as usable here; their
+// revocation state lives on the default board and is checked when used.
+func (r *Registry) requireAdminCredentialBesides(ctx context.Context, tx *sql.Tx, identityID string) error {
+	var usable int
+	err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM identities i JOIN people p ON p.id=i.person_id
+		LEFT JOIN credentials c ON c.identity_id=i.id
+		WHERE p.role='admin' AND p.active=1 AND i.id<>? AND
+		(i.source='legacy' OR c.revoked=0 AND c.expires>?)`, identityID, time.Now().UnixNano()).Scan(&usable)
+	if err != nil {
+		return err
+	}
+	if usable == 0 {
+		return core.Fail("conflict", "last admin credential must remain")
+	}
+	return nil
+}
 func personResult(ctx context.Context, tx *sql.Tx, p Person) error {
 	raw, err := json.Marshal(map[string]any{"ok": true, "person": p})
 	if err != nil {
@@ -156,6 +175,9 @@ func (r *Registry) UpdatePerson(ctx context.Context, actor Identity, id string, 
 		}
 		if in.VersionGiven && in.Version != p.Version {
 			return p, core.Fail("conflict", "person changed")
+		}
+		if in.Action == "deactivate" && !p.Active || in.Action == "activate" && p.Active {
+			return p, personResult(ctx, tx, p)
 		}
 		switch in.Action {
 		case "update":

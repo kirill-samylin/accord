@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 	"unicode/utf8"
 )
@@ -74,6 +75,19 @@ func registryMigrationCopy(root string, db *sql.DB, version int) error {
 	if err = syncRegistryDirectory(root); err != nil {
 		return err
 	}
+	// A crash during an earlier copy may leave a staging file; it is never a
+	// published copy, and validators refuse unknown entries, so drop it.
+	stale, err := filepath.Glob(filepath.Join(dir, ".registry-copy-*.db"))
+	if err != nil {
+		return err
+	}
+	for _, path := range stale {
+		if info, e := os.Lstat(path); e == nil && info.Mode().IsRegular() {
+			if e = os.Remove(path); e != nil {
+				return e
+			}
+		}
+	}
 	stage, err := os.CreateTemp(dir, ".registry-copy-*.db")
 	if err != nil {
 		return err
@@ -95,7 +109,6 @@ func registryMigrationCopy(root string, db *sql.DB, version int) error {
 	if err = os.Link(stagePath, final); err != nil && !os.IsExist(err) {
 		return err
 	}
-	// An existing name holds byte-identical content: the hash is the name.
 	published, err := os.Lstat(final)
 	if err != nil {
 		return err
@@ -103,7 +116,28 @@ func registryMigrationCopy(root string, db *sql.DB, version int) error {
 	if !published.Mode().IsRegular() || published.Mode().Perm() != 0600 {
 		return errors.New("migration copy must be a regular mode0600 file")
 	}
+	// A pre-existing name is accepted only when its bytes hash to the name;
+	// otherwise the rollback copy would be a foreign file.
+	if err = verifyCopyDigest(final, hex.EncodeToString(digest.Sum(nil))); err != nil {
+		return err
+	}
 	return syncRegistryDirectory(dir)
+}
+
+func verifyCopyDigest(path, expected string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	digest := sha256.New()
+	if _, err = io.Copy(digest, file); err != nil {
+		return err
+	}
+	if hex.EncodeToString(digest.Sum(nil)) != expected {
+		return errors.New("existing migration copy differs from the registry snapshot")
+	}
+	return nil
 }
 
 // bootstrapPeople gives every identity its own person. Owner labels are not
@@ -158,12 +192,25 @@ func bootstrapPeople(tx *sql.Tx) error {
 	return nil
 }
 func uniquePersonName(owner, machine string, taken map[string]bool) string {
-	name := truncateRunes(owner, MaxPersonName)
-	if taken[name] {
-		name = truncateRunes(owner+" ("+machine+")", MaxPersonName)
+	clean := func(value string) string {
+		return strings.TrimSpace(strings.Map(func(r rune) rune {
+			if r == '\r' || r == '\n' || r == 0 || r == utf8.RuneError {
+				return ' '
+			}
+			return r
+		}, value))
+	}
+	owner, machine = clean(owner), clean(machine)
+	if owner == "" {
+		owner = "person"
+	}
+	name := strings.TrimSpace(truncateRunes(owner, MaxPersonName))
+	if taken[name] && machine != "" {
+		name = strings.TrimSpace(truncateRunes(owner+" ("+machine+")", MaxPersonName))
 	}
 	for base, n := name, 2; taken[name]; n++ {
-		name = truncateRunes(fmt.Sprintf("%s #%d", base, n), MaxPersonName)
+		suffix := fmt.Sprintf(" #%d", n)
+		name = strings.TrimSpace(truncateRunes(base, MaxPersonName-utf8.RuneCountInString(suffix))) + suffix
 	}
 	taken[name] = true
 	return name

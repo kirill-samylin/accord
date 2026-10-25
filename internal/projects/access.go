@@ -88,8 +88,8 @@ func (r *Registry) manageAccess(ctx context.Context, tx *sql.Tx, who Identity, p
 		return a, e
 	}
 	p.CanManage = true
-	p.CanArchive = p.State == "active" && p.ID != r.defaultID
-	return access{tx: tx, identity: current, project: p, principal: core.Principal{Owner: current.Owner, Machine: current.Machine}}, nil
+	p.CanArchive = false
+	return access{tx: tx, identity: current, project: p, principal: core.Principal{Owner: current.Owner, Machine: current.Machine}, adminOnly: true}, nil
 }
 func withAccess[T any](s *service, ctx context.Context, write bool, session string, fn func(context.Context, access) (T, error)) (T, error) {
 	var zero T

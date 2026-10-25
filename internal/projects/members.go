@@ -108,6 +108,11 @@ func (r *Registry) changeMember(ctx context.Context, who Identity, pid, target, 
 		if e = audit(ctx, tx, "member_"+operation, who.ID, pid); e != nil {
 			return false, e
 		}
+		if a.adminOnly {
+			if e = adminAudit(ctx, tx, "member_"+operation, who.ID, "", target, "project="+pid+" role="+role); e != nil {
+				return false, e
+			}
+		}
 		return true, finishCatalog(ctx, tx)
 	})
 	return err

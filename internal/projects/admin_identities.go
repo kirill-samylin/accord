@@ -116,8 +116,27 @@ func (r *Registry) LinkIdentity(ctx context.Context, actor Identity, identityID,
 		if err != nil {
 			return AdminIdentity{}, err
 		}
-		if _, err = r.person(ctx, tx, personID); err != nil {
+		target, err := r.person(ctx, tx, personID)
+		if err != nil {
 			return AdminIdentity{}, err
+		}
+		if identityID == admin.ID {
+			return AdminIdentity{}, core.Fail("forbidden", "cannot relink your own credential")
+		}
+		var current string
+		err = tx.QueryRowContext(ctx, `SELECT person_id FROM identities WHERE id=?`, identityID).Scan(&current)
+		if missing(err) {
+			return AdminIdentity{}, notFound()
+		}
+		if err != nil {
+			return AdminIdentity{}, err
+		}
+		// Moving a credential out of an active admin is a demotion of that
+		// credential; it must not strip the last usable admin access.
+		if owner, e := r.person(ctx, tx, current); e == nil && owner.Active && owner.Role == "admin" && !(target.Active && target.Role == "admin") {
+			if err = r.requireAdminCredentialBesides(ctx, tx, identityID); err != nil {
+				return AdminIdentity{}, err
+			}
 		}
 		result, err := tx.ExecContext(ctx, `UPDATE identities SET person_id=? WHERE id=?`, personID, identityID)
 		if err != nil {
@@ -156,6 +175,14 @@ func (r *Registry) RevokeIdentity(ctx context.Context, actor Identity, identityI
 		}
 		if err != nil {
 			return AdminIdentity{}, err
+		}
+		if identityID == admin.ID {
+			return AdminIdentity{}, core.Fail("forbidden", "cannot revoke your own credential")
+		}
+		if owner, e := r.person(ctx, tx, personID); e == nil && owner.Active && owner.Role == "admin" {
+			if err = r.requireAdminCredentialBesides(ctx, tx, identityID); err != nil {
+				return AdminIdentity{}, err
+			}
 		}
 		if source == "legacy" {
 			if err = r.options.Default.RevokeToken(ctx, tokenID); err != nil {

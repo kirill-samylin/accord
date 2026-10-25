@@ -54,6 +54,15 @@ func requireOwner(a access) error {
 	}
 	return nil
 }
+
+// requireProjectOwner is for project settings beyond membership: a global
+// admin must hold an owner membership to rename, archive or edit repositories.
+func requireProjectOwner(a access) error {
+	if a.adminOnly {
+		return denied()
+	}
+	return requireOwner(a)
+}
 func (r *Registry) createProject(ctx context.Context, who Identity, id, name, url, branch string) (Project, error) {
 	if !validName(name) {
 		return Project{}, invalid()
@@ -152,7 +161,7 @@ func (r *Registry) updateProject(ctx context.Context, who Identity, id, name, st
 		if e != nil {
 			return Project{}, e
 		}
-		if e = requireOwner(a); e != nil {
+		if e = requireProjectOwner(a); e != nil {
 			return Project{}, e
 		}
 		if a.project.Version != version {

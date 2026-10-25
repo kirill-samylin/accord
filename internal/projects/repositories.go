@@ -44,7 +44,7 @@ func (r *Registry) repository(ctx context.Context, who Identity, pid, rid, opera
 		if e != nil {
 			return false, e
 		}
-		if e = requireOwner(a); e != nil {
+		if e = requireProjectOwner(a); e != nil {
 			return false, e
 		}
 		switch operation {

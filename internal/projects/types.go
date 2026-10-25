@@ -106,6 +106,9 @@ type access struct {
 	project   Project
 	member    member
 	principal core.Principal
+	// adminOnly marks a global admin without membership: catalog member
+	// management only (docs/admin.md), no board, archive or repositories.
+	adminOnly bool
 }
 type accountKey struct{}
 
