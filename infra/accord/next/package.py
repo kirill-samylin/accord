@@ -37,6 +37,12 @@ def linux_package(lock, name, destination):
     integrity = 'sha512-' + base64.b64encode(hashlib.sha512(data).digest()).decode()
     if integrity != entry['integrity']:
         raise RuntimeError('Linux optional package integrity mismatch')
+    # A Linux build host already carries this optional package in the
+    # standalone output; replace it with the lock-verified copy either way.
+    if destination.is_symlink():
+        raise RuntimeError('symlinked optional package in standalone bundle')
+    if destination.exists():
+        shutil.rmtree(destination)
     destination.mkdir(parents=True)
     with tarfile.open(fileobj=io.BytesIO(data), mode='r:gz') as archive:
         for member in archive:
