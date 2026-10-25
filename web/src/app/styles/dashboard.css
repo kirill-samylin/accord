@@ -1,44 +1,96 @@
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
+  gap: 20px;
 }
 .metric {
   min-width: 0;
-  padding: 20px;
-  border-radius: 8px;
+  padding: 18px 20px;
+  border: var(--line) solid var(--edge);
+  background: var(--surface);
+  color: var(--foreground);
+  box-shadow: var(--shadow-lg);
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition:
+    transform 80ms,
+    box-shadow 80ms;
+}
+.metrics-grid > .metric:nth-child(2) {
+  background: var(--yellow);
+  color: var(--ink);
+}
+.metrics-grid > .metric:nth-child(3) {
+  background: var(--pink);
+  color: var(--ink);
+}
+.metrics-grid > .metric:nth-child(4) {
+  background: var(--lime);
+  color: var(--ink);
+}
+.metrics-grid > .metric:nth-child(n + 2) {
+  border-color: var(--ink);
+}
+.metrics-grid > .metric:nth-child(n + 2) .metric-label {
+  background: #fff;
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.metrics-grid > .metric:nth-child(n + 2) .metric-caption {
+  color: var(--ink);
 }
 a.metric:hover {
-  background: var(--accent);
+  color: inherit;
+  transform: translate(2px, 2px);
+  box-shadow: var(--shadow-sm);
 }
 .metric-label {
-  color: var(--muted-foreground);
-  font-size: 12px;
+  width: max-content;
+  max-width: 100%;
+  padding: 2px 7px;
+  border: var(--line-thin) solid var(--edge);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+:root[data-theme="dark"] .metrics-grid > .metric:first-child .metric-label {
+  color: var(--foreground);
 }
 .metric-value {
-  font-size: 30px;
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  line-height: 1.4;
+  font-family: var(--font-display);
+  font-size: 44px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 .metric-caption {
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 700;
   margin-top: 2px;
 }
 .agent-strip {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: 20px;
 }
 .agent-card {
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: var(--line) solid var(--edge);
+  border-radius: 0;
+  background: var(--surface);
+  box-shadow: var(--shadow);
   padding: 14px;
   min-width: 0;
 }
 .agent-card:hover {
-  background: var(--accent);
+  color: inherit;
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-lg);
 }
 .agent-card-head {
   display: flex;
@@ -53,16 +105,18 @@ a.metric:hover {
 }
 .agent-card-copy strong {
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 800;
 }
 .agent-card-copy > span {
   font-size: 10px;
+  font-family: var(--font-mono);
 }
 .session-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--muted-foreground);
+  width: 8px;
+  height: 8px;
+  border-radius: 0;
+  border: var(--line-thin) solid var(--edge);
+  background: var(--surface);
 }
 .session-active {
   background: var(--green);
@@ -71,14 +125,18 @@ a.metric:hover {
   background: var(--red);
 }
 .agent-card-task {
-  margin-top: 15px;
-  font-size: 11px;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: var(--line-thin) dashed var(--edge);
+  font-size: 12px;
+  font-weight: 700;
 }
 .agent-card-meta {
   margin-top: 10px;
   display: flex;
   gap: 6px;
   align-items: center;
+  font-family: var(--font-mono);
   font-size: 10px;
 }
 .agent-card-meta > span {
@@ -90,65 +148,103 @@ a.metric:hover {
   gap: 24px;
 }
 .chart-panel {
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: var(--line) solid var(--edge);
+  border-radius: 0;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
   padding: 20px;
   min-width: 0;
+}
+.dashboard-charts > .chart-panel:nth-child(2) {
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 6px 6px 0 var(--blue);
+}
+.dashboard-charts > .chart-panel:nth-child(2) h2 {
+  color: var(--yellow);
+}
+.dashboard-charts > .chart-panel:nth-child(2) .muted,
+.dashboard-charts > .chart-panel:nth-child(2) .queue-summary dt,
+.dashboard-charts > .chart-panel:nth-child(2) .inline-link {
+  color: #d8d2c4;
+}
+.dashboard-charts > .chart-panel:nth-child(2) .inline-link:hover {
+  color: var(--yellow);
 }
 .state-chart,
 .group-chart {
   display: grid;
-  gap: 14px;
-  padding-top: 10px;
+  gap: 12px;
+  padding-top: 6px;
 }
 .state-bar-row {
   display: grid;
-  grid-template-columns: 116px 1fr 28px;
+  grid-template-columns: 120px 1fr 32px;
   gap: 12px;
   align-items: center;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.state-bar-row .status {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 13px;
+  text-transform: none;
+}
+.state-bar-row > :last-child {
+  font-family: var(--font-mono);
+  text-align: right;
 }
 .bar-track {
-  height: 6px;
-  border-radius: 4px;
+  height: 14px;
+  border: var(--line-thin) solid var(--edge);
+  border-radius: 0;
   overflow: hidden;
-  background: var(--muted);
+  background: var(--surface);
 }
 .bar-fill {
   display: block;
   height: 100%;
-  border-radius: 4px;
-  background: var(--muted-foreground);
+  border-radius: 0;
+  background: var(--muted);
+  border-right: var(--line-thin) solid var(--edge);
   min-width: 0;
 }
 .fill-ready {
-  background: var(--amber);
+  background: var(--yellow);
 }
 .fill-in_progress {
   background: var(--blue);
 }
 .fill-done {
-  background: var(--green);
+  background: var(--lime);
 }
 .queue-summary {
   margin: 0;
   padding: 8px 0 12px;
   display: grid;
-  gap: 16px;
+  gap: 0;
 }
 .queue-summary > div {
   display: flex;
   gap: 16px;
   justify-content: space-between;
   align-items: center;
-  font-size: 13px;
+  padding: 10px 0;
+  border-bottom: var(--line-thin) solid #5a5450;
+  font-size: 14px;
+  font-weight: 700;
 }
 .queue-summary dt {
   color: var(--muted-foreground);
 }
 .queue-summary dd {
   margin: 0;
-  font-weight: 500;
+  font-family: var(--font-mono);
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 .inline-link {
@@ -156,9 +252,13 @@ a.metric:hover {
   gap: 4px;
   align-items: center;
   font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--muted-foreground);
 }
 .inline-link:hover {
   color: var(--foreground);
   text-decoration: underline;
+  text-underline-offset: 3px;
 }

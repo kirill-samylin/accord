@@ -17,11 +17,11 @@
 }
 @media (max-width: 1023px) {
   .detail-layout {
-    grid-template-columns: minmax(0, 1fr) 210px;
+    grid-template-columns: minmax(0, 1fr) 240px;
     gap: 24px;
   }
   .properties-panel {
-    padding-left: 16px;
+    padding: 16px;
   }
   .entity-task {
     display: none;
@@ -58,23 +58,25 @@
     margin: -12px -8px -12px 0;
   }
   .metrics-grid {
-    gap: 0;
+    gap: 12px;
   }
   .metric {
     padding: 12px;
+    box-shadow: var(--shadow-sm);
   }
   .metric-value {
-    font-size: 28px;
+    font-size: 30px;
   }
   .metric-caption {
     font-size: 10px;
   }
   .agent-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    gap: 12px;
   }
   .agent-card {
     padding: 10px;
+    box-shadow: var(--shadow-sm);
   }
   .agent-card-head {
     gap: 6px;
@@ -94,11 +96,12 @@
     font-size: 11px;
   }
   .session-dot {
-    width: 5px;
-    height: 5px;
+    width: 7px;
+    height: 7px;
   }
   .chart-panel {
     padding: 16px;
+    box-shadow: var(--shadow);
   }
   .state-bar-row {
     grid-template-columns: 105px 1fr 24px;
@@ -111,9 +114,8 @@
   }
   .event-time {
     width: 100%;
-    padding-left: 14px;
-    font-size: 10px;
-    margin-top: -5px;
+    padding-left: 20px;
+    margin-top: -4px;
   }
   .entity-row {
     padding: 12px;
@@ -143,8 +145,10 @@
   .mobile-properties {
     display: block;
     width: 100%;
-    border: 1px solid var(--border);
-    border-radius: 8px;
+    border: var(--line) solid var(--edge);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    border-radius: 0;
     padding: 16px;
   }
   .mobile-properties summary {
@@ -153,6 +157,9 @@
     align-items: center;
     list-style: none;
     font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
     cursor: pointer;
   }
   .mobile-properties .properties {
@@ -180,6 +187,7 @@
   }
   .task-peek {
     width: 100%;
+    box-shadow: none;
     padding-bottom: env(safe-area-inset-bottom);
   }
   .answer-panel {
@@ -196,6 +204,9 @@
   }
   .task-detail-heading .page-heading {
     flex-direction: column;
+  }
+  .task-detail-heading h1 {
+    font-size: 22px;
   }
   .project-entity {
     padding: 14px;
@@ -216,5 +227,11 @@
   .asset-actions .icon-button {
     min-height: 32px;
     height: 32px;
+  }
+  .list-surface,
+  .project-card,
+  .person-card,
+  .kanban-card {
+    box-shadow: var(--shadow-sm);
   }
 }

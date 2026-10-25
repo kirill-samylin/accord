@@ -6,7 +6,7 @@
 .managed-host-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr));
-  gap: 12px;
+  gap: 20px;
 }
 .managed-host {
   display: flex;
@@ -21,7 +21,10 @@
 }
 .managed-status {
   margin-left: auto;
-  font-size: 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 .managed-online {
   color: var(--green);
@@ -35,13 +38,17 @@
   align-items: center;
   gap: 16px;
   padding: 16px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--line-thin) solid var(--edge);
 }
 .managed-run-row:last-child {
   border-bottom: 0;
 }
 .managed-run-row:hover {
-  background: var(--accent);
+  background: var(--paper);
+  color: inherit;
+}
+:root[data-theme="dark"] .managed-run-row:hover {
+  background: var(--muted);
 }
 .managed-summary {
   display: grid;
@@ -73,13 +80,14 @@
 }
 .managed-command {
   padding: 16px 0;
-  border-top: 1px solid var(--border);
+  border-top: var(--line-thin) dashed var(--edge);
   display: flex;
   flex-direction: column;
   gap: 10px;
   overflow-wrap: anywhere;
 }
 .managed-command time {
+  font-family: var(--font-mono);
   font-size: 12px;
   margin-left: auto;
 }
@@ -91,6 +99,12 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  padding: 14px;
+  border: var(--line) solid var(--edge);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 12px;
 }
 .managed-setup {
   display: flex;
@@ -100,7 +114,10 @@
 .managed-setup summary,
 .managed-identifiers summary {
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 12px;
 }
 .managed-setup p {
   margin-top: 10px;
@@ -129,7 +146,6 @@
     margin-left: 0;
   }
 }
-
 .managed-control-code {
   display: flex;
   flex-direction: column;

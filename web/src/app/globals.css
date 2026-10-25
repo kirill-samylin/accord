@@ -24,41 +24,62 @@
   font-style: normal;
   font-display: swap;
 }
+/* Neo-brutalism tokens. Palette: cream paper, ink lines, one loud blue,
+   yellow / pink / lime / mint as flat fills. No radii, hard offset shadows. */
 :root {
   color-scheme: light;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --border: oklch(0.922 0 0);
-  --accent: oklch(0.96 0 0);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.9 0 0);
-  --ring: oklch(0.708 0 0);
-  --radius: 8px;
-  --blue: #2563eb;
-  --green: #16834a;
-  --amber: #a76b06;
-  --red: #d13e3e;
+  --ink: #141414;
+  --paper: #fff6e0;
+  --blue: #2d5bff;
+  --yellow: #ffd23f;
+  --pink: #ff6b9a;
+  --lime: #c7f000;
+  --mint: #8fe3c6;
+  --green: #1b7a3e;
+  --amber: #a05a00;
+  --red: #d1004b;
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --surface: #ffffff;
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --muted: #f3e9cf;
+  --muted-foreground: #5a5450;
+  --edge: var(--ink);
+  --border: var(--edge);
+  --accent: var(--yellow);
+  --on-accent: var(--ink);
+  --sidebar: var(--paper);
+  --sidebar-accent: var(--yellow);
+  --ring: var(--blue);
+  --radius: 0px;
+  --line: 3px;
+  --line-thin: 2px;
+  --shadow-sm: 3px 3px 0 var(--edge);
+  --shadow: 4px 4px 0 var(--edge);
+  --shadow-lg: 6px 6px 0 var(--edge);
+  --font-sans:
+    Manrope, Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  --font-display: Unbounded, "Arial Black", Manrope, Inter, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-pixel: "Press Start 2P", "JetBrains Mono", ui-monospace, monospace;
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --background: oklch(0.205 0 0);
-  --foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --border: oklch(1 0 0 / 0.1);
-  --accent: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-accent: oklch(0.32 0 0);
-  --blue: #7aa9ff;
-  --green: #63c58d;
-  --amber: #e6b454;
-  --red: #f48d8d;
+  --background: #141414;
+  --foreground: var(--paper);
+  --surface: #1f1d1a;
+  --primary: var(--paper);
+  --primary-foreground: var(--ink);
+  --muted: #2a2723;
+  --muted-foreground: #bdb4a6;
+  --edge: var(--paper);
+  --sidebar: #141414;
+  --green: #5fd38a;
+  --amber: #f0b84a;
+  --red: #ff6b9a;
 }
 * {
   box-sizing: border-box;
@@ -68,15 +89,10 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family:
-    Inter,
-    ui-sans-serif,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.5;
+  font-weight: 500;
   -webkit-font-smoothing: antialiased;
 }
 button,
@@ -103,16 +119,21 @@ a {
   color: inherit;
   text-decoration: none;
 }
+a:hover {
+  color: var(--blue);
+}
 button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+  transform: none !important;
 }
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
-select:focus-visible {
-  outline: 2px solid var(--ring);
+select:focus-visible,
+summary:focus-visible {
+  outline: 3px solid var(--ring);
   outline-offset: 3px;
 }
 svg {
@@ -125,33 +146,58 @@ p {
   margin: 0;
 }
 h1 {
-  font-size: 24px;
-  line-height: 1.25;
-  font-weight: 600;
-  letter-spacing: -0.025em;
+  font-family: var(--font-display);
+  font-size: 36px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 h2 {
+  font-family: var(--font-display);
   font-size: 16px;
-  font-weight: 600;
+  line-height: 1.15;
+  font-weight: 900;
+  text-transform: uppercase;
 }
 h3 {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 small {
   font-size: 12px;
 }
+strong {
+  font-weight: 800;
+}
 hr {
   border: 0;
-  border-top: 1px solid var(--border);
+  border-top: var(--line-thin) dashed var(--edge);
   margin: 16px 0;
 }
 .muted {
   color: var(--muted-foreground);
 }
 .mono {
-  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
+  font-weight: 600;
+}
+.kicker {
+  display: inline-block;
+  width: max-content;
+  max-width: 100%;
+  padding: 4px 8px;
+  border: var(--line-thin) solid var(--edge);
+  background: var(--surface);
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.6;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 .truncate {
   overflow: hidden;
@@ -172,4 +218,8 @@ hr {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+::selection {
+  background: var(--yellow);
+  color: var(--ink);
 }

@@ -1,11 +1,13 @@
 .screen-stack {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 .list-surface {
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: var(--line) solid var(--edge);
+  border-radius: 0;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
 }
 .empty-state {
@@ -16,15 +18,24 @@
   gap: 12px;
   color: var(--muted-foreground);
   text-align: center;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent 0 10px,
+    var(--muted) 10px 20px
+  );
 }
 .empty-state > svg {
-  opacity: 0.6;
+  opacity: 0.8;
 }
 .empty-state h3 {
   color: var(--foreground);
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0;
 }
 .empty-state p {
   font-size: 13px;
+  font-weight: 600;
   max-width: 360px;
 }
 .compact-empty {
@@ -33,55 +44,81 @@
   align-items: center;
   gap: 12px;
   font-size: 13px;
+  font-weight: 600;
 }
 .status {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  color: var(--muted-foreground);
+  padding: 2px 7px;
+  border: var(--line-thin) solid var(--edge);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--foreground);
   white-space: nowrap;
 }
+.status svg {
+  width: 11px;
+  height: 11px;
+}
 .status-ready {
-  color: var(--amber);
+  background: var(--yellow);
+  color: var(--ink);
 }
 .status-in_progress,
 .status-active,
 .status-open {
-  color: var(--blue);
+  background: var(--blue);
+  color: #fff;
 }
 .status-done {
-  color: var(--green);
+  background: var(--lime);
+  color: var(--ink);
 }
 .status-blocked,
 .status-credential_invalid {
-  color: var(--red);
+  background: var(--pink);
+  color: var(--ink);
+}
+.status-cancelled,
+.status-canceled {
+  border-style: dashed;
+  color: var(--muted-foreground);
 }
 .task-row {
   display: flex;
   gap: 12px;
   align-items: center;
   padding: 10px 16px;
-  min-height: 45px;
-  border-bottom: 1px solid var(--border);
+  min-height: 48px;
+  border-bottom: var(--line-thin) solid var(--edge);
   font-size: 13px;
 }
 .task-row:last-child {
   border-bottom: 0;
 }
 .task-row:hover {
-  background: color-mix(in oklch, var(--accent) 60%, transparent);
+  background: var(--paper);
+}
+:root[data-theme="dark"] .task-row:hover {
+  background: var(--muted);
 }
 .task-row-status .status span {
   display: none;
 }
 .task-key {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
   color: var(--muted-foreground);
-  min-width: 38px;
+  min-width: 44px;
 }
 .task-title {
   flex: 1;
-  font-weight: 450;
+  font-weight: 700;
 }
 .task-role {
   font-size: 11px;
@@ -92,17 +129,23 @@
   font-size: 11px;
 }
 .peek-button {
-  height: 24px;
-  width: 24px;
+  height: 28px;
+  width: 28px;
 }
 .list-group-heading {
   display: flex;
   gap: 8px;
   align-items: center;
-  padding: 10px 16px;
-  background: var(--muted);
-  border-bottom: 1px solid var(--border);
+  padding: 8px 16px;
+  background: var(--paper);
+  border-bottom: var(--line-thin) solid var(--edge);
+  font-family: var(--font-mono);
   font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+:root[data-theme="dark"] .list-group-heading {
+  background: var(--muted);
 }
 .dashboard-bottom {
   display: grid;
@@ -117,21 +160,20 @@
 .event-row {
   display: flex;
   gap: 12px;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  border-bottom: var(--line-thin) solid var(--edge);
   align-items: flex-start;
 }
 .event-row:last-child {
   border-bottom: 0;
 }
 .event-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--muted-foreground);
-  margin-top: 7px;
-  flex: 0 0 6px;
-  opacity: 0.5;
+  width: 8px;
+  height: 8px;
+  border-radius: 0;
+  background: var(--blue);
+  margin-top: 6px;
+  flex: 0 0 8px;
 }
 .event-main {
   flex: 1;
@@ -141,13 +183,17 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 700;
 }
 .event-title a {
   color: var(--muted-foreground);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .event-meta {
   margin-top: 3px;
+  font-family: var(--font-mono);
   font-size: 10px;
   overflow-wrap: anywhere;
 }
@@ -156,7 +202,9 @@
   margin-top: 6px;
 }
 .event-time {
-  font-size: 10px;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--blue);
   white-space: nowrap;
-  margin-top: 2px;
+  margin-top: 5px;
 }

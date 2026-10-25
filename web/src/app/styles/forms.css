@@ -10,7 +10,10 @@
 }
 .form-field label,
 label.form-field {
-  font-weight: 500;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 .form-grid {
   display: grid;
@@ -19,7 +22,7 @@ label.form-field {
 }
 .form-actions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;
@@ -28,24 +31,30 @@ label.form-field {
 .form-help {
   font-size: 12px;
   color: var(--muted-foreground);
-  font-weight: normal;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
 }
 .field-error {
   font-size: 12px;
+  font-weight: 700;
   color: var(--red);
 }
 .mutation-notice,
 .notice {
   padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  border: var(--line) solid var(--edge);
+  border-radius: 0;
+  box-shadow: var(--shadow);
   font-size: 13px;
-  background: var(--muted);
+  font-weight: 600;
+  background: var(--mint);
+  color: var(--ink);
 }
 .mutation-notice[data-error="true"],
 .error-notice {
-  border-color: color-mix(in srgb, var(--red) 30%, var(--border));
-  color: var(--red);
+  background: var(--pink);
+  color: var(--ink);
 }
 .notice-row {
   display: flex;
@@ -61,6 +70,25 @@ label.form-field {
   justify-content: center;
   gap: 20px;
   padding: 24px;
+  text-align: center;
+  background-color: var(--blue);
+  background-image: radial-gradient(#1e3fbf 1.5px, transparent 1.5px);
+  background-size: 14px 14px;
+  color: #fff;
+}
+.welcome h1 {
+  font-size: 64px;
+  color: var(--yellow);
+  text-shadow: 6px 6px 0 var(--ink);
+}
+.welcome .muted {
+  color: #fff;
+  font-weight: 700;
+}
+.welcome a:not(.button) {
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .app-loading {
   max-width: 800px;
@@ -70,8 +98,12 @@ label.form-field {
 }
 .skeleton {
   height: 24px;
-  border-radius: 6px;
-  background: var(--muted);
+  border: var(--line-thin) solid var(--edge);
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--muted) 0 8px,
+    var(--surface) 8px 16px
+  );
   animation: loading 1.5s ease-in-out infinite;
   margin-bottom: 14px;
 }
@@ -120,4 +152,24 @@ label.form-field {
     transition: none !important;
     scroll-behavior: auto !important;
   }
+}
+.required-mark {
+  color: var(--red);
+}
+.welcome-lead {
+  max-width: 520px;
+  margin: 0;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 600;
+  color: #fff;
+}
+.help-steps {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+  line-height: 1.5;
 }

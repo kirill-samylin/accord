@@ -5,9 +5,10 @@
 }
 .automation-card {
   padding: 20px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--background);
+  border: var(--line) solid var(--edge);
+  border-radius: 0;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
 }
 .automation-card fieldset {
   display: flex;
@@ -35,7 +36,7 @@
   align-items: flex-start;
 }
 .automation-check input {
-  margin-top: 5px;
+  margin-top: 3px;
 }
 .automation-check small {
   display: block;
@@ -47,6 +48,21 @@
   flex-direction: column;
   gap: 12px;
   margin: 0;
+  counter-reset: step;
+}
+.automation-steps > li {
+  position: relative;
+  padding-left: 40px;
+  counter-increment: step;
+}
+.automation-steps > li::before {
+  content: counter(step, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 2px;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--blue);
 }
 .automation-row {
   display: flex;
@@ -63,13 +79,17 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
   padding: 16px;
   gap: 20px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--line-thin) solid var(--edge);
 }
 .automation-list-row:last-child {
   border-bottom: 0;
 }
 .automation-list-row:hover {
-  background: var(--accent);
+  background: var(--paper);
+  color: inherit;
+}
+:root[data-theme="dark"] .automation-list-row:hover {
+  background: var(--muted);
 }
 .automation-text {
   white-space: pre-wrap;
@@ -77,6 +97,7 @@
 }
 .automation-card summary {
   cursor: pointer;
+  font-weight: 800;
 }
 .automation-card details[open] summary,
 details.automation-card[open] summary {

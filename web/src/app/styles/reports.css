@@ -3,59 +3,90 @@
   gap: 16px;
   align-items: center;
   padding: 20px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: var(--line) solid var(--edge);
+  border-radius: 0;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
 }
 .project-entity .project-mark {
-  width: 40px;
-  height: 40px;
-  flex-basis: 40px;
+  width: 44px;
+  height: 44px;
+  flex-basis: 44px;
   font-size: 20px;
+  border-width: var(--line);
 }
 .project-progress {
   max-width: 640px;
 }
 progress {
   display: block;
-  height: 6px;
+  height: 14px;
   width: 100%;
   margin-bottom: 10px;
-  border-radius: 6px;
-  accent-color: var(--green);
+  border: var(--line-thin) solid var(--edge);
+  border-radius: 0;
+  background: var(--surface);
+  accent-color: var(--lime);
+  overflow: hidden;
+}
+progress::-webkit-progress-bar {
+  background: var(--surface);
+}
+progress::-webkit-progress-value {
+  background: var(--lime);
+  border-right: var(--line-thin) solid var(--edge);
+}
+progress::-moz-progress-bar {
+  background: var(--lime);
 }
 .project-links {
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: var(--line) solid var(--edge);
+  border-radius: 0;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
 }
 .group-bar-row {
   display: grid;
-  grid-template-columns: minmax(80px, 120px) 1fr 28px;
+  grid-template-columns: minmax(80px, 120px) 1fr 32px;
   gap: 12px;
   align-items: center;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.group-bar-row > :last-child {
+  font-family: var(--font-mono);
+  text-align: right;
 }
 .table-scroll {
   overflow-x: auto;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: var(--line) solid var(--edge);
+  border-radius: 0;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
 }
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 13px;
   text-align: left;
   white-space: nowrap;
 }
 .data-table th {
-  background: var(--muted);
-  font-weight: 500;
+  background: var(--paper);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--muted-foreground);
+}
+:root[data-theme="dark"] .data-table th {
+  background: var(--muted);
 }
 .data-table td,
 .data-table th {
   padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--line-thin) solid var(--edge);
 }
 .data-table tbody tr:last-child td {
   border-bottom: 0;
@@ -65,9 +96,16 @@ progress {
   gap: 12px;
   align-items: center;
   font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--muted-foreground);
 }
 .toolbar-select select {
   width: auto;
-  min-width: 130px;
+  min-width: 150px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }

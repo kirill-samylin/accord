@@ -1,11 +1,13 @@
 .asset-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: 20px;
 }
 .asset-card {
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: var(--line) solid var(--edge);
+  border-radius: 0;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
   min-width: 0;
 }
@@ -13,10 +15,15 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: var(--muted);
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--muted) 0 10px,
+    var(--surface) 10px 20px
+  );
   width: 100%;
   height: 180px;
   border: 0;
+  border-bottom: var(--line) solid var(--edge);
   color: var(--muted-foreground);
   overflow: hidden;
 }
@@ -35,13 +42,14 @@
   background: transparent;
   max-width: 100%;
   text-align: left;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 800;
 }
 .asset-meta {
   display: flex;
   justify-content: space-between;
   gap: 8px;
+  font-family: var(--font-mono);
   font-size: 11px;
   margin-top: 6px;
 }
@@ -54,8 +62,9 @@
 .asset-list .asset-card {
   display: flex;
   border: 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--line-thin) solid var(--edge);
   border-radius: 0;
+  box-shadow: none;
 }
 .asset-list .asset-card:last-child {
   border-bottom: 0;
@@ -64,6 +73,8 @@
   height: 110px;
   width: 130px;
   flex-shrink: 0;
+  border-bottom: 0;
+  border-right: var(--line-thin) solid var(--edge);
 }
 .asset-list .asset-body {
   flex: 1;
@@ -79,11 +90,12 @@
 .asset-detail-preview {
   max-height: 360px;
   background: var(--muted);
+  border: var(--line) solid var(--edge);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: 0;
 }
 .asset-detail-preview img {
   width: 100%;
@@ -106,8 +118,9 @@ fieldset {
 }
 .file-drop {
   padding: 16px;
-  border: 1px dashed var(--border);
-  border-radius: 6px;
+  border: var(--line) dashed var(--edge);
+  border-radius: 0;
+  background: var(--surface);
 }
 .file-drop input {
   max-width: 100%;
@@ -118,11 +131,12 @@ fieldset {
   display: flex;
   gap: 10px;
   align-items: center;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 700;
 }
 .legacy-decision {
   padding: 16px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--line-thin) solid var(--edge);
 }
 .legacy-decision p {
   margin-top: 12px;
@@ -132,11 +146,13 @@ fieldset {
   bottom: 28px;
   right: 28px;
   z-index: 70;
-  background: var(--background);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 4px 16px #0002;
+  background: var(--yellow);
+  color: var(--ink);
+  border: var(--line) solid var(--edge);
+  border-radius: 0;
+  padding: 14px 16px;
+  box-shadow: var(--shadow-lg);
+  font-weight: 700;
   display: flex;
   gap: 12px;
 }
