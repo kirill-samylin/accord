@@ -138,7 +138,7 @@
   box-shadow: 4px 4px 0 var(--ink);
 }
 .question-actions,
-.release-question {
+.release-question .disclosure-inner {
   display: flex;
   flex-direction: column;
   gap: 14px;

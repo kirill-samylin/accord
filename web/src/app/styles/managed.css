@@ -106,24 +106,25 @@
   font-family: var(--font-mono);
   font-size: 12px;
 }
+/* Both blocks are Disclosures; the column layout lives in the panel so the
+   closed trigger leaves no gap (.settings-section is a flex column). */
 .managed-setup {
+  display: block;
+  --disclosure-gap: 10px;
+}
+.managed-setup .disclosure-inner {
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-.managed-setup summary,
-.managed-identifiers summary {
-  cursor: pointer;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 12px;
 }
 .managed-setup p {
   margin-top: 10px;
 }
 .managed-identifiers {
   margin-top: 20px;
+}
+.managed-identifiers .disclosure-inner > dl {
+  margin-top: 0;
 }
 .managed-dialog {
   width: min(640px, calc(100vw - 32px));

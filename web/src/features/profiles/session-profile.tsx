@@ -1,5 +1,6 @@
 import { ProjectLink as Link } from "@/components/project-link";
 import { Fact } from "@/components/common";
+import { Disclosure } from "@/components/disclosure";
 import type { ProfileSnapshot } from "@/lib/agent-profiles";
 import { providerLabels } from "@/lib/agent-profiles";
 export function SessionProfile({ profile }: { profile?: ProfileSnapshot }) {
@@ -37,15 +38,14 @@ export function SessionProfile({ profile }: { profile?: ProfileSnapshot }) {
             него не влияют. Подключение к провайдеру и процесс этим не
             подтверждаются.
           </p>
-          <details>
-            <summary>Описание и инструкции сессии</summary>
+          <Disclosure summary="Описание и инструкции сессии">
             <p className="profile-text">
               {profile.description || "Описание не добавлено"}
             </p>
             <p className="profile-text profile-instructions">
               {profile.instructions || "Инструкции не добавлены"}
             </p>
-          </details>
+          </Disclosure>
         </>
       ) : (
         <p className="muted">

@@ -1,7 +1,8 @@
 "use client";
 import { ProjectLink as Link } from "@/components/project-link";
 import { useState } from "react";
-import { ChevronDown, FileText, Pencil } from "lucide-react";
+import { FileText, Pencil } from "lucide-react";
+import { Disclosure } from "@/components/disclosure";
 import {
   EmptyState,
   EventRows,
@@ -290,13 +291,9 @@ export function TaskDetail({
           <h3>Свойства</h3>
           {properties}
         </aside>
-        <details className="mobile-properties">
-          <summary>
-            Свойства задачи
-            <ChevronDown size={15} />
-          </summary>
+        <Disclosure className="mobile-properties" summary="Свойства задачи">
           {properties}
-        </details>
+        </Disclosure>
       </div>
       <EditTaskDialog
         key={`${task.key}:${task.version}`}

@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { CopyX, Layers } from "lucide-react";
+import { AnimatedCollapse } from "@/components/motion";
 import { useSimilar } from "../duplicates/use-similar";
 import { SimilarList } from "../duplicates/similar-list";
 import { useProjectScope } from "../projects/project-context";
@@ -421,7 +422,9 @@ export function CreateTaskDialog({
               />
               <FieldError name="description" errors={errors} />
             </label>
-            {matches.length || serverDuplicate || force ? (
+            <AnimatedCollapse
+              show={Boolean(matches.length || serverDuplicate || force)}
+            >
               <section className="similar-callout" aria-live="polite">
                 <div className="similar-callout-head">
                   <CopyX size={15} aria-hidden />
@@ -432,7 +435,7 @@ export function CreateTaskDialog({
                   агенты не сделают одно и то же дважды.
                 </p>
                 <SimilarList items={matches.slice(0, 4)} compact />
-                {needsConsent || force ? (
+                <AnimatedCollapse show={Boolean(needsConsent || force)}>
                   <label className="checkbox-row">
                     <input
                       type="checkbox"
@@ -441,8 +444,8 @@ export function CreateTaskDialog({
                     />
                     Это другая задача — создать всё равно
                   </label>
-                ) : null}
-                {force ? (
+                </AnimatedCollapse>
+                <AnimatedCollapse show={force}>
                   <label className="form-field">
                     Чем она отличается
                     <input
@@ -453,9 +456,9 @@ export function CreateTaskDialog({
                       onChange={(event) => setForceReason(event.target.value)}
                     />
                   </label>
-                ) : null}
+                </AnimatedCollapse>
               </section>
-            ) : null}
+            </AnimatedCollapse>
             {isTask ? (
               <div className="form-grid">
                 <label className="form-field">

@@ -108,11 +108,21 @@
 .task-row:last-child {
   border-bottom: 0;
 }
-.task-row:hover {
+/* The whole row is one hover target: the background, the key and the title
+   all react to the row (hover or keyboard focus inside it), never to the
+   inner <a> alone, so a pointer over the status badge highlights the title.
+   Inner links must not pick up the global a:hover blue. */
+.task-row:hover,
+.task-row:focus-within {
   background: var(--paper);
 }
-:root[data-theme="dark"] .task-row:hover {
+:root[data-theme="dark"] .task-row:hover,
+:root[data-theme="dark"] .task-row:focus-within {
   background: var(--muted);
+}
+.task-row a,
+.task-row a:hover {
+  color: inherit;
 }
 .task-row-status .status span {
   display: none;
@@ -123,10 +133,24 @@
   font-weight: 700;
   color: var(--muted-foreground);
   min-width: 44px;
+  transition: color 120ms ease;
+}
+.task-row .task-key {
+  color: var(--muted-foreground);
+}
+.task-row:hover .task-key,
+.task-row:focus-within .task-key {
+  color: var(--foreground);
 }
 .task-title {
   flex: 1;
   font-weight: 700;
+}
+.task-row:hover .task-title,
+.task-row:focus-within .task-title {
+  color: var(--link-hover);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .task-role {
   font-size: 11px;
@@ -198,6 +222,12 @@
   color: var(--muted-foreground);
   text-decoration: underline;
   text-underline-offset: 3px;
+  transition: color 120ms ease;
+}
+.event-title a:hover,
+.event-title a:focus-visible {
+  color: var(--foreground);
+  text-decoration-thickness: 2px;
 }
 .event-meta {
   margin-top: 3px;

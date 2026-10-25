@@ -3,6 +3,7 @@ import { Select } from "@/components/ui/select";
 import type { CatalogPage } from "@/lib/projects";
 import type { CatalogMutationResult } from "@/lib/types";
 import { RegistryForm } from "./registry-form";
+import { Disclosure } from "@/components/disclosure";
 const roleNames: Record<string, string> = {
   owner: "Владелец",
   editor: "Редактор",
@@ -83,8 +84,7 @@ export function ProjectMembers({
           ) : null}
         </div>
       ))}
-      <details className="registry-add">
-        <summary>Добавить участника</summary>
+      <Disclosure className="registry-add" summary="Добавить участника">
         <RegistryForm
           page={page}
           actionKey="member:grant"
@@ -108,7 +108,7 @@ export function ProjectMembers({
             <Roles />
           </label>
         </RegistryForm>
-      </details>
+      </Disclosure>
     </section>
   );
 }

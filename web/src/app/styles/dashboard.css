@@ -41,7 +41,14 @@
 .metrics-grid > .metric:nth-child(n + 2) .metric-caption {
   color: var(--ink);
 }
-a.metric:hover {
+/* Link metrics lift on hover and press only while the pointer is down. */
+a.metric:hover,
+a.metric:focus-visible {
+  color: inherit;
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0 var(--edge);
+}
+a.metric:active {
   color: inherit;
   transform: translate(2px, 2px);
   box-shadow: var(--shadow-sm);
@@ -86,11 +93,20 @@ a.metric:hover {
   box-shadow: var(--shadow);
   padding: 14px;
   min-width: 0;
+  transition:
+    transform 80ms,
+    box-shadow 80ms;
 }
-.agent-card:hover {
+.agent-card:hover,
+.agent-card:focus-visible {
   color: inherit;
   transform: translate(-2px, -2px);
   box-shadow: var(--shadow-lg);
+}
+.agent-card:active {
+  color: inherit;
+  transform: translate(2px, 2px);
+  box-shadow: var(--shadow-sm);
 }
 .agent-card-head {
   display: flex;

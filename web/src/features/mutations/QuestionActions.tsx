@@ -5,6 +5,7 @@ import type { Task } from "@/lib/types";
 import { actionBody, actionID, type MutationProps } from "./contracts";
 import { ActionNotice, FieldError } from "./ActionNotice";
 import { useAction } from "./useAction";
+import { Disclosure } from "@/components/disclosure";
 
 export function QuestionActions({
   page,
@@ -132,8 +133,10 @@ export function QuestionActions({
               </div>
             </fieldset>
           </form>
-          <details className="release-question">
-            <summary>Вернуть вопрос в очередь</summary>
+          <Disclosure
+            className="release-question"
+            summary="Вернуть вопрос в очередь"
+          >
             <form
               className="mutation-form"
               onSubmit={(event) => {
@@ -166,7 +169,7 @@ export function QuestionActions({
                 </button>
               </fieldset>
             </form>
-          </details>
+          </Disclosure>
         </>
       ) : answer ? (
         <div className="mutation-form">

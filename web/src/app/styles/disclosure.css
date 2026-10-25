@@ -1,0 +1,90 @@
+/* Disclosure (components/disclosure.tsx), the animated replacement for
+   <details>/<summary>.
+
+   Contract:
+   - .disclosure[data-open] marks the open state; the trigger carries
+     aria-expanded and the panel is inert while closed.
+   - The panel is a one-row grid that animates 0fr → 1fr, so the content
+     needs no measuring and stays mounted. Reduced motion is handled
+     globally (forms.css disables every transition).
+   - Spacing between trigger and content is --disclosure-gap (set per block);
+     it lives on the trigger's bottom margin so it collapses with the panel.
+   - Blocks that need their own inner layout (flex column, gaps) style
+     .disclosure-inner, never .disclosure itself: the root must stay a plain
+     block so a parent's flex gap does not leave a hole when closed. */
+.disclosure {
+  min-width: 0;
+  --disclosure-gap: 14px;
+  --disclosure-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.disclosure-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  cursor: pointer;
+  transition:
+    margin-bottom 220ms var(--disclosure-ease),
+    color 120ms ease;
+}
+.disclosure-trigger:hover {
+  color: var(--foreground);
+}
+.disclosure-trigger:hover .disclosure-chevron {
+  color: var(--foreground);
+}
+.disclosure[data-open] > .disclosure-trigger {
+  margin-bottom: var(--disclosure-gap);
+}
+.disclosure-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.disclosure-chevron {
+  flex: none;
+  color: var(--muted-foreground);
+  transition:
+    transform 220ms var(--disclosure-ease),
+    color 120ms ease;
+}
+.disclosure[data-open] > .disclosure-trigger .disclosure-chevron {
+  transform: rotate(180deg);
+}
+.disclosure-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 220ms var(--disclosure-ease),
+    opacity 160ms ease;
+}
+.disclosure[data-open] > .disclosure-panel {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows 220ms var(--disclosure-ease),
+    opacity 200ms ease 40ms;
+}
+/* The grid item must be allowed to shrink to 0. Clipping happens here; the
+   padding keeps hard offset shadows and focus rings of edge controls inside
+   the clip box, and the matching negative margin keeps layout unchanged. */
+.disclosure-inner {
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 8px 8px 6px;
+  margin: -6px -8px -8px -6px;
+}

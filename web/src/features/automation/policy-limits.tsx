@@ -3,6 +3,7 @@ import { limitLabels } from "@/lib/automation-policy";
 import type { AutomationLimits, PolicySettings } from "@/lib/automation";
 import type { ManagedHost } from "@/lib/managed-agents";
 import { FieldError } from "../mutations/ActionNotice";
+import { Disclosure } from "@/components/disclosure";
 export function PolicyLimits({
   draft,
   setDraft,
@@ -57,8 +58,10 @@ export function PolicyLimits({
         )}
         <FieldError name="checks" errors={errors} />
       </section>
-      <details className="automation-card">
-        <summary>Пределы автоматической работы</summary>
+      <Disclosure
+        className="automation-card"
+        summary="Пределы автоматической работы"
+      >
         <div className="form-grid">
           {(Object.keys(limitLabels) as (keyof AutomationLimits)[]).map(
             (key) => (
@@ -89,7 +92,7 @@ export function PolicyLimits({
           цикл запросит вмешательство. Стоимость неизвестна, если агент её не
           сообщил.
         </p>
-      </details>
+      </Disclosure>
       <label className="form-field">
         Разрешение действует до (UTC)
         <input

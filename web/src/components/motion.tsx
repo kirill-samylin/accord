@@ -4,6 +4,7 @@
 // "reduce motion" setting for every animation below.
 import {
   animate,
+  AnimatePresence,
   LazyMotion,
   m,
   MotionConfig,
@@ -83,7 +84,8 @@ function format(value: number) {
   return new Intl.NumberFormat("ru-RU").format(value);
 }
 
-// Horizontal bar that grows from zero with a spring.
+// Horizontal bar that grows from zero with a spring (or snaps to its width
+// when the OS asks for reduced motion).
 export function GrowBar({
   share,
   className,
@@ -93,14 +95,56 @@ export function GrowBar({
   className: string;
   empty?: boolean;
 }) {
+  const reduce = useReducedMotion();
   return (
     <m.span
       className={className}
       data-empty={empty ? "" : undefined}
-      initial={{ width: 0 }}
+      initial={reduce ? false : { width: 0 }}
       animate={{ width: `${share}%` }}
-      transition={{ type: "spring", stiffness: 140, damping: 22, mass: 0.8 }}
+      transition={
+        reduce
+          ? { duration: 0 }
+          : { type: "spring", stiffness: 140, damping: 22, mass: 0.8 }
+      }
     />
+  );
+}
+
+// Conditionally rendered blocks (callouts, extra fields, status lines) grow
+// and fade in instead of popping, and shrink away before unmounting.
+// `initial={false}`: content present on first render does not animate.
+// Overflow is clipped only while the height animates, so focus rings and
+// offset shadows inside are not cut once the block has settled.
+export function AnimatedCollapse({
+  show,
+  children,
+  className,
+}: {
+  show: boolean;
+  children: ReactNode;
+  className?: string;
+}) {
+  const reduce = useReducedMotion();
+  return (
+    <AnimatePresence initial={false}>
+      {show ? (
+        <m.div
+          className={className}
+          style={{ overflow: "hidden" }}
+          initial={{ height: 0, opacity: 0 }}
+          animate={{
+            height: "auto",
+            opacity: 1,
+            transitionEnd: { overflow: "visible" },
+          }}
+          exit={{ height: 0, opacity: 0, overflow: "hidden" }}
+          transition={reduce ? { duration: 0 } : { duration: 0.22, ease }}
+        >
+          {children}
+        </m.div>
+      ) : null}
+    </AnimatePresence>
   );
 }
 

@@ -1,4 +1,5 @@
 import { ProjectLink as Link } from "@/components/project-link";
+import { Disclosure } from "@/components/disclosure";
 import type { WorkflowPage } from "@/lib/automation";
 import { stageLabels, workflowLabels } from "@/lib/automation";
 import { attestationOutcome } from "@/lib/automation-evidence";
@@ -136,10 +137,11 @@ export function WorkflowReports({ detail }: { detail: WorkflowPage }) {
     <section className="screen-stack">
       <h2>Результаты и подтверждения</h2>
       {detail.plans.map((plan) => (
-        <details key={plan.revision} className="automation-card">
-          <summary>
-            План {plan.revision} · {plan.status}
-          </summary>
+        <Disclosure
+          key={plan.revision}
+          className="automation-card"
+          summary={`План ${plan.revision} · ${plan.status}`}
+        >
           <ol>
             {plan.tasks.map((task) => (
               <li key={task.client_key}>
@@ -164,7 +166,7 @@ export function WorkflowReports({ detail }: { detail: WorkflowPage }) {
               </li>
             ))}
           </ol>
-        </details>
+        </Disclosure>
       ))}
       {detail.attestations.map((proof) => {
         const outcome = attestationOutcome(proof);
@@ -220,8 +222,7 @@ export function WorkflowReports({ detail }: { detail: WorkflowPage }) {
         </p>
       ) : null}
       {detail.workflow.messages?.length ? (
-        <details className="automation-card">
-          <summary>Переданные уточнения</summary>
+        <Disclosure className="automation-card" summary="Переданные уточнения">
           <ol>
             {detail.workflow.messages.map((message, i) => (
               <li key={i} className="automation-text">
@@ -229,7 +230,7 @@ export function WorkflowReports({ detail }: { detail: WorkflowPage }) {
               </li>
             ))}
           </ol>
-        </details>
+        </Disclosure>
       ) : null}
     </section>
   );

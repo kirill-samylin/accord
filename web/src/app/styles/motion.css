@@ -45,6 +45,63 @@
 .dialog-content[data-state="closed"] {
   animation: dialog-out 120ms ease-in forwards;
 }
+/* The command palette sits at the top on phones (layout.css) with a
+   translateX-only transform, so its keyframes must not move it on Y. */
+@media (max-width: 767px) {
+  .command-content[data-state="open"] {
+    animation-name: dialog-top-in;
+  }
+  .command-content[data-state="closed"] {
+    animation-name: dialog-top-out;
+  }
+}
+@keyframes dialog-top-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px) scale(0.96);
+  }
+}
+@keyframes dialog-top-out {
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-6px) scale(0.98);
+  }
+}
+
+/* Side panels (mobile navigation drawer, task peek) slide in from their
+   edge; Radix keeps them mounted while the exit animation runs. */
+.drawer-content[data-state="open"] {
+  animation: slide-in-left 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.drawer-content[data-state="closed"] {
+  animation: slide-out-left 160ms ease-in forwards;
+}
+.task-peek[data-state="open"] {
+  animation: slide-in-right 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.task-peek[data-state="closed"] {
+  animation: slide-out-right 160ms ease-in forwards;
+}
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+}
+@keyframes slide-out-left {
+  to {
+    transform: translateX(-100%);
+  }
+}
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes slide-out-right {
+  to {
+    transform: translateX(100%);
+  }
+}
 @keyframes overlay-in {
   from {
     opacity: 0;
@@ -181,25 +238,19 @@
   }
 }
 
-/* Hover feedback: cards lift towards the pointer, rows slide a touch. */
-.project-card,
-.person-card {
-  transition:
-    transform 120ms ease,
-    box-shadow 120ms ease;
-}
-.project-card:hover,
-.person-card:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 8px 8px 0 var(--edge);
-}
+/* Hover feedback: rows slide a touch. Only link cards (a.metric, .agent-card,
+   .team-strip-card, .dup-alert) lift on hover; static .project-card and
+   .person-card stay put because nothing happens when they are clicked. */
 .task-row {
   transition: background-color 120ms ease;
 }
 .task-row .task-title {
-  transition: transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition:
+    transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    color 120ms ease;
 }
-.task-row:hover .task-title {
+.task-row:hover .task-title,
+.task-row:focus-within .task-title {
   transform: translateX(3px);
 }
 .state-chip {

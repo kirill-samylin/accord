@@ -369,7 +369,26 @@
   font-size: 13px;
   font-weight: 700;
 }
-a.team-agent-task:hover span:last-child {
+/* The agent card drives the task link colour: hovering anywhere on the card
+   (or focusing the link) highlights the title, and the link itself never
+   takes the global a:hover blue. */
+.team-agent a,
+.team-agent a:hover {
+  color: inherit;
+}
+.team-agent .task-key {
+  transition: color 120ms ease;
+}
+.team-agent:hover .task-key,
+.team-agent:focus-within .task-key {
+  color: var(--foreground);
+}
+a.team-agent-task span:last-child {
+  transition: color 120ms ease;
+}
+.team-agent:hover a.team-agent-task span:last-child,
+.team-agent:focus-within a.team-agent-task span:last-child {
+  color: var(--link-hover);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -455,6 +474,27 @@ a.team-agent-task:hover span:last-child {
   background: #fff;
   color: var(--ink);
   border: var(--line) solid var(--ink);
+  /* Always a white card, so the light-theme link colour is right in dark too. */
+  --link-hover: var(--blue);
+}
+/* Each side of a pair is the hover target for its own title; inner links
+   never take the global a:hover colour. */
+.dup-row a,
+.dup-row a:hover {
+  color: inherit;
+}
+.pair-side .task-key {
+  transition: color 120ms ease;
+}
+.pair-side:hover .task-key,
+.pair-side:focus-within .task-key {
+  color: var(--ink);
+}
+.pair-side:hover .pair-title,
+.pair-side:focus-within .pair-title {
+  color: var(--link-hover);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .dup-row .button {
   border-color: var(--ink);
@@ -495,9 +535,7 @@ a.team-agent-task:hover span:last-child {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.pair-title:hover {
-  text-decoration: underline;
+  transition: color 120ms ease;
 }
 .pair-people {
   display: flex;
@@ -580,8 +618,23 @@ a.team-agent-task:hover span:last-child {
   font-size: 13px;
   font-weight: 700;
 }
-.similar-title a:hover {
+/* The whole item is the hover target for its title link. */
+.similar-item a,
+.similar-item a:hover {
+  color: inherit;
+}
+.similar-title a {
+  transition: color 120ms ease;
+}
+.similar-item:hover .task-key,
+.similar-item:focus-within .task-key {
+  color: var(--foreground);
+}
+.similar-item:hover .similar-title a:not(.task-key),
+.similar-item:focus-within .similar-title a:not(.task-key) {
+  color: var(--link-hover);
   text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .similar-meta {
   display: flex;
@@ -644,6 +697,11 @@ a.team-agent-task:hover span:last-child {
   text-underline-offset: 3px;
   color: var(--ink);
 }
+.duplicate-banner a:hover,
+.duplicate-banner a:focus-visible {
+  color: var(--ink);
+  text-decoration-thickness: 3px;
+}
 
 .task-people {
   display: inline-flex;
@@ -684,7 +742,14 @@ a.team-agent-task:hover span:last-child {
     transform 80ms,
     box-shadow 80ms;
 }
-.team-strip-card:hover {
+/* Hover lifts the card towards the pointer; only a press pushes it down. */
+.team-strip-card:hover,
+.team-strip-card:focus-visible {
+  color: inherit;
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0 var(--person);
+}
+.team-strip-card:active {
   color: inherit;
   transform: translate(2px, 2px);
   box-shadow: 3px 3px 0 var(--person);
@@ -736,13 +801,23 @@ a.team-agent-task:hover span:last-child {
   background: var(--pink);
   color: var(--ink);
   box-shadow: var(--shadow);
+  transition:
+    transform 80ms,
+    box-shadow 80ms;
 }
 .dup-alert span {
   flex: 1;
   color: var(--ink);
   font-weight: 700;
 }
-.dup-alert:hover {
+/* Lift on hover, press only on :active (same as other link cards). */
+.dup-alert:hover,
+.dup-alert:focus-visible {
+  color: var(--ink);
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-lg);
+}
+.dup-alert:active {
   color: var(--ink);
   transform: translate(2px, 2px);
   box-shadow: 2px 2px 0 var(--edge);

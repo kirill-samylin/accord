@@ -27,6 +27,13 @@
   border-bottom: 4px solid transparent;
   margin-bottom: -3px;
   white-space: nowrap;
+  transition: color 120ms ease;
+}
+/* Tabs darken on hover (like .tab); the current one stays yellow/ink. */
+.agent-navigation a:hover,
+.agent-navigation a:focus-visible {
+  color: var(--foreground);
+  border-bottom-color: var(--edge);
 }
 .agent-navigation a[aria-current="page"] {
   color: var(--ink);

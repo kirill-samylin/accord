@@ -24,10 +24,18 @@
   background: var(--surface);
   box-shadow: var(--shadow-sm);
   text-align: left;
+  transition:
+    background-color 120ms,
+    box-shadow 80ms;
 }
-.project-switch:hover {
-  transform: translate(1px, 1px);
-  box-shadow: 2px 2px 0 var(--edge);
+/* Menu anchor: recolour on hover, never move; open state keeps its shadow. */
+.project-switch:hover:not(:disabled) {
+  background: var(--muted);
+}
+.project-switch[data-state="open"] {
+  background: var(--muted);
+  box-shadow: var(--shadow-sm);
+  transform: none;
 }
 .project-switch strong {
   flex: 1;

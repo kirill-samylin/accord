@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Monitor } from "lucide-react";
+import { Disclosure } from "@/components/disclosure";
 import { date } from "@/lib/format";
 import {
   hostOnline,
@@ -68,8 +69,10 @@ export function EnrollmentHelp({
     }
   }
   return (
-    <details className="settings-section managed-setup">
-      <summary>Подключить компьютер</summary>
+    <Disclosure
+      className="settings-section managed-setup"
+      summary="Подключить компьютер"
+    >
       {actorPrincipalID ? (
         <div className="managed-control-code">
           <p>Ваш код управления для подключения компьютера</p>
@@ -113,6 +116,6 @@ export function EnrollmentHelp({
         задания или уточнения. Локальная аварийная остановка доступна владельцу
         через worker, даже без сети.
       </p>
-    </details>
+    </Disclosure>
   );
 }

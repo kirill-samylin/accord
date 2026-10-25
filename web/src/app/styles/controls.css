@@ -17,14 +17,17 @@
   white-space: nowrap;
   transition:
     transform 80ms,
-    box-shadow 80ms;
+    box-shadow 80ms,
+    background-color 120ms,
+    color 120ms;
 }
+/* Hover only recolours; the press (translate + shadow collapse) is reserved
+   for :active so a hover never looks like a click. */
 .button:hover {
   color: var(--ink);
-  transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0 var(--edge);
+  background: #ffe07a;
 }
-.button:active {
+.button:active:not(:disabled) {
   transform: translate(4px, 4px);
   box-shadow: none;
 }
@@ -34,6 +37,7 @@
 }
 .button-secondary:hover {
   color: var(--foreground);
+  background: var(--muted);
 }
 .button-ghost {
   color: var(--muted-foreground);
@@ -43,13 +47,17 @@
 }
 .button-ghost:hover {
   color: var(--foreground);
+  background: transparent;
   border-color: var(--edge);
-  transform: none;
   box-shadow: none;
 }
 .button-destructive {
   background: var(--pink);
   color: var(--ink);
+}
+.button-destructive:hover {
+  color: var(--ink);
+  background: #ff8fb1;
 }
 .button-link {
   color: var(--foreground);
@@ -63,9 +71,38 @@
   font-weight: 700;
 }
 .button-link:hover {
-  color: var(--blue);
+  color: var(--link-hover);
+  background: transparent;
+  box-shadow: none;
+}
+/* Flat buttons have no shadow to collapse, so they do not move on press. */
+.button-ghost:active:not(:disabled),
+.button-link:active:not(:disabled) {
   transform: none;
   box-shadow: none;
+}
+/* Popper triggers (Radix Popover / DropdownMenu render aria-haspopup and
+   data-state): pressing must not shift the anchor the menu is positioned
+   against, and the open state is a stable "held down" box. */
+.button[aria-haspopup]:active:not(:disabled),
+.button[data-state="open"] {
+  transform: none;
+  box-shadow: var(--shadow-sm);
+}
+.button[data-state="open"] {
+  background: var(--muted);
+}
+.button-ghost[aria-haspopup]:active:not(:disabled),
+.button-ghost[data-state="open"],
+.button-link[aria-haspopup]:active:not(:disabled),
+.button-link[data-state="open"] {
+  box-shadow: none;
+}
+.button-ghost[data-state="open"] {
+  border-color: var(--edge);
+}
+.button-link[data-state="open"] {
+  background: transparent;
 }
 .button-sm {
   min-height: 34px;
@@ -220,17 +257,16 @@ select {
   text-transform: none;
   text-align: left;
   line-height: 1.3;
-  transition:
-    box-shadow 120ms ease,
-    transform 120ms ease;
+  transition: box-shadow 120ms ease;
 }
+/* Shadow only: the trigger anchors the popup and must never move. */
 .select-trigger:hover:not(:disabled) {
   box-shadow: var(--shadow-sm);
-  transform: translate(-1px, -1px);
+  transform: none;
 }
 .select-trigger[data-state="open"] {
   box-shadow: var(--shadow);
-  transform: translate(-2px, -2px);
+  transform: none;
 }
 .select-trigger[data-placeholder] {
   color: var(--muted-foreground);

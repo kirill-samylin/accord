@@ -117,6 +117,17 @@
   gap: 4px;
   align-items: center;
 }
+.section-heading a:hover,
+.section-heading a:focus-visible {
+  color: var(--foreground);
+  text-decoration-thickness: 3px;
+}
+.section-heading a svg {
+  transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.section-heading a:hover svg {
+  transform: translateX(3px);
+}
 .toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -245,6 +256,11 @@
     font-size: 10px;
     font-weight: 800;
     border: var(--line-thin) solid transparent;
+  }
+  .mobile-nav a:hover,
+  .mobile-nav a:focus-visible {
+    color: var(--foreground);
+    border-color: var(--edge);
   }
   .mobile-nav a[aria-current="page"] {
     color: var(--ink);

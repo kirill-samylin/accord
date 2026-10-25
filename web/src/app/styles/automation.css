@@ -95,13 +95,18 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.automation-card summary {
-  cursor: pointer;
+/* Disclosures inside (or as) automation cards keep the plain bold summary
+   look instead of the uppercase kicker, with a 16px gap when open. */
+.automation-card .disclosure-trigger,
+.disclosure.automation-card > .disclosure-trigger {
+  font-size: 14px;
   font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
 }
-.automation-card details[open] summary,
-details.automation-card[open] summary {
-  margin-bottom: 16px;
+.automation-card.disclosure,
+.automation-card .disclosure {
+  --disclosure-gap: 16px;
 }
 @media (max-width: 760px) {
   .automation-team,

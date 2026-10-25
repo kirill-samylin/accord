@@ -2,6 +2,7 @@
 import type { CatalogPage } from "@/lib/projects";
 import type { CatalogMutationResult } from "@/lib/types";
 import { RegistryForm } from "./registry-form";
+import { Disclosure } from "@/components/disclosure";
 export function ProjectRepositories({
   page,
   onSuccess,
@@ -81,8 +82,7 @@ export function ProjectRepositories({
         </div>
       ))}
       {project.can_manage ? (
-        <details className="registry-add">
-          <summary>Подключить репозиторий</summary>
+        <Disclosure className="registry-add" summary="Подключить репозиторий">
           <RegistryForm
             page={page}
             actionKey="repository:add"
@@ -105,7 +105,7 @@ export function ProjectRepositories({
               <input name="branch" maxLength={200} spellCheck={false} />
             </label>
           </RegistryForm>
-        </details>
+        </Disclosure>
       ) : null}
     </section>
   );

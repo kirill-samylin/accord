@@ -151,19 +151,8 @@
     border-radius: 0;
     padding: 16px;
   }
-  .mobile-properties summary {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    list-style: none;
+  .mobile-properties .disclosure-trigger {
     font-size: 13px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    cursor: pointer;
-  }
-  .mobile-properties .properties {
-    margin-top: 14px;
   }
   .pagination {
     align-items: flex-start;

@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import { Play, Square } from "lucide-react";
+import { AnimatedCollapse } from "@/components/motion";
 import {
   commandReason,
   hostOnline,
@@ -208,17 +209,17 @@ export function RunControls({
           сессию.
         </p>
       ) : null}
-      {action.busy ? (
+      <AnimatedCollapse show={action.busy}>
         <p className="form-help" role="status">
           Отправляем команду…
         </p>
-      ) : null}
-      {sent ? (
+      </AnimatedCollapse>
+      <AnimatedCollapse show={sent}>
         <p role="status" className="form-help">
           Команда сохранена. Её доставку и исполнение можно проверить в истории
           ниже.
         </p>
-      ) : null}
+      </AnimatedCollapse>
       <ActionNotice
         message={action.message}
         uncertain={action.phase === "uncertain"}

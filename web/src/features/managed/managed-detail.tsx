@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { PageHeading, EmptyState, Fact } from "@/components/common";
+import { Disclosure } from "@/components/disclosure";
 import { ProjectLink as Link } from "@/components/project-link";
 import { date } from "@/lib/format";
 import {
@@ -226,8 +227,10 @@ export function ManagedDetail({
           </dl>
           <h3>Первоначальное задание</h3>
           <p className="profile-text">{run.prompt}</p>
-          <details className="managed-identifiers">
-            <summary>Сведения о диалоге</summary>
+          <Disclosure
+            className="managed-identifiers"
+            summary="Сведения о диалоге"
+          >
             <dl>
               <Fact
                 name="Диалог агента"
@@ -246,7 +249,7 @@ export function ManagedDetail({
               Диалог агента и рабочая сессия Accord — разные сущности. Право на
               задачу отдельно подтверждается её арендой.
             </p>
-          </details>
+          </Disclosure>
         </aside>
       </div>
       {requirement ? (

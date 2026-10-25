@@ -9,6 +9,7 @@ import { actionBody, type MutationProps } from "../mutations/contracts";
 import { useAction } from "../mutations/useAction";
 import { ActionNotice } from "../mutations/ActionNotice";
 import { PolicyDialog } from "./policy-dialog";
+import { Disclosure } from "@/components/disclosure";
 export function PolicyDetail({ page, onSuccess }: MutationProps) {
   const [edit, setEdit] = useState(false),
     [reason, setReason] = useState("");
@@ -44,8 +45,7 @@ export function PolicyDetail({ page, onSuccess }: MutationProps) {
         <p className="mono break">
           Код разрешения: {policy.id} · версия {policy.version}
         </p>
-        <details>
-          <summary>Пределы и проверки</summary>
+        <Disclosure summary="Пределы и проверки">
           <dl>
             {Object.entries(policy.limits).map(([key, value]) => (
               <div key={key}>
@@ -62,7 +62,7 @@ export function PolicyDetail({ page, onSuccess }: MutationProps) {
               </li>
             ))}
           </ul>
-        </details>
+        </Disclosure>
         <p>
           Задания из Codex / Claude:{" "}
           {policy.client_intake
