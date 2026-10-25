@@ -83,7 +83,7 @@ func resetAutomation(b *board, now time.Time) {
 	for _, w := range a.Workflows {
 		if w.State != "completed" && w.State != "cancelled" {
 			w.State = "needs_recovery"
-			w.ReasonCode = "restore_authority_invalidated"
+			workflowReason(w, "restore_authority_invalidated", "")
 			w.ControlEpoch++
 			w.Version++
 			w.UpdatedAt = now

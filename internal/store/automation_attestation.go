@@ -157,7 +157,7 @@ func (s *Store) WorkflowAttest(ctx context.Context, a core.Actor, in core.Workfl
 				}
 				record.Status = "delivery_unknown"
 				w.State = "needs_recovery"
-				w.ReasonCode = "check_ownership_uncertain"
+				workflowReason(w, "check_ownership_uncertain", "")
 				w.ControlEpoch++
 				revokeWorkflowCapabilities(b, w.ID)
 				workflowTouch(w, now)

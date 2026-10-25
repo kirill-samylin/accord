@@ -12,6 +12,9 @@ func (e *Engine) StopAll(reason string) error {
 	e.stopEpoch++
 	var children []process
 	for id, active := range e.active {
+		if !active.stop && active.stopReason == "" {
+			active.stopReason = "worker_stop"
+		}
 		active.stop = true
 		if active.automation != nil {
 			active.automation.cancel()
@@ -52,7 +55,16 @@ func (e *Engine) Close() error {
 	if closed {
 		return nil
 	}
-	err := e.StopAll("local worker is stopping")
+	err := e.StopAll("worker_shutdown: local worker is stopping")
+	// StopAll bounds the ownership answer at 5s, but exit observers still fsync
+	// the exit proof (Git/task observation is bounded at ~35s). Closing the
+	// journal under them would turn a proven exit into needs_recovery.
+	observed := make(chan struct{})
+	go func() { e.wg.Wait(); close(observed) }()
+	select {
+	case <-observed:
+	case <-time.After(40 * time.Second):
+	}
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	if !e.closed {

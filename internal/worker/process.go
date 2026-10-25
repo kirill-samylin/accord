@@ -25,6 +25,9 @@ type launchSpec struct {
 	prompt     string
 	stdin      io.Reader // Only helper-owned finite config dialogue uses this pipe.
 	inspection *configInspection
+	// onGroup receives the native process group a Unix supervisor reports, so
+	// `worker recover` can census it later. It is called without Engine.mu.
+	onGroup func(int)
 }
 
 // Native verification needs the observed OS exit status, not a fabricated code

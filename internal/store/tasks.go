@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -27,6 +28,8 @@ func (s *Store) createAsRoleInBoard(b *board, role string, a core.Actor, in core
 	if in.Type != "task" && in.Type != "epic" {
 		return zero, core.Fail("invalid_input", "type must be task or epic")
 	}
+	// Git prints lowercase SHAs; gates compare commits exactly.
+	in.TargetCommit = strings.ToLower(in.TargetCommit)
 	t := &core.Task{CreatedAt: &now, Category: in.Category, Complexity: in.Complexity, ExternalID: in.ExternalID, Key: nextKey(b), Type: in.Type, Title: in.Title, Description: in.Description, Role: in.Role, State: "ready", EpicKey: in.EpicKey, Priority: in.Priority, Version: 1, Requester: a.Principal.ID, CreatedBy: a.Principal.Owner, ReadyAt: now, Areas: in.Areas}
 	if t.Priority == 0 {
 		t.Priority = 2
@@ -186,26 +189,34 @@ func (s *Store) Update(ctx context.Context, a core.Actor, in core.UpdateInput) (
 		} else if sess.Role != "coordinator" && t.Requester != a.Principal.ID {
 			return core.Task{}, core.Fail("forbidden", "only requester or coordinator may update unclaimed work")
 		}
+		changed := false
 		if in.Title != nil {
 			if !validTitle(*in.Title) {
 				return core.Task{}, core.Fail("invalid_input", "invalid title")
 			}
+			changed = changed || t.Title != *in.Title
 			t.Title = *in.Title
 		}
 		if in.Description != nil {
 			if len(*in.Description) > 16384 {
 				return core.Task{}, core.Fail("invalid_input", "description too long")
 			}
+			changed = changed || t.Description != *in.Description
 			t.Description = *in.Description
 		}
-		if in.Category != nil {
-			t.Category = *in.Category
+		for _, field := range []struct {
+			value  *string
+			target *string
+		}{{in.Category, &t.Category}, {in.Complexity, &t.Complexity}, {in.ExternalID, &t.ExternalID}} {
+			if field.value != nil {
+				changed = changed || *field.target != *field.value
+				*field.target = *field.value
+			}
 		}
-		if in.Complexity != nil {
-			t.Complexity = *in.Complexity
-		}
-		if in.ExternalID != nil {
-			t.ExternalID = *in.ExternalID
+		// A request that changes nothing is a successful no-op: no version,
+		// event or lease renewal, so it cannot masquerade as progress.
+		if !changed {
+			return viewTask(b, t), nil
 		}
 		if err := validateMetadata(b, t); err != nil {
 			return core.Task{}, err

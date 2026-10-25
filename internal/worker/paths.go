@@ -61,18 +61,31 @@ func pinPaths(config Config) (map[string]pathPin, error) {
 	return pins, nil
 }
 
+// pinError names which local pin changed: the provider executable (for example
+// an auto-updated CLI with a new inode) or the workspace directory. The text
+// keeps "local workspace or provider identity changed" for owner guidance.
+type pinError struct{ kind, name string }
+
+func (e pinError) Error() string {
+	if e.kind == "provider" {
+		return "local workspace or provider identity changed: provider executable " + e.name + " differs from the consented pin; run `agent-board worker consent`"
+	}
+	return "local workspace or provider identity changed: workspace " + e.name + " differs from the consented pin; run `agent-board worker consent`"
+}
+
+// Code is the stable diagnostic for the changed pin.
+func (e pinError) Code() string { return e.kind + "_pin_changed" }
+
 func (e *Engine) checkPins(provider, alias string) error {
-	for key, path := range map[string]string{"provider:" + provider: e.config.Executables[provider], "workspace:" + alias: e.config.Workspaces[alias].Path} {
-		pin, ok := e.journal.PathPins[key]
-		if !ok || pin.Path != path {
-			return errors.New("local path mapping changed; explicit worker consent is required")
+	// Device+inode pins are unchanged; the order only makes the cause stable.
+	for _, pin := range []struct{ kind, name, key, path string }{{"provider", provider, "provider:" + provider, e.config.Executables[provider]}, {"workspace", alias, "workspace:" + alias, e.config.Workspaces[alias].Path}} {
+		saved, ok := e.journal.PathPins[pin.key]
+		if !ok || saved.Path != pin.path || validateLocalPath(pin.path) != nil {
+			return pinError{pin.kind, pin.name}
 		}
-		if err := validateLocalPath(path); err != nil {
-			return err
-		}
-		identity, err := directoryIdentity(path)
-		if err != nil || identity != pin.Identity {
-			return errors.New("local path identity changed; explicit worker consent is required")
+		identity, err := directoryIdentity(pin.path)
+		if err != nil || identity != saved.Identity {
+			return pinError{pin.kind, pin.name}
 		}
 	}
 	return nil

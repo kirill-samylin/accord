@@ -23,6 +23,7 @@ type supervisedProcess struct {
 	mu        sync.Mutex
 	proof     *supervisorProof
 	waitError error
+	onGroup   func(int)
 }
 
 func startSupervised(spec launchSpec) (process, error) {
@@ -44,7 +45,7 @@ func startSupervised(spec launchSpec) (process, error) {
 		return nil, err
 	}
 	cmd.Stdout = writer
-	p := &supervisedProcess{cmd: cmd, input: input, nonce: randomID("proof_"), done: make(chan struct{})}
+	p := &supervisedProcess{cmd: cmd, input: input, nonce: randomID("proof_"), done: make(chan struct{}), onGroup: spec.onGroup}
 	p.output = &proofReader{source: output, reader: bufio.NewReader(output), owner: p}
 	if err = cmd.Start(); err != nil {
 		input.Close()
@@ -66,7 +67,10 @@ func startSupervised(spec launchSpec) (process, error) {
 	return p, nil
 }
 
-func (p *supervisedProcess) closeInput()           { p.closeOnce.Do(func() { p.input.Close() }) }
+func (p *supervisedProcess) closeInput() { p.closeOnce.Do(func() { p.input.Close() }) }
+
+// supervisorGroup is the helper's own process group (Setpgid).
+func (p *supervisedProcess) supervisorGroup() int  { return p.cmd.Process.Pid }
 func (p *supervisedProcess) Output() io.ReadCloser { return p.output }
 func (p *supervisedProcess) Forced() bool {
 	p.mu.Lock()
@@ -136,6 +140,12 @@ func (p *supervisedProcess) ExitCode() (int, bool) {
 func (p *supervisedProcess) acceptProof(proof supervisorProof) bool {
 	if proof.Nonce != p.nonce {
 		return false
+	}
+	if proof.Type == "accord.supervisor.start" {
+		if p.onGroup != nil && proof.Group > 1 {
+			p.onGroup(proof.Group)
+		}
+		return true
 	}
 	p.mu.Lock()
 	p.proof = &proof

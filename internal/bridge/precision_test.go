@@ -11,8 +11,11 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
+// Token counters are bounded to 10^12 per attempt (below 2^53), so the
+// end-to-end path uses the largest valid values; exact int64 decoding beyond
+// 2^53 is covered by TestResultJSONKeepsExactInt64 below.
 func TestExactInt64ThroughHTTPWorkerAndDownstreamWire(t *testing.T) {
-	for _, tokens := range []int64{9007199254740993, math.MaxInt64} {
+	for _, tokens := range []int64{999_999_999_999, 1_000_000_000_000} {
 		t.Run(strconv.FormatInt(tokens, 10), func(t *testing.T) {
 			f := setup(t, 0)
 			task := f.task()
@@ -75,6 +78,34 @@ func TestExactInt64ThroughHTTPWorkerAndDownstreamWire(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestResultJSONKeepsExactInt64(t *testing.T) {
+	for _, n := range []int64{9007199254740993, math.MaxInt64} {
+		text := `{"attempts":[{"tokens_spent":` + strconv.FormatInt(n, 10) + `}],"key":"T-1"}`
+		result := &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: text}}}
+		if _, err := resultJSON(result); err != nil {
+			t.Fatal(err)
+		}
+		wire, err := json.Marshal(result.StructuredContent)
+		if err != nil || string(wire) != text {
+			t.Fatalf("structuredContent rounded int64: %s %v", wire, err)
+		}
+	}
+}
+
+func TestOversizedTokenCounterIsValidationWithoutQuarantine(t *testing.T) {
+	f := setup(t, 0)
+	task := f.task()
+	f.describe()
+	claim := value[core.Claim](t, f.invoke("next", core.NextInput{RequestID: "bound-next", TaskKey: task.Key}))
+	tokens := int64(math.MaxInt64)
+	result := f.invoke("comment", core.CommentInput{LeaseInput: core.LeaseInput{RequestID: "bound-comment", TaskKey: task.Key, Generation: claim.Lease.Generation}, Text: "too many", TokensSpentDelta: &tokens})
+	raw, _ := resultJSON(result)
+	if !result.IsError || errorCode(raw) != "VALIDATION" || f.stderr.String() != "" {
+		t.Fatalf("oversized counter: %s / %q", raw, f.stderr.String())
+	}
+	value[core.Task](t, f.invoke("comment", core.CommentInput{LeaseInput: core.LeaseInput{RequestID: "bound-ok", TaskKey: task.Key, Generation: claim.Lease.Generation}, Text: "still owned"}))
 }
 
 func exactTask(t *testing.T, result *mcp.CallToolResult, tokens int64) json.RawMessage {

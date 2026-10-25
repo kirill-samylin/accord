@@ -10,7 +10,9 @@ import (
 
 // RunAutomation owns no credentials or native processes. Each transition
 // reacquires registry -> legacy -> board authority; SQL/CAS fences all servers.
-// The caller cancels and joins this loop before closing the registry.
+// The caller cancels and joins this loop before closing the registry. Only a
+// registry-wide failure (listing projects) stops it; a failing project is
+// logged without secrets and backed off while the others continue.
 func (r *Registry) RunAutomation(ctx context.Context) error {
 	if r.options.Offline {
 		return errors.New("automation scheduler is unavailable offline")
@@ -67,9 +69,13 @@ func (r *Registry) automationCycle(ctx context.Context, start int, cursors map[s
 		if err = ctx.Err(); err != nil {
 			return next, err
 		}
+		if r.backoff.skip(projectID, time.Now()) {
+			continue
+		}
 		v, e := r.runtime(projectID)
 		if e != nil {
-			return next, e
+			r.backoff.fail(projectID, e, time.Now())
+			continue
 		}
 		candidates, e := transaction(r, ctx, func(tx *sql.Tx) ([]core.WorkflowAdvanceInput, error) {
 			project, err := r.project(ctx, tx, projectID)
@@ -81,8 +87,13 @@ func (r *Registry) automationCycle(ctx context.Context, start int, cursors map[s
 			})
 		})
 		if e != nil {
-			return next, e
+			if cycleExpired(ctx, e) {
+				return next, e
+			}
+			r.backoff.fail(projectID, e, time.Now())
+			continue
 		}
+		failed := false
 		batch := min(4, budget, len(candidates))
 		for position := 0; position < batch; position++ {
 			candidateIndex := cursors[projectID] % len(candidates)
@@ -103,9 +114,19 @@ func (r *Registry) automationCycle(ctx context.Context, start int, cursors map[s
 				// An ordinary CAS/access race is not an infrastructure failure.
 				// It never grants dispatch; the next scan observes current state.
 				if !errors.As(e, &domain) {
-					return next, e
+					if cycleExpired(ctx, e) {
+						return next, e
+					}
+					// One broken project (storage, migration, damaged board) is
+					// isolated and backed off; other projects keep running.
+					r.backoff.fail(projectID, e, time.Now())
+					failed = true
+					break
 				}
 			}
+		}
+		if !failed {
+			r.backoff.ok(projectID)
 		}
 	}
 	return next, nil

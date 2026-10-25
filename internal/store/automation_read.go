@@ -12,6 +12,8 @@ func workflowPage(ctx context.Context, b *board, a core.Actor, w *core.Workflow,
 }
 func workflowFullPage(ctx context.Context, b *board, a core.Actor, w *core.Workflow, now time.Time) core.WorkflowPage {
 	out := core.WorkflowPage{Workflow: *w, Steps: []core.WorkflowStep{}, Plans: []core.WorkflowPlanSnapshot{}, Questions: []core.WorkflowQuestionRecord{}, Attestations: []core.WorkflowAttestation{}, CanControl: workflowController(ctx, b, a, w, now) == nil}
+	// Readers always see one label per message, including inferred legacy rows.
+	out.Workflow.MessageMeta = workflowMessageMetas(b, w)
 	for _, v := range b.Automation.Steps {
 		if v.WorkflowID == w.ID {
 			out.Steps = append(out.Steps, *v)

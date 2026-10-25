@@ -53,9 +53,12 @@ func workflowStopOwned(ctx context.Context, b *board, w *core.Workflow, now time
 				return err
 			}
 		}
-		r.State = "stopping"
-		r.Version++
-		r.UpdatedAt = now
+		// Repeated scans of an already stopping run are not a new run version.
+		if !stopExists || r.State != "stopping" {
+			r.State = "stopping"
+			r.Version++
+			r.UpdatedAt = now
+		}
 	}
 	return nil
 }
@@ -115,24 +118,27 @@ func (s *Store) WorkflowCommand(ctx context.Context, a core.Actor, in core.Workf
 			w.ControlEpoch++
 			revokeWorkflowCapabilities(b, w.ID)
 			w.State = "pausing"
-			w.ReasonCode = "human_pause"
-			if in.Kind == "cancel" {
+			workflowReason(w, "human_pause", "")
+			if in.Kind == "cancel" || w.CancelRequested {
+				// A cancel is never downgraded by a later pause; it completes
+				// once every owned run is proven terminal (see workflowSettleStop).
 				w.State = "stopping"
-				w.ReasonCode = "human_cancel"
+				w.CancelRequested = true
+				workflowReason(w, "human_cancel", "")
 			}
 			if err := workflowStopOwned(ctx, b, w, now); err != nil {
 				return core.WorkflowPage{}, err
 			}
 			if !workflowOwnedActive(b, w) {
 				w.State = "paused"
-				if in.Kind == "cancel" {
-					w.State = "cancelled"
-					cancelWorkflowTasks(b, w, now)
-					w.ReservedRuns = 0
-					delete(b.Automation.Reservations, w.ID)
+				if w.CancelRequested {
+					workflowCancelled(b, w, now)
 				}
 			}
 		case "resume":
+			if w.CancelRequested {
+				return core.WorkflowPage{}, core.Fail("conflict", "Отмена уже запрошена; она завершится после подтверждённой остановки процессов")
+			}
 			if w.ReasonCode == "clarification_after_completion" {
 				return core.WorkflowPage{}, core.Fail("conflict", "Нужен явный replan после уточнения уже завершённой задачи")
 			}
@@ -176,7 +182,7 @@ func (s *Store) WorkflowCommand(ctx context.Context, a core.Actor, in core.Workf
 			}
 			w.ControlEpoch++
 			w.State = "queued"
-			w.ReasonCode = ""
+			workflowReason(w, "", "")
 			if st := b.Automation.Steps[w.CurrentStepID]; st != nil && st.Status != "completed" {
 				st.Status = "interrupted"
 			}
@@ -187,7 +193,7 @@ func (s *Store) WorkflowCommand(ctx context.Context, a core.Actor, in core.Workf
 			if len(w.Messages) >= 64 {
 				return core.WorkflowPage{}, core.Fail("capacity", "Предел уточнений")
 			}
-			w.Messages = append(w.Messages, managedClean(in.Text))
+			workflowAppendMessage(w, core.WorkflowMessageMeta{Source: core.WorkflowMessageHumanClarification}, in.Text)
 		case "replan":
 			if err := authorizeWorkflow(ctx, b, w, now); err != nil {
 				return core.WorkflowPage{}, err
@@ -211,10 +217,10 @@ func (s *Store) WorkflowCommand(ctx context.Context, a core.Actor, in core.Workf
 			}
 			cancelWorkflowTasks(b, w, now)
 			w.EpicKey = ""
-			w.Messages = appendBoundedWorkflowMessage(w.Messages, "Согласованный человеком replan: "+in.Text)
+			workflowAppendMessage(w, core.WorkflowMessageMeta{Source: core.WorkflowMessageHumanReplan}, "Согласованный человеком replan: "+in.Text)
 			w.ControlEpoch++
 			w.State = "queued"
-			w.ReasonCode = "replan"
+			workflowReason(w, "replan", "")
 			w.CurrentStepID = ""
 			for _, p := range b.Automation.Plans {
 				if p.WorkflowID == w.ID {

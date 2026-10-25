@@ -4,7 +4,6 @@ import (
 	"agent-board/internal/core"
 	"context"
 	"fmt"
-	"strings"
 	"time"
 )
 
@@ -17,7 +16,7 @@ func workflowSteps(b *board, id string) int {
 	}
 	return n
 }
-func workflowPrompt(w *core.Workflow, st *core.WorkflowStep) string {
+func workflowPrompt(b *board, w *core.Workflow, st *core.WorkflowStep) string {
 	text := fmt.Sprintf("Workflow %s, step %s, role %s. Requirement:\n%s\nYour only task: %s. First describe the exact pinned profile and next this task; keep its lease. Complete using transition with genuine evidence; never infer success from CLI exit. Ask workflow_question for human blockers. Do not create recursive workflows or control hosts.\n", w.ID, st.ID, st.Kind, w.IntakeText, st.TaskKey)
 	if st.Kind == "analyst" {
 		text += "Analyze the checkout and submit workflow_plan with a topologically ordered plan (client_key/title/description/areas/acceptance/prerequisites/required_check_ids), then finish the analyst task with artifact workflow-plan hash and summary. Every task must include the required test presets.\n"
@@ -31,10 +30,7 @@ func workflowPrompt(w *core.Workflow, st *core.WorkflowStep) string {
 	if st.Kind == "tester" {
 		text += "Independent testing of reviewed exact SHA " + st.TargetSHA + ". Use workflow_run_check for every required policy check and wait for genuine completed results. Passed needs actual executed tests; NOT-RUN is not PASS. For missing process/E2E tests propose an artifact-only test patch and report test_design; never edit reviewed source directly.\n"
 	}
-	if len(w.Messages) > 0 {
-		text += "Human clarifications for this next turn:\n" + strings.Join(w.Messages, "\n")
-	}
-	return text
+	return text + workflowPromptMessages(b, w, st)
 }
 func (s *Store) workflowNewTask(b *board, w *core.Workflow, role, title, description string, target *core.Task, now time.Time) (*core.Task, error) {
 	binding := w.Grant.RoleBindings[role]
@@ -73,8 +69,11 @@ func (s *Store) workflowEnqueue(ctx context.Context, b *board, w *core.Workflow,
 			}
 		}
 	}
-	if active >= 8 || len(b.ManagedRuns) >= 128 {
-		return core.Fail("capacity", "Нет managed slot")
+	if active >= 8 {
+		return core.Fail("capacity", "Нет свободного managed slot: уже 8 активных запусков")
+	}
+	if err := automationRotateHistory(b, now, ""); err != nil {
+		return err
 	}
 	id, err := managedID("ws_")
 	if err != nil {
@@ -97,12 +96,13 @@ func (s *Store) workflowEnqueue(ctx context.Context, b *board, w *core.Workflow,
 	}
 	profileCopy := profile
 	r := &core.ManagedRun{ID: runID, HostID: w.HostID, Version: 1, Provider: st.Provider, Workspace: w.Workspace, Profile: &profileCopy, TaskKey: t.Key, CreatedBy: w.Grant.RequesterID, State: "queued", Generation: 1, CreatedAt: now, UpdatedAt: now, Output: []string{}, Automation: &core.ManagedAutomationBinding{WorkflowID: w.ID, StepID: id, ControlEpoch: w.ControlEpoch, PolicyVersion: w.Grant.PolicyVersion, MessageCount: len(w.Messages), TaskGeneration: t.Generation + 1, DeadlineAt: st.DeadlineAt, TargetSHA: st.TargetSHA, Checks: workflowTaskChecks(b, w, t)}}
-	r.Prompt = workflowPrompt(w, st)
+	r.Prompt = workflowPrompt(b, w, st)
 	b.ManagedRuns[r.ID] = r
 	b.Automation.Steps[id] = st
 	w.CurrentStepID = id
 	w.State = "running"
-	w.Counters.Invocations++
+	// Invocations are counted when the worker reports started
+	// (automationRunStarted); a launch that never started spends no budget.
 	w.ReservedRuns--
 	_, err = managedNewCommand(b, r, core.Actor{Principal: w.Requester}, "start", r.Prompt, now, w.Grant.RequesterEpoch)
 	if err == nil {

@@ -95,6 +95,12 @@ func automationGuard[T any](s *service, ctx context.Context, tx *sql.Tx, project
 }
 
 func automationCall[I, O any](s *service, ctx context.Context, a core.Actor, in I, write bool, call func(context.Context, core.Actor, I) (O, error)) (O, error) {
+	return automationAccessCall(s, ctx, a, in, write, false, call)
+}
+
+// automationAccessCall is automationCall that, with manage, also requires the
+// caller to manage the project (owner membership or global admin member).
+func automationAccessCall[I, O any](s *service, ctx context.Context, a core.Actor, in I, write, manage bool, call func(context.Context, core.Actor, I) (O, error)) (O, error) {
 	return transaction(s.registry, ctx, func(tx *sql.Tx) (O, error) {
 		var zero O
 		who, err := accountFrom(ctx)
@@ -107,6 +113,11 @@ func automationCall[I, O any](s *service, ctx context.Context, a core.Actor, in 
 		}
 		if a.Principal != access.principal {
 			return zero, denied()
+		}
+		if manage {
+			if err = requireOwner(access); err != nil {
+				return zero, err
+			}
 		}
 		if err = s.registry.sessionAllowed(ctx, tx, access, a.SessionID); err != nil {
 			return zero, err

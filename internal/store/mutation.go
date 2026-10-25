@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode"
 	"unicode/utf8"
 
 	"agent-board/internal/core"
@@ -24,8 +25,9 @@ func identifier() (string, error) {
 }
 func mutate[T any](s *Store, ctx context.Context, a core.Actor, request, method string, input any, fn func(*board, *core.Session, time.Time) (T, error)) (T, error) {
 	var zero T
-	if strings.TrimSpace(request) == "" || len(request) > 128 {
-		return zero, core.Fail("invalid_input", "request_id must contain 1..128 characters")
+	// Limits count characters (runes), matching the message and the UI.
+	if strings.TrimSpace(request) == "" || utf8.RuneCountInString(request) > 128 || !plainText(request, false) {
+		return zero, core.Fail("invalid_input", "request_id must contain 1..128 characters without control characters")
 	}
 	raw, err := json.Marshal(input)
 	if err != nil {
@@ -76,6 +78,11 @@ func mutate[T any](s *Store, ctx context.Context, a core.Actor, request, method 
 				return zero, err
 			}
 		}
+		// After the replay lookup: an exact retry of an already stored request
+		// keeps returning its original result even if hygiene rules tightened.
+		if err := inputText(input); err != nil {
+			return zero, err
+		}
 		// Domain mutations operate on an isolated copy: a rejected operation cannot
 		// persist partial task changes, events, or lease renewals.
 		snapshot, err := json.Marshal(b)
@@ -124,9 +131,23 @@ func owned(b *board, a core.Actor, key string, generation int64) (*core.Task, er
 		return nil, err
 	}
 	if t.Lease == nil || t.Lease.SessionID != a.SessionID || t.Lease.Generation != generation {
+		// LEASE_LOST tells a holder that ITS ownership ended, and clients stop
+		// work on it. A caller that never held this task while another session
+		// does gets LEASE_HELD instead, so a stray call cannot look like loss.
+		if t.Lease != nil && t.Lease.SessionID != a.SessionID && !attemptedBy(t, a.SessionID) {
+			return nil, core.Fail("lease_held", "another session holds this task; only its holder may change it")
+		}
 		return nil, core.Fail("lease_lost", "active lease and current generation required")
 	}
 	return t, nil
+}
+func attemptedBy(t *core.Task, session string) bool {
+	for _, attempt := range t.Attempts {
+		if attempt.SessionID == session {
+			return true
+		}
+	}
+	return false
 }
 func coordinator(sess *core.Session) error {
 	if sess.Role != "coordinator" {
@@ -165,5 +186,49 @@ func viewTask(b *board, t *core.Task) core.Task {
 func nextKey(b *board) string { b.Sequence++; return fmt.Sprintf("T-%d", b.Sequence) }
 
 func validTitle(value string) bool {
-	return strings.TrimSpace(value) != "" && utf8.RuneCountInString(value) <= 200
+	return strings.TrimSpace(value) != "" && utf8.RuneCountInString(value) <= 200 && plainText(value, false)
+}
+
+// plainText accepts only valid UTF-8 without Unicode control characters (C0,
+// DEL, C1), so stored text cannot carry NUL or terminal escape sequences to
+// logs, terminals or the UI. Multi-line bodies may also use \n, \t and CRLF.
+func plainText(value string, multiline bool) bool {
+	if !utf8.ValidString(value) {
+		return false
+	}
+	for i, r := range value {
+		if !unicode.IsControl(r) || multiline && (r == '\n' || r == '\t' || r == '\r' && strings.HasPrefix(value[i+1:], "\n")) {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+// inputText is the shared text boundary for externally supplied mutations;
+// internal constructors (automation) validate their own generated text.
+func inputText(input any) error {
+	switch in := input.(type) {
+	case core.OpenSession:
+		if !plainText(in.RunID, false) {
+			return core.Fail("invalid_input", "run_id must not contain control characters or invalid UTF-8")
+		}
+	case core.CreateInput:
+		if !plainText(in.Description, true) {
+			return core.Fail("invalid_input", "description must be valid UTF-8 without control characters other than newline and tab")
+		}
+		if err := validOwner(in.Type, in.Owner); err != nil {
+			return err
+		}
+		return validAreas(in.Areas)
+	case core.UpdateInput:
+		if in.Description != nil && !plainText(*in.Description, true) {
+			return core.Fail("invalid_input", "description must be valid UTF-8 without control characters other than newline and tab")
+		}
+	case core.CommentInput:
+		if !plainText(in.Text, true) {
+			return core.Fail("invalid_input", "comment must be valid UTF-8 without control characters other than newline and tab")
+		}
+	}
+	return nil
 }

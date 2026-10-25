@@ -71,6 +71,8 @@ func TestOptedInLaunchUsesProvenProfileAndNeverLegacyFallback(t *testing.T) {
 				}
 			} else if starts != 1 || r.Automation.PermissionProof == nil {
 				t.Fatal("proven profile missing from actual launch")
+			} else if budget := e.journal.AutomationBudgets[p.run.Automation.WorkflowID]; budget == nil || budget.Invocations != 0 || r.LocalDiagnostic != "native_start_failed" {
+				t.Fatal("a native start failure consumed a local invocation or lost its cause", r.LocalDiagnostic)
 			}
 		})
 	}

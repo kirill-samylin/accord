@@ -5,12 +5,16 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"sort"
+	"strings"
 	"sync"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"agent-board/internal/client"
 	"agent-board/internal/core"
@@ -24,10 +28,53 @@ type remote struct {
 	session   core.SessionView
 }
 
-type statusError struct{ code int }
+// statusError keeps the HTTP status and the server's fixed domain error code
+// and message. Bodies are bounded and sanitized; they never carry secrets.
+type statusError struct {
+	code    int
+	server  string
+	message string
+}
 
 func (e statusError) Error() string {
-	return "Accord rejected the worker request; check local enrollment, project access and server capability"
+	text := fmt.Sprintf("Accord rejected the worker request: HTTP %d", e.code)
+	if e.server != "" {
+		text += " " + e.server
+	}
+	if e.message != "" {
+		text += ": " + e.message
+	}
+	if e.code == http.StatusUnauthorized || e.code == http.StatusForbidden || e.code == http.StatusNotFound {
+		text += "; check local enrollment, project access and server capability"
+	}
+	return text
+}
+
+// readStatusError decodes at most 4KiB of the standard {"error":{code,message}}
+// envelope. Unknown bodies keep only the status; text is bounded to 200 bytes.
+func readStatusError(status int, body io.Reader) statusError {
+	out := statusError{code: status}
+	var envelope struct {
+		Error struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	if json.NewDecoder(io.LimitReader(body, 4096)).Decode(&envelope) == nil {
+		out.server = safeServerText(envelope.Error.Code, 64)
+		out.message = safeServerText(envelope.Error.Message, 200)
+	}
+	return out
+}
+
+func safeServerText(text string, limit int) string {
+	text = strings.Map(func(r rune) rune {
+		if unicode.IsControl(r) || r == utf8.RuneError {
+			return -1
+		}
+		return r
+	}, text)
+	return strings.TrimSpace(boundedText(text, limit))
 }
 
 func newRemote(config Config) (*remote, error) {
@@ -79,7 +126,7 @@ func (r *remote) request(ctx context.Context, method, path string, input, output
 	}
 	defer response.Body.Close()
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return statusError{code: response.StatusCode}
+		return readStatusError(response.StatusCode, response.Body)
 	}
 	decoder := json.NewDecoder(io.LimitReader(response.Body, client.MaxResponseBytes+1))
 	if err = decoder.Decode(output); err != nil {

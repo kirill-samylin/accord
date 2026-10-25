@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 )
 
 func (r *Registry) List(ctx context.Context, who Identity) ([]Project, error) {
@@ -44,8 +46,11 @@ func (r *Registry) List(ctx context.Context, who Identity) ([]Project, error) {
 		return out, nil
 	})
 }
+
+// validName keeps project names printable: valid UTF-8 and no Unicode control
+// characters, so a name cannot inject terminal escapes into CLI/log output.
 func validName(name string) bool {
-	return strings.TrimSpace(name) == name && name != "" && len(name) <= 120 && !strings.ContainsAny(name, "\r\n\x00")
+	return strings.TrimSpace(name) == name && name != "" && len(name) <= 120 && utf8.ValidString(name) && strings.IndexFunc(name, unicode.IsControl) < 0
 }
 func validRole(role string) bool { return role == "owner" || role == "editor" || role == "viewer" }
 func requireOwner(a access) error {
@@ -153,13 +158,18 @@ func (r *Registry) createProject(ctx context.Context, who Identity, id, name, ur
 	})
 }
 func (r *Registry) updateProject(ctx context.Context, who Identity, id, name, state string, version int64) (Project, error) {
-	if !validName(name) || state != "active" && state != "archived" || id == r.defaultID && state == "archived" {
+	if state != "active" && state != "archived" || id == r.defaultID && state == "archived" {
 		return Project{}, invalid()
 	}
 	return transaction(r, ctx, func(tx *sql.Tx) (Project, error) {
 		a, e := r.manageAccess(ctx, tx, who, id)
 		if e != nil {
 			return Project{}, e
+		}
+		// Only a new name must satisfy the current rules: a project with a
+		// legacy name can still be archived or restored unchanged.
+		if name != a.project.Name && !validName(name) {
+			return Project{}, invalid()
 		}
 		if e = requireProjectOwner(a); e != nil {
 			return Project{}, e

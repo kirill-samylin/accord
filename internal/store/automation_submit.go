@@ -3,6 +3,7 @@ package store
 import (
 	"agent-board/internal/core"
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -70,8 +71,10 @@ func reserveWorkflowBudget(b *board, w *core.Workflow) error {
 	if need < 0 {
 		need = 0
 	}
-	if len(b.ManagedRuns)+workflowReservedRuns(b)-w.ReservedRuns+need > 128 {
-		return core.Fail("capacity", "Недостаточно lifetime managed slots")
+	// Live runs plus every workflow's remaining reservation stay within the
+	// managed slot ceiling; terminal history is bounded by archive rotation.
+	if managedLiveRuns(b)+workflowReservedRuns(b)-w.ReservedRuns+need > managedRunLiveLimit {
+		return core.Fail("capacity", fmt.Sprintf("Недостаточно свободных managed slots: активные запуски и резервы workflow превысят %d", managedRunLiveLimit))
 	}
 	w.ReservedRuns = need
 	return nil
@@ -118,8 +121,11 @@ func (s *Store) WorkflowSubmit(ctx context.Context, a core.Actor, in core.Workfl
 		if err := textLimit(in.Text, 16384, "требование"); err != nil {
 			return core.WorkflowPage{}, err
 		}
-		if len(b.Automation.Workflows) >= 32 {
-			return core.WorkflowPage{}, core.Fail("capacity", "В проекте достигнут предел 32 циклов автоматизации; нужна ротация истории")
+		if err := automationRotateHistory(b, now, a.SessionID); err != nil {
+			return core.WorkflowPage{}, err
+		}
+		if workflowLive(b) >= workflowLiveLimit {
+			return core.WorkflowPage{}, core.Fail("capacity", fmt.Sprintf("В проекте уже %d незавершённых циклов автоматизации; завершите или отмените один из них", workflowLiveLimit))
 		}
 		id, err := managedID("wf_")
 		if err != nil {

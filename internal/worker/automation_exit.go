@@ -58,15 +58,24 @@ func (e *Engine) observeAutomationExit(id string, child process, readError, exit
 	}
 	runCopy := *run
 	config := snapshotConfig(e.config)
+	stopped := active.stop
 	e.mu.Unlock()
-	proofCtx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	proof, proofErr := e.observeAutomationGit(proofCtx, config.Automation.Workspaces[runCopy.Workspace], config.Workspaces[runCopy.Workspace].Path)
-	cancel()
-	var task core.Task
-	taskCtx, taskCancel := context.WithTimeout(context.Background(), 4*time.Second)
-	taskErr := e.automationRead(taskCtx, "/tasks/"+a.Run.TaskKey, &task)
-	taskCancel()
+	consent, directory := config.Automation.Workspaces[runCopy.Workspace], config.Workspaces[runCopy.Workspace].Path
 	role := a.Run.Profile.Role
+	proofCtx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	proof, proofErr := e.observeAutomationGit(proofCtx, consent, directory)
+	var interrupted *interruptedWork
+	var dirtyErr error
+	if role == "developer" && stopped && !errors.Is(proofErr, errOwnership) {
+		interrupted, dirtyErr = e.observeInterruptedWork(proofCtx, consent, directory, a.Run.Automation)
+	}
+	cancel()
+	hasSession := sessionID.MatchString(runCopy.SessionID)
+	var task core.Task
+	var taskErr error = errors.New("no native session")
+	if hasSession {
+		task, taskErr = e.readExitTask(a.Run.TaskKey)
+	}
 	clean := proofErr == nil && unchangedProof(a.Baseline, proof, role != "developer") == nil
 	if (role == "reviewer" || role == "tester") && proof.Head != a.Run.Automation.TargetSHA {
 		clean = false
@@ -74,35 +83,52 @@ func (e *Engine) observeAutomationExit(id string, child process, readError, exit
 	if taskErr != nil || task.Key != a.Run.TaskKey || task.Role != role || (task.Generation != a.Run.Automation.TaskGeneration && task.Generation != a.Run.Automation.TaskGeneration-1) {
 		clean = false
 	}
-	if pinErr := e.checkAutomationExitPins(runCopy.Provider, runCopy.Workspace); pinErr != nil {
+	// SourceClean describes the checkout only. A replaced provider executable
+	// (auto-update, new inode) is a local diagnostic, never dirty source; a
+	// changed workspace directory identity still makes the proof unusable.
+	providerChanged := false
+	var pin pinError
+	if pinErr := e.checkAutomationExitPins(runCopy.Provider, runCopy.Workspace); errors.As(pinErr, &pin) && pin.kind == "provider" {
+		providerChanged = true
+	} else if pinErr != nil {
 		clean = false
 	}
 	if role == "developer" && task.State == "done" && task.Evidence.Commit != proof.Head {
 		clean = false
 	}
 	observations := core.WorkflowObservations{ActualHead: proof.Head, TargetSHA: a.Run.Automation.TargetSHA, SourceClean: &clean, ManifestSHA256: proof.Manifest}
-	if role == "tester" && clean && task.Review != nil && task.Review.Outcome == "not_run" && config.Automation.Workspaces[runCopy.Workspace].AllowTesterArtifactWrites {
-		refs := qualifyingDesignRefs(context.Background(), config.Workspaces[runCopy.Workspace].Path, config.Automation.Workspaces[runCopy.Workspace], a.Baseline.Artifacts, proof.Artifacts)
+	if role == "tester" && clean && task.Review != nil && task.Review.Outcome == "not_run" && consent.AllowTesterArtifactWrites {
+		refs := qualifyingDesignRefs(context.Background(), directory, consent, a.Baseline.Artifacts, proof.Artifacts)
 		if len(refs) > 0 {
 			observations.TestDesign = true
 			observations.ArtifactRefs = refs
 		}
 	}
 	e.mu.Lock()
-	defer e.mu.Unlock()
-	if errors.Is(proofErr, errOwnership) {
+	if errors.Is(proofErr, errOwnership) || errors.Is(dirtyErr, errOwnership) {
 		active.uncertain = true
 		run.State = "needs_recovery"
 		run.Error = "Git observation process ownership is uncertain"
 		e.reportFor(run.CommandID, "delivery_unknown", run, run.Error, "")
 		_ = e.save()
+		e.mu.Unlock()
 		return
 	}
 	a.ExitDurable = true
 	a.ExitObservations = &observations
+	if interrupted != nil {
+		a.Interrupted = interrupted
+	}
+	if providerChanged {
+		const note = "provider executable identity changed; run `agent-board worker consent`"
+		run.LocalDiagnostic = "provider_pin_changed"
+		run.Error = joinNote(run.Error, note)
+		run.Notice = joinNote(run.Notice, note)
+	}
 	// Missing provider identity or an unavailable task fact cannot authenticate an
-	// exit attestation. Preserve a negative local proof and stop automatic reuse.
-	attestable := sessionID.MatchString(run.SessionID) && taskErr == nil && task.Key == a.Run.TaskKey
+	// exit attestation. The proven local exit then needs no proof: it is reported
+	// as a plain terminal failure/stop and never followed by delivery_unknown.
+	attestable := hasSession && taskErr == nil && task.Key == a.Run.TaskKey
 	if attestable {
 		commandID := run.CommandID
 		if active.stopCommand != "" {
@@ -114,39 +140,63 @@ func (e *Engine) observeAutomationExit(id string, child process, readError, exit
 	} else {
 		a.ExitUnreportable = true
 	}
-	if active.stop {
+	e.reportAutomationExitLocked(run, active, child, readError, exitError, hasSession, attestable)
+	if err := e.save(); err != nil {
+		active.uncertain = true
+		e.mu.Unlock()
+		return
+	}
+	e.mu.Unlock()
+	if !attestable {
+		_ = e.releaseAutomationExit(id)
+	}
+}
+
+// reportAutomationExitLocked queues exactly one terminal report per command.
+func (e *Engine) reportAutomationExitLocked(run *RunState, active *activeRun, child process, readError, exitError error, hasSession, attestable bool) {
+	switch {
+	case active.stop && active.stopCommand != "":
 		run.State = "stopped"
 		if !active.observed {
 			e.reportFor(run.CommandID, "failed", run, "stopped before native turn was observed", "")
 		}
-		if active.stopCommand != "" {
-			e.journal.Receipts[active.stopCommand].Forced = child.Forced()
-			e.reportFor(active.stopCommand, "stopped", run, "", "")
-		} else {
-			e.journal.Receipts[run.CommandID].Forced = child.Forced()
-			e.reportFor(run.CommandID, "recovered_stopped", run, run.Error, "")
-		}
-	} else if active.complete && active.observed && !active.failed && readError == nil && exitError == nil {
+		e.journal.Receipts[active.stopCommand].Forced = child.Forced()
+		e.reportFor(active.stopCommand, "stopped", run, "", "")
+	case active.stop:
+		// A worker-local stop (local deadline, shutdown) is this live worker's
+		// normal terminal stop of the execution command.
+		run.State = "stopped"
+		e.journal.Receipts[run.CommandID].Forced = child.Forced()
+		e.reportFor(run.CommandID, "recovered_stopped", run, run.Error, "")
+	case !hasSession:
+		run.State = "failed"
+		run.LocalDiagnostic = "native_exit_before_session"
+		run.Error = "native_exit_before_session: native provider exited before announcing a session; check local login (codex login / claude), CLI version and flags"
+		e.reportFor(run.CommandID, "failed", run, run.Error, "")
+	case !attestable:
+		run.State = "failed"
+		run.LocalDiagnostic = "exit_task_unavailable"
+		run.Error = "exit_task_unavailable: native exit is proven locally but the task facts needed for its proof were unavailable"
+		e.reportFor(run.CommandID, "failed", run, run.Error, "")
+	case active.complete && active.observed && !active.failed && readError == nil && exitError == nil:
 		run.State = "completed"
 		e.reportFor(run.CommandID, "completed", run, "", run.Output)
-	} else {
+	default:
 		run.State = "failed"
 		if run.Error == "" {
 			run.Error = "native provider failed or no complete workflow turn was observed"
 		}
 		e.reportFor(run.CommandID, "failed", run, run.Error, "")
 	}
-	if err := e.save(); err != nil {
-		active.uncertain = true
-		return
-	}
-	if a.ExitUnreportable {
-		run.State = "needs_recovery"
-		run.Error = "native exit is proven locally but task or provider identity is unavailable"
-		e.reportFor(run.CommandID, "delivery_unknown", run, run.Error, "")
-		_ = e.save()
-	}
 }
+
+func joinNote(text, note string) string {
+	if text == "" {
+		return note
+	}
+	return boundedText(text+"; "+note, 3000)
+}
+
 func (e *Engine) automationRead(ctx context.Context, path string, output any) error {
 	e.mu.Lock()
 	read := e.automationReadTransport
@@ -164,7 +214,7 @@ func (e *Engine) releaseAutomationExit(id string) error {
 		return nil
 	}
 	a := run.Automation
-	if active.uncertain || !a.NativeExited || !a.ExitDurable || !a.ExitAck || len(a.Pending) > 0 {
+	if active.uncertain || !a.NativeExited || !a.ExitDurable || !automationExitSettled(a) {
 		e.mu.Unlock()
 		return errors.New("automation exit has unresolved proof")
 	}
@@ -195,4 +245,39 @@ func (e *Engine) checkAutomationExitPins(provider, workspace string) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	return e.checkPins(provider, workspace)
+}
+
+// readExitTask retries transport failures briefly; a definitive 4xx or a
+// mismatched fact is final. Without it no exit attestation can be built.
+func (e *Engine) readExitTask(key string) (core.Task, error) {
+	var task core.Task
+	var err error
+	for attempt := 0; attempt < 3; attempt++ {
+		ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
+		task = core.Task{}
+		err = e.automationRead(ctx, "/tasks/"+key, &task)
+		cancel()
+		var status statusError
+		e.mu.Lock()
+		offline := e.automationReadTransport == nil
+		e.mu.Unlock()
+		if err == nil || errors.As(err, &status) || offline {
+			return task, err
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	return task, err
+}
+
+// observeInterruptedWork fingerprints a stopped developer step's uncommitted
+// tree. Only provable trees (regular files, no unmerged entries) are recorded.
+func (e *Engine) observeInterruptedWork(ctx context.Context, a AutomationWorkspace, directory string, binding *core.ManagedAutomationBinding) (*interruptedWork, error) {
+	tree, err := readDirtyTree(ctx, a, directory, e.gitRunnerFor())
+	if err != nil || tree.files == 0 || !tree.provable || binding == nil {
+		if errors.Is(err, errOwnership) {
+			return nil, err
+		}
+		return nil, nil
+	}
+	return &interruptedWork{WorkflowID: binding.WorkflowID, StepID: binding.StepID, Head: tree.head, Fingerprint: tree.fingerprint, Files: tree.files}, nil
 }

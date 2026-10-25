@@ -50,10 +50,14 @@ func TestAutomationClarifyUnfinishedUsesExactConversationNextTurnAndObservedDeli
 	}
 	m.exit(t, first, commitA, "")
 	queued := m.tick(t, id)
-	if len(queued.Steps) != 1 || queued.Steps[0].ManagedGeneration != 2 || queued.Steps[0].DeliveredMessages != 0 || queued.Workflow.Counters.Invocations != 2 {
+	if len(queued.Steps) != 1 || queued.Steps[0].ManagedGeneration != 2 || queued.Steps[0].DeliveredMessages != 0 || queued.Workflow.Counters.Invocations != 1 {
 		t.Fatal("continuationnotqueued", queued.Workflow)
 	}
 	second := m.attempt(t, id)
+	// Invocations count actual starts, so the continuation counts once started.
+	if v := m.page(t, id); v.Workflow.Counters.Invocations != 2 {
+		t.Fatal("started continuation not counted", v.Workflow.Counters)
+	}
 	if second.poll.Run.ID != first.poll.Run.ID || second.uuid != first.uuid || second.actor.SessionID == first.actor.SessionID {
 		t.Fatal("resume lostexactcontext/sessionisolation")
 	}

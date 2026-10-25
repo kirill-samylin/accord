@@ -133,7 +133,7 @@ func invalidatePolicyWorkflows(b *board, id string, now time.Time) {
 	for _, w := range b.Automation.Workflows {
 		if w.Grant != nil && w.Grant.PolicyID == id && !workflowTerminal(w.State) {
 			w.State = "pausing"
-			w.ReasonCode = "authorization_changed"
+			workflowReason(w, "authorization_changed", "")
 			w.ControlEpoch++
 			w.Version++
 			w.UpdatedAt = now

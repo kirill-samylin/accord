@@ -184,6 +184,38 @@ func TestExpiredRegistrySessionMetadataIsBoundedWithoutDeletingNativeEpochs(t *t
 	}
 }
 
+// T022-R2-10b: the tightened name rule applies to new names only; a project
+// stored with a legacy name can still be archived and restored unchanged.
+func TestLegacyProjectNameCanChangeStateButNotBeRenamedInvalid(t *testing.T) {
+	f := setup(t)
+	ctx := context.Background()
+	if e := f.r.BootstrapDefaultOwner(ctx, f.token.ID); e != nil {
+		t.Fatal(e)
+	}
+	p := f.create(t, f.who, "legacy")
+	legacy := "legacy\u0085name"
+	if _, e := f.r.db.Exec(`UPDATE projects SET name=? WHERE id=?`, legacy, p.ID); e != nil {
+		t.Fatal(e)
+	}
+	if validName(legacy) {
+		t.Fatal("fixture name is valid under current rules")
+	}
+	archived, e := f.r.updateProject(ctx, f.who, p.ID, legacy, "archived", p.Version)
+	if e != nil || archived.State != "archived" {
+		t.Fatal("legacy-named project could not be archived", e)
+	}
+	restored, e := f.r.updateProject(ctx, f.who, p.ID, legacy, "active", archived.Version)
+	if e != nil || restored.State != "active" {
+		t.Fatal("legacy-named project could not be restored", e)
+	}
+	if _, e = f.r.updateProject(ctx, f.who, p.ID, "other\u0085name", "active", restored.Version); e == nil {
+		t.Fatal("rename to an invalid name accepted")
+	}
+	if renamed, e := f.r.updateProject(ctx, f.who, p.ID, "clean name", "active", restored.Version); e != nil || renamed.Name != "clean name" {
+		t.Fatal("rename to a valid name", e)
+	}
+}
+
 func TestArchiveCapabilityAndCatalogCredentialRevocation(t *testing.T) {
 	f := setup(t)
 	ctx := context.Background()

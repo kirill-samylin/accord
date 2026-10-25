@@ -34,8 +34,10 @@ func TestCatalogExactTokensStdioChildWire(t *testing.T) {
 	p := startMCP(t, worker, b.url)
 	exactMCP[core.SessionView](t, p.call("describe", payload{"request_id": "metrics-open", "role": "developer", "run_id": "metrics", "machine": "metrics-participant"}))
 	claim := exactMCP[core.Claim](t, p.call("next", payload{"request_id": "metrics-claim", "task_key": task.Key}))
-	const delta int64 = 9007199254740993
-	const total int64 = math.MaxInt64
+	// Counters are bounded to 10^12 per attempt; use the largest valid values.
+	// Exact >2^53 decoding is covered by internal/bridge TestResultJSONKeepsExactInt64.
+	const delta int64 = 999_999_999_999
+	const total int64 = 1_000_000_000_000
 	comment := payload{"request_id": "metrics-comment", "task_key": task.Key, "generation": claim.Lease.Generation, "text": "Exact synthetic counter", "tokens_spent_delta": delta}
 	for i := 0; i < 2; i++ {
 		got := exactMCP[core.Task](t, p.call("comment", comment))
@@ -130,7 +132,7 @@ func TestCatalogExactTokensStdioChildWire(t *testing.T) {
 	if !found {
 		t.Fatal("participant owner group missing")
 	}
-	t.Log("C-02 exact >2^53 delta and MaxInt64 final on child wire; replay/audit and participant [from,to) stats persisted")
+	t.Log("C-02 exact bounded delta and final total on child wire; replay/audit and participant [from,to) stats persisted")
 }
 
 func TestCatalogCancelledBlockedDurationProcess(t *testing.T) {

@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 )
 
 func loadBoard(ctx context.Context, tx *sql.Tx) (*board, error) {
@@ -73,8 +74,9 @@ func loadBoard(ctx context.Context, tx *sql.Tx) (*board, error) {
 	return b, rows.Err()
 }
 func loadEntities[T any](ctx context.Context, tx *sql.Tx, table string, target map[string]*T) error {
-	// table is always a static internal name, never external input.
-	rows, err := tx.QueryContext(ctx, "SELECT key,data FROM "+table)
+	// table is always a static internal name, never external input. Archived
+	// history rows are not live state; AutomationArchive pages them.
+	rows, err := tx.QueryContext(ctx, "SELECT key,data FROM "+table+" WHERE substr(key,1,8)<>'"+automationArchivePrefix+"'")
 	if err != nil {
 		return err
 	}
@@ -94,6 +96,25 @@ func loadEntities[T any](ctx context.Context, tx *sql.Tx, table string, target m
 	return rows.Err()
 }
 func saveBoard(ctx context.Context, tx *sql.Tx, b *board) error {
+	for _, m := range b.archive {
+		raw, err := json.Marshal(m.value)
+		if err != nil {
+			return err
+		}
+		// Static table names only; a duplicate archive key fails the transaction,
+		// and so does a live row that is missing (nothing may be archived twice
+		// or silently dropped).
+		res, err := tx.ExecContext(ctx, "UPDATE "+m.table+" SET key=?,data=? WHERE key=?", automationArchivePrefix+m.key, string(raw), m.key)
+		if err != nil {
+			return err
+		}
+		if n, err := res.RowsAffected(); err != nil {
+			return err
+		} else if n != 1 {
+			return fmt.Errorf("archive %s row %q: %d live rows renamed, want 1", m.table, m.key, n)
+		}
+	}
+	b.archive = nil
 	if err := saveAutomation(ctx, tx, b); err != nil {
 		return err
 	}

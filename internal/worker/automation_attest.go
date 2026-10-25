@@ -107,12 +107,15 @@ func (e *Engine) flushAutomation(ctx context.Context) error {
 		if input.Kind == "run_exit" {
 			a.ExitAck = true
 		}
+		// An exit without attestable identity releases once its last check
+		// proof is delivered; no run_exit will follow.
+		release := input.Kind == "run_exit" || a.ExitUnreportable && a.NativeExited && len(a.Pending) == 0
 		err = e.save()
 		e.mu.Unlock()
 		if err != nil {
 			return err
 		}
-		if input.Kind == "run_exit" {
+		if release {
 			if err = e.releaseAutomationExit(runID); err != nil {
 				return err
 			}

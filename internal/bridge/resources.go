@@ -81,7 +81,7 @@ func (b *bridge) readNotes(ctx context.Context, request *mcp.ReadResourceRequest
 	defer cancel()
 	result, err := b.upstream.ReadResource(reading, &mcp.ReadResourceParams{URI: u.String()})
 	if err != nil {
-		return nil, errors.New("cannot read project resource; verify session and connectivity")
+		return nil, resourceError(err)
 	}
 	// The consumer requested a worker-local URI, without its injected SID.
 	for _, content := range result.Contents {

@@ -219,6 +219,8 @@ func publicError(err error) string {
 		return "Не найдено"
 	case "LEASE_LOST":
 		return "Время ответа истекло. Текст сохранён на этой странице. Обновите состояние вопроса"
+	case "LEASE_HELD":
+		return "Задачу сейчас выполняет другой участник или агент. Обновите страницу и дождитесь освобождения"
 	default:
 		return e.Message
 	}

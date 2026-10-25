@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+// validCommit accepts a full SHA-1/SHA-256 in either case. Writers store the
+// lowercase form (as git prints it), so later exact gate comparisons agree.
 func validCommit(value string) bool {
 	if len(value) != 40 && len(value) != 64 {
 		return false
@@ -32,6 +34,8 @@ func completion(b *board, t *core.Task, sess *core.Session, in core.TransitionIn
 		return core.Fail("evidence_missing", "completion evidence required")
 	}
 	e := *in.Evidence
+	e.Commit = strings.ToLower(e.Commit)
+	e.VerifiedCommit = strings.ToLower(e.VerifiedCommit)
 	if len(e.RunSummary) > 1024 || len(e.Summary) > 4096 || len(e.Findings) > 16384 || len(e.Answer) > 16384 || len(e.Artifact) > 32 {
 		return core.Fail("invalid_input", "evidence exceeds limits")
 	}
@@ -62,14 +66,15 @@ func completion(b *board, t *core.Task, sess *core.Session, in core.TransitionIn
 			return core.Fail("evidence_missing", "verification target required")
 		}
 		target := b.Tasks[t.Review.TargetKey]
-		if target == nil || target.State != "done" || e.VerifiedCommit != t.Review.TargetCommit || target.Evidence.Commit != t.Review.TargetCommit || target.Generation != t.Review.TargetGeneration {
+		// EqualFold keeps rows written before lowercase normalisation comparable.
+		if target == nil || target.State != "done" || !strings.EqualFold(e.VerifiedCommit, t.Review.TargetCommit) || !strings.EqualFold(target.Evidence.Commit, t.Review.TargetCommit) || target.Generation != t.Review.TargetGeneration {
 			return core.Fail("rule_violation", "verification must reference current completed developer commit")
 		}
 		if target.AuthorSession == sess.SessionID {
 			return core.Fail("rule_violation", "review must use a separate server session")
 		}
 		for _, attempt := range target.Attempts {
-			if attempt.SessionID == sess.SessionID && (attempt.Commit == e.VerifiedCommit || attempt.Commit == "") {
+			if attempt.SessionID == sess.SessionID && (strings.EqualFold(attempt.Commit, e.VerifiedCommit) || attempt.Commit == "") {
 				return core.Fail("rule_violation", "author attempt cannot review its own result")
 			}
 		}

@@ -93,12 +93,12 @@ func automationHumanAnswered(b *board, t *core.Task, now time.Time) {
 	q.AnswerRef = t.Key
 	w := b.Automation.Workflows[q.WorkflowID]
 	if w != nil {
-		w.Messages = appendBoundedWorkflowMessage(w.Messages, "Ответ человека "+q.ID+": "+t.Evidence.Answer)
+		workflowAppendMessage(w, core.WorkflowMessageMeta{Source: core.WorkflowMessageHumanAnswer}, "Ответ человека "+q.ID+": "+t.Evidence.Answer)
 		if !workflowOwnedActive(b, w) {
 			w.State = "paused"
 		} else {
 			w.State = "pausing"
-			w.ReasonCode = "human_answer_wait_stop"
+			workflowReason(w, "human_answer_wait_stop", "")
 		}
 		workflowTouch(w, now)
 	}
@@ -129,7 +129,13 @@ func automationRunStarted(b *board, r *core.ManagedRun, now time.Time) {
 	}
 	w := b.Automation.Workflows[r.Automation.WorkflowID]
 	st := b.Automation.Steps[r.Automation.StepID]
-	if w != nil && st != nil && w.CurrentStepID == st.ID && w.ControlEpoch == r.Automation.ControlEpoch {
+	if w != nil {
+		// The native invocation budget counts actual starts of this workflow,
+		// including a late start of a fenced attempt; queued launches do not.
+		w.Counters.Invocations++
+		workflowTouch(w, now)
+	}
+	if w != nil && st != nil && w.State == "running" && w.CurrentStepID == st.ID && w.ControlEpoch == r.Automation.ControlEpoch {
 		w.Counters.Started++
 		st.Status = "running"
 		st.NativeSessionID = r.ProviderSessionID

@@ -200,10 +200,28 @@ States: draft/awaiting_authorization, queued, running, pausing, paused,
 awaiting_human, stopping, cancelled, completed, blocked, needs_recovery.
 Stage и run delivery status показываются отдельно; queued/accepted/offline не applied.
 Pause блокирует advance и запрашивает owned stop, paused только после proof.
+Cancel при needs_recovery запоминается (`cancel_requested`), resume/новый dispatch
+отвергаются, пока ownership неизвестна; после terminal/recovered_stopped всех runs —
+cancelled+release. Без cancel needs_recovery → paused/`native_recovered`. Каждый
+reason_code сопровождает bounded redacted `reason_message` (у native_* — LastError).
+Invocations считаются по started report; human resume не тратит continuation budget.
+Поздний `accepted`/`started` команды, dispatched до pause/cancel/вопроса/срока,
+от live owner этого dispatch принимается (native session и invocation учитываются),
+но run остаётся `stopping`, owned stop — pending, шаг не возобновляется; при
+потере authority инициатора — по-прежнему `403`. Run в `needs_recovery` не
+получает повторную доставку своих команд (их закрывает `worker recover` →
+`recovered_stopped`) и не делает весь poll `409` для других runs этого host:
+отказ остаётся только для dispatched работы с неизвестной судьбой. Live-owner
+`recovered_stopped` не продлевает lease (остаётся действующей для run_exit).
+Шаг без dispatch, истёкший при открытом workflow deadline, на resume заменяется новым.
+Queued scan при занятом workspace не меняет version без новых фактов.
 Cancel также снимает лишь незахваченные workflow задачи после остановки; историю/
 check evidence не удаляет. Resume требует current grant/epoch/profiles, разрешённый
 checkpoint и отсутствие ambiguity; новый control epoch отвергает late results. Profile edit/archive блокирует новые
 claims/steps до явного rebind; живой snapshot не переписывается.
+Сообщения имеют `message_meta{source,task_key?,defect_key?}`: human_clarification/
+answer/replan идут всем следующим turns, reviewer/tester_findings и test_design — только
+developer step этой задачи как findings; legacy без меток — по серверным префиксам.
 Clarify сохраняет ordered сообщения: текущему run — next-turn TASK013 semantics,
 изменяющее план/acceptance уточнение — pause, analyst replan новой revision и явное
 согласование уже сделанного. Цель/SHA начатого review не переписывается.
@@ -225,13 +243,24 @@ step2h/workflow24h/grant7d. Локальный maximum может быть ст�
 Token/cost usage показывается только если native CLI реально сообщает её;
 неизвестная стоимость не объявляется нулевой или доказанным денежным hard budget.
 
-Квоты сохраняют TASK013:128 total managed runs/8 active,256 commands/run (+stop),
-16 queued commands. Перед start резервируется допустимый run budget из оставшихся
-slots, manual start учитывает reservation; unused slots освобождаются при terminal.
-History не удаляется ради запуска. Capacity exhaustion виден до dispatch; полный
-journal/DB останавливает advance. Automation maximum32 workflows/project и256
-steps/workflow включая attempts; bounded readers paginated, audit не скрывается
-truncation как «всё выполнено». Ротация/архив — отдельная явная операция, не silent GC.
+Квоты (TASK022): admission считает только live — ≤128 active runs+reserved run budget
+всех workflows, 8 active, ≤32 non-terminal workflows; 256 commands/run (+stop), 16
+queued, 256 steps/workflow. Lifetime-счёт навсегда блокировал проект. История не
+удаляется, но ограничена в live state, т.к. каждая transaction грузит (tick клонирует)
+весь board, а run держит до 64KiB output+16KiB prompt: когда новый workflow/run
+требует slot и terminal history ≥512 runs или ≥128 workflows, в той же transaction
+старейшие idle terminal записи (без active run/queued/accepted command/live session/
+lease; automation runs — только вместе со своим terminal workflow, steps/plans/
+questions/attestations/capabilities) переносятся в archive rows тех же таблиц
+(key `archive/…`, без DDL/schema bump) до 448/96. Это автоматическая, но явная и
+аудитируемая ротация (event `automation_history_archived` с числами), не silent GC:
+`AutomationArchive{kind:workflows|managed_runs,cursor,limit≤32}` пагинирует её —
+read-only для owner/admin проекта: REST POST `/api/v1/p/{id}/automation/archive`,
+MCP resource `accord://automation-archive{?session_id,kind,cursor,limit}` (см.
+[api.md](api.md)). Перенос пишет финальное значение записи; capabilities архивного
+workflow в archive row уже `revoked`, а restore (`RecoverState`) отзывает и archive
+rows прежних версий. Нет архивируемого — `capacity` с причиной. Archived run не resume/clarify; задачи
+archived workflow — обычная terminal история. Старый binary archive не понимает.
 ## 7. Общие интерфейсы и границы исполнителей
 Все новые DTO ниже proposed; точные поля/safety helpers —
 [WORK181](work/WORK-181-automation-contract.md#единые-dto-и-safety-context).

@@ -11,7 +11,6 @@ import (
 
 	"agent-board/internal/automationipc"
 	"agent-board/internal/bridge"
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 func runMCP(args []string, in io.Reader, out io.Writer) error {
@@ -38,7 +37,7 @@ func runMCPWithAutomationBinding(args []string, in io.Reader, out io.Writer, man
 	if !ok {
 		reader = io.NopCloser(in)
 	}
-	return bridge.Serve(ctx, bridge.Options{Automation: automation, ExecutionCapabilityID: capabilityID, ManagedRunID: managedRunID, ManagedGeneration: managedGeneration, Server: *server, ProjectID: *project, TokenFile: *tokenFile, HeartbeatInterval: *interval, Stderr: os.Stderr}, &mcp.IOTransport{Reader: reader, Writer: writerNoClose{out}, MaxLineLength: 64 << 10})
+	return bridge.Serve(ctx, bridge.Options{Automation: automation, ExecutionCapabilityID: capabilityID, ManagedRunID: managedRunID, ManagedGeneration: managedGeneration, Server: *server, ProjectID: *project, TokenFile: *tokenFile, HeartbeatInterval: *interval, Stderr: os.Stderr}, bridge.StdioTransport(reader, writerNoClose{out}, 64<<10))
 }
 
 type writerNoClose struct{ io.Writer }

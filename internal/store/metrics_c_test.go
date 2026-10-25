@@ -103,19 +103,37 @@ func TestTokensZeroNegativeOverflowAndExpiredLease(t *testing.T) {
 	in := core.CommentInput{LeaseInput: core.LeaseInput{RequestID: f.id(), TaskKey: task.Key, Generation: claim.Lease.Generation}, Text: "x", TokensSpentDelta: &delta}
 	_, err := f.s.Comment(testContext, d, in)
 	requireCode(t, err, "VALIDATION")
+	// One attempt is bounded to maxAttemptTokens (10^12): huge values are a
+	// client error, never a counter that later breaks statistics.
 	delta = math.MaxInt64
+	in.RequestID = f.id()
+	_, err = f.s.Comment(testContext, d, in)
+	requireCode(t, err, "VALIDATION")
+	delta = maxAttemptTokens
 	in.RequestID = f.id()
 	_, err = f.s.Comment(testContext, d, in)
 	if err != nil {
 		t.Fatal(err)
 	}
-	delta = 1
+	delta = maxAttemptTokens + 1
 	in.RequestID = f.id()
 	_, err = f.s.Comment(testContext, d, in)
 	requireCode(t, err, "VALIDATION")
 	task = f.get(t, task.Key)
-	if *task.Attempts[0].TokensSpent != math.MaxInt64 {
+	if *task.Attempts[0].TokensSpent != maxAttemptTokens {
 		t.Fatal("failed token mutation persisted")
+	}
+	// T022-R2-10c: the bound applies to the reported delta only; an attempt
+	// whose total already exceeds it (like legacy data) keeps reporting.
+	for _, step := range []int64{maxAttemptTokens, 0} {
+		delta = step
+		in.RequestID = f.id()
+		if _, err = f.s.Comment(testContext, d, in); err != nil {
+			t.Fatal("delta on an attempt above the bound", step, err)
+		}
+	}
+	if task = f.get(t, task.Key); *task.Attempts[0].TokensSpent != 2*maxAttemptTokens {
+		t.Fatal("deltas not accumulated", *task.Attempts[0].TokensSpent)
 	}
 	f.clock.advance(time.Minute)
 	in.RequestID = f.id()

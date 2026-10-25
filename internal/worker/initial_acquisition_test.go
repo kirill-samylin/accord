@@ -21,14 +21,18 @@ func TestInitialAcquisitionWaitsOnlyWithoutPriorAuthority(t *testing.T) {
 		polls    int
 		acquired bool
 		local    string
+		waits    bool
 	}{
-		{"previous_lease_expires", []int{409, 409, 200, 401}, 4, true, ""},
-		{"live_previous_worker", []int{409}, -1, false, ""},
-		{"conflict_after_acquisition", []int{200, 409}, 2, true, ""},
-		{"invalid_credential", []int{401}, 1, false, ""},
-		{"revoked_host", []int{403}, 1, false, ""},
-		{"unconfirmed_accepted", []int{409}, 1, false, "accepted"},
-		{"ambiguous_process", []int{409}, 0, false, "needs_recovery"},
+		{"previous_lease_expires", []int{409, 409, 200, 401}, 4, true, "", false},
+		{"live_previous_worker", []int{409}, -1, false, "", false},
+		{"conflict_after_acquisition", []int{200, 409}, 2, true, "", false},
+		{"invalid_credential", []int{401}, 1, false, "", false},
+		{"revoked_host", []int{403}, 1, false, "", false},
+		{"unconfirmed_accepted", []int{409}, 1, false, "accepted", false},
+		// A needs_recovery run is reported once and quarantined locally. While
+		// Accord refuses the lease because of it, the idle worker keeps
+		// polling with backoff instead of exiting (it never launches).
+		{"ambiguous_process", []int{409}, -1, false, "needs_recovery", true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e := testEngine(t)
@@ -74,12 +78,20 @@ func TestInitialAcquisitionWaitsOnlyWithoutPriorAuthority(t *testing.T) {
 			}))
 			defer server.Close()
 			e.config.Server = server.URL
-			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			timeout := 2 * time.Second
+			if tc.waits {
+				timeout = 400 * time.Millisecond
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			defer cancel()
 			started := time.Now()
 			err := e.run(ctx, 10*time.Millisecond, 80*time.Millisecond)
 			elapsed := time.Since(started)
-			if err == nil || errors.Is(err, context.DeadlineExceeded) {
+			if tc.waits {
+				if !errors.Is(err, context.DeadlineExceeded) {
+					t.Fatal("idle worker exited on a recovery lease conflict instead of waiting", err)
+				}
+			} else if err == nil || errors.Is(err, context.DeadlineExceeded) {
 				t.Fatal("acquisition did not terminate under its own bounded authority rules")
 			}
 			mu.Lock()
@@ -87,7 +99,7 @@ func TestInitialAcquisitionWaitsOnlyWithoutPriorAuthority(t *testing.T) {
 			if tc.polls >= 0 && len(ids) != tc.polls {
 				t.Fatalf("wrong ownership polling count: got %d want %d", len(ids), tc.polls)
 			}
-			if tc.polls < 0 && (len(ids) < 2 || elapsed < 80*time.Millisecond || elapsed > time.Second) {
+			if tc.polls < 0 && (len(ids) < 2 || elapsed < 80*time.Millisecond || elapsed > time.Second && !tc.waits) {
 				t.Fatal("live previous owner was not respected for the bounded grace window")
 			}
 			seen := map[string]bool{}

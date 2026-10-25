@@ -37,19 +37,20 @@ func (e *Engine) recoverExpiredReports(ctx context.Context, r *remote) (bool, er
 		input := core.ManagedReportInput{ManagedPollInput: e.pollInput(receipt.RequestID), CommandID: receipt.CommandID, DispatchID: receipt.DispatchID, RunID: receipt.RunID, Generation: receipt.Generation, Phase: receipt.Phase, ProviderSessionID: receipt.SessionID, Error: receipt.Error, Forced: receipt.Forced}
 		var response core.ManagedResult
 		if err := r.post(ctx, "/managed/report", input, &response); err != nil {
+			if dropped, dropErr := e.dropSettledRecovery(*receipt, err); dropped {
+				if dropErr != nil {
+					return true, dropErr
+				}
+				continue
+			}
 			return true, recoveryRequestError(err)
 		}
 		if err := e.Ack(*receipt); err != nil {
 			return true, err
 		}
 	}
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	for _, run := range e.journal.Runs {
-		if run.State == "needs_recovery" {
-			return true, errors.New("private journal requires local process recovery; automatic launch is disabled")
-		}
-	}
+	e.releaseRecoveredCheckouts()
+	e.noticeRecovery()
 	return false, nil
 }
 

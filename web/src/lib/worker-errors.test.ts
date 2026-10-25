@@ -19,3 +19,15 @@ test("unknown or empty worker errors get no invented hint", () => {
   assert.equal(workerErrorHint(""), undefined);
   assert.equal(workerErrorHint(undefined), undefined);
 });
+
+test("new worker cause codes explain the owner's next step", () => {
+  assert.match(workerErrorHint("workspace_dirty: 2 files") ?? "", /git status/);
+  assert.match(
+    workerErrorHint("workspace_quarantined: run needs recovery") ?? "",
+    /worker recover/,
+  );
+  assert.match(
+    workerErrorHint("local_budget_exhausted (native invocations 12/12)") ?? "",
+    /worker consent/,
+  );
+});

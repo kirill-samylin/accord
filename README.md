@@ -214,8 +214,17 @@ Configure the MCP client to launch that executable with those arguments. Its
 standard output is exclusively MCP; diagnostics go to standard error. One bridge
 serves one board session. It injects the opened session ID when omitted and rejects
 a different one. The server supplies TTL and heartbeat hints; `--heartbeat-interval`
-can shorten the interval. Expired ownership, failed heartbeat or an uncertain
-network result quarantines mutations until the process is restarted. The bridge
+can shorten the interval. Expired ownership, failed heartbeat, an uncertain
+network result or an authoritative `LEASE_LOST` for the bridge's own tracked
+lease quarantines mutations (`LEASE_UNCERTAIN`) until the process is restarted.
+Definitive answers do not: validation errors (including numbers outside the
+float64 range), JSON-RPC errors that reject a request before execution, and
+errors about another session's task (`LEASE_HELD`) are returned unchanged. A
+`LEASE_LOST` about a task the bridge does not hold is re-checked with a fresh
+heartbeat before it is passed through. An input line over 64 KiB, or a line that
+is not one JSON value, gets a JSON-RPC error reply (`-32600`/`-32700`, with the
+request id when it can be recovered) and the bridge keeps running. Resource
+read errors keep the service's domain code in `error.data.code`. The bridge
 cannot stop an IDE or model from editing local files; respect its stop message.
 EOF/SIGTERM stops renewal and lets server leases expire naturally.
 
@@ -249,7 +258,8 @@ leases renew only through a mutation on that live lease with its generation
 renew the task currently held. Reads, errors and replay renew neither lease.
 
 On loss of connection, ambiguous results or `LEASE_LOST`, stop local edits,
-reconnect and verify ownership. An expired lease cannot be revived with a
+reconnect and verify ownership. `LEASE_HELD` on a task you never held means
+another session owns it; your own lease is unaffected. An expired lease cannot be revived with a
 heartbeat. Server fencing protects board mutations; it cannot stop a detached
 process writing files on another machine. Areas are labels in this pilot,
 not distributed file locks.
@@ -259,8 +269,11 @@ not distributed file locks.
 MCP endpoint: `http://127.0.0.1:8080/mcp`, Streamable HTTP, stateless transport,
 protocol **2026-07-28** with **2025-11-25** compatibility through official
 Go SDK **v1.8.0**. Board sessions persist in
-SQLite independently of transport connections. The 12 tools stay fixed after
-`describe`; each later call includes `session_id`. Authentication is required
+SQLite independently of transport connections. The tool list is fixed per
+project and does not change after `describe`: 12 board tools, plus four
+`workflow_submit`, `workflow_command`, `workflow_plan` and `workflow_question`
+(16 in total) when the project has registry automation authority. Each later
+call includes `session_id`. Authentication is required
 for initialization, listing and calls. REST uses the same DTOs and rules.
 
 Both transports enforce body limits and reject unexpected business fields.

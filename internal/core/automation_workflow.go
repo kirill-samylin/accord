@@ -28,12 +28,18 @@ type WorkflowCounters struct {
 }
 type Workflow struct {
 	// IntakeTruncated is a list-only wire projection, never an edited requirement.
-	IntakeTruncated bool             `json:"intake_truncated,omitempty"`
-	ID              string           `json:"id"`
-	Version         int64            `json:"version"`
-	ControlEpoch    int64            `json:"control_epoch"`
-	State           string           `json:"state"`
-	ReasonCode      string           `json:"reason_code,omitempty"`
+	IntakeTruncated bool   `json:"intake_truncated,omitempty"`
+	ID              string `json:"id"`
+	Version         int64  `json:"version"`
+	ControlEpoch    int64  `json:"control_epoch"`
+	State           string `json:"state"`
+	ReasonCode      string `json:"reason_code,omitempty"`
+	// ReasonMessage is a bounded, redacted explanation stored next to
+	// ReasonCode (for example the managed run's last error); never a secret.
+	ReasonMessage string `json:"reason_message,omitempty"`
+	// CancelRequested survives needs_recovery: cancel completes only after every
+	// owned run is proven terminal, never by forgetting an uncertain process.
+	CancelRequested bool             `json:"cancel_requested,omitempty"`
 	IntakeText      string           `json:"intake_text"`
 	IntakeHash      string           `json:"intake_hash"`
 	Requester       Principal        `json:"requester"`
@@ -49,7 +55,30 @@ type Workflow struct {
 	CreatedAt       time.Time        `json:"created_at"`
 	UpdatedAt       time.Time        `json:"updated_at"`
 	Messages        []string         `json:"messages,omitempty"`
+	// MessageMeta labels Messages index by index. Rows stored before labels
+	// existed have a shorter (or no) slice; readers infer those positions.
+	MessageMeta []WorkflowMessageMeta `json:"message_meta,omitempty"`
 }
+
+// WorkflowMessageMeta records who produced a workflow message. Only human
+// sources are delivered as human instructions; reviewer/tester findings go
+// only to the developer step of TaskKey.
+type WorkflowMessageMeta struct {
+	Source    string `json:"source"`
+	TaskKey   string `json:"task_key,omitempty"`
+	DefectKey string `json:"defect_key,omitempty"`
+}
+
+// Workflow message sources.
+const (
+	WorkflowMessageHumanClarification = "human_clarification"
+	WorkflowMessageHumanAnswer        = "human_answer"
+	WorkflowMessageHumanReplan        = "human_replan"
+	WorkflowMessageReviewerFindings   = "reviewer_findings"
+	WorkflowMessageTesterFindings     = "tester_findings"
+	WorkflowMessageTestDesign         = "test_design"
+)
+
 type WorkflowStep struct {
 	ID                string          `json:"id"`
 	WorkflowID        string          `json:"workflow_id"`
@@ -120,4 +149,18 @@ type WorkflowAdvanceResult struct {
 	Workflow  Workflow  `json:"workflow"`
 	NextDueAt time.Time `json:"next_due_at"`
 	Changed   bool      `json:"changed"`
+}
+
+// AutomationArchiveInput pages history rows moved out of the live state by
+// audited rotation. Kind is "workflows" or "managed_runs".
+type AutomationArchiveInput struct {
+	Kind   string `json:"kind"`
+	Cursor string `json:"cursor,omitempty"`
+	Limit  int    `json:"limit,omitempty"`
+}
+type AutomationArchivePage struct {
+	Kind       string       `json:"kind"`
+	Workflows  []Workflow   `json:"workflows"`
+	Runs       []ManagedRun `json:"runs"`
+	NextCursor string       `json:"next_cursor,omitempty"`
 }

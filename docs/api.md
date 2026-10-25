@@ -38,6 +38,14 @@ status-only `accord://workflow-check{?request_id,preset_id,session_id}`.
 terminal ACK после pause не предоставляет права продолжить исполнение.
 `observations.check_aborted=true` исключает успешную проверку даже при exit0.
 
+Архив ротации истории (read-only, только owner проекта или global admin с
+membership; editor/viewer/child — `403`): POST `/api/v1/p/{projectID}/automation/archive`
+с `{kind:"workflows"|"managed_runs",cursor?,limit?≤32}` и обычным `X-Session`
+(query-параметры запрещены), MCP resource
+`accord://automation-archive{?session_id,kind,cursor,limit}`, generic CLI
+`call automation_archive`. Ответ `{kind,workflows,runs,next_cursor?}`; проекция
+как у live list (без prompt/output/instructions). Это не MCP tool.
+
 
 > TASK013 расширяет scoped REST/browser API управлением добровольно
 > подключёнными workers. Host proof и native controller ACL не заменяют
@@ -96,7 +104,8 @@ machine токена. Без сессии доступны только describe
 
 Успех пилота: bare JSON business-результата. Общие `server_time`/`high_water`
 во все ответы не добавляются; `high_water` обязателен только для EventsPage.
-Мутации требуют `request_id` (1..128 символов), scoped токеном+сессией;
+Мутации требуют `request_id` (1..128 символов — считаются Unicode-символы, не
+байты; валидный UTF-8 без управляющих символов), scoped токеном+сессией;
 describe scoped токеном. Канонический payload включает operation, целевой ключ,
 поля тела и поколение; `session_id` — часть scope. Replay возвращает исходный
 сохранённый результат и исходные lease timestamps, не продлевая ничего.
@@ -105,8 +114,24 @@ describe scoped токеном. Канонический payload включае�
 400 VALIDATION/INVALID_TRANSITION/EVIDENCE_MISSING/CYCLE;
 401 UNAUTHORIZED; 403 FORBIDDEN_ROLE; 404 NOT_FOUND/NO_SESSION;
 409 LEASE_HELD/ROLE_HELD/LEASE_LOST/IDEMPOTENCY_CONFLICT/RULE_VIOLATION.
+LEASE_LOST получает только бывший держатель (его сессия имела попытку этой
+задачи) либо вызов без действующей аренды; сессия, которая никогда не держала
+задачу, занятую другой сессией, получает LEASE_HELD.
+Managed worker (`managed/report`, `managed/poll`) получает явные коды, не текст:
+409 STALE_GENERATION (устаревшая generation), STALE_DISPATCH (не текущий dispatch),
+COMMAND_TERMINAL (команда уже terminal), MANAGED_UNCERTAIN (судьба прежнего
+dispatch неизвестна — нужна локальная сверка), LEASE_HELD (прежний worker ещё
+держит live lease — временно, повторить); 404 RUN_ARCHIVED (run перенесён в
+архив истории) или NOT_FOUND. Коды на проводе в верхнем регистре.
 MCP domain error — tool result `isError=true` с тем же JSON; malformed
-JSON-RPC/transport errors обрабатывает SDK. Токен/секрет не отражается в ошибке.
+JSON-RPC/transport errors обрабатывает SDK. Ошибка чтения resource приходит
+JSON-RPC ошибкой с сообщением `CODE: message`; stdio bridge сохраняет код
+домена в `error.data.code` (NOT_FOUND → -32602 по SEP-2164, VALIDATION →
+-32602, прочие → -32000). Токен/секрет не отражается в ошибке.
+
+Текст: title, request_id, run_id, owner, areas и имена проектов — валидный
+UTF-8 без управляющих символов (C0, DEL, C1); description и comment text
+дополнительно допускают `\n`, `\t` и CRLF. Нарушение — VALIDATION.
 
 ## Пилотные маршруты
 
@@ -169,6 +194,11 @@ developer-задача в том же экземпляре. `target_generation` 
 положительного цикла потребитель явно заменяет старую связь через unlink/link.
 Поля areas и owner опциональны в пилоте; не выдавать их отсутствие за
 проверенную блокировку пересечения областей или epic-owner policy.
+areas: ≤32 различных значений, каждое 1..128 символов, без сегментов `.`/`..`.
+owner принимается только для epic (1..128 символов); owner в create задачи —
+VALIDATION, а не молча отброшенное поле: участник задачи — держатель аренды.
+SHA (`target_commit`, evidence `commit`/`verified_commit`) принимаются в любом
+регистре, сохраняются в нижнем и сравниваются без учёта регистра.
 
 ```json
 {"request_id":"claim-1","task_key":"T-1"}
@@ -191,7 +221,9 @@ Get input MCP: `{session_id,task_key}`; REST path key. GET не продлева
 Update: `{request_id,generation,title?,description?}`; только разрешённые
 метаданные. Evidence/role/state/lease/attempts нельзя свободно подменять patch.
 Активную задачу изменяет её держатель с generation; незахваченную — requester/
-coordinator. Ограничения по авторизации применяет core, не только HTTP handler.
+coordinator. Update без полей либо с теми же значениями — успешный no-op:
+возвращает текущую задачу, не меняет version, не создаёт событие и не продлевает
+аренду (для продления служит heartbeat). Ограничения по авторизации применяет core, не только HTTP handler.
 Ненулевое generation требует действующую аренду и после expiry/release даёт
 LEASE_LOST; административный запрос к незахваченной задаче опускает generation
 либо передаёт0. Такое же правило применяется к link/unlink.
@@ -223,7 +255,8 @@ Comment: `{request_id,task_key,generation,text}` (text ≤4 КиБ), тольк�
  "type":"blocks","condition":"completed"}
 ```
 
-Link types: blocks,contract_of,spawned_by,related. `unlink:true` удаляет указанную
+Link types: blocks,contract_of,spawned_by,related. Связь элемента с самим
+собой (from = to) отклоняется VALIDATION для любого типа, включая duplicate_of. `unlink:true` удаляет указанную
 связь с аудитом по тем же правам на consumer, что добавление. Это не снимает
 историческую обязательность роли проверки target для закрытия эпика.
 Condition можно опустить:
@@ -248,7 +281,9 @@ high_water,has_more}`. `high_water` фиксируется на начало с�
 При фильтре next_cursor продвигается до последней просмотренной записи,
 но не перескакивает непоказанную подходящую запись. Пустая страница может
 продвинуть next_cursor до high_water, если на этом диапазоне совпадений нет.
-since_cursor≥0, limit=1..200; новый фильтр начинает новый проход с сохранённой
+since_cursor≥0, limit=1..200 (числа вне диапазона, например 1e309, —
+VALIDATION). since_cursor больше high_water не отклоняется, а ограничивается:
+next_cursor всегда ≤ high_water. Новый фильтр начинает новый проход с сохранённой
 нужной позицией. Высокий high_water из другого ответа читать как прогресс нельзя.
 
 ## Store API и границы
@@ -264,14 +299,16 @@ Clock внедряется для точных TTL-тестов; сетевой 
 ## MCP bootstrap и ограничения
 
 Streamable HTTP `/mcp`, stateless transport, бизнес-сессии в SQLite.
-12 имён tools в стабильном порядке: comment, create, describe, events, get,
-heartbeat, link, next, note, release, transition, update. Локально авторизованным
-principal список одинаков; role authorization проверяется на вызове.
+12 имён board tools в стабильном порядке: comment, create, describe, events,
+get, heartbeat, link, next, note, release, transition, update. Если у проекта
+есть registry automation authority, добавляются ещё четыре: workflow_submit,
+workflow_command, workflow_plan, workflow_question (всего 16). Локально
+авторизованным principal список одинаков; role authorization проверяется на вызове.
 `describe` не вызывает tools/list_changed и не меняет схемы списка.
 Читающие tools помечаются readOnly; у мутаций нет обещания безопасности лишь
 потому, что для повтора нужен request_id.
 
-Описания краткие; проверка ≤12 обязательна, оценка ≤3000 токенов не выдаётся
+Описания краткие; проверка ≤12 board tools (≤16 с automation) обязательна, оценка ≤3000 токенов не выдаётся
 за результат конкретного токенизатора без измерения. Prompts, OAuth,
 import и config apply — последующие этапы. Весь transport
 делегирует правила core; отдельного упрощённого MCP пути без проверок нет.
@@ -324,7 +361,10 @@ CLI: `call tasks|epics|sessions|notes|stats` получает query-поля ч�
 в интервале [from,to); активные delta доступны в attempts задачи. Это итоги
 по времени завершения попыток. Final total заменяет delta total. Audit хранит
 tokens_spent_delta, tokens_spent_total и correction_delta отдельно; их нельзя
-суммировать как независимые расходы. current_queue относится ко времени
+суммировать как независимые расходы. tokens_spent_delta и tokens_spent
+ограничены 10^12 на попытку (больше — VALIDATION). Если старые строки журнала
+содержат большие значения, сумма насыщается до int64 max и отчёт помечается
+incomplete_data=true вместо ошибки. current_queue относится ко времени
 запроса. Неизвестные first timestamps старых задач остаются null/отсутствуют;
 legacy timing/attribution помечается incomplete.
 

@@ -3,7 +3,9 @@ package store
 import (
 	"agent-board/internal/core"
 	"context"
+	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 func (s *Store) Describe(ctx context.Context, p core.Principal, in core.OpenSession) (core.SessionView, error) {
@@ -16,7 +18,7 @@ func (s *Store) Describe(ctx context.Context, p core.Principal, in core.OpenSess
 				}
 			}
 		}
-		if !core.ValidRole(in.Role) || !bounded(in.RunID, 128) || in.Machine != p.Machine {
+		if !core.ValidRole(in.Role) || strings.TrimSpace(in.RunID) == "" || utf8.RuneCountInString(in.RunID) > 128 || in.Machine != p.Machine {
 			return zero, core.Fail("invalid_input", "valid role, run_id and token machine required")
 		}
 		var profile *core.ProfileSnapshot

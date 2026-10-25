@@ -217,7 +217,7 @@ func requestBody(w http.ResponseWriter, r *http.Request, route route) ([]byte, e
 		}
 		return readQuery(route.name, r.URL.RawQuery)
 	}
-	if (route.name == "assign" || route.name == "check_create" || route.name == "duplicate" || route.name == "similar" || strings.HasPrefix(route.name, "managed_") || strings.HasPrefix(route.name, "workflow_") || route.name == "execution_capability_register" || strings.HasPrefix(route.name, "automation_policy_")) && r.URL.RawQuery != "" {
+	if (route.name == "assign" || route.name == "check_create" || route.name == "duplicate" || route.name == "similar" || strings.HasPrefix(route.name, "managed_") || strings.HasPrefix(route.name, "workflow_") || route.name == "execution_capability_register" || strings.HasPrefix(route.name, "automation_policy_") || route.name == "automation_archive") && r.URL.RawQuery != "" {
 		return nil, core.Fail("validation", "unexpected query parameters")
 	}
 	media, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))

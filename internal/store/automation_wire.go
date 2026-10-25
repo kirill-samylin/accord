@@ -28,6 +28,7 @@ func wireProfile(p core.ProfileSnapshot) core.ProfileSnapshot {
 func wireWorkflow(w *core.Workflow, summary bool) core.Workflow {
 	out := *w
 	out.Messages = nil
+	out.MessageMeta = nil
 	if w.Grant != nil {
 		grant := *w.Grant
 		grant.Profiles = map[string]core.ProfileSnapshot{}
@@ -111,6 +112,9 @@ func workflowPageWindow(full core.WorkflowPage, in core.WorkflowReadInput, names
 			switch i {
 			case 0:
 				next.Workflow.Messages = append(next.Workflow.Messages, full.Workflow.Messages[p])
+				if p < len(full.Workflow.MessageMeta) {
+					next.Workflow.MessageMeta = append(next.Workflow.MessageMeta, full.Workflow.MessageMeta[p])
+				}
 			case 1:
 				step := full.Steps[p]
 				step.Profile = wireProfile(step.Profile)

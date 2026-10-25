@@ -92,11 +92,13 @@ func (e *Engine) launch(plan plan) error {
 		_ = checkoutLock.release(true)
 		return fail("local path identity changed before native launch")
 	}
-	child, err := e.start(launchSpec{executable: executable, directory: directory, args: args, env: providerEnv(), prompt: e.prompt(plan)})
+	run.ProcessGroups, run.RecoveryNotified = nil, false
+	child, err := e.start(launchSpec{executable: executable, directory: directory, args: args, env: providerEnv(), prompt: e.prompt(plan), onGroup: e.groupRecorder(run.ID)})
 	if err != nil {
 		_ = checkoutLock.release(true)
 		return fail("native provider could not start; check its local installation and permissions")
 	}
+	e.recordSupervisorLocked(run.ID, child)
 	e.active[run.ID] = &activeRun{process: child, workspaceLock: checkoutLock}
 	e.wg.Add(1)
 	go e.observe(run.ID, child)
@@ -210,7 +212,9 @@ func (e *Engine) observe(id string, child process) {
 		e.reportFor(run.CommandID, "delivery_unknown", run, run.Error, "")
 	} else if active.stop {
 		run.State = "stopped"
-		if !active.observed {
+		// A worker-local stop has no stop command: its single terminal report
+		// is recovered_stopped on the execution command.
+		if !active.observed && active.stopCommand != "" {
 			e.reportFor(run.CommandID, "failed", run, "stopped before native turn was observed", "")
 		}
 		if active.stopCommand != "" {

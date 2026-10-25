@@ -215,7 +215,8 @@ PageData capabilities проверяют actor+host ACL; server повторяе
 check на mutation/replay. UI отдельно показывает host online, process state,
 command/delivery status, board lease/task и provider conversation ID.
 
-Квоты:32hosts/project,128runs/project,8active runs/project,1active/workspace,
+Квоты:32hosts/project,128 live runs+workflow reservations/project (terminal history
+≤512 в live state, старше — audited archive, automation.md §6),8active,1active/workspace,
 256обычных commands/run с отдельным257-м reserve stop и запретом concurrent
 stop;16pending обычных команд/run, prompt≤16KiB, clarify≤4KiB, list limit1..100.
 Output: сервер только нормализованные короткие events/assistant excerpts,
@@ -251,13 +252,19 @@ task_key?}` → `{run,command}`. Snapshot не client supplied.
 `poll`: `{request_id,host_id,host_secret,worker_id,worker_epoch?}` →
 `{host,worker_epoch,lease_expires_at,command?,run?}`. Worker ID random local startup
 nonce, не PID. Первый poll atomic bind owner; same worker renews30s lease. Other
-worker ID при живом/ambiguous run получает409, не automatic takeover по timeout.
+worker ID при живом/ambiguous run получает409 (`MANAGED_UNCERTAIN`/`LEASE_HELD`), не automatic takeover по timeout. Исключение: run в `needs_recovery` не блокирует новый worker того же journal (host secret + exclusive state lock); сам run остаётся в карантине до `worker recover`.
 Полученный dispatch_id навсегда связан с command/run generation/worker ID/epoch.
 Повтор poll того же worker возвращает этот dispatch; accepted command после receipt
 не повторяет side effect. Новый worker после restart обязан локально reconcile:
 `report phase=recovered_stopped` допускает только terminal old dispatch, proof и
 новый worker ID; он НЕ доказывает отсутствие процесса сам по сети. Локальная
 проверка обязательна, неоднозначность phase=delivery_unknown и needs_recovery.
+Recovered_stopped текущего live lease holder (тот же worker ID+epoch, живая lease:
+local deadline, `worker recover`) — не takeover: lease/ID/epoch сохраняются, его
+run_exit принимается; другой worker ID — только после истечения lease, lease сброшена.
+Workflow pause/cancel/question/timeout после dispatch только добавляет owned stop:
+start/resume сохраняет статус, его failed/stopped принимается; delivery_unknown —
+лишь при потере полномочий инициатора/grant. accepted/started по-прежнему 403.
 После terminal reconciliation нового epoch выдаёт следующий explicit command.
 `report`: `{request_id,host_id,host_secret,worker_id,worker_epoch,command_id,
 dispatch_id,run_id,generation,phase,provider_session_id?,error?,output?}` →

@@ -23,6 +23,7 @@ type supervisorProof struct {
 	Success    bool   `json:"success"`
 	Forced     bool   `json:"forced"`
 	Diagnostic string `json:"local_diagnostic,omitempty"`
+	Group      int    `json:"group,omitempty"`
 	ExitCode   *int   `json:"exit_code,omitempty"`
 }
 
@@ -42,6 +43,13 @@ func Supervise(input io.Reader, output io.Writer) error {
 	proof := supervisorProof{Type: "accord.supervisor.exit", Nonce: request.Nonce, Proven: true}
 	if err != nil {
 		return json.NewEncoder(output).Encode(proof)
+	}
+	// The start line only names the native group for a later read-only
+	// census; it grants nothing and carries the same unguessable nonce.
+	if owned, ok := child.(interface{ processGroup() int }); ok {
+		if err = json.NewEncoder(output).Encode(supervisorProof{Type: "accord.supervisor.start", Nonce: request.Nonce, Group: owned.processGroup()}); err != nil {
+			_ = child.Stop()
+		}
 	}
 	go func() {
 		// Include bytes buffered by Decode so the private framing cannot lose

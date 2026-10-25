@@ -27,7 +27,7 @@ func (r *proofReader) Read(data []byte) (int, error) {
 	fragment, err := r.reader.ReadSlice('\n')
 	if len(fragment) > 0 {
 		var proof supervisorProof
-		if len(fragment) < 1024 && json.Unmarshal(fragment, &proof) == nil && proof.Type == "accord.supervisor.exit" && r.owner.acceptProof(proof) {
+		if len(fragment) < 1024 && json.Unmarshal(fragment, &proof) == nil && (proof.Type == "accord.supervisor.exit" || proof.Type == "accord.supervisor.start") && r.owner.acceptProof(proof) {
 			return r.Read(data)
 		}
 		n := copy(data, fragment)

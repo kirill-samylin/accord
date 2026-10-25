@@ -57,7 +57,10 @@ func validateWorkflowPlan(w *core.Workflow, tasks []core.WorkflowPlanTask) error
 			return core.Fail("validation", "Повтор client_key")
 		}
 		index[t.ClientKey] = i
-		for _, v := range append(append([]string{}, t.Areas...), t.Acceptance...) {
+		if err := validPlanAreas(t.Areas); err != nil {
+			return err
+		}
+		for _, v := range t.Acceptance {
 			if !bounded(v, 1024) {
 				return core.Fail("validation", "Пустое или длинное условие плана")
 			}

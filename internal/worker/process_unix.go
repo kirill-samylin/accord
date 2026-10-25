@@ -48,6 +48,9 @@ func startProcess(spec launchSpec) (process, error) {
 
 func (p *unixProcess) Output() io.ReadCloser { return p.output }
 
+// processGroup is the owned group ID (Setpgid makes it the leader's PID).
+func (p *unixProcess) processGroup() int { return p.cmd.Process.Pid }
+
 func (p *unixProcess) reap() {
 	// WNOWAIT keeps the leader's PID reserved until the owned process group is
 	// killed. A fast parent exit must not leave live members in that group or

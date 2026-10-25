@@ -48,8 +48,9 @@ func TestLinkRequiresLiveConsumerGeneration(t *testing.T) {
 	claim := f.claim(t, dev, target.Key)
 	_, err := f.s.Link(testContext, dev, core.LinkInput{RequestID: f.id(), From: source.Key, To: target.Key, Type: "blocks", Generation: claim.Lease.Generation - 1})
 	requireCode(t, err, "LEASE_LOST")
+	// The coordinator never held this lease: LEASE_HELD, not a loss signal.
 	_, err = f.s.Link(testContext, f.coord, core.LinkInput{RequestID: f.id(), From: source.Key, To: target.Key, Type: "blocks", Generation: claim.Lease.Generation})
-	requireCode(t, err, "LEASE_LOST")
+	requireCode(t, err, "LEASE_HELD")
 	_, err = f.s.Link(testContext, dev, core.LinkInput{RequestID: f.id(), From: source.Key, To: target.Key, Type: "blocks", Generation: claim.Lease.Generation})
 	if err != nil {
 		t.Fatal(err)

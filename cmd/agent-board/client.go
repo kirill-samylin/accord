@@ -122,6 +122,8 @@ func clientRoute(operation string, fields map[string]json.RawMessage) (string, s
 		path = "/api/v1/automation/" + strings.TrimPrefix(operation, "workflow_")
 	case "execution_capability_register":
 		path = "/api/v1/automation/capabilities/register"
+	case "automation_archive":
+		path = "/api/v1/automation/archive"
 	case "managed_list", "managed_run", "managed_start", "managed_command", "managed_poll", "managed_report":
 		path = "/api/v1/managed/" + strings.TrimPrefix(operation, "managed_")
 	case "managed_host_enroll", "managed_host_update", "managed_host_disable":

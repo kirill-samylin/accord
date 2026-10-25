@@ -52,18 +52,45 @@ func managedReportAuthorize(ctx context.Context, b *board, a core.Actor, in core
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	r, err := managedRun(b, in.RunID)
-	if err != nil {
-		return nil, nil, nil, err
+	r := b.ManagedRuns[in.RunID]
+	if r == nil {
+		return nil, nil, nil, managedMissingRun(ctx, b, in.RunID)
 	}
 	c := b.ManagedCommands[in.CommandID]
-	if c == nil || r.HostID != h.Host.ID || c.Command.RunID != r.ID || c.Command.DispatchID == "" || c.Command.DispatchID != in.DispatchID || c.Command.Generation != in.Generation {
+	if c == nil || r.HostID != h.Host.ID || c.Command.RunID != r.ID {
 		return nil, nil, nil, core.Fail("conflict", "Чужой или устаревший dispatch")
 	}
-	if (in.Phase == "accepted" || in.Phase == "started") && !managedCommandAllowed(ctx, b, h, c, now) {
+	if c.Command.DispatchID == "" || c.Command.DispatchID != in.DispatchID {
+		return nil, nil, nil, core.Fail("stale_dispatch", "Чужой или устаревший dispatch")
+	}
+	if c.Command.Generation != in.Generation {
+		return nil, nil, nil, core.Fail("stale_generation", "Устаревшая generation запуска")
+	}
+	if (in.Phase == "accepted" || in.Phase == "started") && !managedCommandAllowed(ctx, b, h, c, now) && !managedLateReceipt(ctx, b, h, c, in, now) {
 		return nil, nil, nil, core.Fail("forbidden", "Инициатор команды потерял разрешение управления")
 	}
 	return h, r, c, nil
+}
+
+// managedMissingRun distinguishes a run moved to the history archive
+// (RUN_ARCHIVED) from one that never existed here (NOT_FOUND); both are
+// definitive for a worker's pending report and map to HTTP 404.
+func managedMissingRun(ctx context.Context, b *board, id string) error {
+	var n int
+	if b.tx != nil && b.tx.QueryRowContext(ctx, `SELECT count(*) FROM managed_runs WHERE key=?`, automationArchivePrefix+id).Scan(&n) == nil && n > 0 {
+		return core.Fail("run_archived", "Запуск перенесён в архив истории")
+	}
+	return core.Fail("not_found", "Запуск не найден")
+}
+
+// managedLateReceipt admits the receipt or start of a command dispatched before
+// a routine workflow interruption (pause, cancel, question, timeout) when the
+// reporter is still the live owner of that dispatch. The report is recorded so
+// the native session and invocation are accounted for; the run stays stopping
+// and its owned stop stays pending. Lost initiator or project authority is not
+// an interruption and still refuses the report.
+func managedLateReceipt(ctx context.Context, b *board, h *managedHostRecord, c *managedCommandRecord, in core.ManagedReportInput, now time.Time) bool {
+	return c.Command.DispatchID != "" && h.WorkerID == in.WorkerID && h.Host.WorkerEpoch == in.WorkerEpoch && c.WorkerID == in.WorkerID && c.WorkerEpoch == in.WorkerEpoch && h.Host.LeaseExpiresAt.After(now) && managedWorkflowInterrupted(ctx, b, h, c, now)
 }
 func managedReportCheck(ctx context.Context, b *board, a core.Actor, in core.ManagedReportInput, now time.Time) (*managedHostRecord, *core.ManagedRun, *managedCommandRecord, error) {
 	h, r, c, err := managedReportAuthorize(ctx, b, a, in, now)
@@ -71,7 +98,7 @@ func managedReportCheck(ctx context.Context, b *board, a core.Actor, in core.Man
 		return nil, nil, nil, err
 	}
 	if r.Generation != in.Generation {
-		return nil, nil, nil, core.Fail("conflict", "Устаревшая generation запуска")
+		return nil, nil, nil, core.Fail("stale_generation", "Устаревшая generation запуска")
 	}
 	if in.Phase == "recovered_stopped" || in.Phase == "delivery_unknown" {
 		if !bounded(in.WorkerID, 128) {
@@ -101,9 +128,12 @@ func (s *Store) ManagedReport(ctx context.Context, a core.Actor, in core.Managed
 		if err = managedOutput(r, in); err != nil {
 			return out, err
 		}
+		// The current lease holder reporting its own local stop (worker deadline,
+		// `worker recover`) is not a takeover; it keeps lease, worker ID and epoch.
+		liveOwner := h.WorkerID == in.WorkerID && h.Host.WorkerEpoch == in.WorkerEpoch && h.Host.LeaseExpiresAt.After(now)
 		terminal := c.Command.Status == "failed" || c.Command.Status == "cancelled" || c.Command.Status == "delivery_unknown"
 		if terminal && in.Phase != "recovered_stopped" {
-			return out, core.Fail("conflict", "Команда уже terminal")
+			return out, core.Fail("command_terminal", "Команда уже terminal")
 		}
 		switch in.Phase {
 		case "accepted":
@@ -128,7 +158,11 @@ func (s *Store) ManagedReport(ctx context.Context, a core.Actor, in core.Managed
 			}
 			r.ProviderSessionID = in.ProviderSessionID
 			automationRunStarted(b, r, now)
-			if r.State != "stopping" {
+			if !managedCommandAllowed(ctx, b, h, c, now) {
+				// Late start after an interruption: never resume work.
+				r.State = "stopping"
+				r.LastError = managedInterruptedMessage
+			} else if r.State != "stopping" {
 				r.State = "running"
 			}
 			c.Command.Status = "applied"
@@ -171,7 +205,8 @@ func (s *Store) ManagedReport(ctx context.Context, a core.Actor, in core.Managed
 			r.LastError = c.Command.Error
 		case "recovered_stopped":
 			if h.Host.LeaseExpiresAt.After(now) && h.WorkerID != in.WorkerID {
-				return out, core.Fail("conflict", "Прежний worker ещё владеет lease")
+				// Transient: retried after the previous lease lapses.
+				return out, core.Fail("lease_held", "Прежний worker ещё владеет lease")
 			}
 			r.State = "stopped"
 			c.Command.Status = "cancelled"
@@ -183,8 +218,11 @@ func (s *Store) ManagedReport(ctx context.Context, a core.Actor, in core.Managed
 					peer.Command.Status = "cancelled"
 				}
 			}
-			h.WorkerID = ""
-			h.Host.LeaseExpiresAt = now
+			if !liveOwner {
+				// A restarted incarnation reconciles; the next poll re-acquires.
+				h.WorkerID = ""
+				h.Host.LeaseExpiresAt = now
+			}
 		default:
 			return out, core.Fail("validation", "Неизвестная фаза worker report")
 		}
@@ -210,6 +248,11 @@ func (s *Store) ManagedReport(ctx context.Context, a core.Actor, in core.Managed
 		if in.Phase != "recovered_stopped" && in.Phase != "delivery_unknown" {
 			h.Host.LastSeenAt = now
 			h.Host.LeaseExpiresAt = now.Add(30 * time.Second)
+		} else if in.Phase == "recovered_stopped" && liveOwner {
+			// The live owner keeps its current lease (still valid for the
+			// following run_exit proof) but a local stop never extends it: a
+			// worker that is shutting down must not delay its restart.
+			h.Host.LastSeenAt = now
 		}
 		emit(b, now, "managed_report_"+in.Phase, "", a.SessionID)
 		return core.ManagedResult{Run: *r, Command: c.Command}, nil

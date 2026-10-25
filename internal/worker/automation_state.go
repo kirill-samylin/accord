@@ -30,6 +30,12 @@ type automationAttempt struct {
 	ExitAck               bool                        `json:"exit_ack"`
 	Checks                map[string]*automationCheck `json:"checks"`
 	Pending               []*core.WorkflowAttestInput `json:"pending"`
+	// Interrupted fingerprints a developer step's uncommitted work left after a
+	// proven stop, so a later different step may preserve it in a Git stash.
+	Interrupted *interruptedWork `json:"interrupted,omitempty"`
+	// ProofAbandoned marks an exit proof that a restart or `worker recover`
+	// could no longer deliver; the server is owed one recovered_stopped.
+	ProofAbandoned bool `json:"proof_abandoned,omitempty"`
 }
 type automationCheck struct {
 	ID                string                    `json:"id"`

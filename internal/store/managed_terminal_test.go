@@ -101,7 +101,7 @@ func TestManagedUnknownAndInvalidTerminalProofDoNotReleaseBoardOwnership(t *test
 	bad := m.reportInput(p, "completed")
 	bad.Generation++
 	_, err = m.f.s.ManagedReport(testContext, m.a, bad)
-	requireCode(t, err, "CONFLICT")
+	requireCode(t, err, "STALE_GENERATION")
 	m.report(t, p, "delivery_unknown")
 	still, err := m.f.s.Get(testContext, m.f.coord, core.GetInput{TaskKey: task.Key})
 	if err != nil || still.Lease == nil || still.Lease.SessionID != native.SessionID || still.Lease.Generation != claim.Lease.Generation || still.Attempts[0].EndedAt != nil {

@@ -12,7 +12,9 @@ import (
 	"agent-board/internal/core"
 )
 
-func TestWorkflowProofQueueSurvivesRestartAndNeverAdoptsOldExecution(t *testing.T) {
+// A proven, persisted native exit whose proof was not delivered before restart
+// is a terminal stop: the old proof is never re-signed by the new incarnation.
+func TestRestartAfterProvenExitReportsTerminalStopAndNeverResignsOldProof(t *testing.T) {
 	e, request := automationTestEngine(t)
 	r := e.journal.Runs[request.RunID]
 	r.State = "completed"
@@ -22,17 +24,34 @@ func TestWorkflowProofQueueSurvivesRestartAndNeverAdoptsOldExecution(t *testing.
 	if err := e.save(); err != nil {
 		t.Fatal(err)
 	}
-	stateDir := e.config.StateDir
+	config := e.config
 	e.disk.close()
 	e.closed = true
-	disk, j, err := openDisk(stateDir)
+	restarted, err := Open(config)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer disk.close()
-	restored := j.Runs[r.ID]
-	if restored.State != "needs_recovery" || len(restored.Automation.Pending) != 1 || restored.Automation.Pending[0].RequestID != "pending-proof" || restored.Automation.Pending[0].WorkerID == j.WorkerID {
-		t.Fatal("restart discarded or reauthorized an unacknowledged proof")
+	defer restarted.Close()
+	restored := restarted.journal.Runs[r.ID]
+	if restored.State != "stopped" || len(restored.Automation.Pending) != 0 || !restored.Automation.ExitUnreportable {
+		t.Fatal("proven exit was quarantined or its old proof kept for re-signing", restored.State)
+	}
+	if err = restarted.prepareReconciliation(); err != nil {
+		t.Fatal(err)
+	}
+	report := restarted.Pending()
+	if report == nil || report.Phase != "recovered_stopped" || report.CommandID != r.CommandID || report.RecoveryWorkerID != restarted.journal.WorkerID {
+		t.Fatal("restart did not owe the server exactly one terminal stop", report)
+	}
+	if err = restarted.Ack(*report); err != nil {
+		t.Fatal(err)
+	}
+	restarted.releaseRecoveredCheckouts()
+	if !restored.RecoveryNotified || !restored.Automation.LockReleased {
+		t.Fatal("acknowledged terminal stop did not release the checkout")
+	}
+	if err = restarted.prepareReconciliation(); err != nil || restarted.Pending() != nil {
+		t.Fatal("terminal stop repeated after acknowledgement", err)
 	}
 }
 func TestPassingExitAndReportCannotQualifyChangedReviewedSource(t *testing.T) {

@@ -39,6 +39,9 @@ type board struct {
 	tx               *sql.Tx
 	owners           map[string]string
 	ownersFor        int
+	// archive lists rows moved out of the live state by history rotation in
+	// this transaction; saveBoard renames them atomically (automation_history.go).
+	archive []archiveMove
 }
 
 // Open serializes transactions in process and obtains a SQLite write lock before

@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -105,7 +106,7 @@ func setupConfigured(t *testing.T, interval time.Duration, cfg core.Config) *fix
 	clientReader, bridgeWriter := io.Pipe()
 	bridgeReader, clientWriter := io.Pipe()
 	clientTransport := &mcp.IOTransport{Reader: clientReader, Writer: clientWriter}
-	bridgeTransport := &mcp.IOTransport{Reader: bridgeReader, Writer: capturingWriter{Writer: io.MultiWriter(&f.stdout, bridgeWriter), Closer: bridgeWriter}, MaxLineLength: 64 << 10}
+	bridgeTransport := StdioTransport(bridgeReader, capturingWriter{Writer: io.MultiWriter(&f.stdout, bridgeWriter), Closer: bridgeWriter}, 64<<10)
 	go func() {
 		f.done <- Serve(ctx, Options{Server: f.http.URL, TokenFile: path, HeartbeatInterval: interval, Stderr: &f.stderr}, bridgeTransport)
 	}()
@@ -166,7 +167,7 @@ func (f *fixture) admin() core.Actor {
 var sequence atomic.Int64
 
 func fmtID() string {
-	return time.Now().Format("150405.000000000") + "-" + string(rune(sequence.Add(1)+64))
+	return time.Now().Format("150405.000000000") + "-" + strconv.FormatInt(sequence.Add(1), 10)
 }
 func (f *fixture) task() core.Task {
 	f.t.Helper()

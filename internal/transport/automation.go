@@ -20,6 +20,12 @@ type AutomationService interface {
 	ExecutionCapabilityRegister(context.Context, core.Actor, core.ExecutionCapabilityRegisterInput) (core.ExecutionCapability, error)
 }
 
+// AutomationArchiveService pages audited history rotation rows, read-only, for
+// project owners and admins.
+type AutomationArchiveService interface {
+	AutomationArchive(context.Context, core.Actor, core.AutomationArchiveInput) (core.AutomationArchivePage, error)
+}
+
 func automationTools(s Service) []operation {
 	a, ok := s.(AutomationService)
 	if !ok || !a.AutomationAvailable() {
@@ -27,7 +33,7 @@ func automationTools(s Service) []operation {
 	}
 	return []operation{
 		bind("workflow_submit", "Submit a requirement to an existing owner-approved policy. Without a policy only a draft is created; no agents start.", false, a.WorkflowSubmit),
-		bind("workflow_command", "Pause, resume, stop, clarify or replan an authorized workflow using its current version. Queued control is not completed execution.", false, a.WorkflowCommand),
+		bind("workflow_command", "Pause, cancel, resume, clarify or replan an authorized workflow using its current version (kind: pause|cancel|resume|clarify|replan; there is no stop kind). Queued control is not completed execution.", false, a.WorkflowCommand),
 		bind("workflow_plan", "Publish the analyst plan for this exact leased workflow step.", false, a.WorkflowPlan),
 		bind("workflow_question", "Ask a blocking question for this exact workflow step.", false, a.WorkflowQuestion),
 	}
@@ -37,7 +43,7 @@ func automationOperations(s Service) []operation {
 	if !ok || !a.AutomationAvailable() {
 		return nil
 	}
-	return []operation{
+	ops := []operation{
 		bind("workflow_list", "Read a bounded workflow page.", true, a.WorkflowList),
 		bind("workflow_get", "Read the workflow, steps, questions and evidence.", true, a.WorkflowGet),
 		bind("workflow_report", "Read a workflow report with actual evidence.", true, a.WorkflowReport),
@@ -45,6 +51,10 @@ func automationOperations(s Service) []operation {
 		bind("workflow_attest", "Record an authenticated worker observation.", false, a.WorkflowAttest),
 		bind("execution_capability_register", "Register an exact dispatched attempt capability using local host proof.", false, a.ExecutionCapabilityRegister),
 	}
+	if archive, ok := s.(AutomationArchiveService); ok {
+		ops = append(ops, bind("automation_archive", "Page archived (rotated) workflow or managed-run history; project owners and admins only.", true, archive.AutomationArchive))
+	}
+	return ops
 }
 
 var automationRoutes = []route{
@@ -62,4 +72,5 @@ var automationRoutes = []route{
 	{"POST", "/api/v1/automation/report", "workflow_report", true},
 	{"POST", "/api/v1/automation/attest", "workflow_attest", true},
 	{"POST", "/api/v1/automation/capabilities/register", "execution_capability_register", true},
+	{"POST", "/api/v1/automation/archive", "automation_archive", true},
 }

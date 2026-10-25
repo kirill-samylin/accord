@@ -6,8 +6,10 @@ import (
 	"errors"
 )
 
-// The loop must exit before registry.Close. An unexpected storage error stops
-// admission rather than leaving a healthy-looking server with a dead scheduler.
+// The loop must exit before registry.Close. Per-project failures are isolated
+// and backed off inside the scheduler; only a registry-wide failure ends the
+// loop, and then admission stops rather than leaving a healthy-looking server
+// with a dead scheduler.
 func startAutomation(ctx context.Context, stop context.CancelFunc, r *projects.Registry) <-chan error {
 	done := make(chan error, 1)
 	if r == nil {

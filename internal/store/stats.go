@@ -80,8 +80,8 @@ func (s *Store) Stats(ctx context.Context, a core.Actor, in core.StatsInput) (co
 			key := statsKey(e.Data, in.GroupBy)
 			group := metricGroup(groups, key)
 			for _, m := range []*core.StatsMetrics{&result.Totals, group} {
-				if err = aggregateEvent(m, e); err != nil {
-					return result, err
+				if aggregateEvent(m, e) {
+					result.IncompleteData = true
 				}
 			}
 		}
@@ -163,7 +163,11 @@ func minTime(a, b time.Time) time.Time {
 	}
 	return b
 }
-func aggregateEvent(m *core.StatsMetrics, e core.Event) error {
+
+// aggregateEvent reports true when a stored token value could not be summed
+// exactly. Rows written before per-attempt bounds may hold absurd counts; the
+// total then saturates and the report is marked incomplete instead of failing.
+func aggregateEvent(m *core.StatsMetrics, e core.Event) bool {
 	d := e.Data
 	if e.Type == "task_done" {
 		if d.FirstDone {
@@ -187,16 +191,20 @@ func aggregateEvent(m *core.StatsMetrics, e core.Event) error {
 	if strings.HasSuffix(e.Type, "_warning") {
 		m.RuleWarnings++
 	}
+	saturated := false
 	if d.AttemptEnded {
 		m.Attempts++
-		if d.TokensSpent == nil {
+		switch {
+		case d.TokensSpent == nil:
 			m.MissingTokens++
-		} else {
-			if *d.TokensSpent > math.MaxInt64-m.TokensSpent {
-				return core.Fail("limit_exceeded", "statistics token total exceeds int64")
-			}
+		case *d.TokensSpent < 0:
+			saturated = true
+		case *d.TokensSpent > math.MaxInt64-m.TokensSpent:
+			m.TokensSpent = math.MaxInt64
+			saturated = true
+		default:
 			m.TokensSpent += *d.TokensSpent
 		}
 	}
-	return nil
+	return saturated
 }

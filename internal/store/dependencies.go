@@ -30,6 +30,11 @@ func cycle(b *board, from, to string) bool {
 }
 func (s *Store) Link(ctx context.Context, a core.Actor, in core.LinkInput) (core.Task, error) {
 	return mutate(s, ctx, a, in.RequestID, "link", in, func(b *board, sess *core.Session, now time.Time) (core.Task, error) {
+		// No relation type is meaningful from an item to itself; unlink of such a
+		// legacy row stays possible so it can be cleaned up.
+		if in.From == in.To && !in.Unlink {
+			return core.Task{}, core.Fail("invalid_input", "a link must connect two different items")
+		}
 		source, err := taskFor(b, in.From)
 		if err != nil {
 			return core.Task{}, err

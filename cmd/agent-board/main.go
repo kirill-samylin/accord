@@ -114,6 +114,7 @@ agent-board worker enroll --config PRIVATE_JSON
 agent-board worker run --config PRIVATE_JSON
 agent-board worker identity --config PRIVATE_JSON
 agent-board worker consent --config PRIVATE_JSON
+agent-board worker recover --config PRIVATE_JSON --run RUN_ID
 agent-board projects token-create --projects-data ROOT --db DEFAULT --web-data WEB --owner NAME --machine NAME --output NEW_PRIVATE [--person u_ID]
 agent-board projects bootstrap-admin --projects-data ROOT --db DEFAULT --web-data WEB --identity REGISTRY_OR_LEGACY_TOKEN_ID
 agent-board projects people-list --projects-data ROOT --db DEFAULT --web-data WEB

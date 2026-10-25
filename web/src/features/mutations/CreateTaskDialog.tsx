@@ -243,6 +243,10 @@ export function CreateTaskDialog({
     if (!isTask) {
       fields.epic_key = "";
       fields.role = "";
+    } else {
+      // owner belongs to epics only; the server rejects it on tasks, so a
+      // value typed before switching the type must not be sent.
+      fields.owner = "";
     }
     if (!isReview) {
       fields.target_key = "";

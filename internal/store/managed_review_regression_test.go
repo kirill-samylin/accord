@@ -41,7 +41,7 @@ func TestManagedReportReplayAfterExpiryAndLaterGenerationDoesNotRenewOrReapply(t
 	recovery.RequestID = m.f.id()
 	recovery.Phase = "recovered_stopped"
 	_, err = m.f.s.ManagedReport(testContext, m.a, recovery)
-	requireCode(t, err, "CONFLICT")
+	requireCode(t, err, "STALE_GENERATION")
 }
 func TestManagedExpiredSameWorkerLeaseCannotRenewActiveProcess(t *testing.T) {
 	m := managedSetup(t)
@@ -51,7 +51,7 @@ func TestManagedExpiredSameWorkerLeaseCannotRenewActiveProcess(t *testing.T) {
 	m.report(t, p, "started")
 	m.f.clock.advance(31 * time.Second)
 	_, err := m.f.s.ManagedPoll(testContext, m.a, core.ManagedPollInput{RequestID: m.f.id(), HostID: m.h.ID, HostSecret: managedTestSecret, WorkerID: "worker-a", WorkerEpoch: p.WorkerEpoch})
-	requireCode(t, err, "CONFLICT")
+	requireCode(t, err, "MANAGED_UNCERTAIN")
 }
 func TestManagedFailedRunRequiresRecoveryBeforeResume(t *testing.T) {
 	m := managedSetup(t)

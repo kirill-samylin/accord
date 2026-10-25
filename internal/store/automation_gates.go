@@ -138,11 +138,12 @@ func (s *Store) workflowFix(ctx context.Context, b *board, w *core.Workflow, def
 	}
 	w.Counters.FixTotal++
 	w.Counters.FixPerTask[target.Key]++
-	w.Messages = appendBoundedWorkflowMessage(w.Messages, "Исправить замечания "+defect.Key+": "+defect.Evidence.Findings+" "+defect.Evidence.RunSummary)
+	findings := workflowFindingsMeta(defect)
+	workflowAppendMessage(w, findings, workflowFixPrefix+defect.Key+": "+defect.Evidence.Findings+" "+defect.Evidence.RunSummary)
 	for _, step := range b.Automation.Steps {
 		if step.TaskKey == defect.Key {
 			if exit := workflowFindExit(b, step); exit != nil && exit.Observations.TestDesign {
-				w.Messages = appendBoundedWorkflowMessage(w.Messages, "Test design: применить предложенный artifact-only patch, затем новый commit, independent review и execution. Artifact hashes: "+strings.Join(exit.Observations.ArtifactRefs, ", "))
+				workflowAppendMessage(w, core.WorkflowMessageMeta{Source: core.WorkflowMessageTestDesign, TaskKey: findings.TaskKey, DefectKey: defect.Key}, workflowTestDesignPrefix+"применить предложенный artifact-only patch, затем новый commit, independent review и execution. Artifact hashes: "+strings.Join(exit.Observations.ArtifactRefs, ", "))
 			}
 		}
 	}
@@ -151,15 +152,6 @@ func (s *Store) workflowFix(ctx context.Context, b *board, w *core.Workflow, def
 	}
 	workflowTouch(w, now)
 	return nil
-}
-func appendBoundedWorkflowMessage(v []string, text string) []string {
-	if len(text) > 4096 {
-		text = text[:4096]
-	}
-	if len(v) >= 64 {
-		v = v[1:]
-	}
-	return append(v, managedClean(text))
 }
 func (s *Store) workflowNextDeveloper(ctx context.Context, b *board, w *core.Workflow, now time.Time) error {
 	p := currentPlan(b, w)
@@ -203,7 +195,7 @@ func (s *Store) workflowNextDeveloper(ctx context.Context, b *board, w *core.Wor
 		epic.FirstDoneAt = &now
 	}
 	w.State = "completed"
-	w.ReasonCode = ""
+	workflowReason(w, "", "")
 	w.ReservedRuns = 0
 	delete(b.Automation.Reservations, w.ID)
 	revokeWorkflowCapabilities(b, w.ID)

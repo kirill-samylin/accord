@@ -25,6 +25,17 @@ func (s *service) WorkflowSubmit(ctx context.Context, a core.Actor, in core.Work
 func (s *service) WorkflowList(ctx context.Context, a core.Actor, in core.WorkflowReadInput) (core.WorkflowListPage, error) {
 	return automationMethodCall(s, ctx, a, in, false, "workflow_list", s.board.WorkflowList)
 }
+
+// AutomationArchive pages audited history rotation rows (read-only) for the
+// people who manage the project: owners and global admins with a membership.
+// REST POST /api/v1/p/{id}/automation/archive and MCP resource
+// accord://automation-archive bind it in internal/transport.
+func (s *service) AutomationArchive(ctx context.Context, a core.Actor, in core.AutomationArchiveInput) (core.AutomationArchivePage, error) {
+	if err := automationOperationAllowed(ctx, "automation_archive"); err != nil {
+		return core.AutomationArchivePage{}, err
+	}
+	return automationAccessCall(s, ctx, a, in, false, true, s.board.AutomationArchive)
+}
 func (s *service) WorkflowGet(ctx context.Context, a core.Actor, in core.WorkflowReadInput) (core.WorkflowPage, error) {
 	return automationMethodCall(s, ctx, a, in, false, "workflow_get", s.board.WorkflowGet)
 }

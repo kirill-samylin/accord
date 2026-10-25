@@ -54,7 +54,7 @@ func startWindowsInspection(spec launchSpec) (process, error) {
 	return p, nil
 }
 func (p *windowsInspection) acceptProof(proof supervisorProof) bool {
-	if proof.Nonce != p.nonce {
+	if proof.Nonce != p.nonce || proof.Type != "accord.supervisor.exit" {
 		return false
 	}
 	p.mu.Lock()

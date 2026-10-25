@@ -7,12 +7,11 @@ import (
 	"time"
 )
 
+// A step that ran keeps its pinned deadline across human waiting. A step that
+// was never dispatched is covered by TestAutomationNeverDispatchedExpiredStepGetsFreshStepOnResume.
 func TestAutomationExpiredInterruptedStepBlocksWithoutRetryChurn(t *testing.T) {
-	for _, started := range []bool{false, true} {
-		name := "undispatched"
-		if started {
-			name = "human_question"
-		}
+	for _, started := range []bool{true} {
+		name := "human_question"
 		t.Run(name, func(t *testing.T) {
 			m := automationSetup(t)
 			id := m.submit(t).Workflow.ID
@@ -74,10 +73,47 @@ func TestAutomationExpiredInterruptedStepBlocksWithoutRetryChurn(t *testing.T) {
 				t.Fatal("explicit replan failed", err)
 			}
 			next := m.tick(t, id)
-			if next.Workflow.State != "running" || len(next.Steps) != 2 || next.Steps[1].Kind != "analyst" || !next.Workflow.DeadlineAt.Equal(blocked.Workflow.DeadlineAt) || next.Workflow.Grant.Limits.NativeInvocations != blocked.Workflow.Grant.Limits.NativeInvocations || next.Workflow.Counters.Invocations != blocked.Workflow.Counters.Invocations+1 {
+			if next.Workflow.State != "running" || len(next.Steps) != 2 || next.Steps[1].Kind != "analyst" || !next.Workflow.DeadlineAt.Equal(blocked.Workflow.DeadlineAt) || next.Workflow.Grant.Limits.NativeInvocations != blocked.Workflow.Grant.Limits.NativeInvocations || next.Workflow.Counters.Invocations != blocked.Workflow.Counters.Invocations {
 				t.Fatal("replan did not preserve overall bounds", next.Workflow)
 			}
 		})
+	}
+}
+
+func TestAutomationNeverDispatchedExpiredStepGetsFreshStepOnResume(t *testing.T) {
+	m := automationSetup(t)
+	id := m.submit(t).Workflow.ID
+	page := m.tick(t, id)
+	page, err := m.f.s.WorkflowCommand(m.ctx, m.a, core.WorkflowCommandInput{RequestID: m.f.id(), WorkflowID: id, Version: page.Workflow.Version, Kind: "pause"})
+	if err != nil || page.Workflow.State != "paused" {
+		t.Fatal("pause", err)
+	}
+	m.f.clock.advance(time.Duration(m.p.Limits.StepSeconds) * time.Second)
+	page, err = m.f.s.WorkflowCommand(m.ctx, m.a, core.WorkflowCommandInput{RequestID: m.f.id(), WorkflowID: id, Version: page.Workflow.Version, Kind: "resume"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	fresh := m.tick(t, id)
+	if fresh.Workflow.State != "running" || len(fresh.Steps) != 2 || fresh.Steps[0].Status != "expired" || fresh.Steps[1].Kind != "analyst" || fresh.Steps[1].Status != "queued" || fresh.Steps[1].TaskKey != fresh.Steps[0].TaskKey || !fresh.Steps[1].DeadlineAt.After(fresh.Steps[0].DeadlineAt) {
+		t.Fatal("never-dispatched expired step did not get a fresh step", fresh.Workflow, fresh.Steps)
+	}
+	if fresh.Workflow.Counters.Invocations != 0 || !fresh.Workflow.DeadlineAt.Equal(page.Workflow.DeadlineAt) {
+		t.Fatal("fresh step spent budget or renewed the workflow deadline", fresh.Workflow.Counters)
+	}
+	a := m.attempt(t, id)
+	if a.poll.Run.ID != fresh.Steps[1].ManagedRunID || m.page(t, id).Workflow.Counters.Invocations != 1 {
+		t.Fatal("fresh step is not the dispatched one or start was not counted")
+	}
+	// Once the workflow deadline itself is gone the step stays a timeout.
+	m2 := automationSetup(t)
+	id2 := m2.submit(t).Workflow.ID
+	p2 := m2.tick(t, id2)
+	p2, _ = m2.f.s.WorkflowCommand(m2.ctx, m2.a, core.WorkflowCommandInput{RequestID: m2.f.id(), WorkflowID: id2, Version: p2.Workflow.Version, Kind: "pause"})
+	m2.f.clock.advance(time.Duration(m2.p.Limits.WorkflowSeconds) * time.Second)
+	if _, err = m2.f.s.WorkflowCommand(m2.ctx, m2.a, core.WorkflowCommandInput{RequestID: m2.f.id(), WorkflowID: id2, Version: p2.Workflow.Version, Kind: "resume"}); err == nil {
+		if after := m2.tick(t, id2); after.Workflow.State == "running" {
+			t.Fatal("expired workflow deadline produced a fresh step", after.Workflow)
+		}
 	}
 }
 

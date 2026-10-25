@@ -166,7 +166,7 @@ func TestManagedClarificationBoundaryStoppedMailboxAndRecoveryFencing(t *testing
 	m.report(t, q, "started")
 	m.f.clock.advance(31 * time.Second)
 	_, err = m.f.s.ManagedPoll(testContext, m.a, core.ManagedPollInput{RequestID: m.f.id(), HostID: m.h.ID, HostSecret: managedTestSecret, WorkerID: "worker-b"})
-	requireCode(t, err, "CONFLICT")
+	requireCode(t, err, "MANAGED_UNCERTAIN")
 	_, err = m.f.s.ManagedReport(testContext, m.a, m.reportInput(q, "completed"))
 	requireCode(t, err, "CONFLICT")
 	unknown := m.reportInput(q, "delivery_unknown")

@@ -24,6 +24,16 @@ type RunState struct {
 	Output          string             `json:"output,omitempty"`
 	Error           string             `json:"error,omitempty"`
 	LocalDiagnostic string             `json:"local_diagnostic,omitempty"`
+	// Notice is a bounded owner note (e.g. a preserved stash ref) appended to
+	// this run's terminal report output.
+	Notice string `json:"notice,omitempty"`
+	// ProcessGroups are OS process group IDs this run's supervisors and native
+	// trees used. They are only ever read by a census in `worker recover`; no
+	// signal is ever sent to a persisted ID.
+	ProcessGroups []int `json:"process_groups,omitempty"`
+	// RecoveryNotified records that delivery_unknown for this needs_recovery
+	// run was acknowledged, so restarts do not repeat it.
+	RecoveryNotified bool `json:"recovery_notified,omitempty"`
 }
 
 type Receipt struct {
@@ -39,6 +49,12 @@ type Receipt struct {
 	SessionID        string `json:"provider_session_id,omitempty"`
 	Error            string `json:"error,omitempty"`
 	Output           string `json:"output,omitempty"`
+	// TerminalPhase is the first terminal phase queued for this command. After
+	// it, delivery_unknown is never sent for the same command.
+	TerminalPhase string `json:"terminal_phase,omitempty"`
+	// Converted marks a terminal report re-sent as recovered_stopped after the
+	// server answered 409 for an already terminal command.
+	Converted bool `json:"converted,omitempty"`
 }
 
 type journal struct {
@@ -114,9 +130,16 @@ func openDisk(dir string) (*disk, journal, error) {
 		j.EnrollRequestID = randomID("enroll_")
 	}
 	for _, run := range j.Runs {
-		if a := run.Automation; a != nil && (len(a.Pending) > 0 || (a.NativeExited && (!a.ExitAck || !a.LockReleased))) {
-			run.State = "needs_recovery"
-			run.Error = "workflow proof or checkout release was not acknowledged before restart; local recovery required"
+		// A run whose exit proof is settled (acknowledged or explicitly
+		// unreportable, nothing pending) and whose checkout lock is released
+		// needs nothing more; it is never re-opened or re-reported.
+		if a := run.Automation; a != nil && (len(a.Pending) > 0 || (a.NativeExited && !(automationExitSettled(a) && a.LockReleased))) {
+			if provenAutomationExit(run) {
+				abandonUndeliveredProof(run, "exit_proof_undelivered_before_restart")
+			} else {
+				run.State = "needs_recovery"
+				run.Error = "workflow proof or checkout release was not acknowledged before restart; local recovery required"
+			}
 		}
 		if run.State == "accepted" || run.State == "launching" || run.State == "running" || run.State == "stopping" {
 			run.State = "needs_recovery"

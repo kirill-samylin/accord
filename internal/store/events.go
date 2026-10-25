@@ -21,7 +21,10 @@ func (s *Store) Events(ctx context.Context, a core.Actor, in core.EventsInput) (
 		if _, err := sessionFor(b, a, now); err != nil {
 			return core.EventsPage{}, err
 		}
-		page := core.EventsPage{Events: []core.Event{}, NextCursor: in.SinceCursor, HighWater: b.EventBase + int64(len(b.Events))}
+		// A cursor beyond high_water (e.g. from another project or a reset board)
+		// is clamped: next_cursor never exceeds high_water, so following it
+		// cannot skip events written later.
+		page := core.EventsPage{Events: []core.Event{}, NextCursor: min(in.SinceCursor, b.EventBase+int64(len(b.Events))), HighWater: b.EventBase + int64(len(b.Events))}
 		// Materialized expiry events are included in the same snapshot as reads.
 		if err := persistNewEvents(ctx, b); err != nil {
 			return page, err

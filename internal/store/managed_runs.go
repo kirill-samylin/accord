@@ -101,8 +101,11 @@ func (s *Store) ManagedStart(ctx context.Context, a core.Actor, in core.ManagedS
 				}
 			}
 		}
-		if len(b.ManagedRuns)+workflowReservedRuns(b) >= 128 || active >= 8 {
-			return out, core.Fail("conflict", "Достигнут предел запусков")
+		if active+workflowReservedRuns(b) >= managedRunLiveLimit || active >= 8 {
+			return out, core.Fail("conflict", "Достигнут предел активных и зарезервированных запусков")
+		}
+		if err := automationRotateHistory(b, now, a.SessionID); err != nil {
+			return out, err
 		}
 		id, err := managedID("mr_")
 		if err != nil {

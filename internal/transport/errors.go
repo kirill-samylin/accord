@@ -28,7 +28,7 @@ func publicError(err error) (errorResponse, int) {
 		status = http.StatusUnauthorized
 	case "FORBIDDEN", "FORBIDDEN_ROLE":
 		status = http.StatusForbidden
-	case "NOT_FOUND", "NO_SESSION":
+	case "NOT_FOUND", "NO_SESSION", "RUN_ARCHIVED":
 		status = http.StatusNotFound
 	}
 	return errorResponse{core.Error{Code: code, Message: domain.Message}}, status

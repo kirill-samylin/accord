@@ -23,11 +23,17 @@ func managedWorker(b *board, a core.Actor, in core.ManagedPollInput, epoch int64
 	}
 	return h, nil
 }
+
+const managedInterruptedMessage = "Workflow остановлен после dispatch (пауза, отмена, вопрос или срок); ожидается подтверждённая остановка"
+
 func managedPending(b *board, host string) []*managedCommandRecord {
 	out := []*managedCommandRecord{}
 	for _, c := range b.ManagedCommands {
 		r := b.ManagedRuns[c.Command.RunID]
-		if r != nil && r.HostID == host && (c.Command.Status == "queued" || c.Command.Status == "accepted" && r.Generation == c.Command.Generation || c.Command.Status == "applied" && managedActive(r.State) && r.Generation == c.Command.Generation) {
+		// A needs_recovery run is resolved only by the owner's local `worker
+		// recover` (recovered_stopped settles its commands); re-delivering its
+		// stop first on every poll would starve every other run on the host.
+		if r != nil && r.HostID == host && r.State != "needs_recovery" && (c.Command.Status == "queued" || c.Command.Status == "accepted" && r.Generation == c.Command.Generation || c.Command.Status == "applied" && managedActive(r.State) && r.Generation == c.Command.Generation) {
 			out = append(out, c)
 		}
 	}
@@ -51,10 +57,15 @@ func managedBusy(b *board, host string) bool {
 	}
 	return false
 }
+
+// managedUncertain reports dispatched work whose local fate is unknown after a
+// lease lapse or takeover. needs_recovery runs are already known-uncertain and
+// fenced on their own (no dispatch, workspace blocked, `worker recover`), so
+// they do not make ownership of every other run on the host uncertain.
 func managedUncertain(b *board, host string) bool {
 	for _, c := range b.ManagedCommands {
 		r := b.ManagedRuns[c.Command.RunID]
-		if r != nil && r.HostID == host && managedActive(r.State) && r.Generation == c.Command.Generation && c.Command.DispatchID != "" {
+		if r != nil && r.HostID == host && managedActive(r.State) && r.State != "needs_recovery" && r.Generation == c.Command.Generation && c.Command.DispatchID != "" {
 			return true
 		}
 	}
@@ -70,19 +81,23 @@ func (s *Store) ManagedPoll(ctx context.Context, a core.Actor, in core.ManagedPo
 		h := b.ManagedHosts[in.HostID]
 		previousWorker := h.WorkerID
 		if previousWorker == in.WorkerID && previousWorker != "" && !h.Host.LeaseExpiresAt.After(now) && managedUncertain(b, in.HostID) {
-			return out, core.Fail("conflict", "Ownership lease истекла; нужна локальная сверка остановки")
+			return out, core.Fail("managed_uncertain", "Ownership lease истекла; нужна локальная сверка остановки")
 		}
 		if h.WorkerID != "" && h.WorkerID != in.WorkerID {
-			if h.Host.LeaseExpiresAt.After(now) || managedUncertain(b, in.HostID) {
-				return out, core.Fail("conflict", "worker ownership требует terminal recovery, takeover запрещён")
+			if h.Host.LeaseExpiresAt.After(now) {
+				// Transient: another worker still holds a live lease.
+				return out, core.Fail("lease_held", "worker ownership требует terminal recovery, takeover запрещён")
+			}
+			if managedUncertain(b, in.HostID) {
+				return out, core.Fail("managed_uncertain", "worker ownership требует terminal recovery, takeover запрещён")
 			}
 			h.Host.WorkerEpoch++
 		}
 		if h.WorkerID == "" {
 			for _, old := range b.ManagedCommands {
 				run := b.ManagedRuns[old.Command.RunID]
-				if run != nil && run.HostID == h.Host.ID && managedActive(run.State) && old.Command.DispatchID != "" && old.WorkerID != in.WorkerID && (old.Command.Status == "accepted" || old.Command.Status == "applied") {
-					return out, core.Fail("conflict", "Сначала сверяйте все процессы прежнего worker")
+				if run != nil && run.HostID == h.Host.ID && managedActive(run.State) && run.State != "needs_recovery" && old.Command.DispatchID != "" && old.WorkerID != in.WorkerID && (old.Command.Status == "accepted" || old.Command.Status == "applied") {
+					return out, core.Fail("managed_uncertain", "Сначала сверяйте все процессы прежнего worker")
 				}
 			}
 			h.Host.WorkerEpoch++
@@ -101,11 +116,22 @@ func (s *Store) ManagedPoll(ctx context.Context, a core.Actor, in core.ManagedPo
 			r := b.ManagedRuns[c.Command.RunID]
 			if !managedCommandAllowed(ctx, b, h, c, now) {
 				if c.Command.DispatchID != "" {
-					c.Command.Status = "delivery_unknown"
-					r.State = "stopping"
-					r.LastError = "Инициатор потерял доступ после dispatch; остановка требует подтверждения"
-					r.Version++
-					r.UpdatedAt = now
+					// A workflow pause/cancel/question/timeout (state or control
+					// epoch change) only adds an owned stop: the dispatched command
+					// keeps its status so its own terminal report stays acceptable.
+					// Lost initiator authority still makes delivery unknown.
+					message := "Инициатор потерял доступ после dispatch; остановка требует подтверждения"
+					if managedWorkflowInterrupted(ctx, b, h, c, now) {
+						message = managedInterruptedMessage
+					} else {
+						c.Command.Status = "delivery_unknown"
+					}
+					if r.State != "stopping" || r.LastError != message {
+						r.State = "stopping"
+						r.LastError = message
+						r.Version++
+						r.UpdatedAt = now
+					}
 					var stop *managedCommandRecord
 					for _, existing := range b.ManagedCommands {
 						if existing.Command.RunID == r.ID && existing.Command.Kind == "stop" && (existing.Command.Status == "queued" || existing.Command.Status == "accepted") && managedCommandAllowed(ctx, b, h, existing, now) {
@@ -127,7 +153,7 @@ func (s *Store) ManagedPoll(ctx context.Context, a core.Actor, in core.ManagedPo
 					if id == "" {
 						id, err = managedID("md_")
 					} else if stop.WorkerID != in.WorkerID || stop.WorkerEpoch != h.Host.WorkerEpoch {
-						return out, core.Fail("conflict", "Прежний stop требует recovery")
+						return out, core.Fail("managed_uncertain", "Прежний stop требует recovery")
 					}
 					if err != nil {
 						return out, err
@@ -153,7 +179,7 @@ func (s *Store) ManagedPoll(ctx context.Context, a core.Actor, in core.ManagedPo
 			}
 			if c.Command.DispatchID != "" {
 				if c.WorkerID != in.WorkerID || c.WorkerEpoch != h.Host.WorkerEpoch {
-					return out, core.Fail("conflict", "Нужна сверка прежнего dispatch")
+					return out, core.Fail("managed_uncertain", "Нужна сверка прежнего dispatch")
 				}
 			} else {
 				if c.Command.Kind == "clarify" {

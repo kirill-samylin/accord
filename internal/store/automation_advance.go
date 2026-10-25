@@ -54,14 +54,14 @@ func (s *Store) AutomationTick(ctx context.Context, in core.WorkflowAdvanceInput
 		before := w.Version
 		if err = authorizeWorkflow(ctx, candidate, w, now); err != nil && (w.State == "queued" || w.State == "running" || w.State == "awaiting_human") {
 			w.State = "pausing"
-			w.ReasonCode = "authorization_changed"
+			workflowReason(w, "authorization_changed", "")
 			w.ControlEpoch++
 			revokeWorkflowCapabilities(candidate, w.ID)
 			workflowTouch(w, now)
 		}
 		if w.Grant != nil && !w.DeadlineAt.After(now) && (w.State == "queued" || w.State == "running") {
 			w.State = "pausing"
-			w.ReasonCode = "workflow_timeout"
+			workflowReason(w, "workflow_timeout", "")
 			w.ControlEpoch++
 			revokeWorkflowCapabilities(candidate, w.ID)
 			workflowTouch(w, now)
@@ -70,44 +70,34 @@ func (s *Store) AutomationTick(ctx context.Context, in core.WorkflowAdvanceInput
 		if cloneErr != nil {
 			return zero, cloneErr
 		}
-		phaseErr := error(nil)
+		phaseErr, stopErr := error(nil), error(nil)
 		switch w.State {
-		case "pausing", "stopping", "awaiting_human":
-			if err = workflowStopOwned(ctx, candidate, w, now); err != nil {
-				return zero, err
-			}
-			if workflowUncertain(candidate, w) {
-				w.State = "needs_recovery"
-				w.ReasonCode = "native_ownership_uncertain"
-				workflowTouch(w, now)
-			} else if !workflowOwnedActive(candidate, w) {
-				if w.State == "stopping" {
-					w.State = "cancelled"
-					cancelWorkflowTasks(candidate, w, now)
-					w.ReservedRuns = 0
-					delete(candidate.Automation.Reservations, w.ID)
-					workflowTouch(w, now)
-				} else if w.State == "pausing" {
-					w.State = "paused"
-					workflowTouch(w, now)
-				}
-			}
+		case "pausing", "stopping", "awaiting_human", "needs_recovery":
+			stopErr = workflowSettleStop(ctx, candidate, w, now)
 		case "queued":
 			phaseErr = s.workflowStartOrContinue(ctx, candidate, w, now)
 		case "running":
 			phaseErr = s.workflowObserve(ctx, candidate, w, now)
 		}
+		if stopErr != nil {
+			return zero, stopErr
+		}
 		if phaseErr != nil {
 			candidate = phaseBase
 			w = candidate.Automation.Workflows[in.WorkflowID]
-			oldState := w.State
-			w.State = "blocked"
-			if oldState == "queued" && automationErrorCode(phaseErr) == "CONFLICT" {
-				w.State = "queued"
+			state, code, message := "blocked", automationErrorCode(phaseErr), automationErrorMessage(phaseErr)
+			if w.State == "queued" && code == "CONFLICT" {
+				state = "queued"
 			}
-			w.ReasonCode = automationErrorCode(phaseErr)
-			revokeWorkflowCapabilities(candidate, w.ID)
-			workflowTouch(w, now)
+			// A queued workflow waiting for a busy workspace retries every scan.
+			// Unchanged facts are not a new version: human commands carrying the
+			// current version must not race a no-op scheduler write.
+			if state != w.State || code != w.ReasonCode || workflowReasonText(message) != w.ReasonMessage {
+				w.State = state
+				workflowReason(w, code, message)
+				revokeWorkflowCapabilities(candidate, w.ID)
+				workflowTouch(w, now)
+			}
 		}
 		*b = *candidate
 		return core.WorkflowAdvanceResult{Workflow: *w, NextDueAt: now.Add(time.Second), Changed: w.Version != before}, nil
@@ -133,30 +123,7 @@ func (s *Store) workflowStartOrContinue(ctx context.Context, b *board, w *core.W
 	if w.CurrentStepID != "" {
 		st := b.Automation.Steps[w.CurrentStepID]
 		if st != nil && st.Status == "interrupted" {
-			t := b.Tasks[st.TaskKey]
-			if t == nil {
-				return core.Fail("not_found", "Задача этапа отсутствует")
-			}
-			if t.State == "done" {
-				exit := workflowFindExit(b, st)
-				if exit == nil || !workflowGitGate(t, exit) {
-					return core.Fail("evidence_missing", "Resume не имеет подтверждённого exit/SHA")
-				}
-				return s.workflowAdvanceAfter(ctx, b, w, st, now)
-			}
-			// Human waiting does not renew the pinned step deadline, even if no
-			// native conversation was created before interruption.
-			if !st.DeadlineAt.After(now) {
-				return core.Fail("step_timeout", "Срок этапа истёк; нужны pause и явный replan")
-			}
-			r := b.ManagedRuns[st.ManagedRunID]
-			if r == nil || managedActive(r.State) {
-				return core.Fail("conflict", "Предыдущая native попытка не завершена")
-			}
-			if r.ProviderSessionID != "" {
-				return workflowContinueTurn(ctx, b, w, st, r, now)
-			}
-			return s.workflowEnqueue(ctx, b, w, t, now)
+			return s.workflowResumeStep(ctx, b, w, st, now)
 		}
 	}
 	if p := currentPlan(b, w); p != nil && p.Status == "materialized" {
@@ -183,7 +150,7 @@ func (s *Store) workflowObserve(ctx context.Context, b *board, w *core.Workflow,
 	if managedActive(r.State) && r.State != "needs_recovery" && !st.DeadlineAt.After(now) {
 		w.ControlEpoch++
 		w.State = "pausing"
-		w.ReasonCode = "step_timeout"
+		workflowReason(w, "step_timeout", "")
 		revokeWorkflowCapabilities(b, w.ID)
 		workflowTouch(w, now)
 		return workflowStopOwned(ctx, b, w, now)
@@ -193,7 +160,7 @@ func (s *Store) workflowObserve(ctx context.Context, b *board, w *core.Workflow,
 	}
 	if r.State == "needs_recovery" {
 		w.State = "needs_recovery"
-		w.ReasonCode = "native_ownership_uncertain"
+		workflowReason(w, "native_ownership_uncertain", r.LastError)
 		workflowTouch(w, now)
 		return nil
 	}
@@ -204,7 +171,7 @@ func (s *Store) workflowObserve(ctx context.Context, b *board, w *core.Workflow,
 		st.Status = "interrupted"
 		st.EndedAt = &now
 		w.State = "paused"
-		w.ReasonCode = "native_" + r.State
+		workflowReason(w, "native_"+r.State, r.LastError)
 		revokeWorkflowCapabilities(b, w.ID)
 		workflowTouch(w, now)
 		return nil
@@ -218,11 +185,11 @@ func (s *Store) workflowObserve(ctx context.Context, b *board, w *core.Workflow,
 	st.TaskGeneration = exit.TaskGeneration
 	st.EvidenceRefs = append(st.EvidenceRefs, exit.ID)
 	t := b.Tasks[st.TaskKey]
-	if t != nil && t.State == "done" && len(w.Messages) > st.DeliveredMessages {
+	if t != nil && t.State == "done" && workflowUndelivered(b, w, st) > 0 {
 		st.Status = "interrupted"
 		st.EndedAt = &now
 		w.State = "paused"
-		w.ReasonCode = "clarification_after_completion"
+		workflowReason(w, "clarification_after_completion", "")
 		w.ControlEpoch++
 		revokeWorkflowCapabilities(b, w.ID)
 		workflowTouch(w, now)
@@ -230,7 +197,7 @@ func (s *Store) workflowObserve(ctx context.Context, b *board, w *core.Workflow,
 	}
 	if t == nil || t.State != "done" {
 		if st.Continuations < w.Grant.Limits.ContinuationPerStep && r.ProviderSessionID != "" {
-			return workflowContinueTurn(ctx, b, w, st, r, now)
+			return workflowContinueTurn(ctx, b, w, st, r, now, true)
 		}
 		return core.Fail("evidence_missing", "Native turn не завершил назначенную задачу")
 	}
@@ -244,44 +211,4 @@ func (s *Store) workflowObserve(ctx context.Context, b *board, w *core.Workflow,
 	st.EndedAt = &now
 	revokeWorkflowCapabilities(b, w.ID)
 	return s.workflowAdvanceAfter(ctx, b, w, st, now)
-}
-func workflowContinueTurn(ctx context.Context, b *board, w *core.Workflow, st *core.WorkflowStep, r *core.ManagedRun, now time.Time) error {
-	if w.Counters.Invocations >= w.Grant.Limits.NativeInvocations || w.ReservedRuns <= 0 || st.Continuations >= w.Grant.Limits.ContinuationPerStep {
-		return core.Fail("budget_exhausted", "Бюджет continuation исчерпан")
-	}
-	if !st.DeadlineAt.After(now) {
-		return core.Fail("step_timeout", "Срок этапа истёк; нужны pause и явный replan")
-	}
-	if !managedSessionID.MatchString(r.ProviderSessionID) || managedActive(r.State) {
-		return core.Fail("conflict", "Exact native resume требует terminal attempt и native conversation")
-	}
-	if b.ManagedHosts[w.HostID].Host.WorkerCapabilities["automation"] < 1 {
-		return core.Fail("worker_incompatible", "Worker не поддерживает automation:1")
-	}
-	profile, ok := w.Grant.Profiles[st.Kind]
-	if !ok || profile.ID != st.Profile.ID || profile.Version != st.Profile.Version || w.Grant.RoleBindings[st.Kind].Provider != st.Provider {
-		return core.Fail("conflict", "Resume не меняет pinned profile/provider; нужен explicit replan")
-	}
-	r.Automation.PolicyVersion = w.Grant.PolicyVersion
-	r.Generation++
-	r.State = "queued"
-	r.Version++
-	r.UpdatedAt = now
-	r.Automation.ControlEpoch = w.ControlEpoch
-	r.Automation.MessageCount = len(w.Messages)
-	r.Automation.TaskGeneration = b.Tasks[st.TaskKey].Generation + 1
-	st.ManagedGeneration = r.Generation
-	st.Continuations++
-	st.AttemptNo++
-	st.EndedAt = nil
-	st.Status = "queued"
-	w.Counters.Invocations++
-	w.ReservedRuns--
-	w.State = "running"
-	revokeWorkflowCapabilities(b, w.ID)
-	_, err := managedNewCommand(b, r, core.Actor{Principal: w.Requester}, "resume", "Продолжи назначенную задачу; предыдущий turn завершился без task completion. "+workflowPrompt(w, st), now, w.Grant.RequesterEpoch)
-	if err == nil {
-		workflowTouch(w, now)
-	}
-	return err
 }

@@ -57,7 +57,7 @@ func TestAutomationHumanResumePreservesExactConversationRunAndFreshTaskFence(t *
 		t.Fatal(e)
 	}
 	next := m.tick(t, id)
-	if next.Workflow.State != "running" || len(next.Steps) != 1 || next.Steps[0].ManagedRunID != first.poll.Run.ID || next.Steps[0].ManagedGeneration != 2 || next.Steps[0].AttemptNo != 2 || next.Workflow.Counters.Invocations != 2 {
+	if next.Workflow.State != "running" || len(next.Steps) != 1 || next.Steps[0].ManagedRunID != first.poll.Run.ID || next.Steps[0].ManagedGeneration != 2 || next.Steps[0].AttemptNo != 2 || next.Workflow.Counters.Invocations != 1 || next.Steps[0].Continuations != 0 {
 		t.Fatal("resume replacedcontext", next.Workflow)
 	}
 	resumed := m.attempt(t, id)

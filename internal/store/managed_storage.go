@@ -244,3 +244,33 @@ func managedAllowed(b *board, a core.Actor, host, run string, owner bool) (*mana
 func managedActive(state string) bool {
 	return state == "queued" || state == "starting" || state == "running" || state == "stopping" || state == "needs_recovery"
 }
+
+// managedWorkflowInterrupted reports that a non-stop automation command is
+// blocked only because its workflow left running or changed control epoch,
+// while the initiator, grant, worker capability and project write authority
+// are all still valid. That is a routine interruption, not lost delivery.
+func managedWorkflowInterrupted(ctx context.Context, b *board, h *managedHostRecord, c *managedCommandRecord, now time.Time) bool {
+	r := b.ManagedRuns[c.Command.RunID]
+	if r == nil || r.Automation == nil || c.Command.Kind == "stop" {
+		return false
+	}
+	if authority, ok := AutomationAuthorityFromContext(ctx); ok && !authority.Writable {
+		return false
+	}
+	w := b.Automation.Workflows[r.Automation.WorkflowID]
+	if w == nil || h.Host.WorkerCapabilities["automation"] < 1 || authorizeWorkflow(ctx, b, w, now) != nil {
+		return false
+	}
+	if w.State == "running" && w.ControlEpoch == r.Automation.ControlEpoch {
+		return false
+	}
+	if !managedCreatorAllowed(ctx, b, h, c.Command.CreatedBy, c.CreatorEpoch, now) {
+		return false
+	}
+	for _, related := range b.ManagedCommands {
+		if c.Command.DispatchID != "" && related.Command.DispatchID == c.Command.DispatchID && (related.Command.Status == "accepted" || related.Command.Status == "applied") && !managedCreatorAllowed(ctx, b, h, related.Command.CreatedBy, related.CreatorEpoch, now) {
+			return false
+		}
+	}
+	return true
+}

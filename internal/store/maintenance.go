@@ -117,6 +117,12 @@ func (s *Store) RecoverState(ctx context.Context, reason string) (core.RecoveryR
 		}
 		b.Events[len(b.Events)-1].Reason = reason
 		resetAutomation(b, now)
+		// Archived history is not loaded into the board, but restore must not
+		// retain execution authority anywhere: revoke archived capability rows
+		// too (rows archived by older versions may still say active).
+		if _, err = b.tx.ExecContext(ctx, `UPDATE execution_capabilities SET data=json_set(data,'$.state','revoked') WHERE substr(key,1,8)=? AND json_extract(data,'$.state') IS NOT 'revoked'`, automationArchivePrefix); err != nil {
+			return err
+		}
 		for _, sess := range b.Sessions {
 			if sess.ExpiresAt.After(now) {
 				sess.ExpiresAt = now

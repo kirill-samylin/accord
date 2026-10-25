@@ -45,7 +45,7 @@ func (s *Store) WorkflowQuestion(ctx context.Context, a core.Actor, in core.Work
 		b.Automation.Questions[id] = q
 		w.State = "awaiting_human"
 		w.ControlEpoch++
-		w.ReasonCode = "human_question"
+		workflowReason(w, "human_question", "")
 		revokeWorkflowCapabilities(b, w.ID)
 		if err = workflowStopOwned(ctx, b, w, now); err != nil {
 			return core.WorkflowPage{}, err
@@ -120,7 +120,7 @@ func (s *Store) WorkflowAnswer(ctx context.Context, a core.Actor, in core.Workfl
 		q.State = "answered"
 		q.Version++
 		q.AnswerRef = t.Key
-		w.Messages = appendBoundedWorkflowMessage(w.Messages, "Ответ человека "+q.ID+": "+evidence.Answer)
+		workflowAppendMessage(w, core.WorkflowMessageMeta{Source: core.WorkflowMessageHumanAnswer}, "Ответ человека "+q.ID+": "+evidence.Answer)
 		if in.Resume {
 			if workflowOwnedActive(b, w) {
 				return core.WorkflowPage{}, core.Fail("conflict", "Сначала proven stop текущего процесса")
@@ -130,11 +130,11 @@ func (s *Store) WorkflowAnswer(ctx context.Context, a core.Actor, in core.Workfl
 			}
 			w.ControlEpoch++
 			w.State = "queued"
-			w.ReasonCode = ""
+			workflowReason(w, "", "")
 		} else {
 			if workflowOwnedActive(b, w) {
 				w.State = "pausing"
-				w.ReasonCode = "human_answer_wait_stop"
+				workflowReason(w, "human_answer_wait_stop", "")
 			} else {
 				w.State = "paused"
 			}

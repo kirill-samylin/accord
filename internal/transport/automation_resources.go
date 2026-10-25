@@ -69,4 +69,54 @@ func addAutomationResources(server *mcp.Server, service Service) {
 			return &mcp.ReadResourceResult{Contents: []*mcp.ResourceContents{{URI: req.Params.URI, MIMEType: "application/json", Text: string(raw)}}}, nil
 		})
 	}
+	if archive, ok := service.(AutomationArchiveService); ok {
+		addAutomationArchiveResource(server, archive)
+	}
+}
+
+// accord://automation-archive pages rotated history read-only (project owners
+// and admins); kind is workflows or managed_runs.
+func addAutomationArchiveResource(server *mcp.Server, a AutomationArchiveService) {
+	server.AddResourceTemplate(&mcp.ResourceTemplate{Name: "Accord automation-archive", MIMEType: "application/json", URITemplate: "accord://automation-archive{?session_id,kind,cursor,limit}"}, func(ctx context.Context, req *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
+		p, ok := ctx.Value(principalKey{}).(core.Principal)
+		if !ok {
+			return nil, core.Fail("UNAUTHORIZED", "authentication required")
+		}
+		u, e := url.Parse(req.Params.URI)
+		if e != nil || u.Scheme != "accord" || u.Host != "automation-archive" || u.Path != "" || u.User != nil || u.Fragment != "" {
+			return nil, core.Fail("VALIDATION", "invalid archive URI")
+		}
+		q, e := url.ParseQuery(u.RawQuery)
+		if e != nil {
+			return nil, core.Fail("VALIDATION", "invalid archive query")
+		}
+		for k, v := range q {
+			if len(v) != 1 {
+				return nil, core.Fail("VALIDATION", "repeated query field")
+			}
+			switch k {
+			case "session_id", "kind", "cursor", "limit":
+			default:
+				return nil, core.Fail("VALIDATION", "unknown query field")
+			}
+		}
+		if q.Get("session_id") == "" {
+			return nil, core.Fail("NO_SESSION", "board session required")
+		}
+		in := core.AutomationArchiveInput{Kind: q.Get("kind"), Cursor: q.Get("cursor")}
+		if q.Has("limit") {
+			if in.Limit, e = strconv.Atoi(q.Get("limit")); e != nil {
+				return nil, core.Fail("VALIDATION", "invalid limit")
+			}
+		}
+		value, e := a.AutomationArchive(ctx, core.Actor{Principal: p, SessionID: q.Get("session_id")}, in)
+		if e != nil {
+			return nil, e
+		}
+		raw, e := json.Marshal(value)
+		if e != nil {
+			return nil, e
+		}
+		return &mcp.ReadResourceResult{Contents: []*mcp.ResourceContents{{URI: req.Params.URI, MIMEType: "application/json", Text: string(raw)}}}, nil
+	})
 }

@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -102,8 +103,25 @@ func TestExpiredRecoveryKeepsUncertainProcessesQuarantined(t *testing.T) {
 	}
 	r.session.ExpiresAt = time.Now().Add(time.Minute)
 	blocked, err := e.recoverExpiredReports(context.Background(), r)
-	if !blocked || err == nil || phase != "delivery_unknown" || e.journal.Runs["run_test"].State != "needs_recovery" {
-		t.Fatal("uncertain ownership was reported as a confirmed stop or enabled new polling")
+	if blocked || err != nil || phase != "delivery_unknown" || e.journal.Runs["run_test"].State != "needs_recovery" || !e.journal.Runs["run_test"].RecoveryNotified {
+		t.Fatal("uncertain ownership was reported as a confirmed stop or stopped serving other work", blocked, err)
+	}
+	// The run stays quarantined locally: its workspace refuses a new launch
+	// until the owner runs `worker recover`.
+	e.journal.Runs["run_test"].Workspace = "test"
+	e.journal.Runs["run_test"].Provider = "codex"
+	command, managed := testDispatch("start")
+	managed.ID, command.RunID, command.ID, command.DispatchID = "run_other", "run_other", "command_other", "dispatch_other"
+	if err = e.Accept(command, managed); err != nil {
+		t.Fatal("a quarantined workspace stopped the worker instead of refusing one start", err)
+	}
+	refused := e.journal.Runs["run_other"]
+	if refused.State != "failed" || refused.LocalDiagnostic != "workspace_quarantined" || len(e.journal.Pending) != 2 || e.journal.Pending[0].Phase != "accepted" || e.journal.Pending[1].Phase != "failed" || len(e.plans) != 0 {
+		t.Fatal("quarantined workspace launch was not refused as accepted+failed", refused.State, e.journal.Pending)
+	}
+	command, _ = testDispatch("stop")
+	if err = e.Accept(command, core.ManagedRun{ID: "run_test", Provider: "codex", Workspace: "test", Generation: 1}); !errors.Is(err, errRunQuarantined) {
+		t.Fatal("a dispatch for the needs_recovery run is not marked quarantined", err)
 	}
 }
 

@@ -18,7 +18,7 @@ func (e *Engine) launchAutomationLocked(p plan) error {
 	run := e.journal.Runs[p.run.ID]
 	if err := e.checkPins(run.Provider, run.Workspace); err != nil {
 		run.State = "failed"
-		run.Error = "local workspace or provider identity changed"
+		run.LocalDiagnostic, run.Error = classifyPreparation(err)
 		e.reportFor(p.command.ID, "failed", run, run.Error, "")
 		return e.save()
 	}
@@ -39,47 +39,32 @@ func (e *Engine) launchAutomationLocked(p plan) error {
 	}
 	e.mu.Lock()
 	if prepErr != nil {
-		return fail(prepErr)
+		return fail(errConsent)
 	}
 	if !e.automationPreparing(p, active, epoch, config) {
-		return fail(consentError())
+		return fail(errStopped)
 	}
 	remaining := min(time.Until(p.run.Automation.DeadlineAt), time.Duration(consent.MaxAttemptSeconds)*time.Second, time.Until(consent.ExpiresAt))
 	if remaining <= 0 {
-		return fail(consentError())
+		return fail(errConsent)
 	}
 	runtime.deadline = time.Now().Add(remaining)
-	if e.journal.AutomationBudgets == nil {
-		e.journal.AutomationBudgets = map[string]*automationBudget{}
-	}
-	budget := e.journal.AutomationBudgets[p.run.Automation.WorkflowID]
-	if budget == nil {
-		now := time.Now()
-		budget = &automationBudget{FirstStartedAt: now, DeadlineAt: now.Add(time.Duration(consent.MaxWorkflowSeconds) * time.Second)}
-		e.journal.AutomationBudgets[p.run.Automation.WorkflowID] = budget
-	}
-	if time.Now().Before(budget.FirstStartedAt) || !time.Now().Before(budget.DeadlineAt) || budget.Invocations >= consent.MaxNativeInvocations {
-		return fail(errors.New("local workflow budget exhausted"))
-	}
-	budget.Invocations++
-	if e.automationDeadlines == nil {
-		e.automationDeadlines = map[string]time.Time{}
-	}
-	localDeadline, exists := e.automationDeadlines[p.run.Automation.WorkflowID]
-	if !exists {
-		localDeadline = time.Now().Add(time.Until(budget.DeadlineAt))
-		e.automationDeadlines[p.run.Automation.WorkflowID] = localDeadline
-	}
-	if localDeadline.Before(runtime.deadline) {
-		runtime.deadline = localDeadline
+	budget, err := e.automationBudgetLocked(p.run.Automation, consent)
+	if err != nil {
+		return fail(err)
 	}
 	if budget.DeadlineAt.Before(runtime.deadline) {
-		runtime.deadline = time.Now().Add(time.Until(budget.DeadlineAt))
+		runtime.deadline = budget.DeadlineAt
 	}
-	if run.Automation != nil && (!run.Automation.ExitAck || len(run.Automation.Pending) > 0) {
-		return fail(errors.New("previous automation proof is unresolved"))
+	if run.Automation != nil && !automationExitSettled(run.Automation) {
+		return fail(errProofOpen)
 	}
+	previous := run.Automation
 	run.Automation = &automationAttempt{Run: p.run, Checks: map[string]*automationCheck{}}
+	if previous != nil && previous.Interrupted != nil && previous.Interrupted.Stash == "" {
+		run.Automation.Interrupted = previous.Interrupted
+	}
+	run.ProcessGroups, run.RecoveryNotified, run.Notice = nil, false, ""
 	if err := e.save(); err != nil {
 		return fail(err)
 	}
@@ -89,28 +74,37 @@ func (e *Engine) launchAutomationLocked(p plan) error {
 	e.mu.Lock()
 	active.workspaceLock = lock
 	if err != nil {
-		return fail(err)
+		return fail(errBusy)
 	}
 	if !e.automationPreparing(p, active, epoch, config) {
-		return fail(consentError())
+		return fail(errStopped)
 	}
-	proofCtx, proofCancel := context.WithTimeout(runtime.ctx, 20*time.Second)
+	interrupted := e.interruptedCandidatesLocked(run)
+	proofCtx, proofCancel := context.WithTimeout(runtime.ctx, 40*time.Second)
 	e.mu.Unlock()
-	baseline, err := e.observeAutomationGit(proofCtx, consent, directory)
+	cleaned, err := e.prepareCleanCheckout(proofCtx, consent, directory, run.Workspace, p.run.Automation, interrupted)
+	var baseline gitProof
+	if err == nil {
+		baseline, err = e.observeAutomationGit(proofCtx, consent, directory)
+		if err != nil && !errors.Is(err, errOwnership) {
+			err = errSource
+		}
+	}
 	proofCancel()
 	e.mu.Lock()
+	e.recordStashLocked(run, cleaned)
 	if err != nil {
 		return fail(err)
 	}
 	if !e.automationPreparing(p, active, epoch, config) {
-		return fail(consentError())
+		return fail(errStopped)
 	}
 	if p.run.Profile == nil {
-		return fail(consentError())
+		return fail(errConsent)
 	}
 	role := p.run.Profile.Role
 	if (role == "reviewer" || role == "tester") && (baseline.Head != p.run.Automation.TargetSHA || !fullCommit(p.run.Automation.TargetSHA)) {
-		return fail(errors.New("reviewed full SHA differs from local HEAD"))
+		return fail(errTargetSHA)
 	}
 	run.Automation.Baseline = baseline
 	if err = e.createCapabilityLocked(p, run); err != nil {
@@ -124,7 +118,7 @@ func (e *Engine) launchAutomationLocked(p plan) error {
 	})
 	e.mu.Lock()
 	if err != nil {
-		return fail(err)
+		return fail(errIPC)
 	}
 	runtime.ipc = server
 	ipcConfig := server.Config()
@@ -133,17 +127,17 @@ func (e *Engine) launchAutomationLocked(p plan) error {
 		return fail(err)
 	}
 	if !e.automationPreparing(p, active, epoch, config) {
-		return fail(consentError())
+		return fail(errStopped)
 	}
 	e.mu.Unlock()
 	err = e.registerCapability(runtime.ctx, p, run.Automation)
 	e.mu.Lock()
 	if err != nil {
-		return fail(err)
+		return fail(registrationCause(err))
 	}
 	run.Automation.Registered = true
 	if !e.automationPreparing(p, active, epoch, config) {
-		return fail(consentError())
+		return fail(errStopped)
 	}
 	args, err := providerArgs(run.Provider, run.SessionID)
 	if err != nil {
@@ -186,7 +180,15 @@ func (e *Engine) launchAutomationLocked(p plan) error {
 		run.Automation.PermissionProof = permission
 	}
 	if !e.automationPreparing(p, active, epoch, config) {
-		return fail(consentError())
+		return fail(errStopped)
+	}
+	// Pins are re-checked right before spawn: a provider auto-update during
+	// preparation is named precisely instead of surfacing later as dirty source.
+	if err = e.checkPins(run.Provider, run.Workspace); err != nil {
+		return fail(err)
+	}
+	if err = budgetRemaining(budget, consent); err != nil {
+		return fail(err)
 	}
 	run.State, run.CommandID, run.Generation = "launching", p.command.ID, p.command.Generation
 	if err = e.save(); err != nil {
@@ -195,11 +197,15 @@ func (e *Engine) launchAutomationLocked(p plan) error {
 	// The durable intent and active preparation handle fence a stop racing spawn.
 	// A returned child is always adopted into this attempt and stopped if revoked.
 	e.mu.Unlock()
-	child, err := e.start(launchSpec{executable: config.Executables[run.Provider], directory: directory, args: args, env: nativeEnv, prompt: e.prompt(p)})
+	child, err := e.start(launchSpec{executable: config.Executables[run.Provider], directory: directory, args: args, env: nativeEnv, prompt: e.prompt(p), onGroup: e.groupRecorder(run.ID)})
 	e.mu.Lock()
 	if err != nil {
-		return fail(err)
+		return fail(errStart)
 	}
+	// Only an actually started native process consumes a local invocation.
+	budget.Invocations++
+	e.recordSupervisorLocked(run.ID, child)
+	_ = e.save() // A failed save sets fatal; the watchdog then stops this child.
 	active.process = child
 	if !e.automationPreparingAfterSpawn(p, active, epoch, config) {
 		active.stop = true
@@ -257,11 +263,8 @@ func (e *Engine) failAutomationPreparationLocked(p plan, active *activeRun, caus
 		e.reportFor(p.command.ID, "delivery_unknown", run, run.Error, "")
 	} else {
 		run.State = "failed"
-		run.Error = "automation local consent, source proof or scoped registration is unavailable"
-		if errors.Is(cause, errPermissionProof) {
-			run.Error = errPermissionProof.Error()
-			run.LocalDiagnostic = "native_git_permission_unproven"
-		}
+		// The specific cause survives into the failed report and local state.
+		run.LocalDiagnostic, run.Error = classifyPreparation(cause)
 		e.reportFor(p.command.ID, "failed", run, run.Error, "")
 		if active.stopCommand != "" {
 			run.State = "stopped"

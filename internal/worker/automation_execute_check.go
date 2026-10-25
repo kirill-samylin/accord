@@ -83,12 +83,13 @@ func (e *Engine) executeAutomationCheck(id string, c *automationCheck, p CheckPr
 	if err != nil {
 		return
 	}
-	child, err := e.start(launchSpec{executable: p.Executable, directory: cwd, args: append([]string{}, p.Args...), env: providerEnv()})
+	child, err := e.start(launchSpec{executable: p.Executable, directory: cwd, args: append([]string{}, p.Args...), env: providerEnv(), onGroup: e.groupRecorder(id)})
 	if err != nil {
 		e.failCheck(id, c, "check_not_started", false)
 		return
 	}
 	e.mu.Lock()
+	e.recordSupervisorLocked(id, child)
 	rt.checks[c.ID] = child
 	allowed := e.checkLaunchAllowed(id, rt)
 	e.mu.Unlock()
@@ -122,8 +123,9 @@ func (e *Engine) executeAutomationCheck(id string, c *automationCheck, p CheckPr
 		startErr = e.save()
 		e.mu.Unlock()
 	}
+	var stopErr error
 	if startErr != nil {
-		_ = child.Stop()
+		stopErr = child.Stop()
 	}
 	truncated := <-drained
 	waitErr := child.Wait()
@@ -131,7 +133,20 @@ func (e *Engine) executeAutomationCheck(id string, c *automationCheck, p CheckPr
 	e.mu.Lock()
 	delete(rt.checks, c.ID)
 	e.mu.Unlock()
-	if errors.Is(waitErr, errOwnership) || startErr != nil {
+	if errors.Is(waitErr, errOwnership) || errors.Is(stopErr, errOwnership) {
+		e.failCheck(id, c, "check_delivery_unknown", true)
+		return
+	}
+	if startErr != nil {
+		// A definitive 4xx (e.g. a human pause changed the control epoch)
+		// means the server never recorded this check as running; the owned
+		// process is stopped and reaped, so it is simply not run. Transport
+		// errors or a failed save keep the uncertain path.
+		var rejected statusError
+		if errors.As(startErr, &rejected) && rejected.code >= 400 && rejected.code < 500 {
+			e.failCheck(id, c, "check_cancelled", false)
+			return
+		}
 		e.failCheck(id, c, "check_delivery_unknown", true)
 		return
 	}

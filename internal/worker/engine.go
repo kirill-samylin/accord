@@ -16,9 +16,13 @@ type plan struct {
 	run     core.ManagedRun
 }
 type activeRun struct {
-	process       process
-	stop          bool
-	stopCommand   string
+	process     process
+	stop        bool
+	stopCommand string
+	// stopReason is a worker-local stop (local_deadline, worker_shutdown) with
+	// no server stop command; its exit is the live worker's normal terminal
+	// stop, reported as recovered_stopped on the execution command.
+	stopReason    string
 	complete      bool
 	failed        bool
 	observed      bool
@@ -54,8 +58,12 @@ type Engine struct {
 	automationGit           func(context.Context, AutomationWorkspace, string) (gitProof, error)
 	inspectPermissions      func(context.Context, launchSpec) (permissionProof, error)
 	preparedConnectors      []mcpConnector
-	automationDeadlines     map[string]time.Time
 	asyncApply              bool
+	logger                  func(string)
+	noticed                 map[string]bool
+	groupCensus             func([]int) ([]int, error)
+	processScan             func(map[string]bool) ([]localProcess, error)
+	workspaceGit            gitRunner
 }
 
 func Open(config Config) (*Engine, error) {
@@ -142,18 +150,28 @@ func (e *Engine) Accept(command core.ManagedCommand, run core.ManagedRun) error 
 		if _, _, err := e.config.launch(run.Provider, run.Workspace); err != nil {
 			return err
 		}
+		quarantined := ""
 		for _, other := range e.journal.Runs {
-			if e.workspacePath(other.Workspace) == e.workspacePath(run.Workspace) && (other.State == "launching" || other.State == "running" || other.State == "stopping" || other.State == "accepted" || other.State == "needs_recovery") {
+			if e.workspacePath(other.Workspace) != e.workspacePath(run.Workspace) {
+				continue
+			}
+			if other.State == "launching" || other.State == "running" || other.State == "stopping" || other.State == "accepted" {
 				return errors.New("workspace has another active or unresolved local run")
+			}
+			if other.State == "needs_recovery" {
+				quarantined = other.ID
 			}
 		}
 		local = &RunState{ID: run.ID, Provider: run.Provider, Workspace: run.Workspace, Generation: run.Generation, State: "accepted", CommandID: command.ID}
 		e.journal.Runs[run.ID] = local
+		if quarantined != "" {
+			return e.refuseQuarantinedStartLocked(command, local, quarantined)
+		}
 	} else if local == nil || local.Provider != run.Provider || local.Workspace != run.Workspace {
 		return errors.New("managed run is not known to this worker")
 	}
 	if local.State == "needs_recovery" {
-		return errors.New("local process identity is ambiguous; manual recovery required")
+		return errRunQuarantined
 	}
 	if run.ProviderSessionID != "" && local.SessionID != run.ProviderSessionID {
 		return errors.New("provider session differs from the private journal")
@@ -195,21 +213,6 @@ func (e *Engine) workspacePath(alias string) string {
 		return resolved
 	}
 	return filepath.Clean(path)
-}
-
-func (e *Engine) enqueue(receipt Receipt) {
-	receipt.RequestID = randomID("report_")
-	e.journal.Pending = append(e.journal.Pending, &receipt)
-}
-
-func (e *Engine) Pending() *Receipt {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	if len(e.journal.Pending) == 0 {
-		return nil
-	}
-	copy := *e.journal.Pending[0]
-	return &copy
 }
 
 func (e *Engine) apply(id string) error {
@@ -283,13 +286,4 @@ func (e *Engine) allowedController(id string) bool {
 		}
 	}
 	return false
-}
-
-func (e *Engine) reportFor(id, phase string, run *RunState, reason, output string) {
-	receipt := e.journal.Receipts[id]
-	if receipt == nil {
-		return
-	}
-	receipt.Phase, receipt.SessionID, receipt.Error, receipt.Output = phase, run.SessionID, reason, output
-	e.enqueue(*receipt)
 }

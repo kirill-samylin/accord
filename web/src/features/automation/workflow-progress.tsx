@@ -1,3 +1,4 @@
+import { workerErrorHint } from "@/lib/worker-errors";
 import { ProjectLink as Link } from "@/components/project-link";
 import { Disclosure } from "@/components/disclosure";
 import type { WorkflowPage } from "@/lib/automation";
@@ -22,7 +23,23 @@ export function WorkflowProgress({
       <section className="automation-card screen-stack">
         <h2>{workflowLabels[flow.state] ?? flow.state}</h2>
         {flow.reason_code ? (
-          <p className="notice">{workflowReason(flow.reason_code)}</p>
+          <div className="notice">
+            <p>{workflowReason(flow.reason_code)}</p>
+            {flow.reason_message ? (
+              <p className="form-help break">
+                Причина: {flow.reason_message}
+                {workerErrorHint(flow.reason_message)
+                  ? ` — ${workerErrorHint(flow.reason_message)}`
+                  : ""}
+              </p>
+            ) : null}
+            {flow.cancel_requested ? (
+              <p className="form-help">
+                Отмена запрошена: цикл завершится после подтверждения остановки
+                агентов.
+              </p>
+            ) : null}
+          </div>
         ) : null}
         <p className="automation-text">{flow.intake_text}</p>
         <div className="automation-facts">

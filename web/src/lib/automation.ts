@@ -90,6 +90,9 @@ export interface Workflow {
   control_epoch: number;
   state: string;
   reason_code?: string;
+  // Bounded, secret-free detail of reason_code (e.g. the worker's run error).
+  reason_message?: string;
+  cancel_requested?: boolean;
   intake_text: string;
   intake_truncated?: boolean;
   intake_hash: string;

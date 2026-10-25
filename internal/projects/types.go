@@ -93,6 +93,8 @@ type Registry struct {
 	signingKey []byte
 	mu         sync.Mutex
 	runtimes   map[string]*runtime
+	// backoff isolates projects whose scheduler scan failed (automation_scheduler.go).
+	backoff automationBackoff
 }
 type runtime struct {
 	store   *store.Store

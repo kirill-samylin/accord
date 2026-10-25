@@ -9,6 +9,11 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
+// Quarantine contract: only an outcome that leaves this bridge unable to know
+// whether its session or lease is still owned (no reply, an ambiguous transport
+// failure, a malformed reply, or an authoritative loss of ITS own lease) locks
+// the bridge. A definitive rejection (validation, another session's task, a
+// domain error) is returned to the client and never touches lease state.
 func (b *bridge) call(ctx context.Context, name string, raw json.RawMessage) (*mcp.CallToolResult, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -18,6 +23,9 @@ func (b *bridge) call(ctx context.Context, name string, raw json.RawMessage) (*m
 	}
 	if err := transport.ValidateJSONFields(raw); err != nil {
 		return failure("VALIDATION", "Invalid or duplicate JSON fields"), nil
+	}
+	if !finiteNumbers(raw) {
+		return failure("VALIDATION", "Numbers must be finite and within the IEEE-754 double range."), nil
 	}
 	var fields map[string]json.RawMessage
 	if json.Unmarshal(raw, &fields) != nil || fields == nil {
@@ -96,6 +104,9 @@ func (b *bridge) call(ctx context.Context, name string, raw json.RawMessage) (*m
 	started := time.Now()
 	result, err := b.upstream.CallTool(calling, &mcp.CallToolParams{Name: name, Arguments: fields})
 	if err != nil {
+		if message, ok := rejectedBeforeExecution(err); ok {
+			return failure("VALIDATION", message), nil
+		}
 		return b.uncertain(), nil
 	}
 	data, err := resultJSON(result)
@@ -104,7 +115,11 @@ func (b *bridge) call(ctx context.Context, name string, raw json.RawMessage) (*m
 	}
 	if result.IsError {
 		switch errorCode(data) {
-		case "LEASE_LOST", "UNAUTHORIZED", "NO_SESSION", "INTERNAL", "":
+		case "LEASE_LOST":
+			if b.ownLoss(ctx, name, fields) {
+				return b.uncertain(), nil
+			}
+		case "UNAUTHORIZED", "NO_SESSION", "INTERNAL", "":
 			return b.uncertain(), nil
 		}
 		return result, nil
