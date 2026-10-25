@@ -177,3 +177,6 @@ canonical `projects/upgrade.py`). Процесс — `docs/release-process.md`.
 полный SHA. Старые каталоги релизов на VPS удаляет `prune` (активный и `--keep`
 предыдущих остаются); снимки данных и журналы не удаляются. Секреты выкатки
 (ключ SSH, known_hosts) в репозиторий и CI кладёт только пользователь.
+В тот же день пользователь удалил репозиторий DenisShagi/accord: единственный
+remote — `origin` (kirill-samylin/accord); упоминания DenisShagi выше — история.
+Теги на origin: `v0.1.0` (сборка Release упала), `v0.1.1` = стенд `575793f`.

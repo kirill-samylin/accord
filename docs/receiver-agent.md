@@ -1,7 +1,8 @@
 # Задание агенту на втором компьютере
 
-> Актуальный источник 23.10.2026:
-> [DenisShagi/accord, main](https://github.com/DenisShagi/accord/tree/main).
+> Актуальный источник 25.10.2026:
+> [kirill-samylin/accord, codex/native-preflight](https://github.com/kirill-samylin/accord/tree/codex/native-preflight);
+> готовые клиенты — в [GitHub Releases](https://github.com/kirill-samylin/accord/releases).
 > Задание ниже относится к историческому MCP-клиенту. Для подключения нового
 > управляемого worker прочитайте [managed-worker-guide.md](managed-worker-guide.md)
 > и [TASK013](TASK-013-managed-agents.md), используйте schema5/managed_agents1

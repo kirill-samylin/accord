@@ -1,8 +1,9 @@
-> Обновление 23.10.2026: основной репозиторий —
-> [DenisShagi/accord](https://github.com/DenisShagi/accord), единая ветка `main`.
-> Для передачи исходников: `git clone --branch main https://github.com/DenisShagi/accord.git`.
-> В ней сохранена история прежних веток; их экспериментальные функции не
-> включались в продукт. См. [объединение истории](repository-consolidation.md).
+> Обновление 25.10.2026: репозиторий DenisShagi/accord удалён; единственный
+> репозиторий — [kirill-samylin/accord](https://github.com/kirill-samylin/accord),
+> текущий код в ветке `codex/native-preflight`, релизы — теги `v*` с готовыми
+> артефактами (см. [release-process.md](release-process.md)). Для передачи
+> исходников: `git clone --branch codex/native-preflight https://github.com/kirill-samylin/accord.git`.
+> Объединение истории 23.10.2026 описано в [repository-consolidation.md](repository-consolidation.md).
 > Инструкции старого bundle/`codex/pilot` ниже — исторические. Для современного
 > schema5 worker используйте [managed-worker-guide.md](managed-worker-guide.md)
 > и фактический [TASK013](TASK-013-managed-agents.md); native GUI проверка пока FAIL.

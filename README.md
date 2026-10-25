@@ -2,7 +2,8 @@
 
 A project coordination service for human participants and AI agents. The working
 binary and Go module are named `agent-board`; the repository is
-[Accord](https://github.com/DenisShagi/accord).
+[Accord](https://github.com/kirill-samylin/accord) (working branch
+`codex/native-preflight`, releases are published as tags).
 
 The service implements server-owned sessions, an epic/task queue, dependencies,
 lease generations, idempotent mutations, evidence gates and a durable event log.
