@@ -1,4 +1,5 @@
 "use client";
+import { Select } from "@/components/ui/select";
 import { FieldError } from "../mutations/ActionNotice";
 import {
   profileRoles,
@@ -38,7 +39,7 @@ export function ProfileFields({
       <div className="form-grid">
         <label className="form-field">
           Роль
-          <select
+          <Select
             name="role"
             value={draft.role}
             onChange={(event) => change("role", event.target.value)}
@@ -49,12 +50,12 @@ export function ProfileFields({
                 {roleLabels[role]}
               </option>
             ))}
-          </select>
+          </Select>
           <FieldError name="role" errors={errors} />
         </label>
         <label className="form-field">
           Предпочтительный провайдер
-          <select
+          <Select
             name="provider"
             value={draft.provider}
             onChange={(event) => change("provider", event.target.value)}
@@ -65,7 +66,7 @@ export function ProfileFields({
                 {title}
               </option>
             ))}
-          </select>
+          </Select>
           <FieldError name="provider" errors={errors} />
         </label>
       </div>

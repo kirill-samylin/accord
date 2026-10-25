@@ -22,13 +22,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { MutationResult, PageData } from "@/lib/types";
 import { label } from "@/lib/format";
-import { CommandPalette } from "./command-palette";
+import dynamic from "next/dynamic";
+// cmdk and the search index load when the palette is first opened.
+const CommandPalette = dynamic(
+  () => import("./command-palette").then((m) => m.CommandPalette),
+  { ssr: false },
+);
 import { currentSection, navigation } from "./navigation";
 import { SessionControls } from "./mutations/SessionControls";
 import { ProjectSwitcher } from "./projects/project-switcher";
 import { useProjectScope } from "./projects/project-context";
 import { useAppearance } from "./hooks/use-appearance";
 import { HelpDialog } from "./help-dialog";
+import { NavIndicator } from "@/components/motion";
 export function Shell({
   page,
   children,
@@ -110,6 +116,7 @@ export function Shell({
                     }
                     href={item.href}
                   >
+                    {section.href === item.href ? <NavIndicator /> : null}
                     <item.icon />
                     <span className="nav-name">{item.title}</span>
                     {item.href === "/app/questions" &&
@@ -265,7 +272,9 @@ export function Shell({
             </Link>
           ))}
       </nav>
-      <CommandPalette open={searchOpen} onOpenChange={setSearchOpen} />
+      {searchOpen ? (
+        <CommandPalette open={searchOpen} onOpenChange={setSearchOpen} />
+      ) : null}
     </div>
   );
 }

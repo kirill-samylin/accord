@@ -262,3 +262,78 @@ a.metric:hover {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+/* Task states: one fill per state, shared by the chart chip, bar and badges. */
+.fill-created {
+  /* Fixed light hatch: the ink icon stays visible in the dark theme too. */
+  background: repeating-linear-gradient(-45deg, #ffffff 0 4px, #f3e9cf 4px 8px);
+}
+.fill-ready {
+  background: var(--yellow);
+}
+.fill-in_progress {
+  background: var(--blue);
+  color: #fff;
+}
+.fill-done {
+  background: var(--lime);
+}
+.fill-cancelled,
+.fill-canceled {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--pink) 0 4px,
+    #ffc7d9 4px 8px
+  );
+}
+.state-bar-row {
+  grid-template-columns: minmax(170px, 230px) 1fr 36px;
+  gap: 16px;
+}
+.state-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.state-chip {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: var(--line-thin) solid var(--edge);
+  box-shadow: 2px 2px 0 var(--edge);
+  color: var(--ink);
+}
+.state-chip.fill-in_progress {
+  color: #fff;
+}
+.state-text {
+  display: grid;
+  min-width: 0;
+  line-height: 1.2;
+}
+.state-text strong {
+  font-size: 13px;
+}
+.state-text small {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bar-track {
+  height: 18px;
+}
+.bar-fill {
+  transition: width 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.bar-fill[data-empty] {
+  border-right: 0;
+}
+.state-bar-row:hover .bar-track {
+  box-shadow: 2px 2px 0 var(--edge);
+}

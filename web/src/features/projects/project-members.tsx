@@ -1,4 +1,5 @@
 "use client";
+import { Select } from "@/components/ui/select";
 import type { CatalogPage } from "@/lib/projects";
 import type { CatalogMutationResult } from "@/lib/types";
 import { RegistryForm } from "./registry-form";
@@ -10,11 +11,11 @@ const roleNames: Record<string, string> = {
 export const projectRole = (role: string) => roleNames[role] ?? role;
 function Roles({ value = "viewer" }: { value?: string }) {
   return (
-    <select name="role" defaultValue={value}>
+    <Select name="role" defaultValue={value}>
       <option value="viewer">Наблюдатель · только чтение</option>
       <option value="editor">Редактор · работа с задачами</option>
       <option value="owner">Владелец · управление доступом</option>
-    </select>
+    </Select>
   );
 }
 export function ProjectMembers({

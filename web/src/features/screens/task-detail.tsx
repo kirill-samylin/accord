@@ -14,6 +14,7 @@ import type { MutationResult, PageData } from "@/lib/types";
 import { date, label } from "@/lib/format";
 import { QuestionActions } from "../mutations/QuestionActions";
 import { TaskProperties } from "./task-properties";
+import { EpicTasks } from "./epic-tasks";
 import { EditTaskDialog } from "../mutations/EditTaskDialog";
 import { CoordinationPanel } from "../coordination/coordination-panel";
 import { DuplicateBanners, SimilarTasks } from "../duplicates/task-duplicates";
@@ -87,6 +88,9 @@ export function TaskDetail({
                     <span className="muted">Описание ещё не добавлено.</span>
                   )}
                 </div>
+                {task.type === "epic" && !compact ? (
+                  <EpicTasks epicKey={task.key} />
+                ) : null}
                 {task.links?.length ? (
                   <section>
                     <h3>Связи</h3>
@@ -128,7 +132,6 @@ export function TaskDetail({
                 />
                 {!compact && task.role === "human" && task.type === "task" ? (
                   <section className="answer-panel">
-                    <h2>Вопрос человеку</h2>
                     <QuestionActions
                       key={task.key}
                       page={page}

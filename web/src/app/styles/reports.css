@@ -101,7 +101,7 @@ progress::-moz-progress-bar {
   letter-spacing: 0.06em;
   color: var(--muted-foreground);
 }
-.toolbar-select select {
+.toolbar-select .select-trigger {
   width: auto;
   min-width: 150px;
   font-size: 12px;

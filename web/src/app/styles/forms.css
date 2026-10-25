@@ -7,6 +7,9 @@
   gap: 6px;
   min-width: 0;
   font-size: 13px;
+  /* Grid rows must not stretch to the taller neighbour in .form-grid,
+     otherwise inputs grow and drop below the adjacent column's field. */
+  align-content: start;
 }
 .form-field label,
 label.form-field {
@@ -19,6 +22,7 @@ label.form-field {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  align-items: start;
 }
 .form-actions {
   display: flex;
@@ -126,7 +130,8 @@ label.form-field {
 @media (max-width: 767px) {
   input,
   textarea,
-  select {
+  select,
+  .select-trigger {
     font-size: 16px !important;
   }
   .button,

@@ -1,3 +1,4 @@
+import { Select } from "@/components/ui/select";
 import type { ProfileSummary } from "@/lib/agent-profiles";
 import { currentProfileChoice, profileChoice } from "@/lib/coordination";
 export function ProfileChoice({
@@ -17,7 +18,7 @@ export function ProfileChoice({
   return (
     <label className="form-field" htmlFor={id}>
       Профиль исполнителя
-      <select
+      <Select
         id={id}
         name="profile"
         value={value}
@@ -40,7 +41,7 @@ export function ProfileChoice({
               {profile.name} · версия {profile.version} · {profile.id.slice(-8)}
             </option>
           ))}
-      </select>
+      </Select>
       <span className="form-help" id={`${id}-help`}>
         {current
           ? "Назначение сохраняет выбранную версию инструкций. Смена профиля не запускает агента."

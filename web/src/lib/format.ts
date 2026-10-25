@@ -100,3 +100,26 @@ export function bytes(value: number) {
 export function initial(value: string) {
   return value.trim().slice(0, 2).toUpperCase() || "A";
 }
+
+// One-line meaning of each task state for legends and tooltips.
+const statusHints: Record<string, string> = {
+  created: "черновик, ещё не в очереди",
+  ready: "в очереди, ждёт исполнителя",
+  in_progress: "исполнитель работает",
+  done: "результат принят",
+  cancelled: "работа остановлена",
+  canceled: "работа остановлена",
+  blocked: "ждёт другую задачу",
+};
+export function statusHint(state: string) {
+  return statusHints[state] ?? "";
+}
+// Russian plural form: plural(1, "версия", "версии", "версий") → "версия".
+export function plural(count: number, one: string, few: string, many: string) {
+  const n = Math.abs(count) % 100;
+  const last = n % 10;
+  if (n > 10 && n < 20) return many;
+  if (last === 1) return one;
+  if (last >= 2 && last <= 4) return few;
+  return many;
+}

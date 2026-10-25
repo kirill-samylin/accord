@@ -92,15 +92,22 @@ a.entity-row:hover {
   font-size: 11px;
 }
 .kanban {
-  display: flex;
+  /* All five state columns share the width; scroll only below ~900px and
+     then show a visible scrollbar so hidden columns are discoverable. */
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(156px, 1fr);
   overflow-x: auto;
-  gap: 20px;
-  padding: 4px 8px 20px 0;
+  gap: 14px;
+  padding: 4px 8px 16px 0;
   min-height: 360px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: var(--edge) transparent;
 }
 .kanban-column {
-  width: 272px;
-  flex: 0 0 272px;
+  min-width: 0;
+  scroll-snap-align: start;
   background: transparent;
   border-radius: 0;
   padding: 0;
@@ -149,9 +156,15 @@ a.entity-row:hover {
 }
 .kanban-column:has(.kanban-heading .status-cancelled) .kanban-heading,
 .kanban-column:has(.kanban-heading .status-canceled) .kanban-heading {
-  border-style: dashed;
-  box-shadow: none;
-  color: var(--muted-foreground);
+  background: color-mix(in srgb, var(--pink) 30%, var(--surface));
+  color: var(--ink);
+}
+.kanban-column:has(.kanban-heading .status-created) .kanban-heading {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--surface) 0 4px,
+    var(--muted) 4px 8px
+  );
 }
 .kanban-items {
   display: grid;

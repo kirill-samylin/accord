@@ -3,18 +3,76 @@ import type { MutationResult, PageData } from "@/lib/types";
 import { OverviewScreen } from "./screens/overview";
 import { TasksScreen } from "./screens/tasks";
 import { TaskDetail } from "./screens/task-detail";
-import { AgentDetail, AgentsScreen } from "./screens/agents";
-import { ActivityScreen, HistoryScreen } from "./screens/organization";
-import { ProjectsScreen, SettingsScreen } from "./screens/project-settings";
-import { StatsScreen } from "./screens/stats";
-import { TeamScreen } from "./screens/team";
-import { DesignsScreen } from "./screens/designs";
+import dynamic from "next/dynamic";
 import { SessionControls } from "./mutations/SessionControls";
-import { ProfilesScreen } from "./profiles/profiles-screen";
-import { ProfileDetail } from "./profiles/profile-detail";
-import { ManagedScreen } from "./managed/managed-screen";
-import { AutomationScreen } from "./automation/automation-screen";
-import { ManagedDetail } from "./managed/managed-detail";
+// Overview, tasks and task details are the hot path and stay in the main
+// chunk; every other screen loads on first visit.
+function ScreenLoading() {
+  return (
+    <div className="page" role="status" aria-label="Загрузка раздела">
+      <div className="skeleton" />
+      <div className="skeleton" />
+      <div className="skeleton" />
+    </div>
+  );
+}
+const AgentsScreen = dynamic(
+  () => import("./screens/agents").then((m) => m.AgentsScreen),
+  { loading: ScreenLoading },
+);
+const AgentDetail = dynamic(
+  () => import("./screens/agents").then((m) => m.AgentDetail),
+  { loading: ScreenLoading },
+);
+const ActivityScreen = dynamic(
+  () => import("./screens/organization").then((m) => m.ActivityScreen),
+  { loading: ScreenLoading },
+);
+const HistoryScreen = dynamic(
+  () => import("./screens/organization").then((m) => m.HistoryScreen),
+  { loading: ScreenLoading },
+);
+const ProjectsScreen = dynamic(
+  () => import("./screens/project-settings").then((m) => m.ProjectsScreen),
+  { loading: ScreenLoading },
+);
+const SettingsScreen = dynamic(
+  () => import("./screens/project-settings").then((m) => m.SettingsScreen),
+  { loading: ScreenLoading },
+);
+const StatsScreen = dynamic(
+  () => import("./screens/stats").then((m) => m.StatsScreen),
+  { loading: ScreenLoading },
+);
+const TeamScreen = dynamic(
+  () => import("./screens/team").then((m) => m.TeamScreen),
+  { loading: ScreenLoading },
+);
+const DesignsScreen = dynamic(
+  () => import("./screens/designs").then((m) => m.DesignsScreen),
+  { loading: ScreenLoading },
+);
+const ProfilesScreen = dynamic(
+  () => import("./profiles/profiles-screen").then((m) => m.ProfilesScreen),
+  { loading: ScreenLoading },
+);
+const ProfileDetail = dynamic(
+  () => import("./profiles/profile-detail").then((m) => m.ProfileDetail),
+  { loading: ScreenLoading },
+);
+const ManagedScreen = dynamic(
+  () => import("./managed/managed-screen").then((m) => m.ManagedScreen),
+  { loading: ScreenLoading },
+);
+const AutomationScreen = dynamic(
+  () =>
+    import("./automation/automation-screen").then((m) => m.AutomationScreen),
+  { loading: ScreenLoading },
+);
+const ManagedDetail = dynamic(
+  () => import("./managed/managed-detail").then((m) => m.ManagedDetail),
+  { loading: ScreenLoading },
+);
 export function BoardScreen({
   page,
   refresh,
@@ -30,10 +88,6 @@ export function BoardScreen({
     return (
       <div className="page">
         <h1>Продолжить работу</h1>
-        <div className="notice">
-          Срок рабочей сессии истёк. Продолжите её, чтобы снова видеть проект и
-          выполнять действия.
-        </div>
         <SessionControls page={page} onSuccess={onSuccess} />
       </div>
     );

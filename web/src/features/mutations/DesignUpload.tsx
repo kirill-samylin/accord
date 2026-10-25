@@ -1,5 +1,6 @@
 "use client";
 
+import { Select } from "@/components/ui/select";
 import { useRef, useState, type FormEvent } from "react";
 import { actionID, uploadBody, type MutationProps } from "./contracts";
 import { ActionNotice, FieldError } from "./ActionNotice";
@@ -71,7 +72,7 @@ export function DesignUpload({
           <div className="form-grid">
             <label className="form-field">
               Связать с
-              <select
+              <Select
                 name="scope"
                 value={draft.scope}
                 onChange={(event) => change("scope", event.target.value)}
@@ -79,7 +80,7 @@ export function DesignUpload({
                 <option value="project">Проектом</option>
                 <option value="epic">Эпиком</option>
                 <option value="task">Задачей</option>
-              </select>
+              </Select>
             </label>
             {draft.scope !== "project" ? (
               <label className="form-field">

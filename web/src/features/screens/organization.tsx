@@ -1,4 +1,5 @@
 "use client";
+import { Select } from "@/components/ui/select";
 import { ProjectLink as Link } from "@/components/project-link";
 import {
   ArrowUpRight,
@@ -83,14 +84,14 @@ export function ActivityScreen({
               </label>
               <label className="form-field">
                 Тип события
-                <select name="type" defaultValue={page.draft.type ?? ""}>
+                <Select name="type" defaultValue={page.draft.type ?? ""}>
                   <option value="">Все события</option>
                   {Object.entries(eventLabels).map(([type, title]) => (
                     <option key={type} value={type}>
                       {title}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
               <button className="button">Применить</button>
             </form>
@@ -125,7 +126,7 @@ export function HistoryScreen({ page }: { page: PageData }) {
       />
       <div className="toolbar">
         <form
-          className="toolbar-start"
+          className="toolbar-start inline-search"
           onSubmit={(event) => {
             event.preventDefault();
             filters.set({

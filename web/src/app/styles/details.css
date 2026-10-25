@@ -223,7 +223,7 @@
   justify-content: space-between;
 }
 .settings-section {
-  max-width: 760px;
+  /* Same width as the tab bar above it, so dashed rows end on one line. */
   display: flex;
   flex-direction: column;
   gap: 20px;

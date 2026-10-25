@@ -1,4 +1,6 @@
 "use client";
+import { GrowBar } from "@/components/motion";
+import { Select } from "@/components/ui/select";
 import {
   EmptyState,
   Metric,
@@ -6,7 +8,7 @@ import {
   SectionHeading,
 } from "@/components/common";
 import type { PageData } from "@/lib/types";
-import { duration, label, number } from "@/lib/format";
+import { duration, label, number, plural } from "@/lib/format";
 import { useFilters } from "../query-controls";
 export function StatsScreen({ page }: { page: PageData }) {
   const filters = useFilters();
@@ -32,7 +34,7 @@ export function StatsScreen({ page }: { page: PageData }) {
         <div className="toolbar-start">
           <label className="toolbar-select">
             Период
-            <select
+            <Select
               aria-label="Период статистики"
               value={page.draft.days ?? "7"}
               onChange={(event) => filters.set({ days: event.target.value })}
@@ -42,11 +44,11 @@ export function StatsScreen({ page }: { page: PageData }) {
                   {days === "1" ? "Последние сутки" : `${days} дней`}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="toolbar-select">
             Группировка
-            <select
+            <Select
               aria-label="Группировка статистики"
               value={stats.group_by}
               onChange={(event) =>
@@ -56,13 +58,14 @@ export function StatsScreen({ page }: { page: PageData }) {
               <option value="role">Роль</option>
               <option value="owner">Исполнитель</option>
               <option value="epic">Эпик</option>
-            </select>
+            </Select>
           </label>
         </div>
       </div>
       {stats.incomplete_data ? (
         <div className="notice" role="status">
-          Часть исторических данных неполная: {stats.incomplete_events} событий
+          Часть исторических данных неполная: {stats.incomplete_events}{" "}
+          {plural(stats.incomplete_events, "событие", "события", "событий")}
           без полного учёта.
         </div>
       ) : null}
@@ -70,12 +73,12 @@ export function StatsScreen({ page }: { page: PageData }) {
         <Metric
           title="Завершено впервые"
           value={number(totals.first_completions)}
-          caption={`${totals.epic_completions} эпиков завершено`}
+          caption={`${plural(totals.epic_completions, "Завершён", "Завершено", "Завершено")} ${totals.epic_completions} ${plural(totals.epic_completions, "эпик", "эпика", "эпиков")}`}
         />
         <Metric
           title="Повторных завершений"
           value={number(totals.rework_completions)}
-          caption={`${totals.returns} возвратов`}
+          caption={`${totals.returns} ${plural(totals.returns, "возврат", "возврата", "возвратов")}`}
         />
         <Metric
           title="Учтено токенов"
@@ -85,7 +88,7 @@ export function StatsScreen({ page }: { page: PageData }) {
         <Metric
           title="Попытки"
           value={number(totals.attempts)}
-          caption={`${totals.expired_leases} истёкших аренд`}
+          caption={`${totals.expired_leases} ${plural(totals.expired_leases, "истёкшая аренда", "истёкшие аренды", "истёкших аренд")}`}
         />
       </div>
       <div className="dashboard-charts">
@@ -108,11 +111,10 @@ export function StatsScreen({ page }: { page: PageData }) {
                     {label(group.key)}
                   </span>
                   <div className="bar-track">
-                    <span
+                    <GrowBar
                       className="bar-fill fill-done"
-                      style={{
-                        width: `${(group.metrics.first_completions / maximum) * 100}%`,
-                      }}
+                      empty={!group.metrics.first_completions}
+                      share={(group.metrics.first_completions / maximum) * 100}
                     />
                   </div>
                   <strong>{group.metrics.first_completions}</strong>

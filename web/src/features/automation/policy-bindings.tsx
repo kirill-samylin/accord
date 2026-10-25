@@ -1,4 +1,5 @@
 "use client";
+import { Select } from "@/components/ui/select";
 import type { ProfileSummary } from "@/lib/agent-profiles";
 import {
   automationRoles,
@@ -42,7 +43,7 @@ export function PolicyBindings({
             <strong>{stageLabels[role]}</strong>
             <label className="form-field">
               Агент
-              <select
+              <Select
                 value={binding?.provider ?? ""}
                 onChange={(e) =>
                   setDraft({
@@ -66,11 +67,11 @@ export function PolicyBindings({
                     </option>
                   ),
                 )}
-              </select>
+              </Select>
             </label>
             <label className="form-field">
               Профиль и версия
-              <select
+              <Select
                 value={
                   binding?.profile_id
                     ? `${binding.profile_id}:${binding.profile_version}`
@@ -113,7 +114,7 @@ export function PolicyBindings({
                     Версия изменилась — выберите заново
                   </option>
                 ) : null}
-              </select>
+              </Select>
               <FieldError name={role} errors={errors} />
             </label>
           </div>

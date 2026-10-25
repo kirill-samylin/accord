@@ -1,4 +1,5 @@
 "use client";
+import { Select } from "@/components/ui/select";
 import { useState } from "react";
 import {
   Dialog,
@@ -97,14 +98,14 @@ function TeamRole({
         </label>
         <label className="form-field">
           Агент по умолчанию
-          <select
+          <Select
             value={draft.provider}
             onChange={(e) => setDraft({ ...draft, provider: e.target.value })}
           >
             <option value="unconfigured">Выбрать при настройке запуска</option>
             <option value="openai">Codex</option>
             <option value="anthropic">Claude Code</option>
-          </select>
+          </Select>
         </label>
         <label className="form-field">
           Инструкции

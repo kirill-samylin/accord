@@ -86,7 +86,15 @@
 .status-cancelled,
 .status-canceled {
   border-style: dashed;
-  color: var(--muted-foreground);
+  background: color-mix(in srgb, var(--pink) 30%, var(--surface));
+  color: var(--ink);
+}
+.status-created {
+  border-style: dashed;
+  background: var(--surface);
+}
+.status[title] {
+  cursor: help;
 }
 .task-row {
   display: flex;
@@ -207,4 +215,24 @@
   color: var(--blue);
   white-space: nowrap;
   margin-top: 5px;
+}
+/* Task rows adapt to the width of their list, not the window: in narrow
+   panels (epic tasks, overview column) secondary columns step aside so the
+   title stays readable. */
+.list-surface {
+  container-type: inline-size;
+}
+.task-title {
+  min-width: 120px;
+}
+@container (max-width: 720px) {
+  .task-row .task-owner {
+    display: none;
+  }
+}
+@container (max-width: 560px) {
+  .task-row .task-role,
+  .task-row .task-people {
+    display: none;
+  }
 }

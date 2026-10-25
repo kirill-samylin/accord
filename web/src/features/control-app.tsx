@@ -19,10 +19,15 @@ import {
 import { isCatalogPage, type CatalogPage } from "@/lib/projects";
 import type { MutationResult, PageData } from "@/lib/types";
 import { Shell } from "./shell";
+import { MotionProvider, PageTransition } from "@/components/motion";
 import { BoardScreen } from "./board-screens";
 import { useRouteHeadingFocus } from "./hooks/use-route-heading-focus";
 import { LoginForm } from "./mutations/LoginForm";
-import { CreateTaskDialog } from "./mutations/CreateTaskDialog";
+// The create form (and its similar-task search) loads on first open.
+const CreateTaskDialog = dynamic(
+  () => import("./mutations/CreateTaskDialog").then((m) => m.CreateTaskDialog),
+  { ssr: false },
+);
 import { pendingTaskReady } from "./mutations/taskDraftStore";
 import { ProjectProvider, useProjectScope } from "./projects/project-context";
 import { ProjectOpening } from "./projects/project-opening";
@@ -31,9 +36,11 @@ const CatalogWorkspace = dynamic(() => import("./projects/catalog-workspace"), {
 });
 export function ControlApp() {
   return (
-    <Suspense fallback={<Loading />}>
-      <ScopedApp />
-    </Suspense>
+    <MotionProvider>
+      <Suspense fallback={<Loading />}>
+        <ScopedApp />
+      </Suspense>
+    </MotionProvider>
   );
 }
 function ScopedApp() {
@@ -212,6 +219,14 @@ function ControlContent() {
           <a className="button" href={scope.app(path)}>
             Открыть начало истории
           </a>
+        ) : result.error instanceof APIError &&
+          result.error.status === 400 &&
+          search.size ? (
+          // A stale or foreign link (old filter, tracking tag) must not
+          // strand the user: offer the same screen without its parameters.
+          <button className="button" onClick={() => router.replace(path)}>
+            Открыть без лишних параметров
+          </button>
         ) : (
           <button className="button" onClick={() => result.refetch()}>
             Повторить
@@ -241,7 +256,7 @@ function ControlContent() {
     );
   return (
     <Shell page={page} onCreate={() => setCreate(true)} onSuccess={success}>
-      {page.notice ? (
+      {page.notice && !page.can_continue ? (
         <div className="page-notice notice" role="status">
           {page.notice}
         </div>
@@ -263,12 +278,14 @@ function ControlContent() {
           Обновляем данные…
         </div>
       ) : null}
-      <BoardScreen
-        page={page}
-        refresh={() => void result.refetch()}
-        onCreate={() => setCreate(true)}
-        onSuccess={success}
-      />
+      <PageTransition routeKey={path}>
+        <BoardScreen
+          page={page}
+          refresh={() => void result.refetch()}
+          onCreate={() => setCreate(true)}
+          onSuccess={success}
+        />
+      </PageTransition>
       {create ? (
         createOptions.isPending ? (
           <div className="loading-toast" role="status">

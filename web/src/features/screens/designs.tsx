@@ -1,4 +1,5 @@
 "use client";
+import { Select } from "@/components/ui/select";
 import { useState } from "react";
 import { ProjectLink as Link } from "@/components/project-link";
 import { Download, File, Grid2X2, History, List, Plus, X } from "lucide-react";
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { EmptyState, Fact, PageHeading } from "@/components/common";
 import type { DesignAsset, MutationResult, PageData } from "@/lib/types";
-import { bytes, date } from "@/lib/format";
+import { bytes, date, plural } from "@/lib/format";
 import { DesignUpload } from "../mutations/DesignUpload";
 import { FilterMenu, Pagination, useFilters } from "../query-controls";
 import { safeAssetURL } from "@/lib/project-assets";
@@ -73,12 +74,12 @@ export function DesignsScreen({
             >
               <label className="form-field">
                 Область
-                <select name="scope" defaultValue={page.draft.scope ?? ""}>
+                <Select name="scope" defaultValue={page.draft.scope ?? ""}>
                   <option value="">Все</option>
                   <option value="project">Проект</option>
                   <option value="epic">Эпик</option>
                   <option value="task">Задача</option>
-                </select>
+                </Select>
               </label>
               <label className="form-field">
                 Ключ задачи или эпика
@@ -100,7 +101,8 @@ export function DesignsScreen({
             </button>
           ) : null}
           <span className="toolbar-count">
-            {assets.length} версий в выборке
+            {assets.length}{" "}
+            {plural(assets.length, "версия", "версии", "версий")} в выборке
           </span>
         </div>
         <div className="segmented">

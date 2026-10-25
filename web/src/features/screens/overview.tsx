@@ -14,13 +14,14 @@ import {
   Metric,
   PageHeading,
   SectionHeading,
-  Status,
+  statusIcon,
   TaskRow,
 } from "@/components/common";
 import { readPage } from "@/lib/api";
 import type { PageData } from "@/lib/types";
-import { date, label, number } from "@/lib/format";
+import { date, label, number, plural, statusHint } from "@/lib/format";
 import { useDashboard } from "../hooks/use-dashboard";
+import { GrowBar } from "@/components/motion";
 export function OverviewScreen({
   page,
   onSessionExpired,
@@ -189,7 +190,7 @@ export function OverviewScreen({
         <Metric
           title="Всего задач"
           value={number(overview.tasks_total)}
-          caption={`${overview.open_epics} открытых эпиков`}
+          caption={`${overview.open_epics} ${plural(overview.open_epics, "открытый эпик", "открытых эпика", "открытых эпиков")}`}
           href="/app/tasks?include_closed=true"
         />
         <Metric
@@ -221,20 +222,37 @@ export function OverviewScreen({
               .map((item) => `${label(item.key)}: ${item.count}`)
               .join(", ")}
           >
-            {counts.map((item) => (
-              <div key={item.key} className="state-bar-row">
-                <Status value={item.key} />
-                <div className="bar-track">
-                  <span
-                    className={`bar-fill fill-${item.key}`}
-                    style={{
-                      width: `${overview.tasks_total ? (item.count / overview.tasks_total) * 100 : 0}%`,
-                    }}
-                  />
+            {counts.map((item) => {
+              const Icon = statusIcon(item.key);
+              const share = overview.tasks_total
+                ? (item.count / overview.tasks_total) * 100
+                : 0;
+              return (
+                <div
+                  key={item.key}
+                  className="state-bar-row"
+                  title={`${label(item.key)} — ${statusHint(item.key)}`}
+                >
+                  <div className="state-label">
+                    <span className={`state-chip fill-${item.key}`}>
+                      <Icon size={14} strokeWidth={2.5} aria-hidden />
+                    </span>
+                    <span className="state-text">
+                      <strong>{label(item.key)}</strong>
+                      <small>{statusHint(item.key)}</small>
+                    </span>
+                  </div>
+                  <div className="bar-track">
+                    <GrowBar
+                      className={`bar-fill fill-${item.key}`}
+                      empty={!item.count}
+                      share={share}
+                    />
+                  </div>
+                  <span className="tabular-nums">{item.count}</span>
                 </div>
-                <span className="tabular-nums">{item.count}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
         <section className="chart-panel">

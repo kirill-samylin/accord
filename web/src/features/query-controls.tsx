@@ -1,4 +1,5 @@
 "use client";
+import { Select } from "@/components/ui/select";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ChevronRight, Filter, Search, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -98,7 +99,7 @@ export function SelectFilter({
   return (
     <label className="form-field">
       {title}
-      <select
+      <Select
         value={value ?? ""}
         onChange={(event) => onChange(event.target.value)}
       >
@@ -114,7 +115,7 @@ export function SelectFilter({
             </option>
           ),
         )}
-      </select>
+      </Select>
     </label>
   );
 }

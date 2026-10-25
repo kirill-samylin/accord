@@ -1,4 +1,5 @@
 "use client";
+import { Select } from "@/components/ui/select";
 import { useState } from "react";
 import type { MutationProps } from "../mutations/contracts";
 import { actionBody, actionID } from "../mutations/contracts";
@@ -70,7 +71,7 @@ export function WorkflowControls({ page, onSuccess }: MutationProps) {
         {error ? <p className="field-error">{error}</p> : null}
         <label className="form-field">
           Явно обновить разрешение при продолжении
-          <select
+          <Select
             value={refreshPolicy}
             onChange={(e) => setRefreshPolicy(e.target.value)}
           >
@@ -90,7 +91,7 @@ export function WorkflowControls({ page, onSuccess }: MutationProps) {
                   {p.name} · версия {p.version}
                 </option>
               ))}
-          </select>
+          </Select>
         </label>
         <div className="form-actions">
           {[

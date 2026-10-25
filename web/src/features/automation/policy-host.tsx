@@ -1,4 +1,5 @@
 "use client";
+import { Select } from "@/components/ui/select";
 import type { PolicySettings } from "@/lib/automation";
 import type { ManagedHost } from "@/lib/managed-agents";
 import { FieldError } from "../mutations/ActionNotice";
@@ -61,7 +62,7 @@ export function PolicyHost({
       <div className="form-grid">
         <label className="form-field">
           Компьютер
-          <select
+          <Select
             disabled={editing}
             value={draft.host_id}
             onChange={(e) => {
@@ -98,12 +99,12 @@ export function PolicyHost({
                   : ""}
               </option>
             ))}
-          </select>
+          </Select>
           <FieldError name="host_id" errors={errors} />
         </label>
         <label className="form-field">
           Рабочая папка
-          <select
+          <Select
             value={draft.workspace}
             onChange={(e) => workspace(e.target.value)}
           >
@@ -111,7 +112,7 @@ export function PolicyHost({
             {(host?.workspaces ?? []).map((alias) => (
               <option key={alias}>{alias}</option>
             ))}
-          </select>
+          </Select>
           <FieldError name="workspace" errors={errors} />
         </label>
       </div>

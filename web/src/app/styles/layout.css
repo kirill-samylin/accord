@@ -75,6 +75,7 @@
   gap: 16px;
 }
 .page-heading-copy {
+  flex: 1 1 auto;
   min-width: 0;
 }
 .page-heading p {
@@ -86,8 +87,13 @@
 .heading-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 10px;
   flex-wrap: wrap;
+  /* Keep actions on one line next to the title instead of wrapping into
+     a column when the description is long. */
+  flex: 0 0 auto;
+  max-width: 60%;
 }
 .section-heading {
   display: flex;
@@ -205,6 +211,10 @@
   }
   .page-heading p {
     font-size: 13px;
+  }
+  .heading-actions {
+    max-width: 100%;
+    justify-content: flex-start;
   }
   .heading-actions .desktop-label {
     display: none;

@@ -1,4 +1,5 @@
 "use client";
+import { Select } from "@/components/ui/select";
 import { useState, type FormEvent } from "react";
 import {
   Dialog,
@@ -95,7 +96,7 @@ export function StartDialog({
           <fieldset disabled={action.locked || !canWrite}>
             <label className="form-field">
               Компьютер
-              <select
+              <Select
                 value={draft.host_id}
                 onChange={(event) => change("host_id", event.target.value)}
                 aria-invalid={Boolean(fields.host_id)}
@@ -112,13 +113,13 @@ export function StartDialog({
                     {entry.state !== "active" ? " · отключён" : ""}
                   </option>
                 ))}
-              </select>
+              </Select>
               <FieldError name="host_id" errors={fields} />
             </label>
             <div className="form-grid">
               <label className="form-field">
                 Рабочая папка
-                <select
+                <Select
                   value={draft.workspace}
                   onChange={(event) => change("workspace", event.target.value)}
                   aria-invalid={Boolean(fields.workspace)}
@@ -127,12 +128,12 @@ export function StartDialog({
                   {host?.workspaces.map((workspace) => (
                     <option key={workspace}>{workspace}</option>
                   ))}
-                </select>
+                </Select>
                 <FieldError name="workspace" errors={fields} />
               </label>
               <label className="form-field">
                 Агент
-                <select
+                <Select
                   value={draft.provider}
                   onChange={(event) => change("provider", event.target.value)}
                   aria-invalid={Boolean(fields.provider)}
@@ -143,13 +144,13 @@ export function StartDialog({
                       {providerName(provider)}
                     </option>
                   ))}
-                </select>
+                </Select>
                 <FieldError name="provider" errors={fields} />
               </label>
             </div>
             <label className="form-field">
               Профиль и версия
-              <select
+              <Select
                 value={draft.profile}
                 onChange={(event) => change("profile", event.target.value)}
                 aria-invalid={Boolean(
@@ -170,7 +171,7 @@ export function StartDialog({
                       {entry.version}
                     </option>
                   ))}
-              </select>
+              </Select>
               <FieldError name="profile" errors={fields} />
             </label>
             <label className="form-field">

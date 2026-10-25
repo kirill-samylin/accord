@@ -1,4 +1,5 @@
 "use client";
+import { Select } from "@/components/ui/select";
 import { useState, type FormEvent } from "react";
 import type { MutationProps } from "../mutations/contracts";
 import { actionBody, actionID } from "../mutations/contracts";
@@ -58,7 +59,7 @@ export function RequirementForm({
           </label>
           <label className="form-field">
             Команда и разрешение
-            <select
+            <Select
               value={selection}
               onChange={(e) => setSelection(e.target.value)}
             >
@@ -75,7 +76,7 @@ export function RequirementForm({
                   Разрешение изменилось — выберите актуальную версию
                 </option>
               ) : null}
-            </select>
+            </Select>
           </label>
           {policy ? (
             <div className="notice">

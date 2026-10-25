@@ -30,7 +30,6 @@ export function ManagedScreen({
     Boolean(actionID(page, "managed:start"));
   return (
     <div className="page managed-page">
-      <AgentNavigation current="managed" />
       <PageHeading
         title="Управление агентами"
         description="Передайте новое требование команде или управляйте отдельными агентами по существующим задачам."
@@ -57,6 +56,7 @@ export function ManagedScreen({
           </>
         }
       />
+      <AgentNavigation current="managed" />
       {!canStart ? (
         <p className="form-help">
           {page.project?.can_write === false

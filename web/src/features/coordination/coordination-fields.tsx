@@ -1,3 +1,4 @@
+import { Select } from "@/components/ui/select";
 import type {
   CoordinationDraft,
   CoordinationOperation,
@@ -39,7 +40,7 @@ export function CoordinationFields({
       <>
         <label className="form-field">
           Проверка
-          <select
+          <Select
             value={draft.role}
             onChange={(event) => {
               change("role", event.target.value);
@@ -50,7 +51,7 @@ export function CoordinationFields({
             <option value="tester" disabled={!reviewer}>
               QA после одобренного ревью
             </option>
-          </select>
+          </Select>
         </label>
         <dl className="coord-target">
           <dt>Проверяемый результат</dt>
@@ -84,13 +85,13 @@ export function CoordinationFields({
       <>
         <label className="form-field">
           Действие
-          <select
+          <Select
             value={draft.unlink}
             onChange={(event) => change("unlink", event.target.value)}
           >
             <option value="false">Добавить связь</option>
             <option value="true">Удалить связь</option>
-          </select>
+          </Select>
         </label>
         <label className="form-field">
           Исходная задача
@@ -116,7 +117,7 @@ export function CoordinationFields({
         </label>
         <label className="form-field">
           Тип связи
-          <select
+          <Select
             value={draft.type}
             onChange={(event) => change("type", event.target.value)}
           >
@@ -124,12 +125,12 @@ export function CoordinationFields({
             <option value="contract_of">Предоставляет контракт</option>
             <option value="spawned_by">Порождена</option>
             <option value="related">Связана</option>
-          </select>
+          </Select>
         </label>
         {draft.unlink !== "true" ? (
           <label className="form-field">
             Условие готовности
-            <select
+            <Select
               value={draft.condition}
               onChange={(event) => change("condition", event.target.value)}
             >
@@ -137,7 +138,7 @@ export function CoordinationFields({
               <option value="completed">Завершена успешно</option>
               <option value="approved">Ревью одобрено</option>
               <option value="passed">QA пройдено</option>
-            </select>
+            </Select>
           </label>
         ) : (
           <p className="form-help">
@@ -152,7 +153,7 @@ export function CoordinationFields({
     <>
       <label className="form-field">
         Новое состояние
-        <select
+        <Select
           value={draft.state}
           onChange={(event) => change("state", event.target.value)}
         >
@@ -161,7 +162,7 @@ export function CoordinationFields({
               {choice.title}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
       {draft.state !== "done" ? (
         <Reason

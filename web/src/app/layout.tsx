@@ -1,6 +1,38 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import {
+  JetBrains_Mono,
+  Manrope,
+  Press_Start_2P,
+  Unbounded,
+} from "next/font/google";
 import "./globals.css";
+
+// Variable fonts (one file per family). Self-hosted at build time: no render-blocking request to Google, fonts are
+// preloaded from our origin, and fallbacks are metric-adjusted (no reflow).
+const display = Unbounded({
+  subsets: ["latin", "cyrillic"],
+  variable: "--font-unbounded",
+  display: "swap",
+});
+const sans = Manrope({
+  subsets: ["latin", "cyrillic"],
+  variable: "--font-manrope",
+  display: "swap",
+});
+const mono = JetBrains_Mono({
+  subsets: ["latin", "cyrillic"],
+  variable: "--font-jetbrains",
+  display: "swap",
+});
+const pixel = Press_Start_2P({
+  subsets: ["latin", "cyrillic"],
+  weight: "400",
+  variable: "--font-press-start",
+  display: "swap",
+  preload: false,
+});
+
 export const metadata: Metadata = {
   title: "Accord — координация агентов",
   description: "Задачи, агенты и работа проекта в одном месте",
@@ -10,22 +42,11 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   await headers();
   return (
-    <html lang="ru" suppressHydrationWarning>
-      <head>
-        {/* Шрифты neo-brutalism UI: Unbounded (заголовки), Manrope (текст),
-            JetBrains Mono (ключи/время), Press Start 2P (пиксельные кикеры).
-            При недоступности Google Fonts работают локальные фолбэки. */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;900&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&family=Press+Start+2P&display=swap"
-        />
-      </head>
+    <html
+      lang="ru"
+      suppressHydrationWarning
+      className={`${display.variable} ${sans.variable} ${mono.variable} ${pixel.variable}`}
+    >
       <body>{children}</body>
     </html>
   );

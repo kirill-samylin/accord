@@ -189,3 +189,9 @@
   width: min(320px, calc(100vw - 32px));
   padding: 16px;
 }
+/* Intro text placed between a dialog header and its form needs air below. */
+.dialog-content > p,
+.dialog-content > .form-help,
+.dialog-content > .notice {
+  margin-bottom: 16px;
+}

@@ -140,7 +140,11 @@ function Rules({ page }: { page: PageData }) {
       {entries.length ? (
         <dl>
           {entries.map(([key, value]) => (
-            <Fact key={key} name={key} value={value} />
+            <Fact
+              key={key}
+              name={ruleLabels[key.toLowerCase()] ?? key}
+              value={ruleValues[String(value)] ?? String(value)}
+            />
           ))}
         </dl>
       ) : (
@@ -232,3 +236,19 @@ export function SettingsScreen({
     </div>
   );
 }
+
+// Server rule codes in plain language; unknown codes fall back to the code.
+const ruleLabels: Record<string, string> = {
+  cycle_check: "Циклические зависимости",
+  duplicate_check: "Похожие задачи (дубли)",
+  independent_review: "Ревью не автором задачи",
+  one_task_per_agent: "Одна задача на агента",
+  singleton_role: "Единственный координатор и архитектор",
+};
+const ruleValues: Record<string, string> = {
+  block: "Запрещено",
+  warn: "Предупреждение",
+  off: "Выключено",
+  allow: "Разрешено",
+  strict: "Запрещено",
+};

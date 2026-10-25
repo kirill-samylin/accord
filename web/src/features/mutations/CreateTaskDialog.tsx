@@ -1,5 +1,6 @@
 "use client";
 
+import { Select } from "@/components/ui/select";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { currentProfileChoice, profilePair } from "@/lib/coordination";
@@ -363,14 +364,14 @@ export function CreateTaskDialog({
             <div className="form-grid">
               <label className="form-field">
                 Что создать
-                <select
+                <Select
                   name="type"
                   value={draft.type}
                   onChange={(event) => change("type", event.target.value)}
                 >
                   <option value="task">Задача</option>
                   <option value="epic">Эпик</option>
-                </select>
+                </Select>
               </label>
               <label className="form-field">
                 <span>
@@ -463,7 +464,7 @@ export function CreateTaskDialog({
                     <Required />
                   </span>
                   {epicsComplete ? (
-                    <select
+                    <Select
                       name="epic_key"
                       value={draft.epic_key ?? ""}
                       disabled={noEpics}
@@ -485,7 +486,7 @@ export function CreateTaskDialog({
                             : epic.key}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   ) : (
                     <>
                       <input
@@ -514,7 +515,7 @@ export function CreateTaskDialog({
                 </label>
                 <label className="form-field">
                   Роль исполнителя
-                  <select
+                  <Select
                     name="role"
                     value={draft.role}
                     aria-describedby="role-help"
@@ -528,7 +529,7 @@ export function CreateTaskDialog({
                         {roleLabels[role] ?? role}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                   <span id="role-help" className="form-help">
                     {draft.role === "human"
                       ? "Задача для человека попадёт в «Вопросы»: её возьмёт участник-человек."

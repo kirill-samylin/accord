@@ -1,22 +1,40 @@
 import { ProjectLink as Link } from "@/components/project-link";
 import {
   ArrowRight,
+  Ban,
   Bot,
   Circle,
   CircleCheck,
   CircleDashed,
   CircleDot,
-  CircleHelp,
-  CircleX,
+  Hourglass,
   Inbox,
   LockKeyhole,
+  PencilLine,
+  Zap,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import type { Agent, BoardEvent, Task } from "@/lib/types";
-import { date, initial, label } from "@/lib/format";
+import { date, initial, label, statusHint } from "@/lib/format";
 import { AssignmentLabel } from "@/features/coordination/assignment-label";
 import { PersonChip } from "@/components/people";
 import { cn } from "@/lib/utils";
+import { CountUp } from "@/components/motion";
+const stateIcons: Record<string, typeof Circle> = {
+  created: PencilLine,
+  ready: Hourglass,
+  in_progress: Zap,
+  done: CircleCheck,
+  cancelled: Ban,
+  canceled: Ban,
+  active: CircleDot,
+  expired: CircleDashed,
+  credential_invalid: LockKeyhole,
+  blocked: LockKeyhole,
+};
+export function statusIcon(state: string) {
+  return stateIcons[state] ?? Circle;
+}
 export function Status({
   value,
   blocked = false,
@@ -25,23 +43,14 @@ export function Status({
   blocked?: boolean;
 }) {
   const state = blocked ? "blocked" : value;
-  const Icon =
-    (
-      {
-        created: CircleDashed,
-        ready: Circle,
-        in_progress: CircleDot,
-        done: CircleCheck,
-        cancelled: CircleX,
-        active: CircleDot,
-        expired: CircleDashed,
-        credential_invalid: LockKeyhole,
-        blocked: CircleHelp,
-      } as Record<string, typeof Circle>
-    )[state] ?? Circle;
+  const Icon = statusIcon(state);
+  const hint = statusHint(state);
   return (
-    <span className={cn("status", `status-${state}`)}>
-      <Icon size={14} />
+    <span
+      className={cn("status", `status-${state}`)}
+      title={hint ? `${label(state)} — ${hint}` : undefined}
+    >
+      <Icon size={14} aria-hidden />
       <span>{label(state)}</span>
     </span>
   );
@@ -312,7 +321,15 @@ export function Metric({
   const body = (
     <>
       <div className="metric-label">{title}</div>
-      <div className="metric-value">{value}</div>
+      <div className="metric-value">
+        {typeof value === "string" && /^\d[\d\s\u00a0]*$/.test(value) ? (
+          <CountUp value={Number(value.replace(/\D/g, ""))} />
+        ) : typeof value === "number" ? (
+          <CountUp value={value} />
+        ) : (
+          value
+        )}
+      </div>
       {caption ? <div className="metric-caption muted">{caption}</div> : null}
     </>
   );
