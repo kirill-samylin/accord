@@ -136,3 +136,16 @@ Native TUI Codex добавил два служебных
 Укажи реализованный объём, изменённые файлы, проверенную версию, фактические
 проверки и ограничения. Непройденная обязательная проверка оставляет этап
 незавершённым; незавершённый пилот нельзя объявлять готовой первой версией.
+
+
+Продолжение 25.10.2026 — `docs/TASK-018-ui-release.md`: по прямому поручению
+новый интерфейс и onboarding опубликованы в исходный
+`https://github.com/kirill-samylin/accord.git`, ветка `codex/native-preflight`.
+Origin вновь указывает на исходный репозиторий, DenisShagi сохранён отдельным
+remote. Production Go/Next — clean candidate
+`bdcabbd9e97f3aa20ae32aeed1853529be1130dd`, schema6/все прежние floors.
+Canonical capable apply/finalize/final-audit завершены, journal complete;
+новый format2 backup4projects/9runtimeDB/9historicalDB проверен, rows/history/ACL
+сохранены. Проверки109web tests/typecheck/format/build/HTTPS/UI — PASS;
+полный V1/native Windows/Claude execution/второй физическийПК не заявляются.
+Подробные independent approvals/границы — TASK018/WORK286–288.

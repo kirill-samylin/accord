@@ -45,3 +45,75 @@ buildinfo и producer report, независимые source/build/predeploy QA r
 USTAR archives и freeze source для независимого operational review. Затем
 координатор даёт точный per-phase GO в рамках пользовательского deployment
 поручения; отдельного нового запроса пользователю этот документ не вводит.
+
+## Actual candidate freeze
+
+Получен clean committed candidate
+`bdcabbd9e97f3aa20ae32aeed1853529be1130dd`. Actual build.private, Go buildinfo,
+полные Go55/Next1256 member manifests/SOURCE, production upstream7892 и все
+hashes прочитаны и сверены; новых build/CLI действий автор не выполнял.
+Original source APPROVE review_changes и build/predeploy QA APPROVE
+validate_candidate приняты в их исходных областях проверки. Reviewer reports,
+source manifest и producer build hashes проверены; все17 local refs совпали.
+QA доказывает указанные regression/typecheck/format результаты, browser и native
+запуск нового UI в ней NOT-RUN.
+
+Созданы новые локальные regular-only USTAR archives, затем каждый tar member,
+полный member set/path и SHA readback проверены. Go archive
+`23c00314a4a84d9e3cc938c5b31b25ef025626d9f4bc9aa0d84d58af892169d1`,
+Next archive
+`c2949912b422a8f05c5d976bc98c142feb7ad5ff6b4a6888338cdb6bee274d13`.
+Actual Go binary SHA
+`c3f544812bf47aba17192df66b802ae2afebe74a2aab7dfcec907fe41601739d`,
+Go manifest `dd147a67827eb58eaac3d9608d7aa9ca7100ffd2c02e2ee709a0da4ec14e58a9`,
+Next manifest
+`f12a22d93d4fcac3684d609d9eee3ae96868abb771962fffe282aeffb598f03b`,
+BUILD_ID `B1sXF5AaCW_jt_RCH8Orq`; pinned Node hash прежний.
+
+Executable source frozen в manifest
+`a3bd6d026cbdbbb62bc97730f3ea471406c5f2d499245d95578b0034511e0248`:
+12source/metadata files, 7AST PASS; local-only verify_source/delta_check PASS.
+build_ready=true обозначает actual input готовность. Independent operational
+source review и per-phase root GO ещё обязательны; фиктивных approval квитанций
+автор не создавал. Никаких SSH/HTTP/live SQLite/upload/stage/apply/finalize/native
+действий автором не выполнялось. Runtime installation остаётся NOT-RUN.
+
+## Фактическое выполнение координатором
+
+25.10.2026 координатор выполнил exact reviewed frozen source a3bd6d… для
+clean candidate bdcabbd9e97f3aa20ae32aeed1853529be1130dd. Автор WORK287 только
+прочитал сохранённые receipts и сверил их hashes; новых remote/runtime действий
+не выполнял. Все12 frozen source/metadata hashes по-прежнему совпадают.
+
+Upload-go1792931545209925000 и upload-next1792931557612622000 подтвердили
+новые inactive releases. Preflight1792931588046221000 и fresh preflight
+1792931618280539000 — все counters0 на четырёх boards; UID999 WAL-aware
+connections закрыты. Stage1792931598973579000 → staged,
+apply1792931635573161000 → pending-https-smoke и audit1792931698166309000
+завершены с actual proof. Canonical capable updater сохранил schema6, полные
+logical rows9runtimeDB и historical set; старый rollback не применялся.
+
+Original independent ops-source APPROVE b264a769… и postapply PASS/APPROVE
+3aba4f2e… проверены вместе с hashes исходных reports. После фактического
+external HTTPS/UI принят original independent-https-smoke PASS/APPROVE
+`cd89503ee181694d3ce6bcd1a6ed01b20fd4b53a241a7bb55990f463614a2b29`
+и independent evidence review PASS/APPROVE
+`0408dc1a43ae37863438659e49965243bbad940791dd5409b090c8667a847af9`;
+report hashes совпали. Эти receipts относятся к actual bdcabbd server/UI,
+новый native workflow/Windows/Claude execution ими не заявляется.
+
+Canonical finalize1792932124963460000 — journal complete, receipt SHA
+`aca901caaa080e6fe8d461752d651a8fc2fa4db6fda6a01abc4f1c7631ce923a`.
+Final-audit1792932192189420000, receipt SHA
+`a39bdc85da10291dfdf1a08a98cb453b9790a39dd90a431176287047a62e4753`,
+подтвердил exact owned Go+Next, schema6, logical_rows_preserved=true,
+9runtimeDB, history_preserved и новый validated format2 all-project backup.
+Final backup manifest
+`ed2caaf57bf114d8e6d977f0b20fa83944768239cee056ea5ba6406b174bf1bb`:
+четыре проекта,9runtimeDB/9historicalDB, inventory_preserved=true.
+
+Операционная последовательность завершена; отдельное final independent
+acceptance проверяет review_changes и фиксирует координатор. Автор этой
+карточки не подменяет её собственной положительной квитанцией. Mac worker,
+consent/settings/native/Windows/Claude/второй физический ПК не расширялись;
+срабатывание scheduled backup timer этим readback не проверялось.
