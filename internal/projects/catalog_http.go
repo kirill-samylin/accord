@@ -47,6 +47,10 @@ func (r *Registry) catalogHTTP(w http.ResponseWriter, req *http.Request, b brows
 	op, pid, rid := "", "", ""
 	tail := strings.TrimPrefix(req.URL.Path, "/web/catalog/")
 	parts := strings.Split(tail, "/")
+	if parts[0] == "admin" {
+		r.adminHTTP(w, req, b, parts[1:])
+		return
+	}
 	switch {
 	case tail == "projects":
 		op = "create"
@@ -220,6 +224,11 @@ func (r *Registry) catalogPage(w http.ResponseWriter, req *http.Request, b brows
 		fail(w, e)
 		return
 	}
+	if req.URL.Path == "/web/catalog/admin" {
+		registry["actions"] = actions
+		r.adminPage(w, req, b, registry, issue)
+		return
+	}
 	if req.URL.Path == "/web/projects" {
 		projects, e := r.List(ctx, b.Identity)
 		if e != nil {
@@ -247,15 +256,18 @@ func (r *Registry) catalogPage(w http.ResponseWriter, req *http.Request, b brows
 		return
 	}
 	pid := parts[0]
-	a, e := transaction(r, ctx, func(tx *sql.Tx) (access, error) { return r.access(ctx, tx, b.Identity, pid, false) })
+	a, e := transaction(r, ctx, func(tx *sql.Tx) (access, error) { return r.manageAccess(ctx, tx, b.Identity, pid) })
 	if e != nil {
 		fail(w, e)
 		return
 	}
 	page := map[string]any{"name": "project-settings", "registry": registry, "project": a.project}
-	if e = issue("switch:"+pid, pid); e != nil {
-		fail(w, e)
-		return
+	// Only members open a project board; a non-member admin manages it only.
+	if a.member.Active {
+		if e = issue("switch:"+pid, pid); e != nil {
+			fail(w, e)
+			return
+		}
 	}
 	if a.project.CanManage {
 		members, e := r.members(ctx, b.Identity, pid)

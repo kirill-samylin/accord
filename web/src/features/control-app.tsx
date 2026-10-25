@@ -16,7 +16,7 @@ import {
   routeScope,
   safeLoginReturn,
 } from "@/lib/project-routes";
-import { isCatalogPage, type CatalogPage } from "@/lib/projects";
+import { isAdminPage, isCatalogPage, type CatalogPage } from "@/lib/projects";
 import type { MutationResult, PageData } from "@/lib/types";
 import { Shell } from "./shell";
 import { MotionProvider, PageTransition } from "@/components/motion";
@@ -32,6 +32,9 @@ import { pendingTaskReady } from "./mutations/taskDraftStore";
 import { ProjectProvider, useProjectScope } from "./projects/project-context";
 import { ProjectOpening } from "./projects/project-opening";
 const CatalogWorkspace = dynamic(() => import("./projects/catalog-workspace"), {
+  loading: () => <Loading />,
+});
+const AdminScreen = dynamic(() => import("./admin/admin-screen"), {
   loading: () => <Loading />,
 });
 export function ControlApp() {
@@ -181,6 +184,11 @@ function ControlContent() {
     if (target !== location) router.push(target);
   }
   if (result.isPending) return <Loading />;
+  // The server answers 404 to non-admins on /web/catalog/admin.
+  const adminDenied =
+    /^\/app\/admin\/?$/.test(path) &&
+    result.error instanceof APIError &&
+    result.error.status === 404;
   if (
     result.error instanceof APIError &&
     result.error.result.error?.code === "PROJECT_SESSION_REQUIRED"
@@ -204,13 +212,17 @@ function ControlContent() {
         <div className="project-mark">A</div>
         <h1>
           {result.error instanceof APIError && result.error.status === 404
-            ? "Страница не найдена"
+            ? adminDenied
+              ? "Нет доступа"
+              : "Страница не найдена"
             : "Не удалось открыть страницу"}
         </h1>
         <p className="muted">
-          {result.error instanceof Error
-            ? result.error.message
-            : "Проверьте соединение и повторите попытку."}
+          {adminDenied
+            ? "Администрирование доступно только глобальному администратору."
+            : result.error instanceof Error
+              ? result.error.message
+              : "Проверьте соединение и повторите попытку."}
         </p>
         {result.error instanceof APIError &&
         result.error.status === 409 &&
@@ -235,6 +247,7 @@ function ControlContent() {
         <a href="/app/projects">Все проекты</a>
       </main>
     );
+  if (isAdminPage(result.data)) return <AdminScreen page={result.data} />;
   if (isCatalogPage(result.data))
     return <CatalogWorkspace page={result.data} />;
   const page = result.data;

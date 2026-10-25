@@ -8,7 +8,7 @@ import (
 
 func (r *Registry) members(ctx context.Context, who Identity, pid string) ([]Member, error) {
 	return transaction(r, ctx, func(tx *sql.Tx) ([]Member, error) {
-		a, e := r.access(ctx, tx, who, pid, false)
+		a, e := r.manageAccess(ctx, tx, who, pid)
 		if e != nil {
 			return nil, e
 		}
@@ -36,7 +36,7 @@ func (r *Registry) changeMember(ctx context.Context, who Identity, pid, target, 
 		return invalid()
 	}
 	_, err := transaction(r, ctx, func(tx *sql.Tx) (bool, error) {
-		a, e := r.access(ctx, tx, who, pid, false)
+		a, e := r.manageAccess(ctx, tx, who, pid)
 		if e != nil {
 			return false, e
 		}

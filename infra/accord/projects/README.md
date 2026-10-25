@@ -7,6 +7,25 @@ Go7892/Next7893/nginx/accord-web-backup уже должны работать. О
 
 ## Следующие capable релизы после TASK009
 
+Registry schema 2 (`docs/admin.md`, люди/админы): guard требует точно
+`registry_schema:[2]` и новый постоянный floor `people_admin:1` вместе с
+прежними registry/ACL/profiles/coordination/deduplication/managed_agents/
+automation и `board_schema:[6]`; binary с `registry_schema:[1]` отвергается до
+открытия registry. Миграция 1→2 аддитивна (`people`, `identities.person_id`,
+`admin_audit`, index) и выполняется capable binary при первом открытии, включая
+offline `migrate-storage` под capable update и `maintenance-reset` при restore.
+До DDL binary пишет consistent копию `registry.sqlite.migrations/registry1-<sha256>.db`
+(каталог 0700, файл 0600); helpers проверяют её checksum (по имени или
+board-style `.sha256`), включают в format2 snapshot/restore как `board.db.migrations`
+и после миграции сверяют одну из копий с immutable pre-update snapshot.
+Format2 manifest несёт фактический `registry_schema` (1 для исторических
+snapshots, 2 после bump); объявленный 2 требует полный people/audit DDL и
+привязку каждой identity к человеку. Preservation сравнивает прежние строки
+через старый набор колонок: новые defaulted колонки допустимы, изменение старых
+значений — отказ. Restore сохраняет people и привязки; registry1 snapshot
+после reset обязан стать registry2 с одним человеком на identity без слияния по
+owner-метке.
+
 TASK014 добавляет board schema6 и permanent `automation:1` вместе с прежними
 registry/ACL/profiles/coordination/deduplication/managed_agents floors. Guard требует
 точно `board_schema:[6]` до открытия writer; schema5 binary запрещён. Source helpers

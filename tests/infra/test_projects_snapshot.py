@@ -58,14 +58,68 @@ class ProjectsFixture:
         marker.chmod(0o600)
         db(self.projects / 'registry.sqlite', '''PRAGMA user_version=1;
             CREATE TABLE registry_meta(id,default_id,default_db,default_web);
-            CREATE TABLE projects(id,state);''')
+            CREATE TABLE projects(id,state);
+            CREATE TABLE identities(id TEXT PRIMARY KEY,source TEXT NOT NULL,token_id TEXT NOT NULL,
+                owner TEXT NOT NULL,machine TEXT NOT NULL);''')
         with closing(sqlite3.connect(self.projects / 'registry.sqlite')) as connection, connection:
             connection.execute('INSERT INTO registry_meta VALUES(1,?,?,?)',
                                (DEFAULT, str(self.state / 'board.db'), str(self.state / 'web')))
             connection.executemany('INSERT INTO projects VALUES(?,?)', [(DEFAULT, 'active'), (OTHER, 'active')])
+            connection.executemany('INSERT INTO identities VALUES(?,?,?,?,?)',
+                                   [('i_one', 'token', 't_one', 'alice', 'laptop'),
+                                    ('i_two', 'token', 't_two', 'alice', 'server')])
 
     def snapshot(self):
         return projects_snapshot.snapshot(self.state / 'board.db', self.state / 'web', self.projects, self.copies)
+
+
+REGISTRY2_DDL = '''
+CREATE TABLE IF NOT EXISTS people(id TEXT PRIMARY KEY, name TEXT NOT NULL,
+  note TEXT NOT NULL DEFAULT '', role TEXT NOT NULL DEFAULT 'member'
+  CHECK(role IN ('member','admin')), active INTEGER NOT NULL DEFAULT 1,
+  version INTEGER NOT NULL DEFAULT 1, created INTEGER NOT NULL, updated INTEGER NOT NULL);
+ALTER TABLE identities ADD COLUMN person_id TEXT NOT NULL DEFAULT '';
+CREATE INDEX IF NOT EXISTS registry_identity_person ON identities(person_id);
+CREATE TABLE IF NOT EXISTS admin_audit(id INTEGER PRIMARY KEY, event TEXT NOT NULL,
+  actor_id TEXT NOT NULL, person_id TEXT NOT NULL DEFAULT '',
+  identity_id TEXT NOT NULL DEFAULT '', details TEXT NOT NULL DEFAULT '', at INTEGER NOT NULL);
+PRAGMA user_version=2;
+'''
+
+
+def registry1_copy(projects, sidecar=False):
+    """Consistent pre-DDL copy as the capable binary writes it: 0700 dir, 0600 file."""
+    folder = projects / 'registry.sqlite.migrations'
+    folder.mkdir(mode=0o700, exist_ok=True)
+    staging = folder / 'registry1-pending.db'
+    with closing(sqlite3.connect(projects / 'registry.sqlite')) as source, \
+            closing(sqlite3.connect(staging)) as target:
+        source.backup(target)
+        target.execute('PRAGMA journal_mode=DELETE')
+    staging.chmod(0o600)
+    digest = hashlib.sha256(staging.read_bytes()).hexdigest()
+    copy = folder / ('registry1-' + ('e' * 64 if sidecar else digest) + '.db')
+    staging.rename(copy)
+    if sidecar:
+        checksum = copy.with_name(copy.name + '.sha256')
+        checksum.write_text(digest + '  ' + copy.name + '\n')
+        checksum.chmod(0o600)
+    return copy
+
+
+def registry2(projects, copy=True, sidecar=False, bootstrap=True):
+    """Apply the documented registry 1->2 migration to a fixture registry."""
+    if copy:
+        registry1_copy(projects, sidecar=sidecar)
+    with closing(sqlite3.connect(projects / 'registry.sqlite')) as connection, connection:
+        connection.executescript(REGISTRY2_DDL)
+        if bootstrap:
+            for index, (identity, owner, machine) in enumerate(
+                    connection.execute('SELECT id,owner,machine FROM identities ORDER BY id').fetchall()):
+                person = 'u_' + identity
+                connection.execute('INSERT INTO people VALUES(?,?,?,?,?,?,?,?)',
+                                   (person, owner + ' ' + machine, '', 'admin' if index == 0 else 'member', 1, 1, 10, 10))
+                connection.execute('UPDATE identities SET person_id=? WHERE id=?', (person, identity))
 
 
 class ProjectsSnapshot(ProjectsFixture, unittest.TestCase):
@@ -207,3 +261,94 @@ class ProjectsSnapshot(ProjectsFixture, unittest.TestCase):
         legacy = projects_snapshot.LEGACY
         with self.assertRaisesRegex(RuntimeError, 'all-project'):
             legacy.snapshot(self.state, self.copies)
+
+
+class RegistrySchema2(ProjectsFixture, unittest.TestCase):
+    def test_registry2_with_pre_ddl_copy_is_snapshotted_and_restored_byte_exact(self):
+        copy = registry1_copy(self.projects)
+        registry2(self.projects, copy=False)
+        self.assertEqual(inventory(self.projects, self.state / 'board.db', self.state / 'web')['registry_schema'], 2)
+        result = self.snapshot()
+        manifest = validate(result)
+        self.assertEqual(manifest['registry_schema'], 2)
+        saved = result / 'registry/registry.sqlite.migrations' / copy.name
+        self.assertEqual(saved.read_bytes(), copy.read_bytes())
+        self.assertEqual(saved.stat().st_mode & 0o777, 0o600)
+        self.assertIn('registry/registry.sqlite.migrations/' + copy.name, manifest['files'])
+        with closing(sqlite3.connect(saved)) as historical, closing(sqlite3.connect(result / 'registry/registry.sqlite')) as live:
+            self.assertEqual(historical.execute('PRAGMA user_version').fetchone()[0], 1)
+            self.assertEqual(live.execute('PRAGMA user_version').fetchone()[0], 2)
+            self.assertEqual(live.execute("SELECT count(*) FROM identities WHERE person_id=''").fetchone()[0], 0)
+
+    def test_registry1_snapshot_before_the_bump_still_validates(self):
+        manifest = validate(self.snapshot())
+        self.assertEqual(manifest['registry_schema'], 1)
+        self.assertNotIn('registry/registry.sqlite.migrations', {Path(name).parent.as_posix() for name in manifest['files']})
+
+    def test_board_style_sidecar_copy_is_accepted(self):
+        registry2(self.projects, sidecar=True)
+        manifest = validate(self.snapshot())
+        self.assertEqual(len([name for name in manifest['files'] if 'registry.sqlite.migrations' in name]), 2)
+
+    def test_incomplete_or_undeclared_registry2_is_never_published(self):
+        for sql in ('DROP TABLE people', 'DROP TABLE admin_audit', 'DROP INDEX registry_identity_person',
+                    "UPDATE identities SET person_id='u_missing' WHERE id='i_one'", 'PRAGMA user_version=3'):
+            with self.subTest(sql=sql):
+                fixture = RegistrySchema2('test_registry1_snapshot_before_the_bump_still_validates')
+                fixture.setUp()
+                try:
+                    registry2(fixture.projects)
+                    with closing(sqlite3.connect(fixture.projects / 'registry.sqlite')) as connection, connection:
+                        connection.execute(sql)
+                    with self.assertRaises((RuntimeError, sqlite3.Error)):
+                        fixture.snapshot()
+                    self.assertEqual(list(fixture.copies.iterdir()), [])
+                finally:
+                    fixture.doCleanups()
+        with closing(sqlite3.connect(self.projects / 'registry.sqlite')) as connection, connection:
+            connection.execute('CREATE TABLE people(id)')
+        with self.assertRaisesRegex(RuntimeError, 'undeclared'):
+            self.snapshot()
+
+    def test_registry_copy_checksum_name_and_unknown_entries_are_enforced(self):
+        copy = registry1_copy(self.projects)
+        registry2(self.projects, copy=False)
+        good = self.snapshot()
+        copy.write_bytes(copy.read_bytes() + b'\0')
+        with self.assertRaisesRegex(RuntimeError, 'checksum'):
+            self.snapshot()
+        copy.unlink()
+        folder = self.projects / 'registry.sqlite.migrations'
+        for name in ('schema1-' + 'a' * 64 + '.db', 'registry2-' + 'a' * 64 + '.db', 'registry1-' + 'a' * 64 + '.db.sha256'):
+            with self.subTest(name=name):
+                foreign = folder / name
+                foreign.write_bytes(b'foreign')
+                foreign.chmod(0o600)
+                with self.assertRaises(RuntimeError):
+                    self.snapshot()
+                foreign.unlink()
+        sidecar = registry1_copy(self.projects, sidecar=True)
+        sidecar.with_name(sidecar.name + '.sha256').write_text('0' * 64 + '  ' + sidecar.name + '\n')
+        with self.assertRaisesRegex(RuntimeError, 'checksum'):
+            self.snapshot()
+        folder.chmod(0o750)
+        with self.assertRaises(RuntimeError):
+            self.snapshot()
+        folder.chmod(0o700)
+        validate(good)
+        tampered = good / 'registry/registry.sqlite.migrations' / copy.name
+        tampered.write_bytes(b'rewritten history')
+        with self.assertRaises(RuntimeError):
+            validate(good)
+
+    def test_manifest_registry_schema_must_match_the_copied_database(self):
+        registry2(self.projects)
+        result = self.snapshot()
+        manifest = result / 'manifest.json'
+        text = manifest.read_text()
+        manifest.write_text(text.replace('"registry_schema": 2', '"registry_schema": 1'))
+        with self.assertRaises(RuntimeError):
+            validate(result)
+        manifest.write_text(text.replace('"registry_schema": 2', '"registry_schema": 3'))
+        with self.assertRaisesRegex(RuntimeError, 'format'):
+            validate(result)

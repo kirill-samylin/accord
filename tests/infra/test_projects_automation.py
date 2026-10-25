@@ -178,19 +178,49 @@ from restore_authority import verify_managed_reset, verify_registry_reset
 
 
 class ResetAuthority(unittest.TestCase):
-    def registry(self, target, reset):
+    def registry(self, target, reset, version=2):
         db = sqlite3.connect(':memory:')
         self.addCleanup(db.close)
         db.executescript('''CREATE TABLE registry_meta(id,default_id,signing_key,default_db,default_web);
             CREATE TABLE credentials(revoked); CREATE TABLE projects(id,state);
             CREATE TABLE memberships(project_id,identity_id,role,local_id,active,version,access_epoch);
             CREATE TABLE sessions(id); CREATE TABLE preauth(id); CREATE TABLE actions(id);
-            CREATE TABLE session_epochs(id); INSERT INTO projects VALUES('fixture','active');''')
+            CREATE TABLE session_epochs(id); INSERT INTO projects VALUES('fixture','active');
+            CREATE TABLE identities(id,source,token_id,owner,machine);
+            INSERT INTO identities VALUES('who','token','t','alice','laptop');
+            INSERT INTO identities VALUES('other','token','t2','alice','server');''')
         db.execute('INSERT INTO registry_meta VALUES(1,?,?,?,?)',
                    ('fixture', 'new' if reset else 'old', str(target / 'board.db'), str(target / 'web')))
         db.execute('INSERT INTO credentials VALUES(?)', (int(reset),))
         db.execute('INSERT INTO memberships VALUES(?,?,?,?,?,?,?)', ('fixture', 'who', 'editor', 'local', 1, 1, 2 if reset else 1))
+        if version >= 2:
+            db.executescript('''CREATE TABLE people(id,name,note,role,active,version,created,updated);
+                ALTER TABLE identities ADD COLUMN person_id TEXT NOT NULL DEFAULT '';
+                INSERT INTO people VALUES('u_who','alice laptop','','admin',1,1,10,10);
+                INSERT INTO people VALUES('u_other','alice server','','member',1,1,10,10);
+                UPDATE identities SET person_id='u_'||id;''')
+        db.execute('PRAGMA user_version=' + str(version))
         return db
+
+    def test_people_survive_reset_and_registry1_source_is_bootstrapped_not_merged(self):
+        target = Path('/fixture/restored')
+        verify_registry_reset(self.registry(target, False, version=1), self.registry(target, True), target)
+        for change in ("UPDATE identities SET person_id='u_who'", "UPDATE identities SET person_id='' WHERE id='other'",
+                       "DELETE FROM people WHERE id='u_other'", 'PRAGMA user_version=1',
+                       "UPDATE identities SET owner='renamed'"):
+            with self.subTest(source=1, change=change):
+                after = self.registry(target, True)
+                after.execute(change)
+                with self.assertRaises(RuntimeError):
+                    verify_registry_reset(self.registry(target, False, version=1), after, target)
+        for change in ("UPDATE people SET role='member' WHERE id='u_who'", "UPDATE people SET active=0",
+                       "UPDATE identities SET person_id='u_who' WHERE id='other'",
+                       "INSERT INTO people VALUES('u_new','x','','member',1,1,1,1)"):
+            with self.subTest(source=2, change=change):
+                after = self.registry(target, True)
+                after.execute(change)
+                with self.assertRaises(RuntimeError):
+                    verify_registry_reset(self.registry(target, False), after, target)
 
     def test_registry_requires_new_signing_key_epoch_and_no_live_credentials(self):
         target = Path('/fixture/restored')

@@ -6,9 +6,14 @@ import re
 import sqlite3
 
 from guard import MARKER, protected_root
-from migration_files import PATTERN, copy_migrations, validate_migrations
+from migration_files import PATTERN, REGISTRY_MIGRATIONS, REGISTRY_PATTERN, copy_migrations
+from migration_files import validate_migrations, validate_registry_migrations
 
 PROJECT_ID = re.compile(r'p_[0-9a-f]{32}')
+# The capable binary migrates the live registry to 2; snapshots made before
+# that bump and pre-DDL migration copies legitimately remain at 1.
+REGISTRY_SCHEMA = 2
+REGISTRY_SCHEMAS = (1, 2)
 
 
 def legacy_module():
@@ -44,10 +49,13 @@ def inventory(root, default_db, default_web):
         elif entry.name in (MARKER, 'registry.sqlite', 'registry.sqlite-wal',
                             'registry.sqlite-shm', 'registry.sqlite-journal'):
             LEGACY.private(entry)
+        elif entry.name == REGISTRY_MIGRATIONS:
+            validate_registry_migrations(entry, LEGACY)
         else:
             raise RuntimeError('unaccounted registry entry requires recovery')
     with closing(readonly(root / 'registry.sqlite')) as database:
-        if (database.execute('PRAGMA user_version').fetchone()[0] != 1 or
+        registry_schema = database.execute('PRAGMA user_version').fetchone()[0]
+        if (registry_schema not in REGISTRY_SCHEMAS or
                 database.execute('PRAGMA integrity_check').fetchone()[0] != 'ok'):
             raise RuntimeError('unsupported or corrupt registry')
         rows = database.execute('SELECT default_id,default_db,default_web FROM registry_meta WHERE id=1').fetchall()
@@ -102,7 +110,8 @@ def inventory(root, default_db, default_web):
             quarantined.append(folder)
         if len(quarantined) > 128:
             raise RuntimeError('quarantine inventory needs operator maintenance')
-    return {'default_id': default_id, 'projects': result, 'quarantine': quarantined}
+    return {'default_id': default_id, 'projects': result, 'quarantine': quarantined,
+            'registry_schema': registry_schema}
 
 
 def copy_database(source, target, allowed):
@@ -187,6 +196,23 @@ def pending_copy(source, target):
     for folder in sorted((entry for entry in target.rglob('*') if entry.is_dir()), reverse=True):
         LEGACY.sync_dir(folder)
     LEGACY.sync_dir(target)
+
+
+def registry_copy(root, destination):
+    """Copy the registry with its pre-DDL schema1 copies; returns the live version."""
+    version = copy_database(root / 'registry.sqlite', destination / 'registry.sqlite', REGISTRY_SCHEMAS)
+    copy_file(root / MARKER, destination / MARKER)
+    copy_migrations(root / REGISTRY_MIGRATIONS, destination / REGISTRY_MIGRATIONS, LEGACY,
+                    copy_file, validate_registry_migrations)
+    return version
+
+
+def allowed_registry_file(relative):
+    name = relative.as_posix()
+    if name in ('registry.sqlite', MARKER):
+        return True
+    return (len(relative.parts) == 2 and relative.parts[0] == REGISTRY_MIGRATIONS and
+            bool(REGISTRY_PATTERN.fullmatch(relative.name)))
 
 
 def allowed_board_file(relative, pending=False):

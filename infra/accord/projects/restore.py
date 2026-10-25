@@ -8,7 +8,7 @@ import sqlite3
 import subprocess
 
 from guard import require_capable
-from layout import LEGACY, copy_file
+from layout import LEGACY, REGISTRY_SCHEMA, copy_file
 from validate import validate
 from restore_authority import verify_restored
 
@@ -77,7 +77,11 @@ def restore(source, target, binary):
     verify_restored(source, target, manifest)
     LEGACY.sync_dir(projects)
     LEGACY.sync_dir(target / 'web')
-    marker(target / 'RESTORE_AUTH_RESET_COMPLETE', json.dumps({'registry_schema': 1, 'board_schema': 6, 'automation': 1, 'auth_reset': True}))
+    # The capable reset opens the copied registry, so a snapshot at registry1
+    # arrives here already migrated; its pre-DDL copy stays beside the live file.
+    marker(target / 'RESTORE_AUTH_RESET_COMPLETE', json.dumps({
+        'registry_schema': REGISTRY_SCHEMA, 'people_admin': 1, 'board_schema': 6, 'automation': 1,
+        'source_registry_schema': manifest['registry_schema'], 'auth_reset': True}))
     # Keep the boot guard even after reset: replacement credentials and isolated
     # logical-data/runtime checks are distinct mandatory operator steps.
     return target

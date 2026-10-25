@@ -11,10 +11,19 @@ import {
   Workflow,
   Monitor,
   Settings2,
+  ShieldCheck,
   Users,
 } from "lucide-react";
 import { screenPath } from "@/lib/project-routes";
-export const navigation = [
+export interface NavigationItem {
+  href: string;
+  title: string;
+  icon: typeof House;
+  group: "Работа" | "Организация" | "Ресурсы";
+  // Shown only when the catalog reports registry.identity.admin.
+  admin?: boolean;
+}
+export const navigation: NavigationItem[] = [
   { href: "/app", title: "Обзор", icon: House, group: "Работа" },
   { href: "/app/team", title: "Команда", icon: Users, group: "Работа" },
   {
@@ -49,6 +58,13 @@ export const navigation = [
     title: "Статистика",
     icon: BarChart3,
     group: "Организация",
+  },
+  {
+    href: "/app/admin",
+    title: "Администрирование",
+    icon: ShieldCheck,
+    group: "Организация",
+    admin: true,
   },
   { href: "/app/designs", title: "Дизайн", icon: Files, group: "Ресурсы" },
   { href: "/app/history", title: "Решения", icon: Clock3, group: "Ресурсы" },

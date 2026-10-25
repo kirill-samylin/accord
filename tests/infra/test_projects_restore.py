@@ -1,12 +1,13 @@
 """Offline restore orchestration units, with native reset boundary mocked."""
 import importlib.util
+import json
 from pathlib import Path
 import subprocess
 import sys
 import unittest
 from unittest.mock import patch
 
-from test_projects_snapshot import ProjectsFixture, OTHER
+from test_projects_snapshot import ProjectsFixture, OTHER, registry1_copy, registry2
 
 ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location('projects_offline_restore', ROOT / 'infra/accord/projects/restore.py')
@@ -39,6 +40,28 @@ class ProjectsRestore(ProjectsFixture, unittest.TestCase):
         self.assertEqual((snapshot / 'manifest.json').read_bytes(), before)
         self.assertTrue((self.output / 'projects-data/projects' / OTHER / 'board.db').is_file())
         self.assertTrue((self.state / 'board.db').is_file())
+
+    def test_registry2_copies_and_marker_follow_the_bump(self):
+        copy = registry1_copy(self.projects)
+        registry2(self.projects, copy=False)
+        snapshot = self.snapshot()
+        with patch.object(restore, 'verify_restored'), patch.object(restore, 'require_capable'), patch.object(restore.subprocess, 'run') as run:
+            run.return_value.stdout, run.return_value.stderr = b'{"restored_state_reset":true}', b''
+            restore.restore(snapshot, self.output, self.binary)
+        restored = self.output / 'projects-data/registry.sqlite.migrations' / copy.name
+        self.assertEqual(restored.read_bytes(), copy.read_bytes())
+        self.assertEqual(restored.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(restored.parent.stat().st_mode & 0o777, 0o700)
+        marker = json.loads((self.output / 'RESTORE_AUTH_RESET_COMPLETE').read_text())
+        self.assertEqual((marker['registry_schema'], marker['people_admin'], marker['source_registry_schema']), (2, 1, 2))
+
+    def test_registry1_snapshot_marker_records_source_schema(self):
+        snapshot = self.snapshot()
+        with patch.object(restore, 'verify_restored'), patch.object(restore, 'require_capable'), patch.object(restore.subprocess, 'run') as run:
+            run.return_value.stdout, run.return_value.stderr = b'{"restored_state_reset":true}', b''
+            restore.restore(snapshot, self.output, self.binary)
+        marker = json.loads((self.output / 'RESTORE_AUTH_RESET_COMPLETE').read_text())
+        self.assertEqual((marker['registry_schema'], marker['source_registry_schema']), (2, 1))
 
     def test_failed_reset_keeps_staging_blocked_without_complete_marker(self):
         snapshot = self.snapshot()

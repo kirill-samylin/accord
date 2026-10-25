@@ -39,7 +39,7 @@ class ProjectGuard(unittest.TestCase):
         return type('Result', (), {'stdout': json.dumps(value).encode(), 'stderr': stderr})()
 
     def test_guard_requires_capability_before_registry_activation(self):
-        value = {'project_registry': 1, 'project_acl': 1, 'registry_schema': [1],
+        value = {'project_registry': 1, 'project_acl': 1, 'registry_schema': [2], 'people_admin': 1,
                  'agent_profiles': 1, 'coordination': 1, 'deduplication': 1, 'managed_agents': 1, 'automation': 1, 'board_schema': [6]}
         with patch.object(guard.subprocess, 'run', return_value=self.response(value)) as run:
             self.assertEqual(guard.require_capable(self.binary, self.root), value)
@@ -48,7 +48,7 @@ class ProjectGuard(unittest.TestCase):
         self.assertFalse(self.root.exists())
 
     def test_old_registry_capable_binary_and_invalid_profile_floor_are_denied(self):
-        current = {'project_registry': 1, 'project_acl': 1, 'registry_schema': [1],
+        current = {'project_registry': 1, 'project_acl': 1, 'registry_schema': [2], 'people_admin': 1,
                    'agent_profiles': 1, 'coordination': 1, 'deduplication': 1, 'managed_agents': 1, 'automation': 1, 'board_schema': [6]}
         for change in ({'agent_profiles': None}, {'agent_profiles': True},
                        {'agent_profiles': 0}, {'board_schema': [2]},
@@ -60,14 +60,33 @@ class ProjectGuard(unittest.TestCase):
                        {'managed_agents': 0}, {'managed_agents': '1'},
                        {'managed_agents': 2}, {'automation': None}, {'automation': True},
                        {'automation': 0}, {'automation': '1'}, {'automation': 2},
-                       {'board_schema': [5]}, {'board_schema': [5, 6]}):
+                       {'board_schema': [5]}, {'board_schema': [5, 6]},
+                       {'registry_schema': [1]}, {'registry_schema': [1, 2]},
+                       {'registry_schema': [2, 3]}, {'registry_schema': [True]},
+                       {'registry_schema': 2}, {'people_admin': None}, {'people_admin': True},
+                       {'people_admin': 0}, {'people_admin': '1'}, {'people_admin': 2}):
             with self.subTest(change=change), patch.object(guard.subprocess, 'run',
                     return_value=self.response(current | change)):
                 with self.assertRaises(RuntimeError):
                     guard.require_capable(self.binary, self.root)
 
+    def test_registry1_binary_without_people_admin_is_denied_before_any_write(self):
+        # The previously installed capable release reports exactly this set.
+        previous = {'project_registry': 1, 'project_acl': 1, 'registry_schema': [1],
+                    'agent_profiles': 1, 'coordination': 1, 'deduplication': 1, 'managed_agents': 1,
+                    'automation': 1, 'board_schema': [6]}
+        for value in (previous, previous | {'people_admin': 1}, previous | {'registry_schema': [2]}):
+            with self.subTest(value=value), patch.object(guard.subprocess, 'run',
+                    return_value=self.response(value)):
+                with self.assertRaises(RuntimeError):
+                    guard.require_capable(self.binary, self.root)
+                self.assertFalse(self.root.exists())
+        current = previous | {'registry_schema': [2], 'people_admin': 1}
+        with patch.object(guard.subprocess, 'run', return_value=self.response(current)):
+            self.assertEqual(guard.require_capable(self.binary, self.root), current)
+
     def test_schema5_binary_without_deduplication_is_denied_before_any_write(self):
-        current = {'project_registry': 1, 'project_acl': 1, 'registry_schema': [1],
+        current = {'project_registry': 1, 'project_acl': 1, 'registry_schema': [2], 'people_admin': 1,
                    'agent_profiles': 1, 'coordination': 1, 'managed_agents': 1, 'automation': 1, 'board_schema': [6]}
         for value in (current, current | {'deduplication': None},
                       current | {'deduplication': True}, current | {'deduplication': 0},
@@ -85,7 +104,7 @@ class ProjectGuard(unittest.TestCase):
         marker.chmod(0o600)
         before = marker.stat()
         content = marker.read_bytes()
-        current = {'project_registry': 1, 'project_acl': 1, 'registry_schema': [1],
+        current = {'project_registry': 1, 'project_acl': 1, 'registry_schema': [2], 'people_admin': 1,
                    'agent_profiles': 1, 'coordination': 1, 'deduplication': 1, 'managed_agents': 1, 'automation': 1, 'board_schema': [6]}
         for value in (current, current | {'deduplication': 0}, current | {'managed_agents': 0}):
             with self.subTest(value=value), patch.object(guard.subprocess, 'run',
@@ -110,6 +129,7 @@ class ProjectGuard(unittest.TestCase):
         for response in ({}, {'project_registry': 1, 'project_acl': 0, 'registry_schema': [1]},
                          {'project_registry': True, 'project_acl': 1, 'registry_schema': [1]},
                          {'project_registry': 1, 'project_acl': 1, 'registry_schema': [True]},
+                         {'project_registry': 1, 'project_acl': 1, 'registry_schema': [1]},
                          {'project_registry': 1, 'project_acl': 1, 'registry_schema': [2]}):
             with self.subTest(response=response), patch.object(guard.subprocess, 'run', return_value=self.response(response)):
                 with self.assertRaises(RuntimeError):

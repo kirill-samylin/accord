@@ -13,6 +13,7 @@ import {
 import { navigation } from "./navigation";
 import { readPage } from "@/lib/api";
 import { useProjectScope } from "./projects/project-context";
+import { useAdminAccess } from "./admin/use-admin-access";
 export function CommandPalette({
   open,
   onOpenChange,
@@ -21,6 +22,7 @@ export function CommandPalette({
   onOpenChange: (value: boolean) => void;
 }) {
   const scope = useProjectScope();
+  const admin = useAdminAccess();
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
   const router = useRouter();
@@ -87,8 +89,10 @@ export function CommandPalette({
             ) : null}
             <Command.Group heading="Разделы">
               {navigation
-                .filter((item) =>
-                  item.title.toLowerCase().includes(query.toLowerCase()),
+                .filter(
+                  (item) =>
+                    (!item.admin || admin) &&
+                    item.title.toLowerCase().includes(query.toLowerCase()),
                 )
                 .map((item) => (
                   <Command.Item

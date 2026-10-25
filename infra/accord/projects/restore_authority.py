@@ -3,8 +3,8 @@ from contextlib import closing
 import json
 
 from automation_schema import TABLES, validate_automation
-from layout import readonly
-from validate import board
+from layout import REGISTRY_SCHEMA, readonly
+from validate import board, registry
 
 
 def entities(connection, table):
@@ -55,6 +55,32 @@ def verify_registry_reset(before, after, target):
     for table in ('sessions', 'preauth', 'actions', 'session_epochs'):
         if after.execute('SELECT count(*) FROM ' + table).fetchone()[0]:
             raise RuntimeError('restore retained registry session authority')
+    verify_people_reset(before, after)
+
+
+def verify_people_reset(before, after):
+    """People are directory records, not authority: reset keeps them and their bindings."""
+    source_version = before.execute('PRAGMA user_version').fetchone()[0]
+    if after.execute('PRAGMA user_version').fetchone()[0] != REGISTRY_SCHEMA:
+        raise RuntimeError('restore did not migrate the registry to the capable schema')
+    old_identities = before.execute('SELECT id,source,token_id,owner,machine FROM identities ORDER BY id').fetchall()
+    new_identities = after.execute('SELECT id,source,token_id,owner,machine FROM identities ORDER BY id').fetchall()
+    if old_identities != new_identities:
+        raise RuntimeError('restore changed identity inventory')
+    if after.execute("SELECT count(*) FROM identities WHERE person_id='' OR person_id NOT IN (SELECT id FROM people)").fetchone()[0]:
+        raise RuntimeError('restore left an identity without a person')
+    if source_version < 2:
+        # Migration bootstrap creates one person per identity; it must not merge by label.
+        if (after.execute('SELECT count(*) FROM people').fetchone()[0] !=
+                after.execute('SELECT count(DISTINCT person_id) FROM identities').fetchone()[0]):
+            raise RuntimeError('restore synthesized or merged people beyond identity bootstrap')
+        return
+    columns = 'id,name,note,role,active,version,created,updated'
+    if (before.execute('SELECT ' + columns + ' FROM people ORDER BY id').fetchall() !=
+            after.execute('SELECT ' + columns + ' FROM people ORDER BY id').fetchall() or
+            before.execute('SELECT id,person_id FROM identities ORDER BY id').fetchall() !=
+            after.execute('SELECT id,person_id FROM identities ORDER BY id').fetchall()):
+        raise RuntimeError('restore changed people or their identity bindings')
 
 
 def verify_managed_reset(before, after):
@@ -97,5 +123,6 @@ def verify_restored(source, target, manifest):
             if after.execute('SELECT count(*) FROM tokens WHERE revoked=0').fetchone()[0]:
                 raise RuntimeError('restore retained board credentials')
             verify_managed_reset(before, after)
+    registry(target / 'projects-data/registry.sqlite', REGISTRY_SCHEMA, live=True)
     with closing(readonly(source / 'registry/registry.sqlite')) as before, closing(readonly(target / 'projects-data/registry.sqlite')) as after:
         verify_registry_reset(before, after, target)

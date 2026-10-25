@@ -17,16 +17,53 @@ const MaxOwnedProjects = 8
 const MaxRepositories = 16
 const MaxMembers = 128
 const MaxProvisions = 2
+const MaxPersonName = 64
+const MaxPersonNote = 512
 
 type Repository = core.ProjectRepository
 type Project = core.ProjectView
 type Identity struct {
-	ID      string    `json:"id"`
-	Owner   string    `json:"owner"`
-	Machine string    `json:"machine"`
-	Source  string    `json:"-"`
-	TokenID string    `json:"-"`
-	Expires time.Time `json:"-"`
+	ID      string `json:"id"`
+	Owner   string `json:"owner"`
+	Machine string `json:"machine"`
+	// Admin is the global role of the identity's active person (docs/admin.md).
+	Admin    bool      `json:"admin"`
+	Source   string    `json:"-"`
+	TokenID  string    `json:"-"`
+	PersonID string    `json:"-"`
+	Expires  time.Time `json:"-"`
+}
+
+// Person is the global account entity behind one or more identities.
+type Person struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Note      string    `json:"note"`
+	Role      string    `json:"role"`
+	Active    bool      `json:"active"`
+	Version   int64     `json:"version"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// AdminIdentity is the secret-free credential view of the admin page and CLI.
+type AdminIdentity struct {
+	ID        string     `json:"id"`
+	PersonID  string     `json:"person_id"`
+	Owner     string     `json:"owner"`
+	Machine   string     `json:"machine"`
+	Source    string     `json:"source"`
+	ExpiresAt *time.Time `json:"expires_at"`
+	Revoked   bool       `json:"revoked"`
+}
+type AdminAudit struct {
+	ID         int64     `json:"id"`
+	Event      string    `json:"event"`
+	ActorID    string    `json:"actor_id"`
+	PersonID   string    `json:"person_id"`
+	IdentityID string    `json:"identity_id"`
+	Details    string    `json:"details"`
+	At         time.Time `json:"at"`
 }
 type Member struct {
 	IdentityID string `json:"identity_id"`

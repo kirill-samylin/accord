@@ -180,3 +180,14 @@ canonical `projects/upgrade.py`). Процесс — `docs/release-process.md`.
 В тот же день пользователь удалил репозиторий DenisShagi/accord: единственный
 remote — `origin` (kirill-samylin/accord); упоминания DenisShagi выше — история.
 Теги на origin: `v0.1.0` (сборка Release упала), `v0.1.1` = стенд `575793f`.
+
+
+Продолжение25.10.2026 — администрирование: по прямому поручению пользователя
+добавлены сущность «человек», глобальная роль `admin`, выдача/отзыв токенов из
+браузера и раздел `/app/admin`; контракт — `docs/admin.md`. Registry мигрирует
+до schema2 (копия `registry.sqlite.migrations/registry1-<sha>.db`), capabilities
+`registry_schema:[2]` + floor `people_admin:1`; прежний binary отвергается.
+SEC-06 изменён: секрет нового credential отдаётся один раз только админу в живом
+ответе и не сохраняется. Админ управляет участниками любого проекта, но не
+получает OS/host control. Параллельно исправлены hover/press/раскрытия в UI
+(`components/disclosure.tsx`, hover ведёт строка, press только на :active).

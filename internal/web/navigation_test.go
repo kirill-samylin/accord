@@ -21,6 +21,7 @@ func TestLegacyNavigationAllowlistAndJSONNegotiation(t *testing.T) {
 		"/web/tasks/E-1": "/app/tasks/E-1", "/web/automation/workflows/wf_123": "/app/automation/workflows/wf_123",
 		"/web/p/" + project + "/tasks/T-1?q=hello%20world": "/app/p/" + project + "/tasks/T-1?q=hello%20world",
 		"/web/catalog/projects/" + project:                 "/app/projects/" + project,
+		"/web/catalog/admin":                               "/app/admin",
 	} {
 		for _, method := range []string{"GET", "HEAD"} {
 			r := httptest.NewRequest(method, "https://accord.test"+path, nil)
@@ -31,7 +32,7 @@ func TestLegacyNavigationAllowlistAndJSONNegotiation(t *testing.T) {
 			}
 		}
 	}
-	for _, path := range []string{"/web/missing", "/web/catalog/projects/not-a-project", "/web/p/" + project + "/catalog/projects/" + project, "/web/static/app.js", "/web/static/app.css", "/web/tasks/T-1/update", "/web/p/foreign/tasks/T-1", "/web/tasks/%2f%2fevil.example", "/web/tasks/%2e%2e"} {
+	for _, path := range []string{"/web/missing", "/web/catalog/projects/not-a-project", "/web/p/" + project + "/catalog/projects/" + project, "/web/p/" + project + "/catalog/admin", "/web/catalog/admin/people", "/web/static/app.js", "/web/static/app.css", "/web/tasks/T-1/update", "/web/p/foreign/tasks/T-1", "/web/tasks/%2f%2fevil.example", "/web/tasks/%2e%2e"} {
 		w := httptest.NewRecorder()
 		f.s.ServeHTTP(w, httptest.NewRequest("GET", "https://accord.test"+path, nil))
 		if w.Code != 404 || w.Header().Get("Location") != "" || len(w.Result().Cookies()) != 0 {

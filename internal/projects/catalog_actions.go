@@ -22,6 +22,17 @@ func finishCatalog(ctx context.Context, tx *sql.Tx) error {
 	_, err := tx.ExecContext(ctx, `UPDATE actions SET result=? WHERE id=?`, a.Result, a.ID)
 	return err
 }
+
+// finishCatalogResult stores a computed JSON body as the replay result; the
+// live response may carry more (the one-time credential secret) than is stored.
+func finishCatalogResult(ctx context.Context, tx *sql.Tx, result string) error {
+	a, ok := ctx.Value(catalogActionKey{}).(catalogAction)
+	if !ok {
+		return nil
+	}
+	_, err := tx.ExecContext(ctx, `UPDATE actions SET result=? WHERE id=?`, result, a.ID)
+	return err
+}
 func (r *Registry) issue(ctx context.Context, b browserIdentity, operation, pid string) (string, error) {
 	return transaction(r, ctx, func(tx *sql.Tx) (string, error) {
 		if e := cleanupCatalog(ctx, tx); e != nil {
@@ -29,7 +40,7 @@ func (r *Registry) issue(ctx context.Context, b browserIdentity, operation, pid 
 		}
 		epoch := int64(0)
 		if pid != "" {
-			a, e := r.access(ctx, tx, b.Identity, pid, false)
+			a, e := r.manageAccess(ctx, tx, b.Identity, pid)
 			if e != nil {
 				return "", e
 			}
@@ -73,7 +84,7 @@ func (r *Registry) bindCatalog(ctx context.Context, b browserIdentity, id, opera
 		}
 		epoch := int64(0)
 		if pid != "" {
-			a, e := r.access(ctx, tx, b.Identity, pid, false)
+			a, e := r.manageAccess(ctx, tx, b.Identity, pid)
 			if e != nil {
 				return "", e
 			}
@@ -126,7 +137,7 @@ func (r *Registry) catalogGate(ctx context.Context, tx *sql.Tx) error {
 		return err
 	}
 	if pid != "" {
-		access, err := r.access(ctx, tx, a.Identity, pid, false)
+		access, err := r.manageAccess(ctx, tx, a.Identity, pid)
 		if err != nil {
 			return err
 		}

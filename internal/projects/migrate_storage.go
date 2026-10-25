@@ -56,6 +56,19 @@ func MigrateStorage(ctx context.Context, root, defaultDB, defaultWeb string) (in
 	if err != nil {
 		return 0, err
 	}
+	// The registry itself migrates 1→2 through the same copying open path, so
+	// the capable upgrade re-inventories a schema2 authority afterwards.
+	absolute, err := privateRoot(root)
+	if err != nil {
+		return 0, err
+	}
+	migrated, err := openRegistry(absolute)
+	if err != nil {
+		return 0, err
+	}
+	if err = migrated.Close(); err != nil {
+		return 0, err
+	}
 	for _, path := range paths {
 		if err = store.MigrateExisting(ctx, path); err != nil {
 			return 0, err

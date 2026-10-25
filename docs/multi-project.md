@@ -57,7 +57,11 @@ Project role не заменяет native role/session/fencing/SHA gates. Арх
 нельзя, чтобы сохранять прежние адреса и клиентов. Последний owner защищён.
 
 Явная policy TASK009: любая действительная identity может создавать собственные
-проекты и становится owner только там; это не global administrator. Начальные
+проекты и становится owner только там; сама по себе это не global administrator.
+По поручению пользователя от 25.10.2026 добавлена единственная глобальная роль
+`admin` у человека (`people`, registry schema2, [admin.md](admin.md)): админ
+управляет людьми/credentials и участниками любого проекта (`can_manage`), но
+запись на доску по-прежнему требует членства editor/owner. Начальные
 границы:32проекта всего,8созданных на identity,16репозиториев/128участников на
 проект,2одновременных provisioning, catalog request64КиБ,2048action на browser
 session с ограниченным retention. Эти границы не являются нагрузочным benchmark.
@@ -205,7 +209,9 @@ tombstone, освобождение quota. Старый ещё живой create
 
 В projects root durable `MULTIPROJECT_REQUIRES_CAPABILITY` и независимый
 systemd ExecStartPre проверяют выбранный binary через `capabilities --json`:
-`project_registry:1,project_acl:1,registry_schema:[1]`. Прежние RESTORE/INSPECTION
+`project_registry:1,project_acl:1,registry_schema:[2],people_admin:1` (schema2 и
+floor `people_admin` постоянны после миграции registry 1→2 по [admin.md](admin.md);
+копия `registry.sqlite.migrations/registry1-<sha256>.db`). Прежние RESTORE/INSPECTION
 guards сохраняются. Старый binary не запускается поверх новых ACL. Rollback
 возможен только на capable version; иначе fail-closed/roll-forward, не обход ACL.
 Backup с registry нельзя заменить прежним default-only snapshot/script.

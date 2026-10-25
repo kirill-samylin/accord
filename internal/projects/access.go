@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -54,7 +55,9 @@ func (r *Registry) access(ctx context.Context, tx *sql.Tx, who Identity, pid str
 		return out, err
 	}
 	p.Role = m.Role
-	p.CanManage = m.Role == "owner"
+	// Global admins manage every project they belong to; board writes still
+	// require an editor/owner membership (docs/admin.md).
+	p.CanManage = m.Role == "owner" || current.Admin
 	p.CanArchive = p.CanManage && p.State == "active" && p.ID != r.defaultID
 	p.CanWrite = p.State == "active" && (m.Role == "owner" || m.Role == "editor")
 	if write && !p.CanWrite {
@@ -62,6 +65,31 @@ func (r *Registry) access(ctx context.Context, tx *sql.Tx, who Identity, pid str
 	}
 	out = access{tx: tx, identity: current, project: p, member: m, principal: core.Principal{ID: m.LocalID, Owner: current.Owner, Machine: current.Machine}}
 	return out, nil
+}
+
+// manageAccess is the catalog management view: an active member, or a global
+// admin without membership. The admin variant carries no board principal and
+// no session epoch, so it can never open, read or write the project board.
+func (r *Registry) manageAccess(ctx context.Context, tx *sql.Tx, who Identity, pid string) (access, error) {
+	a, err := r.access(ctx, tx, who, pid, false)
+	var domain *core.Error
+	if err == nil || !errors.As(err, &domain) || domain.Code != "NOT_FOUND" {
+		return a, err
+	}
+	current, e := r.identity(ctx, tx, who.ID)
+	if e != nil {
+		return a, e
+	}
+	if !current.Admin {
+		return a, err
+	}
+	p, e := r.project(ctx, tx, pid)
+	if e != nil {
+		return a, e
+	}
+	p.CanManage = true
+	p.CanArchive = p.State == "active" && p.ID != r.defaultID
+	return access{tx: tx, identity: current, project: p, principal: core.Principal{Owner: current.Owner, Machine: current.Machine}}, nil
 }
 func withAccess[T any](s *service, ctx context.Context, write bool, session string, fn func(context.Context, access) (T, error)) (T, error) {
 	var zero T

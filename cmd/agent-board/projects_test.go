@@ -108,10 +108,70 @@ func TestCapabilitiesMachineJSON(t *testing.T) {
 		Automation    int   `json:"automation"`
 		BoardSchemas  []int `json:"board_schema"`
 	}
-	if e := json.Unmarshal(out.Bytes(), &result); e != nil || result.Registry != 1 || result.ACL != 1 || len(result.Schemas) != 1 || result.Schemas[0] != 1 {
+	if e := json.Unmarshal(out.Bytes(), &result); e != nil || result.Registry != 1 || result.ACL != 1 || len(result.Schemas) != 1 || result.Schemas[0] != 2 {
 		t.Fatal("capability contract", e, out.String())
 	}
 	if result.Profiles != 1 || result.Coordination != 1 || result.Deduplication != 1 || result.ManagedAgents != 1 || result.Automation != 1 || len(result.BoardSchemas) != 1 || result.BoardSchemas[0] != 6 {
 		t.Fatal("persisted semantic capability contract", out.String())
+	}
+}
+func TestProjectCLIAdminBootstrapPeopleListAndPersonBinding(t *testing.T) {
+	dir := t.TempDir()
+	os.Chmod(dir, 0700)
+	db, web, root := filepath.Join(dir, "board.db"), filepath.Join(dir, "web"), filepath.Join(dir, "projects")
+	s, e := store.Open(db, core.Config{Project: "existing"}, nil)
+	if e != nil {
+		t.Fatal(e)
+	}
+	old, e := s.CreateToken(context.Background(), core.TokenInput{Owner: "operator", Machine: "machine", TTL: time.Hour})
+	if e != nil {
+		t.Fatal(e)
+	}
+	browser, e := webserver.New(s, webserver.Options{Origin: "http://127.0.0.1:8080", DataDir: web})
+	if e != nil {
+		t.Fatal(e)
+	}
+	browser.Close()
+	s.Close()
+	base := []string{"--projects-data", root, "--db", db, "--web-data", web}
+	var out bytes.Buffer
+	if e = run(append(append([]string{"projects", "bootstrap-admin"}, base...), "--identity", old.ID), strings.NewReader(""), &out); e != nil {
+		t.Fatal("bootstrap-admin", e)
+	}
+	var bootstrapped struct {
+		Admin struct {
+			ID   string `json:"id"`
+			Role string `json:"role"`
+		} `json:"admin"`
+	}
+	if e = json.Unmarshal(out.Bytes(), &bootstrapped); e != nil || bootstrapped.Admin.Role != "admin" {
+		t.Fatal("admin person", e, out.String())
+	}
+	tokenPath := filepath.Join(dir, "second.token")
+	out.Reset()
+	if e = run(append(append([]string{"projects", "token-create"}, base...), "--owner", "operator", "--machine", "laptop", "--person", bootstrapped.Admin.ID, "--output", tokenPath), strings.NewReader(""), &out); e != nil {
+		t.Fatal("token-create --person", e)
+	}
+	secret, _ := os.ReadFile(tokenPath)
+	out.Reset()
+	if e = run(append([]string{"projects", "people-list"}, base...), strings.NewReader(""), &out); e != nil {
+		t.Fatal("people-list", e)
+	}
+	var listing struct {
+		People     []struct{ ID, Role string }
+		Identities []struct {
+			ID       string `json:"id"`
+			PersonID string `json:"person_id"`
+		}
+		Audit []struct{ Event string }
+	}
+	if e = json.Unmarshal(out.Bytes(), &listing); e != nil || len(listing.People) != 1 || len(listing.Identities) != 2 || listing.Identities[0].PersonID != bootstrapped.Admin.ID || listing.Identities[1].PersonID != bootstrapped.Admin.ID {
+		t.Fatalf("people-list %v %s", e, out.String())
+	}
+	if strings.Contains(out.String(), strings.TrimSpace(string(secret))) || strings.Contains(out.String(), "hash") {
+		t.Fatal("people-list leaked secret material")
+	}
+	if len(listing.Audit) != 2 || listing.Audit[0].Event != "credential_issued" || listing.Audit[1].Event != "admin_bootstrapped" {
+		t.Fatalf("CLI audit %v", listing.Audit)
 	}
 }

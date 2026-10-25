@@ -14,6 +14,10 @@ import {
   webToAppRoute,
 } from "./project-routes.ts";
 export const webToApp = webToAppRoute;
+// Administration mutations (docs/admin.md): people, their credentials and
+// identities. Identity IDs are catalog (i_<32hex>) or legacy (legacy_<64hex>).
+export const adminActions =
+  /^\/web\/catalog\/admin\/(?:people(?:\/u_[a-f0-9]{32}(?:\/credentials)?)?|identities\/(?:i_[a-f0-9]{32}|legacy_[a-f0-9]{64}))$/;
 export const appToWeb = appToWebRoute;
 function unauthorized(
   path: string,
@@ -128,7 +132,8 @@ export async function submitAction<
     ) &&
     !/^\/web\/catalog\/(?:switch|projects(?:\/p_[a-f0-9]{32}\/(?:update|members|repositories(?:\/[A-Za-z0-9_-]+)?))?)$/.test(
       path,
-    )
+    ) &&
+    !adminActions.test(path)
   )
     throw new Error("Недопустимое действие");
   const response = await fetch(path, {

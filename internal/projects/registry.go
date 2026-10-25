@@ -1,6 +1,7 @@
 package projects
 
 import (
+	"agent-board/internal/core"
 	"context"
 	"database/sql"
 	"encoding/hex"
@@ -109,15 +110,24 @@ func (r *Registry) projectPaths(id string) (string, string, error) {
 	base := filepath.Join(r.options.DataDir, "projects", id)
 	return filepath.Join(base, "board.db"), filepath.Join(base, "web"), nil
 }
+
+// identity resolves a credential and its person. Identities of an inactive
+// person fail here, so browser sessions and native calls stop without revoking.
 func (r *Registry) identity(ctx context.Context, tx *sql.Tx, id string) (Identity, error) {
 	var who Identity
-	err := tx.QueryRowContext(ctx, `SELECT id,source,token_id,owner,machine FROM identities WHERE id=?`, id).Scan(&who.ID, &who.Source, &who.TokenID, &who.Owner, &who.Machine)
+	var role string
+	var active bool
+	err := tx.QueryRowContext(ctx, `SELECT i.id,i.source,i.token_id,i.owner,i.machine,i.person_id,COALESCE(p.role,''),COALESCE(p.active,1) FROM identities i LEFT JOIN people p ON p.id=i.person_id WHERE i.id=?`, id).Scan(&who.ID, &who.Source, &who.TokenID, &who.Owner, &who.Machine, &who.PersonID, &role, &active)
 	if errors.Is(err, sql.ErrNoRows) {
 		return who, notFound()
 	}
 	if err != nil {
 		return who, err
 	}
+	if !active {
+		return who, core.Fail("forbidden", "person is deactivated")
+	}
+	who.Admin = role == "admin"
 	if who.Source == "legacy" {
 		p, until, e := r.options.Default.AuthenticateID(ctx, who.TokenID)
 		if e != nil {

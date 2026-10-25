@@ -6,8 +6,7 @@ import re
 import shutil
 import uuid
 
-from guard import MARKER
-from layout import LEGACY, board_copy, copy_database, copy_file, inventory, pending_copy
+from layout import LEGACY, board_copy, inventory, pending_copy, registry_copy
 from validate import validate
 
 NAME = re.compile(r'projects-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{32}')
@@ -28,8 +27,7 @@ def snapshot(default_db, default_web, projects_root, backups):
     try:
         schemas = board_copy(default_db, default_web, pending / 'default')
         (pending / 'registry').mkdir(mode=0o700)
-        copy_database(projects_root / 'registry.sqlite', pending / 'registry/registry.sqlite', (1,))
-        copy_file(projects_root / MARKER, pending / 'registry' / MARKER)
+        registry_schema = registry_copy(projects_root, pending / 'registry')
         (pending / 'projects').mkdir(mode=0o700)
         projects = []
         for entry in catalog['projects']:
@@ -47,7 +45,7 @@ def snapshot(default_db, default_web, projects_root, backups):
                 pending_copy(source, pending / 'quarantine' / source.name)
                 quarantined.append(source.name)
             LEGACY.sync_dir(pending / 'quarantine')
-        manifest = {'format': 2, 'registry_schema': 1, 'default_id': catalog['default_id'],
+        manifest = {'format': 2, 'registry_schema': registry_schema, 'default_id': catalog['default_id'],
                     'default': schemas, 'projects': projects, 'restore_requires_auth_reset': True,
                     'quarantine': quarantined,
                     'files': {path.relative_to(pending).as_posix(): LEGACY.sha(path)

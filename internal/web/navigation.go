@@ -35,6 +35,12 @@ func BrowserPageDestination(r *http.Request) (string, bool) {
 		tail, scope = "/login", ""
 	} else if path == "/web/" || path == "/web/overview" {
 		tail = ""
+	} else if path == "/web/catalog/admin" {
+		// The administration page is catalog scope only (docs/admin.md).
+		if scope != "" {
+			return "", false
+		}
+		tail = "/admin"
 	} else {
 		switch path {
 		case "/web/tasks", "/web/questions", "/web/agents", "/web/team", "/web/activity", "/web/projects", "/web/settings", "/web/stats", "/web/history", "/web/designs", "/web/profiles", "/web/managed", "/web/automation", "/web/automation/host-scope":

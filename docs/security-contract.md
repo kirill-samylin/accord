@@ -36,7 +36,7 @@ provenance; они **не дают scopes/RBAC или GitHub/browser identity**.
 | SEC-03 | Tandem443 и его данные сохраняются | до/после совпадает его маршрут; health успешен; deploy не вызывает Serve reset |
 | SEC-04 | Данные0700, DB/WAL/SHM0600, umask0077; binary/releases root-owned | фактические mode/owner; чужая OS identity не читает данные; unsafeexistingDB отклонён |
 | SEC-05 | По токену на машину, owner+machine, явный expiry и отзыв | tokenA не использует sessionB; revokeA запрещает новые вызовы и replay; tokenB продолжает работать |
-| SEC-06 | Token bootstrap только SSH/local admin, без публичного endpoint | значение попадает сразу в новый privatefile, отсутствует в терминальном выводе/argv/Git/логах |
+| SEC-06 | Token bootstrap: SSH/local admin, а по поручению 25.10.2026 ([admin.md](admin.md)) также глобальный `admin` из браузера (`/web/catalog/admin`, CSRF+action_id, 404 для остальных) | CLI: значение попадает сразу в новый privatefile, отсутствует в терминальном выводе/argv/Git/логах; браузер: `secret` только в первом живом ответе (`no-store`), replay/`actions.result`/audit/журнал без секрета, `secret_delivered:true` |
 | SEC-07 | Явная Origin-политика, без широкого CORS | чужой/null/malformed Origin отклонён403 на GET и POST; native запрос без Origin работает |
 | SEC-08 | Ограниченная входная нагрузка и время | предсказуемый429+Retry-After; память limiter ограничена; корректные heartbeat после восстановления лимита |
 | SEC-09 | Минимальные безопасные headers и отсутствие секретов в ошибках | no-store, nosniff; generic500; в журнале нет requestbody/Authorization/sessionpayload |

@@ -53,16 +53,23 @@ func registryDatabase(root string, fresh bool) (*sql.DB, error) {
 	if err == nil && !fresh {
 		_, err = db.Exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;`)
 	}
+	if err == nil && !fresh {
+		// A schema1 authority is copied and migrated before anything reads ACL.
+		err = migrateRegistry(root, db)
+	}
 	if err != nil {
 		db.Close()
 		return nil, err
 	}
 	return db, nil
 }
+
+// validateRegistry accepts schema1 (migrated on open) and schema2 authorities;
+// it never creates tables. Offline preflight reads schema1 without migrating.
 func validateRegistry(db *sql.DB) error {
 	var version int
-	if err := db.QueryRow(`PRAGMA user_version`).Scan(&version); err != nil || version != 1 {
-		return errors.New("existing registry schema1 authority required")
+	if err := db.QueryRow(`PRAGMA user_version`).Scan(&version); err != nil || version != 1 && version != RegistrySchemaVersion {
+		return errors.New("existing registry schema1 or schema2 authority required")
 	}
 	var integrity string
 	if err := db.QueryRow(`PRAGMA quick_check`).Scan(&integrity); err != nil || integrity != "ok" {
@@ -70,7 +77,7 @@ func validateRegistry(db *sql.DB) error {
 	}
 	// Read required columns before any schema DDL. Empty missing auth tables must
 	// not silently replace lost membership or logout/rejection tombstones.
-	for _, query := range []string{
+	for _, query := range append([]string{
 		`SELECT id,default_id,default_db,default_web,signing_key FROM registry_meta LIMIT 0`,
 		`SELECT id,at FROM rejected_provisions LIMIT 0`,
 		`SELECT id,source,token_id,owner,machine FROM identities LIMIT 0`,
@@ -84,7 +91,7 @@ func validateRegistry(db *sql.DB) error {
 		`SELECT hash,csrf,expires FROM preauth LIMIT 0`,
 		`SELECT id,session_hash,operation,project_id,access_epoch,payload,result,created FROM actions LIMIT 0`,
 		`SELECT id,event,identity_id,project_id,at FROM audit LIMIT 0`,
-	} {
+	}, registryColumns(version)...) {
 		rows, err := db.Query(query)
 		if err != nil {
 			return errors.New("registry authority schema incomplete")
@@ -108,4 +115,16 @@ func validateRegistry(db *sql.DB) error {
 		return errors.New("registry authority default binding missing")
 	}
 	return nil
+}
+
+// registryColumns lists the schema2 people/admin columns read before serving.
+func registryColumns(version int) []string {
+	if version < 2 {
+		return nil
+	}
+	return []string{
+		`SELECT person_id FROM identities LIMIT 0`,
+		`SELECT id,name,note,role,active,version,created,updated FROM people LIMIT 0`,
+		`SELECT id,event,actor_id,person_id,identity_id,details,at FROM admin_audit LIMIT 0`,
+	}
 }

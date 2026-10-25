@@ -40,7 +40,7 @@ func repositoryFields(raw, branch string) (string, string, error) {
 }
 func (r *Registry) repository(ctx context.Context, who Identity, pid, rid, operation, url, branch string, version int64) error {
 	_, err := transaction(r, ctx, func(tx *sql.Tx) (bool, error) {
-		a, e := r.access(ctx, tx, who, pid, false)
+		a, e := r.manageAccess(ctx, tx, who, pid)
 		if e != nil {
 			return false, e
 		}

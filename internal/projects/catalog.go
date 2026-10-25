@@ -148,7 +148,7 @@ func (r *Registry) updateProject(ctx context.Context, who Identity, id, name, st
 		return Project{}, invalid()
 	}
 	return transaction(r, ctx, func(tx *sql.Tx) (Project, error) {
-		a, e := r.access(ctx, tx, who, id, false)
+		a, e := r.manageAccess(ctx, tx, who, id)
 		if e != nil {
 			return Project{}, e
 		}

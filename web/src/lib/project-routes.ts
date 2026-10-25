@@ -3,6 +3,11 @@ import { projectID } from "./projects.ts";
 const screens =
   /^(?:\/(?:overview|tasks(?:\/[A-Za-z0-9_-]+)?|questions|agents(?:\/[A-Za-z0-9_-]+)?|profiles(?:\/ap_[a-f0-9]{32})?|projects|designs|history|activity|stats|settings|team|automation(?:\/host-scope|\/workflows\/[A-Za-z0-9_-]+|\/policies\/[A-Za-z0-9_-]+)?|managed(?:\/runs\/[A-Za-z0-9_-]+)?|login))?\/?$/;
 const base = "https://accord.invalid";
+// The administration screen lives beside the projects catalog: /app/admin is
+// served by /web/catalog/admin and shares the "catalog" scope.
+const adminApp = /^\/app\/admin\/?$/;
+const adminWeb = /^\/web\/catalog\/admin\/?$/;
+const catalogApp = /^\/app\/(?:projects|admin)(?:\/|$)/;
 function internal(path: string): URL {
   if (
     !path.startsWith("/") ||
@@ -36,7 +41,11 @@ export function routeScope(path: string): string {
   }
   const detail = /^\/app\/projects\/(p_[a-f0-9]{32})\/?$/.exec(url.pathname);
   if (detail) return `catalog:${detail[1]}`;
-  if (/^\/app\/projects(?:\/|$)/.test(url.pathname)) return "catalog";
+  if (
+    /^\/app\/projects(?:\/|$)/.test(url.pathname) ||
+    adminApp.test(url.pathname)
+  )
+    return "catalog";
   return "default";
 }
 export function expectedProjectID(path: string) {
@@ -59,6 +68,7 @@ export function appToWebRoute(path: string): string {
   }
   const detail = /^\/app\/projects\/(p_[a-f0-9]{32})\/?$/.exec(url.pathname);
   if (detail) return `/web/catalog/projects/${detail[1]}${url.search}`;
+  if (adminApp.test(url.pathname)) return `/web/catalog/admin${url.search}`;
   if (!url.pathname.startsWith("/app") || !screens.test(url.pathname.slice(4)))
     throw new Error("Недопустимый адрес страницы");
   if (url.pathname.replace(/\/$/, "") === "/app/login")
@@ -78,6 +88,7 @@ export function webToAppRoute(path: string): string {
     url.pathname,
   );
   if (detail) return `/app/projects/${detail[1]}${url.search}${url.hash}`;
+  if (adminWeb.test(url.pathname)) return `/app/admin${url.search}${url.hash}`;
   if (!url.pathname.startsWith("/web") || !screens.test(url.pathname.slice(4)))
     throw new Error("Недопустимый адрес перехода");
   const tail = url.pathname.slice(4);
@@ -88,7 +99,7 @@ export function projectAppPath(id: string | undefined, path: string): string {
   const scoped = projectRoute(path);
   if (scoped && id && scoped.id !== id)
     throw new Error("Ссылка относится к другому проекту");
-  if (scoped || /^\/app\/projects(?:\/|$)/.test(url.pathname)) {
+  if (scoped || catalogApp.test(url.pathname)) {
     appToWebRoute(path);
     return path;
   }
@@ -116,7 +127,7 @@ export function safeLoginReturn(value: string | null): string | undefined {
   if (!value) return;
   try {
     appToWebRoute(value);
-    if (projectRoute(value) || /^\/app\/projects(?:\/|$)/.test(value))
+    if (projectRoute(value) || catalogApp.test(internal(value).pathname))
       return value;
   } catch {
     /* Invalid return URLs never become redirects. */

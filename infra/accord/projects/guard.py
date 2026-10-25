@@ -44,8 +44,10 @@ def require_capable(binary, root):
             capabilities['project_registry'] != 1 or
             type(capabilities.get('project_acl')) is not int or
             capabilities['project_acl'] != 1 or
-            capabilities.get('registry_schema') != [1] or
+            capabilities.get('registry_schema') != [2] or
             type(capabilities['registry_schema'][0]) is not int or
+            type(capabilities.get('people_admin')) is not int or
+            capabilities['people_admin'] != 1 or
             type(capabilities.get('agent_profiles')) is not int or
             capabilities['agent_profiles'] != 1 or
             type(capabilities.get('coordination')) is not int or

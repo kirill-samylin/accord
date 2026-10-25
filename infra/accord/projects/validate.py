@@ -5,8 +5,8 @@ from pathlib import PurePosixPath
 import sqlite3
 
 from guard import MARKER
-from layout import LEGACY, PROJECT_ID, allowed_board_file, readonly
-from migration_files import validate_migrations
+from layout import LEGACY, PROJECT_ID, REGISTRY_SCHEMAS, allowed_board_file, allowed_registry_file, readonly
+from migration_files import REGISTRY_MIGRATIONS, validate_migrations, validate_registry_migrations
 
 
 def database(path, version, live=False):
@@ -24,6 +24,34 @@ def database(path, version, live=False):
         if (connection.execute('PRAGMA user_version').fetchone()[0] != version or
                 connection.execute('PRAGMA integrity_check').fetchall() != [('ok',)]):
             raise RuntimeError('snapshot schema/integrity differs')
+
+
+def registry(path, version, live=False):
+    """A declared registry2 must carry the complete additive people/audit DDL."""
+    if version not in REGISTRY_SCHEMAS:
+        raise RuntimeError('unknown registry snapshot schema')
+    database(path, version, live=live)
+    with closing(readonly(path) if live else sqlite3.connect(path.absolute().as_uri() + '?mode=ro&immutable=1', uri=True)) as connection:
+        for query in ('SELECT default_id,default_db,default_web FROM registry_meta LIMIT 0',
+                      'SELECT id,state FROM projects LIMIT 0',
+                      'SELECT id FROM identities LIMIT 0'):
+            connection.execute(query)
+        if version >= 2:
+            for query in ('SELECT id,name,note,role,active,version,created,updated FROM people LIMIT 0',
+                          'SELECT person_id FROM identities LIMIT 0',
+                          'SELECT id,event,actor_id,person_id,identity_id,details,at FROM admin_audit LIMIT 0'):
+                connection.execute(query)
+            indexes = connection.execute(
+                "SELECT tbl_name FROM sqlite_master WHERE type='index' AND name='registry_identity_person'").fetchall()
+            if indexes != [('identities',)]:
+                raise RuntimeError('snapshot registry people index missing')
+            if connection.execute('SELECT count(*) FROM identities WHERE person_id NOT IN (SELECT id FROM people)').fetchone()[0]:
+                raise RuntimeError('snapshot registry identity without a person')
+        elif connection.execute("SELECT count(*) FROM sqlite_master WHERE name IN ('people','admin_audit')").fetchone()[0]:
+            raise RuntimeError('registry1 carries undeclared registry2 tables')
+    migrations = path.with_name(path.name + '.migrations')
+    if migrations.exists() or migrations.is_symlink():
+        validate_registry_migrations(migrations, LEGACY)
 
 
 def board(path, schemas, live=False):
@@ -80,7 +108,7 @@ def validate(path):
     LEGACY.private(path, True)
     LEGACY.private(path / 'manifest.json')
     manifest = json.loads((path / 'manifest.json').read_text())
-    if manifest.get('format') != 2 or manifest.get('registry_schema') != 1:
+    if manifest.get('format') != 2 or manifest.get('registry_schema') not in REGISTRY_SCHEMAS:
         raise RuntimeError('all-project snapshot format required')
     default_id = manifest.get('default_id', '')
     if not PROJECT_ID.fullmatch(default_id):
@@ -91,7 +119,7 @@ def validate(path):
     identities = set()
     states = {}
     directories = {'default', 'default/web', 'default/web/blobs', 'default/web/staging',
-                   'default/board.db.migrations', 'registry', 'projects'}
+                   'default/board.db.migrations', 'registry', 'registry/' + REGISTRY_MIGRATIONS, 'projects'}
     for entry in projects:
         identifier = entry['id']
         if (not PROJECT_ID.fullmatch(identifier) or identifier == default_id or
@@ -127,8 +155,8 @@ def validate(path):
             continue
         if name.startswith('default/'):
             allowed = allowed_board_file(PurePosixPath(*relative.parts[1:]))
-        elif name in ('registry/registry.sqlite', 'registry/' + MARKER):
-            allowed = True
+        elif relative.parts[0] == 'registry':
+            allowed = allowed_registry_file(PurePosixPath(*relative.parts[1:]))
         elif len(relative.parts) >= 3 and relative.parts[0] == 'projects' and relative.parts[1] in identities:
             allowed = allowed_board_file(PurePosixPath(*relative.parts[2:]),
                                          pending=states[relative.parts[1]] == 'provisioning')
@@ -145,7 +173,7 @@ def validate(path):
         relative = PurePosixPath(name)
         if relative.is_absolute() or '..' in relative.parts or LEGACY.sha(path / name) != digest:
             raise RuntimeError('snapshot manifest path/checksum differs')
-    database(path / 'registry/registry.sqlite', 1)
+    registry(path / 'registry/registry.sqlite', manifest['registry_schema'])
     for identifier in quarantined:
         LEGACY.private(path / 'quarantine' / identifier, True)
     LEGACY.private(path / ('registry/' + MARKER))

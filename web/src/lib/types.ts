@@ -1,4 +1,9 @@
-import type { CatalogPage, Project } from "./projects.ts";
+import type {
+  AdminIdentity,
+  CatalogPage,
+  Person,
+  Project,
+} from "./projects.ts";
 import type {
   AgentProfile,
   ProfileRevision,
@@ -340,8 +345,21 @@ export interface MutationResult {
   project?: Project;
   target?: string;
 }
+// The secret of a freshly issued credential appears only in the live
+// response to the first successful POST; replays carry secret_delivered.
+export interface IssuedCredential {
+  identity_id: string;
+  owner: string;
+  machine: string;
+  expires_at: string;
+  secret?: string;
+  secret_delivered?: boolean;
+}
 export interface CatalogMutationResult extends Omit<MutationResult, "page"> {
   page?: CatalogPage;
+  person?: Person;
+  identity?: AdminIdentity;
+  issued?: IssuedCredential;
 }
 export interface DashboardData {
   overview: Overview;

@@ -18,6 +18,8 @@
 @import "./styles/managed.css";
 @import "./styles/automation.css";
 @import "./styles/motion.css";
+@import "./styles/disclosure.css";
+@import "./styles/admin.css";
 @font-face {
   font-family: Inter;
   src: url("/fonts/InterVariable.woff2") format("woff2");
@@ -54,6 +56,9 @@
   --sidebar: var(--paper);
   --sidebar-accent: var(--yellow);
   --ring: var(--blue);
+  /* Hover colour for text links; rows and cards reuse it for their title so
+     the whole row, not just the <a>, is the hover target. */
+  --link-hover: var(--blue);
   --radius: 0px;
   --line: 3px;
   --line-thin: 2px;
@@ -83,6 +88,7 @@
   --muted: #2a2723;
   --muted-foreground: #bdb4a6;
   --edge: var(--paper);
+  --link-hover: #8fa8ff;
   --sidebar: #141414;
   --green: #5fd38a;
   --amber: #f0b84a;
@@ -127,7 +133,7 @@ a {
   text-decoration: none;
 }
 a:hover {
-  color: var(--blue);
+  color: var(--link-hover);
 }
 button:disabled {
   opacity: 0.45;

@@ -16,10 +16,12 @@ import (
 // written to new private files; command output contains a public identity ID.
 func projectCommand(args []string, out io.Writer) error {
 	if len(args) < 1 {
-		return errors.New("usage: projects token-create | bootstrap-owner")
+		return errors.New("usage: projects token-create | bootstrap-owner | bootstrap-admin | people-list")
 	}
 	operation := args[0]
-	if operation != "token-create" && operation != "bootstrap-owner" && operation != "maintenance-reset" && operation != "recover-owner" && operation != "token-revoke" && operation != "reject-provisioning" && operation != "migrate-storage" {
+	switch operation {
+	case "token-create", "bootstrap-owner", "bootstrap-admin", "people-list", "maintenance-reset", "recover-owner", "token-revoke", "reject-provisioning", "migrate-storage":
+	default:
 		return errors.New("unknown projects operation")
 	}
 	f := flags("projects " + operation)
@@ -33,6 +35,7 @@ func projectCommand(args []string, out io.Writer) error {
 	reason := f.String("reason", "", "explicit restore or owner-recovery")
 	project := f.String("project", "", "project for offline owner recovery")
 	identity := f.String("identity", "", "explicit existing legacy identity ID")
+	person := f.String("person", "", "existing person u_... for the new credential")
 	if err := parse(f, args[1:]); err != nil {
 		return err
 	}
@@ -95,6 +98,21 @@ func projectCommand(args []string, out io.Writer) error {
 		}
 		return json.NewEncoder(out).Encode(map[string]any{"default_project": r.DefaultID(), "owner": *identity})
 	}
+	// Admin recovery and inventory are local and secret-free (docs/admin.md).
+	if operation == "bootstrap-admin" {
+		p, err := r.BootstrapAdmin(context.Background(), *identity)
+		if err != nil {
+			return err
+		}
+		return json.NewEncoder(out).Encode(map[string]any{"admin": p, "identity": *identity})
+	}
+	if operation == "people-list" {
+		listing, err := r.People(context.Background())
+		if err != nil {
+			return err
+		}
+		return json.NewEncoder(out).Encode(listing)
+	}
 	if *days < 1 || *days > 365 || *output == "" {
 		return errors.New("days 1..365 and new output required")
 	}
@@ -113,7 +131,7 @@ func projectCommand(args []string, out io.Writer) error {
 			os.Remove(*output)
 		}
 	}()
-	token, who, err := r.CreateCredential(context.Background(), *owner, *machine, time.Duration(*days)*24*time.Hour)
+	token, who, err := r.CreateCredentialFor(context.Background(), *person, *owner, *machine, time.Duration(*days)*24*time.Hour)
 	if err != nil {
 		return err
 	}

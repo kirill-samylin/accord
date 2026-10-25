@@ -1,0 +1,253 @@
+/* Administration: people, their credentials, global roles and the audit log.
+   Shares the catalog header and the neo-brutalist tokens of the catalog. */
+.admin-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.admin-section {
+  border: var(--line) solid var(--edge);
+  border-radius: 0;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  padding: 20px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.admin-section h2 {
+  margin: 0;
+}
+.admin-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+  flex-wrap: wrap;
+}
+.admin-people {
+  border: var(--line-thin) solid var(--edge);
+  background: var(--background);
+}
+.admin-person-row {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+}
+.admin-person-row:hover,
+.admin-person-row:focus-visible {
+  background: var(--paper);
+  outline: none;
+  box-shadow: inset 4px 0 0 var(--blue);
+}
+:root[data-theme="dark"] .admin-person-row:hover,
+:root[data-theme="dark"] .admin-person-row:focus-visible {
+  background: var(--muted);
+}
+.admin-person-row:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.admin-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.role-badge.person-role-admin {
+  color: var(--ink);
+  background: var(--yellow);
+}
+.role-badge.person-role-member {
+  background: var(--surface);
+}
+.admin-person-count {
+  width: 110px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.admin-person-projects {
+  width: 30%;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-identity-list {
+  display: grid;
+  gap: 0;
+}
+.admin-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: var(--line-thin) dashed var(--edge);
+  min-width: 0;
+  font-size: 13px;
+}
+.admin-identity:first-child {
+  border-top: 0;
+}
+.admin-identity .registry-form {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.admin-identity .registry-form fieldset {
+  gap: 8px;
+}
+.admin-link-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.admin-project-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+.person-dialog {
+  width: min(720px, calc(100vw - 32px));
+}
+.person-dialog .dialog-header {
+  gap: 10px;
+}
+.person-section {
+  display: grid;
+  gap: 12px;
+  padding: 16px 0;
+  border-top: var(--line-thin) dashed var(--edge);
+}
+.person-section h3 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.person-section .registry-add .disclosure-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+/* One-time secret: paper box, hard shadow, break anywhere. */
+.secret-dialog {
+  width: min(560px, calc(100vw - 32px));
+}
+.secret-body {
+  display: grid;
+  gap: 14px;
+}
+.secret-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.secret-warning svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+.secret-box {
+  padding: 14px 16px;
+  border: var(--line) solid var(--edge);
+  background: var(--paper);
+  box-shadow: var(--shadow);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+:root[data-theme="dark"] .secret-box {
+  background: var(--muted);
+}
+.secret-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.admin-audit {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: var(--line-thin) solid var(--edge);
+}
+.admin-audit-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: var(--line-thin) solid var(--edge);
+  font-size: 13px;
+}
+.admin-audit-row:last-child {
+  border-bottom: 0;
+}
+.admin-audit-main {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+.admin-audit-subject {
+  font-weight: 600;
+}
+.admin-audit-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  max-width: 40%;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.admin-audit-meta .entity-date {
+  width: auto;
+}
+@media (max-width: 1023px) {
+  .admin-person-projects {
+    display: none;
+  }
+}
+@media (max-width: 767px) {
+  .admin-section {
+    padding: 16px;
+  }
+  .admin-person-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .admin-person-row .entity-main {
+    width: 100%;
+  }
+  .admin-person-count {
+    width: auto;
+  }
+  .admin-identity,
+  .admin-audit-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .admin-identity .registry-form {
+    width: 100%;
+  }
+  .admin-audit-meta {
+    align-items: flex-start;
+    max-width: none;
+  }
+  .secret-actions .button {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}

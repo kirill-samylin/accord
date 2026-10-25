@@ -29,6 +29,7 @@ const CommandPalette = dynamic(
   { ssr: false },
 );
 import { currentSection, navigation } from "./navigation";
+import { useAdminAccess } from "./admin/use-admin-access";
 import { SessionControls } from "./mutations/SessionControls";
 import { ProjectSwitcher } from "./projects/project-switcher";
 import { useProjectScope } from "./projects/project-context";
@@ -54,6 +55,7 @@ export function Shell({
   const { dark, toggle: toggleTheme } = useAppearance();
   const scope = useProjectScope();
   const section = currentSection(path);
+  const admin = useAdminAccess();
   useEffect(() => {
     function key(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
@@ -105,7 +107,9 @@ export function Shell({
             <div className="nav-group" key={group}>
               <div className="nav-group-label">{group}</div>
               {navigation
-                .filter((item) => item.group === group)
+                .filter(
+                  (item) => item.group === group && (!item.admin || admin),
+                )
                 .map((item) => (
                   <Link
                     prefetch={false}

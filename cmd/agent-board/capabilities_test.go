@@ -21,12 +21,12 @@ func TestCapabilitiesRequireFullAutomationFloor(t *testing.T) {
 	if err := json.Unmarshal(out.Bytes(), &got); err != nil {
 		t.Fatal(err)
 	}
-	for _, floor := range []string{"project_registry", "project_acl", "agent_profiles", "coordination", "deduplication", "managed_agents", "automation"} {
+	for _, floor := range []string{"project_registry", "project_acl", "agent_profiles", "coordination", "deduplication", "managed_agents", "automation", "people_admin"} {
 		if string(got[floor]) != "1" {
 			t.Fatalf("missing floor %s", floor)
 		}
 	}
-	if string(got["registry_schema"]) != "[1]" || string(got["board_schema"]) != "[6]" {
+	if string(got["registry_schema"]) != "[2]" || string(got["board_schema"]) != "[6]" {
 		t.Fatal("unsupported schema declaration")
 	}
 	if err := printCapabilities(failedCapabilityWriter{}); err == nil {
