@@ -145,7 +145,9 @@ class Server:
         self.command = command + [target]
 
     def run(self, remote, stdin=None, timeout=900):
-        done = subprocess.run(self.command + [remote], input=stdin, capture_output=True, timeout=timeout)
+        # `stdin` is either bytes or an open file streamed to the remote command.
+        feed = {'stdin': stdin} if hasattr(stdin, 'read') else {'input': stdin}
+        done = subprocess.run(self.command + [remote], capture_output=True, timeout=timeout, **feed)
         if done.returncode:
             raise RuntimeError('remote command failed (%d): %s\n%s' % (
                 done.returncode, remote[:120], done.stderr.decode(errors='replace')[-4000:]))
@@ -269,7 +271,11 @@ class Rollout:
 
     def transfer(self, local, target, files):
         prepared = self.server.python(PREPARE, timeout=60, target=target)
-        if prepared['created']:
+        verified = self.server.python(VERIFY, timeout=600, target=target, files=files, executables=list(EXECUTABLES))
+        uploaded = False
+        # A fresh or partially filled directory is completed; anything that
+        # differs from the local release is left for inspection.
+        if verified['missing'] and not (verified['extra'] or verified['wrong']):
             with tempfile.NamedTemporaryFile(prefix='accord-release-', suffix='.tar') as archive:
                 with tarfile.open(archive.name, 'w') as tar:
                     for name in sorted(files):
@@ -277,10 +283,11 @@ class Rollout:
                 archive.seek(0)
                 self.server.run('umask 022 && tar --no-same-owner --no-same-permissions -C %s -xf -' % shlex.quote(target),
                                 stdin=archive, timeout=1800)
-        verified = self.server.python(VERIFY, timeout=600, target=target, files=files, executables=list(EXECUTABLES))
+            uploaded = True
+            verified = self.server.python(VERIFY, timeout=600, target=target, files=files, executables=list(EXECUTABLES))
         if verified['missing'] or verified['extra'] or verified['wrong']:
-            raise RuntimeError('%s differs from the local release: %s' % (target, json.dumps(verified)))
-        return {'target': target, 'uploaded': prepared['created'], 'files': verified['count']}
+            raise RuntimeError('%s differs from the local release: %s' % (target, json.dumps(verified)[:2000]))
+        return {'target': target, 'created': prepared['created'], 'uploaded': uploaded, 'files': verified['count']}
 
     def upload(self):
         result = {
