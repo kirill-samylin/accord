@@ -4,6 +4,7 @@ import { PageHeading, EmptyState, Fact } from "@/components/common";
 import { Disclosure } from "@/components/disclosure";
 import { ProjectLink as Link } from "@/components/project-link";
 import { date } from "@/lib/format";
+import { workerErrorHint } from "@/lib/worker-errors";
 import {
   commandLabels,
   deliveryLabels,
@@ -89,6 +90,9 @@ export function ManagedDetail({
       {run.last_error ? (
         <div className="notice error-notice break" role="alert">
           {run.last_error}
+          {workerErrorHint(run.last_error) ? (
+            <p className="form-help">{workerErrorHint(run.last_error)}</p>
+          ) : null}
         </div>
       ) : null}
       {!run.task_key ? (
