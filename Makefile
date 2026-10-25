@@ -12,7 +12,7 @@ NEXT_NODE ?= $(NODE)
 NPM ?= npm
 WEB_PORT ?= 3100
 
-.PHONY: build test frontend-test infra-test race vet fmt-check check web-install web-format-check web-typecheck web-test web-build web-check web-dev web-start
+.PHONY: build test infra-test race vet fmt-check check web-install web-format-check web-typecheck web-test web-build web-check web-dev web-start
 
 build:
 	@mkdir -p bin "$(GOTMPDIR)"
@@ -24,9 +24,6 @@ test:
 
 infra-test:
 	PYTHONDONTWRITEBYTECODE=1 "$(PYTHON)" -m unittest discover -s tests/infra -p 'test_*.py' -v
-
-frontend-test:
-	"$(NODE)" --test internal/webui/*.test.cjs
 
 web-install:
 	"$(NPM)" --prefix web ci --registry=https://registry.npmjs.org
@@ -66,4 +63,4 @@ fmt-check:
 		if [ -n "$$unformatted" ]; then printf '%s\n' "$$unformatted"; exit 1; fi; \
 	fi
 
-check: fmt-check vet test frontend-test infra-test race build web-check
+check: fmt-check vet test infra-test race build web-check

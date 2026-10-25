@@ -4,14 +4,19 @@ import { useRef, useState, type FormEvent } from "react";
 import type { MutationProps } from "./contracts";
 import { useAction } from "./useAction";
 import { ActionNotice } from "./ActionNotice";
+import styles from "./LoginForm.module.css";
 
 export function LoginForm({ page, onSuccess }: MutationProps) {
   const form = useRef<HTMLFormElement>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const fileButton = useRef<HTMLButtonElement>(null);
   const [source, setSource] = useState<"token" | "file">("token");
+  const [fileName, setFileName] = useState("");
   const action = useAction(
     page,
     (result) => {
       form.current?.reset();
+      setFileName("");
       onSuccess(result);
     },
     "login",
@@ -65,6 +70,8 @@ export function LoginForm({ page, onSuccess }: MutationProps) {
             aria-pressed={source === "token"}
             onClick={() => {
               form.current?.reset();
+              setFileName("");
+              action.setMessage("");
               setSource("token");
             }}
           >
@@ -76,6 +83,8 @@ export function LoginForm({ page, onSuccess }: MutationProps) {
             aria-pressed={source === "file"}
             onClick={() => {
               form.current?.reset();
+              setFileName("");
+              action.setMessage("");
               setSource("file");
             }}
           >
@@ -95,15 +104,59 @@ export function LoginForm({ page, onSuccess }: MutationProps) {
             />
           </label>
         ) : (
-          <label className="form-field">
-            Файл токена
+          <div
+            className={`form-field ${styles.filePicker}`}
+            role="group"
+            aria-labelledby="token-file-label"
+          >
+            <span id="token-file-label">Файл токена</span>
             <input
+              ref={fileInput}
               name="token_file"
               type="file"
-              required
-              aria-describedby="login-help"
+              hidden
+              onChange={(event) => {
+                setFileName(event.currentTarget.files?.[0]?.name ?? "");
+                action.setMessage("");
+              }}
             />
-          </label>
+            <div className={styles.fileActions}>
+              <button
+                ref={fileButton}
+                type="button"
+                className={`button button-secondary ${styles.fileButton}`}
+                aria-describedby="token-file-status token-file-help"
+                onClick={() => fileInput.current?.click()}
+              >
+                {fileName ? "Заменить файл токена" : "Выбрать файл токена"}
+              </button>
+              {fileName ? (
+                <button
+                  type="button"
+                  className="button button-link"
+                  onClick={() => {
+                    if (fileInput.current) fileInput.current.value = "";
+                    setFileName("");
+                    action.setMessage("");
+                    fileButton.current?.focus();
+                  }}
+                >
+                  Убрать файл
+                </button>
+              ) : null}
+            </div>
+            <span
+              id="token-file-status"
+              className={styles.fileStatus}
+              role="status"
+            >
+              {fileName ? `Выбран файл: ${fileName}` : "Файл не выбран"}
+            </span>
+            <span id="token-file-help" className="form-help">
+              Выберите файл с токеном, который прислал владелец или
+              администратор Accord.
+            </span>
+          </div>
         )}
         <p id="login-help" className="form-help">
           Токен — ваш личный ключ доступа. Его выдаёт владелец или администратор

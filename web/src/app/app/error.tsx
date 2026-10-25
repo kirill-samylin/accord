@@ -6,7 +6,6 @@ export default function ErrorPage({ reset }: { reset: () => void }) {
       <button className="button" onClick={reset}>
         Повторить
       </button>
-      <a href="/web/">Открыть базовый интерфейс</a>
     </main>
   );
 }

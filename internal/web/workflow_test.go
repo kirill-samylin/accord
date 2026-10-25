@@ -36,9 +36,9 @@ func TestExactQuestionRaceAnswerCrashReplayAndFencing(t *testing.T) {
 	}
 	wg.Wait()
 	var winner, loser *http.Cookie
-	if codes[0] == 303 && codes[1] == 409 {
+	if codes[0] == 200 && codes[1] == 409 {
 		winner, loser = c1, c2
-	} else if codes[1] == 303 && codes[0] == 409 {
+	} else if codes[1] == 200 && codes[0] == 409 {
 		winner, loser = c2, c1
 	} else {
 		t.Fatalf("claim race %#v", codes)
@@ -53,7 +53,7 @@ func TestExactQuestionRaceAnswerCrashReplayAndFencing(t *testing.T) {
 	}
 	fields := url.Values{"generation": {strconv.FormatInt(p.Task.Generation, 10)}, "answer": {"<script>answer</script>"}}
 	w := f.post(winner, "/web/tasks/"+task.Key+"/answer", p, "answer", fields)
-	if w.Code != 303 {
+	if w.Code != 200 {
 		t.Fatalf("answer %d %s", w.Code, w.Body)
 	}
 	id := p.Actions["answer"]
@@ -66,13 +66,13 @@ func TestExactQuestionRaceAnswerCrashReplayAndFencing(t *testing.T) {
 		t.Fatal(err)
 	}
 	var reopenErr error
-	f.s, reopenErr = New(f.board, Options{Origin: "https://accord.test", DataDir: f.dir + "/web", Renderer: f.render})
+	f.s, reopenErr = New(f.board, Options{Origin: "https://accord.test", DataDir: f.dir + "/web"})
 	if reopenErr != nil {
 		t.Fatal(reopenErr)
 	}
 	f.now = f.now.Add(2 * time.Minute)
 	w = f.post(winner, "/web/tasks/"+task.Key+"/answer", p, "answer", fields)
-	if w.Code != 303 {
+	if w.Code != 200 {
 		t.Fatalf("expired exact replay %d %s", w.Code, w.Body)
 	}
 	actor := f.native(t, one)
@@ -96,7 +96,7 @@ func TestExplicitHeartbeatReleaseAndStaleDraft(t *testing.T) {
 	task := f.question(t, one)
 	c1, c2 := f.login(t, one), f.login(t, two)
 	p := f.page(t, c1, "/web/tasks/"+task.Key)
-	if w := f.post(c1, "/web/tasks/"+task.Key+"/claim", p, "claim", nil); w.Code != 303 {
+	if w := f.post(c1, "/web/tasks/"+task.Key+"/claim", p, "claim", nil); w.Code != 200 {
 		t.Fatalf("claim %d", w.Code)
 	}
 	owned := f.page(t, c1, "/web/tasks/"+task.Key)
@@ -114,11 +114,11 @@ func TestExplicitHeartbeatReleaseAndStaleDraft(t *testing.T) {
 		t.Fatal("heartbeat missing next action/session")
 	}
 	release := url.Values{"generation": {generation}, "reason": {"Need another owner"}}
-	if w = f.post(c1, "/web/tasks/"+task.Key+"/release", owned, "release", release); w.Code != 303 {
+	if w = f.post(c1, "/web/tasks/"+task.Key+"/release", owned, "release", release); w.Code != 200 {
 		t.Fatalf("release %d %s", w.Code, w.Body)
 	}
 	other := f.page(t, c2, "/web/tasks/"+task.Key)
-	if w = f.post(c2, "/web/tasks/"+task.Key+"/claim", other, "claim", nil); w.Code != 303 {
+	if w = f.post(c2, "/web/tasks/"+task.Key+"/claim", other, "claim", nil); w.Code != 200 {
 		t.Fatalf("reclaim %d", w.Code)
 	}
 	stale := url.Values{"generation": {generation}, "answer": {"Saved draft after lost ownership"}}
@@ -126,7 +126,7 @@ func TestExplicitHeartbeatReleaseAndStaleDraft(t *testing.T) {
 	if w.Code != 409 {
 		t.Fatalf("stale answer %d", w.Code)
 	}
-	draft := f.render.last()
+	draft := f.response.last()
 	if draft.CanEdit || draft.Draft["answer"] != stale.Get("answer") {
 		t.Fatal("stale draft lost or editor reacquired")
 	}
@@ -148,7 +148,7 @@ func TestGetDoesNotDescribeOrRenewAndContinueIsExplicit(t *testing.T) {
 	task := f.question(t, token)
 	c := f.login(t, token)
 	p := f.page(t, c, "/web/tasks/"+task.Key)
-	if w := f.post(c, "/web/tasks/"+task.Key+"/claim", p, "claim", nil); w.Code != 303 {
+	if w := f.post(c, "/web/tasks/"+task.Key+"/claim", p, "claim", nil); w.Code != 200 {
 		t.Fatal(w.Code)
 	}
 	owned := f.page(t, c, "/web/tasks/"+task.Key)
@@ -175,7 +175,7 @@ func TestGetDoesNotDescribeOrRenewAndContinueIsExplicit(t *testing.T) {
 		t.Fatal("GET silently continued session")
 	}
 	w := f.post(c, "/web/session/continue", p, "continue", nil)
-	if w.Code != 303 {
+	if w.Code != 200 {
 		t.Fatalf("continue %d %s", w.Code, w.Body)
 	}
 	fresh := f.page(t, c, "/web/")
@@ -183,7 +183,7 @@ func TestGetDoesNotDescribeOrRenewAndContinueIsExplicit(t *testing.T) {
 		t.Fatal("explicit continuation reused expired session")
 	}
 	// Repeating the same continuation does not open a third native session.
-	if w = f.post(c, "/web/session/continue", p, "continue", nil); w.Code != 303 {
+	if w = f.post(c, "/web/session/continue", p, "continue", nil); w.Code != 200 {
 		t.Fatal(w.Code)
 	}
 	again := f.page(t, c, "/web/")

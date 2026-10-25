@@ -6,11 +6,10 @@
 
 ## Окружение
 
-Для полного `make check` также нужен Python3 со стандартными `unittest`
-и `sqlite3`, а также Node.js для автономных тестов клиентских JS-модулей.
-Node не нужен работающему Go-сервису; npm-зависимости для этих тестов не нужны.
-`make frontend-test` запускает JS unit-тесты; путь к Node можно передать
-через `make NODE=/absolute/path/to/node check`.
+Для полного `make check` нужны Python3 со стандартными `unittest`/`sqlite3`,
+Node24 и точные npm-зависимости единственного Next.js клиента.
+Прежний `frontend-test` и SSR JS suites удалены вместе с HTML renderer в TASK019.
+Node не нужен Go API-процессу, но нужен работающему веб-интерфейсу.
 
 Для нового [Next.js-клиента TASK-007](TASK-007-next-paperclip.md) нужен Node.js
 24 (проверен 24.19.0); минимальное требование dev-скриптов 22.9. Публичный
@@ -23,8 +22,8 @@ make check
 ```
 
 `make web-check` отдельно проверяет форматирование, TypeScript, unit и production
-build Next. `NODE` задаёт runtime прежних JS tests, `NEXT_NODE` — runtime нового
-клиента; оба по умолчанию `node`. При нескольких установках можно явно передать
+build Next. `NEXT_NODE` задаёт runtime клиента и по умолчанию использует `NODE`
+(обычно `node`). При нескольких установках можно явно передать
 `make NEXT_NODE=/absolute/path/to/node24 check`.
 Build output — `web/.local/next`, зависимости — игнорируемый `web/node_modules`.
 Node runtime теперь нужен Next-сервису; Go-only сервер собирается `make build`.

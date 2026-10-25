@@ -1,5 +1,10 @@
 # TASK-004 / WORK-085 — контракт веба Accord
 
+> TASK019 отменяет описанный ниже исторический HTML presentation layer:
+> internal/webui и templates/assets полностью удалены. Единственный UI — Next.
+> Сохраняются browser JSON API, auth/CSRF/idempotency, ACL и защищённые файлы.
+> Текущий контракт — [next-web.md](next-web.md), статус — [TASK019](TASK-019-single-ui.md).
+
 Дата проверки: 19.10.2026. База исходников: `f06338089bec3b8c7f17f541c463131f5c98f96c`.
 Статус: архитектурное решение для реализации; не runtime approve. Родительский TASK
 прочитан в основной копии: в свежем worktree его ещё нет. Live C2/schema2 — вход

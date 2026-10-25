@@ -76,13 +76,17 @@ func statusError(status int) (string, string) {
 		return "NOT_FOUND", "Не найдено"
 	case 405:
 		return "METHOD_NOT_ALLOWED", "Метод недоступен"
+	case 406:
+		return "JSON_REQUIRED", "Откройте Accord в веб-клиенте"
 	case 429:
 		return "RATE_LIMITED", "Повторите позже"
 	default:
 		return "UNAVAILABLE", "Сервис временно недоступен. Результат действия не подтверждён; повторите ту же отправку"
 	}
 }
-func browserJSONRoute(path string) bool {
+
+// BrowserJSONRoute excludes streaming downloads and standalone data endpoints.
+func BrowserJSONRoute(path string) bool {
 	if !strings.HasPrefix(path, "/web/") || strings.HasPrefix(path, "/web/static/") || strings.HasPrefix(path, "/web/data/") {
 		return false
 	}
@@ -90,7 +94,9 @@ func browserJSONRoute(path string) bool {
 	// of Accept, including deadline and streaming behavior.
 	return !strings.HasPrefix(path, "/web/designs/")
 }
-func wantsBrowserJSON(r *http.Request) bool {
+
+// WantsBrowserJSON applies the same explicit representation negotiation to all browser routes.
+func WantsBrowserJSON(r *http.Request) bool {
 	jsonQ, htmlQ := 0.0, 0.0
 	for _, value := range r.Header.Values("Accept") {
 		for _, part := range strings.Split(value, ",") {

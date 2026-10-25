@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"hash/crc32"
 	"image"
 	"image/png"
@@ -127,17 +128,17 @@ func TestDesignFormatFailureRotatesIDAndUncertaintyPreservesID(t *testing.T) {
 	designRequireStatus(t, err, 400)
 	r := httptest.NewRequest("POST", "/web/designs", nil)
 	r.PostForm = url.Values{"action_id": {id}, "title": {in.Title}, "scope": {in.Scope}, "epic_key": {""}}
-	f.s.designPageError(httptest.NewRecorder(), r, f.b, err)
-	nextID := f.render.Page.Actions["upload"]
-	if nextID == id || nextID == "" || f.render.Page.Draft["title"] != in.Title {
+	page := designErrorJSON(t, f, r, err)
+	nextID := page.Actions["upload"]
+	if nextID == id || nextID == "" || page.Draft["title"] != in.Title {
 		t.Fatal("format failure did not preserve draft and rotate action")
 	}
 	if _, err = f.upload(t, nextID, in, raster.Bytes()); err != nil {
 		t.Fatalf("corrected upload rejected: %v", err)
 	}
 	uncertain := designFail(503, "STORAGE", "Unknown result")
-	f.s.designPageError(httptest.NewRecorder(), r, f.b, uncertain)
-	if f.render.Page.Actions["upload"] != id {
+	page = designErrorJSON(t, f, r, uncertain)
+	if page.Actions["upload"] != id {
 		t.Fatal("uncertain outcome discarded replay ID")
 	}
 }
@@ -205,7 +206,7 @@ func TestDesignRestartKeepsReadyVersions(t *testing.T) {
 	if err = f.s.Close(); err != nil {
 		t.Fatal(err)
 	}
-	next, err := New(f.board, Options{Origin: "https://accord.example", DataDir: f.dir, Renderer: f.render})
+	next, err := New(f.board, Options{Origin: "https://accord.example", DataDir: f.dir})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -214,4 +215,20 @@ func TestDesignRestartKeepsReadyVersions(t *testing.T) {
 	if err != nil || got.SHA256 != asset.SHA256 || got.Version != 1 || got.DesignID != asset.DesignID {
 		t.Fatalf("restart lost immutable metadata: %+v %v", got, err)
 	}
+}
+
+func designErrorJSON(t *testing.T, f *designFixture, r *http.Request, failure error) Page {
+	t.Helper()
+	w := httptest.NewRecorder()
+	out := &browserJSONWriter{ResponseWriter: w, request: r}
+	f.s.designPageError(out, r, f.b, failure)
+	out.finish()
+	var envelope browserEnvelope
+	if err := json.Unmarshal(w.Body.Bytes(), &envelope); err != nil {
+		t.Fatal(err)
+	}
+	if envelope.Page.Name != "designs" {
+		t.Fatal(w.Body.String())
+	}
+	return pageFromBrowserJSON(envelope.Page)
 }

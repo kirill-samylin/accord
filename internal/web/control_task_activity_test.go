@@ -21,7 +21,7 @@ func TestTaskDetailActivityIsScopedAndReadDoesNotRenew(t *testing.T) {
 	if len(p.Activity) != 1 || p.Activity[0].TaskKey != task.Key || p.Activity[0].Type != "task_created" {
 		t.Fatalf("task activity %+v", p.Activity)
 	}
-	if w := f.post(cookie, "/web/tasks/"+task.Key+"/claim", p, "claim", nil); w.Code != 303 {
+	if w := f.post(cookie, "/web/tasks/"+task.Key+"/claim", p, "claim", nil); w.Code != 200 {
 		t.Fatal(w.Code)
 	}
 	before := f.page(t, cookie, "/web/tasks/"+task.Key)

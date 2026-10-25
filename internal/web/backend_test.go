@@ -4,7 +4,6 @@ import (
 	"agent-board/internal/core"
 	"agent-board/internal/store"
 	"context"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -16,28 +15,12 @@ import (
 	"time"
 )
 
-type captureRenderer struct {
-	mu   sync.Mutex
-	page Page
-	name string
-}
-
-func (c *captureRenderer) Render(w http.ResponseWriter, status int, name string, p Page) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.page = p
-	c.name = name
-	w.WriteHeader(status)
-	return json.NewEncoder(w).Encode(p)
-}
-func (c *captureRenderer) last() Page { c.mu.Lock(); defer c.mu.Unlock(); return c.page }
-
 type webFixture struct {
-	s      *Server
-	board  *store.Store
-	render *captureRenderer
-	now    time.Time
-	dir    string
+	s        *Server
+	board    *store.Store
+	response *captureBrowserResponse
+	now      time.Time
+	dir      string
 }
 
 func fixture(t *testing.T) *webFixture {
@@ -49,16 +32,17 @@ func fixture(t *testing.T) *webFixture {
 	if err = os.Chmod(dir, 0700); err != nil {
 		t.Fatal(err)
 	}
-	f := &webFixture{now: time.Now(), dir: dir, render: new(captureRenderer)}
+	f := &webFixture{now: time.Now(), dir: dir, response: new(captureBrowserResponse)}
 	f.board, err = store.Open(filepath.Join(dir, "board.db"), core.Config{Project: "fixture", SessionTTL: time.Minute, LeaseTTL: time.Minute}, func() time.Time { return f.now })
 	if err != nil {
 		t.Fatal(err)
 	}
-	f.s, err = New(f.board, Options{Origin: "https://accord.test", DataDir: filepath.Join(dir, "web"), Renderer: f.render})
+	f.s, err = New(f.board, Options{Origin: "https://accord.test", DataDir: filepath.Join(dir, "web")})
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { f.s.Close(); f.board.Close() })
+	browserResponses.Store(filepath.Clean(f.s.options.DataDir), f.response)
+	t.Cleanup(func() { browserResponses.Delete(filepath.Clean(f.s.options.DataDir)); f.s.Close(); f.board.Close() })
 	return f
 }
 func (f *webFixture) token(t *testing.T, owner string) core.TokenView {
@@ -85,7 +69,7 @@ func request(s *Server, method, path string, fields url.Values, cookie *http.Coo
 		r.Header.Add("Origin", o)
 	}
 	w := httptest.NewRecorder()
-	s.ServeHTTP(w, r)
+	observeBrowserResponse(s, w, r)
 	return w
 }
 func (f *webFixture) login(t *testing.T, token core.TokenView, old ...*http.Cookie) *http.Cookie {
@@ -94,7 +78,7 @@ func (f *webFixture) login(t *testing.T, token core.TokenView, old ...*http.Cook
 	if w.Code != 200 {
 		t.Fatalf("login get %d %s", w.Code, w.Body)
 	}
-	csrf := f.render.last().CSRF
+	csrf := f.response.last().CSRF
 	pre := w.Result().Cookies()[0]
 	r := httptest.NewRequest("POST", "https://accord.test/web/login", strings.NewReader(url.Values{"csrf": {csrf}, "token": {token.Secret}}.Encode()))
 	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -104,8 +88,8 @@ func (f *webFixture) login(t *testing.T, token core.TokenView, old ...*http.Cook
 		r.AddCookie(c)
 	}
 	w = httptest.NewRecorder()
-	f.s.ServeHTTP(w, r)
-	if w.Code != 303 {
+	observeBrowserResponse(f.s, w, r)
+	if w.Code != 200 {
 		t.Fatalf("login %d %s", w.Code, w.Body)
 	}
 	for _, c := range w.Result().Cookies() {
@@ -122,7 +106,7 @@ func (f *webFixture) page(t *testing.T, c *http.Cookie, path string) Page {
 	if w.Code != 200 {
 		t.Fatalf("page %s %d %s", path, w.Code, w.Body)
 	}
-	return f.render.last()
+	return f.response.last()
 }
 func (f *webFixture) post(c *http.Cookie, path string, p Page, op string, fields url.Values) *httptest.ResponseRecorder {
 	if fields == nil {
@@ -193,7 +177,7 @@ func TestBrowserCookieRotationRevokeAndLogout(t *testing.T) {
 		t.Fatal("old session survived login")
 	}
 	p = f.page(t, second, "/web/")
-	if w = f.post(second, "/web/logout", p, "logout", nil); w.Code != 303 {
+	if w = f.post(second, "/web/logout", p, "logout", nil); w.Code != 200 {
 		t.Fatalf("logout %d", w.Code)
 	}
 	if w = request(f.s, "GET", "/web/", nil, second); w.Code != 401 {
@@ -217,7 +201,7 @@ func TestBrowserOriginCSRFAndDraftBoundaries(t *testing.T) {
 		if w.Code != 403 {
 			t.Fatalf("origin %#v: %d", origins, w.Code)
 		}
-		if f.render.last().Draft["title"] != fields.Get("title") {
+		if f.response.last().Draft["title"] != fields.Get("title") {
 			t.Fatal("draft lost")
 		}
 	}
@@ -227,11 +211,11 @@ func TestBrowserOriginCSRFAndDraftBoundaries(t *testing.T) {
 	}
 	fields.Set("csrf", p.CSRF)
 	w := request(f.s, "POST", "/web/tasks", fields, c, "https://accord.test")
-	if w.Code != 303 {
+	if w.Code != 200 {
 		t.Fatalf("valid create %d %s", w.Code, w.Body)
 	}
 	w = request(f.s, "POST", "/web/tasks", fields, c, "https://accord.test")
-	if w.Code != 303 {
+	if w.Code != 200 {
 		t.Fatalf("replay %d", w.Code)
 	}
 	fields.Set("title", "changed")
@@ -242,7 +226,7 @@ func TestBrowserOriginCSRFAndDraftBoundaries(t *testing.T) {
 func TestFailedLoginLimiterReservesConcurrentAttempts(t *testing.T) {
 	f := fixture(t)
 	w := request(f.s, "GET", "/web/login", nil, nil)
-	csrf := f.render.last().CSRF
+	csrf := f.response.last().CSRF
 	pre := w.Result().Cookies()[0]
 	var wg sync.WaitGroup
 	codes := make(chan int, 16)
@@ -257,7 +241,7 @@ func TestFailedLoginLimiterReservesConcurrentAttempts(t *testing.T) {
 			r.Header.Set("X-Accord-Client-IP", time.Now().String())
 			r.AddCookie(pre)
 			w := httptest.NewRecorder()
-			f.s.ServeHTTP(w, r)
+			observeBrowserResponse(f.s, w, r)
 			codes <- w.Code
 		}()
 	}

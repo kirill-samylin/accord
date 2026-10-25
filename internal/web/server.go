@@ -45,8 +45,8 @@ func (b *browserSession) actor() core.Actor {
 }
 
 func New(board Board, options Options) (*Server, error) {
-	if board == nil || options.Renderer == nil {
-		return nil, fmt.Errorf("board and renderer required")
+	if board == nil {
+		return nil, fmt.Errorf("board required")
 	}
 	u, err := url.Parse(options.Origin)
 	if err != nil || u.User != nil || u.Host == "" || u.Path != "" || u.RawQuery != "" || u.Fragment != "" || strings.Contains(u.Host, "\\") {

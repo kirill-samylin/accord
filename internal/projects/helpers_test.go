@@ -5,7 +5,6 @@ import (
 	"agent-board/internal/store"
 	"agent-board/internal/transport"
 	"agent-board/internal/web"
-	"agent-board/internal/webui"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -41,11 +40,7 @@ func setup(t *testing.T) *fixture {
 	if e != nil {
 		t.Fatal(e)
 	}
-	renderer, e := webui.New()
-	if e != nil {
-		t.Fatal(e)
-	}
-	browser, e := web.New(s, web.Options{Origin: "http://127.0.0.1:8080", DataDir: webDir, Renderer: renderer})
+	browser, e := web.New(s, web.Options{Origin: "http://127.0.0.1:8080", DataDir: webDir})
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -53,7 +48,7 @@ func setup(t *testing.T) *fixture {
 	if e != nil {
 		t.Fatal(e)
 	}
-	r, e := Open(Options{DataDir: filepath.Join(root, "registry"), DefaultDB: db, DefaultWeb: webDir, Default: s, Browser: browser, Origin: "http://127.0.0.1:8080", Renderer: renderer, Config: cfg})
+	r, e := Open(Options{DataDir: filepath.Join(root, "registry"), DefaultDB: db, DefaultWeb: webDir, Default: s, Browser: browser, Origin: "http://127.0.0.1:8080", Config: cfg})
 	if e != nil {
 		t.Fatal(e)
 	}

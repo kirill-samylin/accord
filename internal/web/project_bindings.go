@@ -118,14 +118,12 @@ func projectResponseContext(w http.ResponseWriter) context.Context {
 func LoginFields(w http.ResponseWriter, r *http.Request) (map[string]string, error) {
 	return loginFields(w, r)
 }
-func (s *Server) RenderLogin(w http.ResponseWriter, r *http.Request, status int, csrf, message string) {
-	if wantsBrowserJSON(r) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(status)
+func (s *Server) LoginResponse(w http.ResponseWriter, r *http.Request, status int, csrf, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if r.Method != http.MethodHead {
 		_ = json.NewEncoder(w).Encode(map[string]any{"ok": status < 400, "page": map[string]any{"name": "login", "csrf": csrf, "error": message}})
-		return
 	}
-	s.options.Renderer.Render(w, status, "login", Page{Title: "Вход в Accord", CSRF: csrf, Error: message})
 }
 func (s *Server) ValidateLogout(r *http.Request) error {
 	s.mu.Lock()

@@ -1,0 +1,25 @@
+.filePicker {
+  min-width: 0;
+}
+
+.fileActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.fileButton {
+  max-width: 100%;
+  white-space: normal;
+}
+
+.fileStatus {
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-transform: none;
+  letter-spacing: normal;
+  overflow-wrap: anywhere;
+}

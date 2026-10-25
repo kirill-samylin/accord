@@ -6,7 +6,6 @@ import { Dialog as Primitive } from "radix-ui";
 import {
   ChevronRight,
   CircleHelp,
-  ExternalLink,
   Menu,
   Moon,
   Search,
@@ -216,13 +215,6 @@ export function Shell({
                   <p className="muted">{label(page.session.role)}</p>
                   <SessionControls page={page} onSuccess={onSuccess} />
                 </div>
-                {!scope.id ? (
-                  <DropdownMenuItem asChild>
-                    <a href={scope.web("/web/")}>
-                      Упрощённая версия <ExternalLink size={13} />
-                    </a>
-                  </DropdownMenuItem>
-                ) : null}
                 <DropdownMenuItem asChild>
                   <a
                     href="/PAPERCLIP-LICENSE.txt"
@@ -252,14 +244,6 @@ export function Shell({
             </div>
           ) : null}
           {children}
-          <noscript>
-            <p className="notice">
-              Для панели нужен JavaScript.{" "}
-              {!scope.id ? (
-                <a href="/web/">Откройте базовый интерфейс</a>
-              ) : null}
-            </p>
-          </noscript>
         </main>
       </div>
       <nav className="mobile-nav" aria-label="Быстрая навигация">

@@ -105,7 +105,7 @@ func TestDashboardReadDoesNotRenewSessionLeaseOrCreateActions(t *testing.T) {
 	task := f.question(t, token)
 	cookie := f.login(t, token)
 	p := f.page(t, cookie, "/web/tasks/"+task.Key)
-	if w := f.post(cookie, "/web/tasks/"+task.Key+"/claim", p, "claim", nil); w.Code != 303 {
+	if w := f.post(cookie, "/web/tasks/"+task.Key+"/claim", p, "claim", nil); w.Code != 200 {
 		t.Fatal(w.Code)
 	}
 	b, err := f.s.loadBrowser(newBrowserRequest(cookie))
@@ -176,7 +176,7 @@ func TestDashboardBrowserBoundaryMethodsAndQueries(t *testing.T) {
 	r := httptest.NewRequest("GET", "https://accord.test/web/data/dashboard", nil)
 	r.Header.Set("Authorization", "Bearer "+token.Secret)
 	w := httptest.NewRecorder()
-	f.s.ServeHTTP(w, r)
+	observeBrowserResponse(f.s, w, r)
 	if w.Code != 401 || strings.Contains(w.Body.String(), "<html") || strings.Contains(w.Body.String(), token.Secret) {
 		t.Fatal("native credential authorized browser data")
 	}

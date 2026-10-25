@@ -225,7 +225,7 @@ func TestDesignAPICurrentAuthSessionAndDownloadOnly(t *testing.T) {
 			r.Header.Set("Origin", origin)
 		}
 		w := &designDeadlineWriter{httptest.NewRecorder()}
-		f.s.ServeHTTP(w, r)
+		observeBrowserResponse(f.s, w, r)
 		return w.ResponseRecorder
 	}
 	for _, path := range []string{"/api/v1/designs", "/api/v1/designs/" + a.AssetID, "/api/v1/designs/" + a.AssetID + "/download"} {

@@ -79,22 +79,22 @@ class CoordinationStorage(ProjectsFixture, unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'checksum'):
             self.snapshot()
 
-    def test_unknown_schema6_and_historical_schema5_require_inspection(self):
+    def test_future_schema7_and_historical_schema6_require_inspection(self):
         self.upgrade(self.state)
         with closing(sqlite3.connect(self.state / 'board.db')) as db, db:
-            db.execute('PRAGMA user_version=6')
+            db.execute('PRAGMA user_version=7')
         with self.assertRaises(RuntimeError):
             self.snapshot()
         with closing(sqlite3.connect(self.state / 'board.db')) as db, db:
             db.execute('PRAGMA user_version=4')
         self.schema3_history(self.state)
-        path = self.state / 'board.db.migrations' / ('schema5-' + 'f' * 64 + '.db')
+        path = self.state / 'board.db.migrations' / ('schema6-' + 'f' * 64 + '.db')
         path.write_bytes(b'unknown future migration evidence')
         path.chmod(0o600)
         with self.assertRaisesRegex(RuntimeError, 'unknown'):
             self.snapshot()
 
-    def test_offline_restore4_preserves_exact_bytes_before_mocked_auth_reset(self):
+    def test_offline_restore4_preserves_bytes_but_rejects_unverified_reset_ack(self):
         for folder in (self.state, self.projects / 'projects' / OTHER):
             self.upgrade(folder)
             self.schema3_history(folder)
@@ -104,10 +104,13 @@ class CoordinationStorage(ProjectsFixture, unittest.TestCase):
         with patch.object(offline.restore, 'require_capable'), patch.object(offline.restore.subprocess, 'run') as run:
             run.return_value.stdout = b'{"restored_state_reset":true}'
             run.return_value.stderr = b''
-            offline.restore.restore(saved, output, self.root / 'synthetic-binary')
+            # A mocked native ACK performs no schema6 migration or authority reset.
+            # Keep verifying the actual post-reset gate rather than mocking it away.
+            with self.assertRaisesRegex(RuntimeError, 'snapshot schema/integrity differs'):
+                offline.restore.restore(saved, output, self.root / 'synthetic-binary')
         self.assertEqual((saved / 'manifest.json').read_bytes(), source_manifest)
         self.assertEqual((output / 'board.db').read_bytes(), (saved / 'default/board.db').read_bytes())
         self.assertEqual((output / 'projects-data/projects' / OTHER / 'board.db').read_bytes(),
                          (saved / 'projects' / OTHER / 'board.db').read_bytes())
         self.assertTrue((output / 'RESTORE_REQUIRES_RESET').exists())
-        self.assertTrue((output / 'RESTORE_AUTH_RESET_COMPLETE').exists())
+        self.assertFalse((output / 'RESTORE_AUTH_RESET_COMPLETE').exists())

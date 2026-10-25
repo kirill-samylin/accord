@@ -113,15 +113,6 @@
   margin-bottom: 24px;
   font-weight: 600;
 }
-.auth-footer {
-  margin-top: 24px;
-  padding-top: 14px;
-  border-top: var(--line-thin) dashed var(--ink);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--muted-foreground);
-  text-align: center;
-}
 .dialog-overlay {
   position: fixed;
   inset: 0;

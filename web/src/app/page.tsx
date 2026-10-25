@@ -13,9 +13,6 @@ export default function Home() {
       <Link prefetch={false} className="button" href="/app">
         Открыть панель
       </Link>
-      <a href="/web/" title="Упрощённая версия работает без JavaScript">
-        Упрощённая версия (без JavaScript)
-      </a>
     </main>
   );
 }

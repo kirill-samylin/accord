@@ -5,7 +5,6 @@ import (
 	"agent-board/internal/projects"
 	"agent-board/internal/store"
 	"agent-board/internal/web"
-	"agent-board/internal/webui"
 	"bytes"
 	"context"
 	"os"
@@ -26,11 +25,7 @@ func TestMultiprojectServeRefusesDefaultMetadataLossBeforeConstructors(t *testin
 			if e != nil {
 				t.Fatal(e)
 			}
-			renderer, e := webui.New()
-			if e != nil {
-				t.Fatal(e)
-			}
-			browser, e := web.New(board, web.Options{Origin: "http://127.0.0.1:8080", DataDir: webDir, Renderer: renderer})
+			browser, e := web.New(board, web.Options{Origin: "http://127.0.0.1:8080", DataDir: webDir})
 			if e != nil {
 				t.Fatal(e)
 			}

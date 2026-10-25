@@ -65,7 +65,7 @@ func (r *Registry) openRuntime(id, db, dir string, published bool) (*runtime, er
 		r.runtimes[id] = v
 		return v, nil
 	}
-	browser, err := web.New(board, web.Options{Origin: r.options.Origin, DataDir: dir, Renderer: r.options.Renderer, StaticHandler: r.options.Static, TrustedProxy: r.options.TrustedProxy})
+	browser, err := web.New(board, web.Options{Origin: r.options.Origin, DataDir: dir, TrustedProxy: r.options.TrustedProxy})
 	if err != nil {
 		board.Close()
 		return nil, err

@@ -11,38 +11,60 @@ function multipart(fields, filename, size) {
   for (const [key, value] of Object.entries(fields)) prefix += `--${boundary}\r\nContent-Disposition: form-data; name="${key}"\r\n\r\n${value}\r\n`;
   prefix += `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: application/zip\r\n\r\n`;
   const tail = Buffer.from(`\r\n--${boundary}--\r\n`);
-  return {prefix: Buffer.from(prefix), tail, headers: {'Content-Type': 'multipart/form-data; boundary=' + boundary, 'Content-Length': Buffer.byteLength(prefix) + size + tail.length}};
+  return {prefix: Buffer.from(prefix), tail, headers: {Accept: 'application/json', 'Content-Type': 'multipart/form-data; boundary=' + boundary, 'Content-Length': Buffer.byteLength(prefix) + size + tail.length}};
 }
 async function main() {
   fs.mkdirSync(root, {recursive: true, mode: 0o700}); fs.chmodSync(root, 0o700);
   const state = path.join(root, 'upload-' + crypto.randomUUID()); fs.mkdirSync(state, {mode: 0o700});
   const file = token(state, 'upload-' + crypto.randomUUID());
   srv = await server(binary, state, await port()); const {origin} = srv; report.process_roles = {server_pid: srv.child.pid, client: 'real net/http multipart'};
-  const page = await fetch(origin + '/web/login');
-  const html = await page.text(); const csrf = html.match(/name="csrf" value="([^"]+)"/)[1];
+  const page = await fetch(origin + '/web/login', {headers: {Accept: 'application/json'}, redirect: 'manual'});
+  assert.equal(page.status, 200); const initial = await page.json(); assert(initial.ok && initial.page.csrf);
+  const csrf = initial.page.csrf;
   const preauth = page.headers.getSetCookie().map(s => s.split(';')[0]).join('; ');
   const form = new FormData(); form.append('csrf', csrf); form.append('token', fs.readFileSync(file, 'utf8').trim());
-  const login = await fetch(origin + '/web/login', {method: 'POST', headers: {Origin: origin, Cookie: preauth}, body: form, redirect: 'manual'});
-  assert.equal(login.status, 303, 'synthetic process login failed');
+  const login = await fetch(origin + '/web/login', {method: 'POST', headers: {Accept: 'application/json', Origin: origin, Cookie: preauth}, body: form, redirect: 'manual'});
+  assert.equal(login.status, 200, 'synthetic process JSON login failed'); assert((await login.json()).ok);
   const cookie = login.headers.getSetCookie().map(s => s.split(';')[0]).join('; ');
-  async function fields(title) {
-    const p = await fetch(origin + '/web/designs', {headers: {Cookie: cookie}}); assert.equal(p.status, 200);
-    const body = await p.text(); const upload = body.split('data-upload>')[1];
-    return {csrf: upload.match(/name="csrf" value="([^"]+)"/)[1], action_id: upload.match(/name="action_id" value="([^"]+)"/)[1], title, scope: 'project', scope_key: '', epic_key: '', design_id: ''};
+  async function designs() {
+    const response = await fetch(origin + '/web/designs', {headers: {Accept: 'application/json', Cookie: cookie}, redirect: 'manual'});
+    assert.equal(response.status, 200); const result = await response.json(); assert(result.ok && result.page); return result.page;
   }
+  async function fields(title) {
+    const page = await designs(); assert(page.csrf && page.actions.upload);
+    return {csrf: page.csrf, action_id: page.actions.upload, title, scope: 'project', scope_key: '', epic_key: '', design_id: ''};
+  }
+  const beforeHTML = (await designs()).designs ?? [];
+  const rejectedHTML = await fetch(origin + '/web/designs', {method: 'POST', headers: {Accept: 'text/html', Origin: origin, Cookie: cookie}, body: new URLSearchParams(await fields('Synthetic rejected HTML')), redirect: 'manual'});
+  assert.equal(rejectedHTML.status, 406, 'non-JSON upload reached form processing'); assert.equal(rejectedHTML.headers.get('location'), null);
+  assert.equal((await rejectedHTML.json()).error.code, 'JSON_REQUIRED'); assert.deepEqual((await designs()).designs ?? [], beforeHTML);
+  report.checks.push({id: 'non-json-post406-no-upload-mutation', result: 'PASS'}); console.log('non-json-post406-no-upload-mutation PASS');
   async function sized(size) {
-    const body = multipart(await fields('Synthetic boundary ' + size), 'boundary.zip', size);
+    const title = 'Synthetic boundary ' + size; const body = multipart(await fields(title), 'boundary.zip', size);
     const bytes = Buffer.alloc(size); bytes.write('PK\x05\x06', 0, 'binary');
-    return new Promise((resolve, reject) => {
+    const status = await new Promise((resolve, reject) => {
       const req = http.request(origin + '/web/designs', {method: 'POST', headers: {...body.headers, Origin: origin, Cookie: cookie}}, res => {res.resume(); res.on('end', () => resolve(res.statusCode));});
       req.on('error', reject); req.setTimeout(15000, () => req.destroy(new Error('byte boundary timeout')));
       req.write(body.prefix); req.write(bytes); req.end(body.tail);
     });
+    if (status === 200) {const asset = ((await designs()).designs ?? []).find(row => row.title === title); assert(asset); assert.equal(asset.size, size); assert.equal(asset.sha256, sha(bytes));}
+    return status;
   }
-  assert.equal(await sized(50 * 1024 * 1024), 303, 'inclusive50MiB boundary failed');
+  assert.equal(await sized(50 * 1024 * 1024), 200, 'inclusive50MiB JSON boundary failed');
   assert.equal(await sized(50 * 1024 * 1024 + 1), 413, 'server accepted over50MiB');
   report.checks.push({id: 'server-inclusive50MiB-and-over-limit', result: 'PASS', accepted_bytes: 50 * 1024 * 1024, rejected_bytes: 50 * 1024 * 1024 + 1}); console.log('server-inclusive50MiB-and-over-limit PASS');
   if (process.env.ACCORD_QA_UPLOAD_BOUNDARY_ONLY) {report.result = 'PASS'; return;}
+  const slow = multipart(await fields('Synthetic31s streaming'), 'slow.zip', 22); const slowStart = Date.now();
+  const slowStatus = await new Promise((resolve, reject) => {
+    let timer;
+    const req = http.request(origin + '/web/designs', {method: 'POST', headers: {...slow.headers, Origin: origin, Cookie: cookie}}, res => {res.resume(); res.on('end', () => {clearTimeout(timer); resolve(res.statusCode);});});
+    req.on('error', error => {clearTimeout(timer); reject(error);}); req.setTimeout(45000, () => req.destroy(new Error('slow31s request timeout')));
+    req.write(slow.prefix); req.write(Buffer.from('PK\x05\x06', 'binary'));
+    timer = setTimeout(() => req.end(Buffer.concat([Buffer.alloc(18), slow.tail])), 31000);
+  });
+  const slowElapsed = Date.now() - slowStart; assert.equal(slowStatus, 200); assert(slowElapsed >= 31000 && slowElapsed < 45000, 'slow31s stream tolerance');
+  const slowAsset = ((await designs()).designs ?? []).find(row => row.title === 'Synthetic31s streaming'); assert(slowAsset); assert.equal(slowAsset.size, 22); assert.equal(slowAsset.sha256, sha(Buffer.concat([Buffer.from('PK\x05\x06', 'binary'), Buffer.alloc(18)])));
+  report.checks.push({id: 'server-slow-body-over-global30s', result: 'PASS', elapsed_ms: slowElapsed}); console.log('server-slow-body-over-global30s PASS');
   const body = multipart(await fields('Synthetic120s deadline'), 'deadline.zip', 22);
   const start = Date.now();
   const outcome = await new Promise((resolve, reject) => {

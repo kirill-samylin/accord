@@ -40,7 +40,7 @@ func (r *Registry) login(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		r.cookie(w, r.preauthName(), secret, expires)
-		r.options.Browser.RenderLogin(w, req, 200, csrf, "")
+		r.options.Browser.LoginResponse(w, req, 200, csrf, "")
 		return
 	}
 	if req.Method != "POST" {
@@ -74,7 +74,7 @@ func (r *Registry) login(w http.ResponseWriter, req *http.Request) {
 	}
 	who, e := r.Authenticate(ctx, fields["token"])
 	if e != nil {
-		r.options.Browser.RenderLogin(w, req, 401, csrf, "Не удалось войти: проверьте токен")
+		r.options.Browser.LoginResponse(w, req, 401, csrf, "Не удалось войти: проверьте токен")
 		return
 	}
 	undo()

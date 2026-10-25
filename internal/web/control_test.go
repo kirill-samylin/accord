@@ -21,8 +21,8 @@ func TestControlPagesRoutingAndActualDTO(t *testing.T) {
 	cases := map[string]string{"/web/": "overview", "/web/overview": "overview", "/web/?view=tasks": "board", "/web/?view=questions": "board", "/web/tasks": "board", "/web/questions": "board", "/web/agents": "agents", "/web/projects": "projects", "/web/settings": "settings", "/web/activity": "activity", "/web/stats": "stats", "/web/tasks/" + question.Key: "task", "/web/history": "history"}
 	for path, name := range cases {
 		p := f.page(t, cookie, path)
-		if f.render.name != name {
-			t.Fatalf("%s got %s", path, f.render.name)
+		if f.response.name != name {
+			t.Fatalf("%s got %s", path, f.response.name)
 		}
 		if path == "/web/" && (p.Overview == nil || p.Overview.TasksTotal != 1 || p.Overview.Project != "fixture" || len(p.Activity) == 0) {
 			t.Fatalf("overview %+v", p)
@@ -59,7 +59,7 @@ func TestControlJSONReadsDoNotCreateActionsOrRenew(t *testing.T) {
 	task := f.question(t, token)
 	cookie := f.login(t, token)
 	p := f.page(t, cookie, "/web/tasks/"+task.Key)
-	if w := f.post(cookie, "/web/tasks/"+task.Key+"/claim", p, "claim", nil); w.Code != 303 {
+	if w := f.post(cookie, "/web/tasks/"+task.Key+"/claim", p, "claim", nil); w.Code != 200 {
 		t.Fatal(w.Code)
 	}
 	b, err := f.s.loadBrowser(newBrowserRequest(cookie))
@@ -144,7 +144,7 @@ func TestControlUnknownAndInvalidQueriesRetainDraft(t *testing.T) {
 		}
 	}
 	w := request(f.s, "GET", "/web/tasks?owner=retained&layout=bad", nil, cookie)
-	if w.Code != 400 || f.render.last().Draft["owner"] != "retained" || f.render.last().Draft["layout"] != "bad" {
+	if w.Code != 400 || f.response.last().Draft["owner"] != "retained" || f.response.last().Draft["layout"] != "bad" {
 		t.Fatal("invalid filters lost")
 	}
 }

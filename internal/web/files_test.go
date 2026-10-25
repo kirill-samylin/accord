@@ -5,12 +5,10 @@ import (
 	"agent-board/internal/store"
 	"bytes"
 	"context"
-	"encoding/json"
 	"image"
 	"image/png"
 	"io"
 	"mime/multipart"
-	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -19,21 +17,12 @@ import (
 	"time"
 )
 
-type designTestRenderer struct{ Page Page }
-
-func (d *designTestRenderer) Render(w http.ResponseWriter, status int, _ string, p Page) error {
-	d.Page = p
-	w.WriteHeader(status)
-	return json.NewEncoder(w).Encode(p)
-}
-
 type designFixture struct {
-	s      *Server
-	board  *store.Store
-	b      *browserSession
-	token  string
-	render *designTestRenderer
-	dir    string
+	s     *Server
+	board *store.Store
+	b     *browserSession
+	token string
+	dir   string
 }
 
 func designFixtureNew(t *testing.T) *designFixture {
@@ -59,14 +48,13 @@ func designFixtureNew(t *testing.T) *designFixture {
 	if err != nil {
 		t.Fatal(err)
 	}
-	render := &designTestRenderer{}
-	s, err := New(board, Options{Origin: "https://accord.example", DataDir: filepath.Join(dir, "web"), Renderer: render})
+	s, err := New(board, Options{Origin: "https://accord.example", DataDir: filepath.Join(dir, "web")})
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { s.Close() })
 	b := &browserSession{Hash: strings.Repeat("a", 64), CSRF: strings.Repeat("b", 64), TokenID: principal.ID, Principal: principal, Session: session, Expires: time.Now().Add(time.Hour)}
-	return &designFixture{s: s, board: board, b: b, token: token.Secret, render: render, dir: filepath.Join(dir, "web")}
+	return &designFixture{s: s, board: board, b: b, token: token.Secret, dir: filepath.Join(dir, "web")}
 }
 
 // ResponseController requires real deadline support. This test writer implements

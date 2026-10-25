@@ -74,7 +74,7 @@ func TestSchema1BrowserImportPreservesHashCSRFSessionAndLegacyDescribe(t *testin
 	}
 	db.Close()
 	options := f.r.options
-	browser, e := web.New(f.store, web.Options{Origin: options.Origin, DataDir: f.webDir, Renderer: options.Renderer})
+	browser, e := web.New(f.store, web.Options{Origin: options.Origin, DataDir: f.webDir})
 	if e != nil {
 		t.Fatal(e)
 	}

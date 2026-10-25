@@ -4,7 +4,6 @@ package web
 import (
 	"agent-board/internal/core"
 	"context"
-	"net/http"
 	"time"
 )
 
@@ -51,13 +50,8 @@ type Options struct {
 	AccessGuard     func(context.Context, bool, string, func() error) error
 	ActionEpoch     func(context.Context) (int64, error)
 	SessionAllowed  func(context.Context, string) error
-	Renderer        Renderer
-	StaticHandler   http.Handler
 	// TrustedProxy permits only a loopback peer's overwritten X-Accord-Client-IP.
 	TrustedProxy bool
-}
-type Renderer interface {
-	Render(http.ResponseWriter, int, string, Page) error
 }
 
 type Page struct {

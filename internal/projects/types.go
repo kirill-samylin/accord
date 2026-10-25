@@ -45,8 +45,6 @@ type Options struct {
 	DataDir, DefaultDB, DefaultWeb, Origin string
 	Default                                *store.Store
 	Browser                                *web.Server
-	Renderer                               web.Renderer
-	Static                                 http.Handler
 	Config                                 core.Config
 	TrustedProxy                           bool
 	Offline                                bool

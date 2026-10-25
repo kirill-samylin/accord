@@ -44,7 +44,7 @@ func fail(w http.ResponseWriter, err error) {
 	write(w, status, map[string]any{"ok": false, "error": map[string]string{"code": code, "message": message}, "retry_same_action": status >= 500})
 }
 func redirect(w http.ResponseWriter, req *http.Request, target string) {
-	if strings.Contains(req.Header.Get("Accept"), "application/json") {
+	if web.WantsBrowserJSON(req) {
 		write(w, 200, map[string]any{"ok": true, "redirect": target})
 		return
 	}
@@ -64,6 +64,21 @@ func (r *Registry) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
 	if !r.allowedBrowser(req) {
 		fail(w, denied())
+		return
+	}
+	if target, ok := web.BrowserPageDestination(req); ok {
+		http.Redirect(w, req, target, http.StatusSeeOther)
+		return
+	}
+	if (req.Method == http.MethodGet || req.Method == http.MethodHead) && !web.WantsBrowserJSON(req) {
+		_, path, _ := projectRoute(req.URL.Path, "/web/")
+		if web.BrowserJSONRoute(path) {
+			http.NotFound(w, req)
+			return
+		}
+	}
+	if req.Method == http.MethodPost && !web.WantsBrowserJSON(req) {
+		write(w, http.StatusNotAcceptable, map[string]any{"ok": false, "error": map[string]string{"code": "JSON_REQUIRED", "message": "Откройте Accord в веб-клиенте"}})
 		return
 	}
 	if req.URL.Path == "/web/login" {
@@ -102,10 +117,6 @@ func (r *Registry) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		fail(w, err)
 		return
 	}
-	if scoped && req.Method == "POST" && !strings.Contains(req.Header.Get("Accept"), "application/json") {
-		write(w, 406, map[string]any{"ok": false, "error": map[string]string{"code": "JSON_REQUIRED", "message": "Откройте проект в веб-клиенте"}})
-		return
-	}
 	v, err := r.runtime(pid)
 	if err != nil {
 		fail(w, err)
@@ -122,10 +133,6 @@ func (r *Registry) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			target += "?" + req.URL.RawQuery
 		}
 		write(w, 409, map[string]any{"ok": false, "error": map[string]string{"code": "PROJECT_SESSION_REQUIRED", "message": "Откройте проект"}, "project": a.project, "target": target})
-		return
-	}
-	if scoped && (req.Method == "GET" || req.Method == "HEAD") && !strings.Contains(req.Header.Get("Accept"), "application/json") && !strings.HasPrefix(path, "/web/designs/") {
-		http.Redirect(w, req, "/app/p/"+pid+strings.TrimPrefix(path, "/web")+query(req), 303)
 		return
 	}
 	cloned := req.Clone(web.WithProjectScope(req.Context(), func() string {

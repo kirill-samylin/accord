@@ -2,6 +2,7 @@ package web
 
 import (
 	"bytes"
+	"context"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -42,7 +43,7 @@ func jsonUploadRequest(t *testing.T, f *webFixture, cookie *http.Cookie, page br
 	r.Header.Set("Content-Type", form.FormDataContentType())
 	r.AddCookie(cookie)
 	w := &browserDeadlineWriter{ResponseRecorder: httptest.NewRecorder()}
-	f.s.ServeHTTP(w, r)
+	observeBrowserResponse(f.s, w, r)
 	return w
 }
 func TestBrowserJSONUploadMetadataDeadlineReplayAndBinary(t *testing.T) {
@@ -85,7 +86,7 @@ func TestBrowserJSONUploadMetadataDeadlineReplayAndBinary(t *testing.T) {
 	r.AddCookie(cookie)
 	r.Header.Set("Accept", "application/json")
 	binary := &browserDeadlineWriter{ResponseRecorder: httptest.NewRecorder()}
-	f.s.ServeHTTP(binary, r)
+	observeBrowserResponse(f.s, binary, r)
 	if binary.Code != 200 || binary.Body.String() != string(data) || binary.Header().Get("Content-Type") != "application/octet-stream" || !strings.HasPrefix(binary.Header().Get("Content-Disposition"), "attachment;") {
 		t.Fatal("binary transfer negotiated JSON")
 	}
@@ -104,4 +105,47 @@ func TestBrowserJSONUploadValidationRotatesActionAndKeepsDraft(t *testing.T) {
 	bad := p
 	bad.CSRF = "bad"
 	decodeBrowser(t, jsonUploadRequest(t, f, cookie, bad, []byte("<!doctype html><title>test</title>")).ResponseRecorder, 403)
+}
+
+func TestBinaryRoutesRetainAuthenticationStatusWithoutLegacyRenderer(t *testing.T) {
+	f := fixture(t)
+	token := f.token(t, "binary-auth")
+	cookie := f.login(t, token)
+	page := jsonBrowserPage(t, f, cookie, "/web/designs")
+	data := []byte("<!doctype html><title>private design</title>")
+	out := decodeBrowser(t, jsonUploadRequest(t, f, cookie, page, data).ResponseRecorder, 200)
+	assets := jsonBrowserPage(t, f, cookie, out.Redirect).Designs
+	if len(assets) != 1 {
+		t.Fatal("missing uploaded design")
+	}
+	paths := []string{assets[0].DownloadURL, strings.TrimSuffix(assets[0].DownloadURL, "/download") + "/preview"}
+	for _, revoked := range []bool{false, true} {
+		if revoked {
+			if err := f.board.RevokeToken(context.Background(), token.ID); err != nil {
+				t.Fatal(err)
+			}
+		}
+		for _, path := range paths {
+			for _, accept := range []string{"", "application/json"} {
+				r := httptest.NewRequest("GET", "https://accord.test"+path, nil)
+				r.Header.Set("Accept", accept)
+				if revoked {
+					r.AddCookie(cookie)
+				}
+				w := httptest.NewRecorder()
+				f.s.ServeHTTP(w, r)
+				if w.Code != 401 || w.Header().Get("Location") != "" || strings.Contains(w.Body.String(), "private design") {
+					t.Fatalf("binary auth revoked%v Accept%q: %d %s", revoked, accept, w.Code, w.Body)
+				}
+				r = httptest.NewRequest("POST", "https://accord.test"+path, nil)
+				r.Header.Set("Accept", accept)
+				r.Header.Set("Origin", "https://foreign.test")
+				w = httptest.NewRecorder()
+				f.s.ServeHTTP(w, r)
+				if w.Code != 403 {
+					t.Fatalf("binary foreign Origin: %d", w.Code)
+				}
+			}
+		}
+	}
 }

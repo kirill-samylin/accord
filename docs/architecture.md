@@ -1,5 +1,12 @@
 # Архитектура пилота
 
+> TASK019: прежний Go HTML renderer удалён целиком; единственный UI — Next.
+> JSON browser handlers `/web` сохраняют cookies/CSRF/actions/replay и scoped ACL.
+> HTML GET/HEAD известных страниц — fixed relative redirects в `/app`,
+> nonJSON POST406 до body/мутации; native/data/downloads работают отдельно.
+> Это замена presentation layer без изменения board schema6/floors или домена.
+> Текущий контракт/приёмка — [TASK019](TASK-019-single-ui.md), [next-web.md](next-web.md).
+
 > TASK014: durable workflow выполнения требования описывается в
 > [automation.md](automation.md); канонический статус — [TASK014](TASK-014-automation.md).
 > Это новое прямо порученное расширение ручного цикла. Автоматические решения

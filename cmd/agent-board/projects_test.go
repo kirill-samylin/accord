@@ -4,7 +4,6 @@ import (
 	"agent-board/internal/core"
 	"agent-board/internal/store"
 	webserver "agent-board/internal/web"
-	"agent-board/internal/webui"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -29,11 +28,7 @@ func TestProjectCLIExplicitBootstrapCredentialAndRestoreRecovery(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	renderer, e := webui.New()
-	if e != nil {
-		t.Fatal(e)
-	}
-	browser, e := webserver.New(s, webserver.Options{Origin: "http://127.0.0.1:8080", DataDir: web, Renderer: renderer})
+	browser, e := webserver.New(s, webserver.Options{Origin: "http://127.0.0.1:8080", DataDir: web})
 	if e != nil {
 		t.Fatal(e)
 	}

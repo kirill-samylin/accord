@@ -4,7 +4,8 @@
 > и возможности, спросив о Next.js. Для следующей поставки выбран отдельный
 > Next.js/TypeScript клиент поверх Go. Актуальное решение —
 > [TASK-007](TASK-007-next-paperclip.md) и [WORK122](work/WORK-122-next-architecture.md).
-> Ниже сохранено решение предыдущего SSR этапа TASK-006 для его сопровождения.
+> В TASK019 прежний SSR полностью удалён из кода; ниже только историческое
+> решение TASK-006. Текущий клиент и JSON-only контракт — [next-web.md](next-web.md).
 
 20.10.2026. Решение для [TASK-006](TASK-006-control-refinement.md).
 Существующие [инварианты](architecture.md) и [API](api.md) сохраняются.

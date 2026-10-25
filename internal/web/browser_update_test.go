@@ -55,7 +55,7 @@ func TestBrowserJSONUpdateRequesterValidationAndExactReplay(t *testing.T) {
 	}
 	// Existing SSR callers use exactly the same operation and native result.
 	p2 := f.page(t, cookie, "/web/tasks/"+task.Key)
-	if w := f.post(cookie, "/web/tasks/"+task.Key+"/update", p2, "update", url.Values{"title": {"SSR update"}, "description": {""}, "generation": {"0"}}); w.Code != 303 {
+	if w := f.post(cookie, "/web/tasks/"+task.Key+"/update", p2, "update", url.Values{"title": {"SSR update"}, "description": {""}, "generation": {"0"}}); w.Code != 200 {
 		t.Fatalf("SSR update %d", w.Code)
 	}
 }

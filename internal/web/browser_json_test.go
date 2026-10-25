@@ -128,8 +128,8 @@ func TestBrowserJSONNegotiationAndRawErrors(t *testing.T) {
 		r.Header.Set("Accept", accept)
 		w := httptest.NewRecorder()
 		f.s.ServeHTTP(w, r)
-		if strings.Contains(w.Body.String(), `"ok"`) || f.render.last().CSRF == "" {
-			t.Fatalf("SSR representation changed for %q", accept)
+		if w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/app" || len(w.Result().Cookies()) != 0 {
+			t.Fatalf("non-JSON navigation changed for %q: %d %s", accept, w.Code, w.Header())
 		}
 	}
 	for _, test := range []struct {

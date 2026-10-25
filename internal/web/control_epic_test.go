@@ -24,10 +24,10 @@ func TestControlEpicFiltersPreserveExistingRoutes(t *testing.T) {
 		if response.Code != 200 {
 			t.Fatalf("valid epic route %s: %d", path, response.Code)
 		}
-		if f.render.page.EpicKey != task.EpicKey {
+		if f.response.page.EpicKey != task.EpicKey {
 			t.Fatalf("epic filter lost on %s", path)
 		}
-		for _, got := range f.render.page.Tasks {
+		for _, got := range f.response.page.Tasks {
 			if got.EpicKey != task.EpicKey {
 				t.Fatalf("wrong epic on %s", path)
 			}

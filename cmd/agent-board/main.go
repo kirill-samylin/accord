@@ -19,7 +19,6 @@ import (
 	"agent-board/internal/store"
 	"agent-board/internal/transport"
 	"agent-board/internal/web"
-	"agent-board/internal/webui"
 )
 
 func main() {
@@ -202,17 +201,13 @@ func serve(args []string, out io.Writer) error {
 		if *webData == "" {
 			return errors.New("web-data required when web-origin is set")
 		}
-		renderer, err := webui.New()
-		if err != nil {
-			return errors.New("cannot initialize web templates")
-		}
-		browser, err := web.New(s, web.Options{Origin: *webOrigin, DataDir: *webData, Renderer: renderer, StaticHandler: renderer.Static(), TrustedProxy: *trustedProxy})
+		browser, err := web.New(s, web.Options{Origin: *webOrigin, DataDir: *webData, TrustedProxy: *trustedProxy})
 		if err != nil {
 			return fmt.Errorf("cannot initialize web: %w", err)
 		}
 		defer browser.Close()
 		if *projectsData != "" {
-			registry, err := projects.Open(projects.Options{DataDir: *projectsData, DefaultDB: *db, DefaultWeb: *webData, Default: s, Browser: browser, Renderer: renderer, Static: renderer.Static(), Origin: *webOrigin, TrustedProxy: *trustedProxy, Config: core.Config{Project: "agent-board", LeaseTTL: *taskTTL, SessionTTL: *sessionTTL, DuplicateMode: *dupMode, DuplicateThreshold: *dupThreshold}})
+			registry, err := projects.Open(projects.Options{DataDir: *projectsData, DefaultDB: *db, DefaultWeb: *webData, Default: s, Browser: browser, Origin: *webOrigin, TrustedProxy: *trustedProxy, Config: core.Config{Project: "agent-board", LeaseTTL: *taskTTL, SessionTTL: *sessionTTL, DuplicateMode: *dupMode, DuplicateThreshold: *dupThreshold}})
 			if err != nil {
 				return fmt.Errorf("cannot initialize project registry: %w", err)
 			}

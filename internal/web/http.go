@@ -8,9 +8,20 @@ import (
 )
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if browserJSONRoute(r.URL.Path) {
+	if (r.Method == http.MethodGet || r.Method == http.MethodHead) && !WantsBrowserJSON(r) {
+		if target, ok := BrowserPageDestination(r); ok {
+			w.Header().Set("Cache-Control", "no-store")
+			http.Redirect(w, r, target, http.StatusSeeOther)
+			return
+		}
+		if BrowserJSONRoute(r.URL.Path) {
+			http.NotFound(w, r)
+			return
+		}
+	}
+	if BrowserJSONRoute(r.URL.Path) {
 		w.Header().Add("Vary", "Accept")
-		if wantsBrowserJSON(r) {
+		if WantsBrowserJSON(r) || r.Method == http.MethodPost {
 			out := &browserJSONWriter{ResponseWriter: w, request: r}
 			w = out
 			defer out.finish()
@@ -18,27 +29,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	// Basic HTML form POSTs serialize Origin as null under no-referrer.
-	// same-origin preserves their Origin while disclosing no referrer off-site.
+	// Keep same-origin browser requests attributable without disclosing a
+	// referrer to other sites; JSON clients retain the existing Origin boundary.
 	w.Header().Set("Referrer-Policy", "same-origin")
 	w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
 	if strings.HasPrefix(r.URL.Path, "/api/v1/designs") {
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		s.handleDesignsAPI(w, r)
-		return
-	}
-	if r.URL.Path == "/" && (r.Method == "GET" || r.Method == "HEAD") {
-		// A fresh visitor must reach the login form, not an authenticated
-		// page's 401 screen. Existing browser sessions retain their home page.
-		destination := "/web/"
-		if _, err := s.loadBrowser(r); err != nil {
-			if errorStatus(err) != http.StatusUnauthorized {
-				s.fail(w, r, nil, err)
-				return
-			}
-			destination = "/web/login"
-		}
-		http.Redirect(w, r, destination, http.StatusSeeOther)
 		return
 	}
 	if !strings.HasPrefix(r.URL.Path, "/web/") {
@@ -55,26 +52,32 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == "POST" {
+		origins := r.Header.Values("Origin")
+		if len(origins) != 1 || origins[0] != s.options.Origin || r.Header.Get("Sec-Fetch-Site") == "cross-site" {
+			// Preserve the bounded public draft for JSON clients even when Origin
+			// fails. Non-JSON submissions never reach body parsing or mutations.
+			if WantsBrowserJSON(r) && r.URL.Path != "/web/login" && r.URL.Path != "/web/designs" {
+				_ = parseForm(w, r)
+			}
+			s.render(w, 403, "error", Page{Title: "Действие отклонено", Error: "Обновите форму: источник запроса не разрешён", Draft: draft(r)})
+			return
+		}
+		if !WantsBrowserJSON(r) {
+			http.Error(w, "Откройте Accord в веб-клиенте", http.StatusNotAcceptable)
+			return
+		}
 		if r.URL.Path != "/web/login" && r.URL.Path != "/web/designs" {
 			if err := parseForm(w, r); err != nil {
 				s.fail(w, r, nil, err)
 				return
 			}
 		}
-		origins := r.Header.Values("Origin")
-		if len(origins) != 1 || origins[0] != s.options.Origin || r.Header.Get("Sec-Fetch-Site") == "cross-site" {
-			s.render(w, 403, "error", Page{Title: "Действие отклонено", Error: "Обновите форму: источник запроса не разрешён", Draft: draft(r)})
-			return
-		}
 	}
-	if strings.HasPrefix(r.URL.Path, "/web/static/") && (r.Method == "GET" || r.Method == "HEAD") {
-		if s.options.StaticHandler == nil {
-			http.NotFound(w, r)
-		} else {
-			s.options.StaticHandler.ServeHTTP(w, r)
-		}
+	if strings.HasPrefix(r.URL.Path, "/web/static/") {
+		http.NotFound(w, r)
 		return
 	}
+
 	if r.URL.Path == "/web/login" {
 		if r.Method == "POST" {
 			s.login(w, r)
@@ -177,9 +180,12 @@ func (s *Server) render(w http.ResponseWriter, status int, name string, p Page) 
 	if renderBrowserJSON(w, status, name, p) {
 		return
 	}
-	if err := s.options.Renderer.Render(w, status, name, p); err != nil {
-		http.Error(w, "Страница временно недоступна", 500)
+	if status >= http.StatusBadRequest {
+		_, message := statusError(status)
+		http.Error(w, message, status)
+		return
 	}
+	http.Error(w, "Требуется JSON-клиент", http.StatusNotAcceptable)
 }
 func errorStatus(err error) int {
 	var e *core.Error

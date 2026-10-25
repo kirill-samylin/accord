@@ -93,7 +93,7 @@ class ManagedStorage(ProjectsFixture, unittest.TestCase):
         self.assertEqual(manifest['default']['board_schema'], 5)
         self.assertEqual(manifest['projects'][0]['board_schema'], 4)
 
-    def test_offline_restore5_preserves_source_before_mocked_auth_reset(self):
+    def test_offline_restore5_preserves_bytes_but_rejects_unverified_reset_ack(self):
         for folder in (self.state, self.projects / 'projects' / OTHER):
             self.upgrade(folder)
             self.history(folder)
@@ -103,10 +103,12 @@ class ManagedStorage(ProjectsFixture, unittest.TestCase):
         with patch.object(offline.restore, 'require_capable'), patch.object(offline.restore.subprocess, 'run') as run:
             run.return_value.stdout = b'{"restored_state_reset":true}'
             run.return_value.stderr = b''
-            offline.restore.restore(saved, output, self.root / 'synthetic-binary')
+            # Schema5 copies plus a mocked ACK are not a verified schema6 reset.
+            with self.assertRaisesRegex(RuntimeError, 'snapshot schema/integrity differs'):
+                offline.restore.restore(saved, output, self.root / 'synthetic-binary')
         self.assertEqual((saved / 'manifest.json').read_bytes(), original)
         self.assertEqual((output / 'board.db').read_bytes(), (saved / 'default/board.db').read_bytes())
         self.assertEqual((output / 'projects-data/projects' / OTHER / 'board.db').read_bytes(),
                          (saved / 'projects' / OTHER / 'board.db').read_bytes())
         self.assertTrue((output / 'RESTORE_REQUIRES_RESET').exists())
-        self.assertTrue((output / 'RESTORE_AUTH_RESET_COMPLETE').exists())
+        self.assertFalse((output / 'RESTORE_AUTH_RESET_COMPLETE').exists())

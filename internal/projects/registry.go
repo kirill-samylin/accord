@@ -11,7 +11,7 @@ import (
 )
 
 func Open(options Options) (*Registry, error) {
-	if options.Default == nil || !options.Offline && (options.Browser == nil || options.Renderer == nil || options.Origin == "") {
+	if options.Default == nil || !options.Offline && (options.Browser == nil || options.Origin == "") {
 		return nil, errors.New("default board and browser required")
 	}
 	if err := Preflight(options.DataDir, options.DefaultDB, options.DefaultWeb); err != nil {

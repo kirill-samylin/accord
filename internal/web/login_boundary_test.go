@@ -30,7 +30,7 @@ func multipartLogin(s *Server, pre *http.Cookie, csrf, token, file string) *http
 	r.Header.Set("Origin", "https://accord.test")
 	r.AddCookie(pre)
 	w := httptest.NewRecorder()
-	s.ServeHTTP(w, r)
+	observeBrowserResponse(s, w, r)
 	return w
 }
 func TestLoginFileSourceBoundsAndPreauthCSRF(t *testing.T) {
@@ -38,7 +38,7 @@ func TestLoginFileSourceBoundsAndPreauthCSRF(t *testing.T) {
 	token := f.token(t, "one")
 	preauth := func() (*http.Cookie, string) {
 		w := request(f.s, "GET", "/web/login", nil, nil)
-		return w.Result().Cookies()[0], f.render.last().CSRF
+		return w.Result().Cookies()[0], f.response.last().CSRF
 	}
 	pre, csrf := preauth()
 	if w := multipartLogin(f.s, pre, "wrong", "", token.Secret); w.Code != 403 {
@@ -56,7 +56,7 @@ func TestLoginFileSourceBoundsAndPreauthCSRF(t *testing.T) {
 	}
 	pre, csrf = preauth()
 	w := multipartLogin(f.s, pre, csrf, "", token.Secret+"\n")
-	if w.Code != 303 {
+	if w.Code != 200 {
 		t.Fatalf("file login %d %s", w.Code, w.Body)
 	}
 	// The consumed preauth session cannot be replayed to create extra sessions.
@@ -82,7 +82,7 @@ func TestBrowserAbsoluteExpiryRevokePostAndPendingDescribe(t *testing.T) {
 	}
 	fields := url.Values{"csrf": {p.CSRF}, "action_id": {p.Actions["create"]}, "type": {"epic"}, "title": {"unsent title"}}
 	w := request(f.s, "POST", "/web/tasks", fields, c, "https://accord.test")
-	if w.Code != 401 || f.render.last().Draft["title"] != "unsent title" {
+	if w.Code != 401 || f.response.last().Draft["title"] != "unsent title" {
 		t.Fatalf("expired session %d/draft lost", w.Code)
 	}
 	c = f.login(t, token)
@@ -100,13 +100,13 @@ func TestBrowserAbsoluteExpiryRevokePostAndPendingDescribe(t *testing.T) {
 func TestOriginConfigurationFailsClosed(t *testing.T) {
 	f := fixture(t)
 	for _, origin := range []string{"https://accord.test/path", "https://u:p@accord.test", "http://accord.test", "http://localhost", "https://accord.test?x=1", "https://accord.test#x", "https://", "null"} {
-		s, err := New(f.board, Options{Origin: origin, DataDir: filepath.Join(f.dir, "invalid"), Renderer: f.render})
+		s, err := New(f.board, Options{Origin: origin, DataDir: filepath.Join(f.dir, "invalid")})
 		if err == nil {
 			s.Close()
 			t.Fatalf("accepted origin %s", origin)
 		}
 	}
-	s, err := New(f.board, Options{Origin: "http://127.0.0.1:1234", DataDir: filepath.Join(f.dir, "dev"), Renderer: f.render})
+	s, err := New(f.board, Options{Origin: "http://127.0.0.1:1234", DataDir: filepath.Join(f.dir, "dev")})
 	if err != nil {
 		t.Fatal(err)
 	}

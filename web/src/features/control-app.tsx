@@ -76,9 +76,6 @@ function Loading() {
       <div className="skeleton" />
       <div className="skeleton" />
       <span>Загрузка проекта…</span>
-      <noscript>
-        <a href="/web/">Открыть базовый интерфейс</a>
-      </noscript>
     </div>
   );
 }
@@ -239,9 +236,6 @@ function ControlContent() {
             строкой.
           </p>
           <LoginForm page={page} onSuccess={success} />
-          <p className="auth-footer">
-            <a href="/web/login">Упрощённая версия входа (без JavaScript)</a>
-          </p>
         </section>
       </main>
     );

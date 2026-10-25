@@ -178,9 +178,12 @@ func (s *Server) renderDesignPage(w http.ResponseWriter, r *http.Request, b *bro
 		w.WriteHeader(status)
 		return
 	}
-	if err := s.options.Renderer.Render(w, status, "designs", page); err != nil {
+	if status >= http.StatusBadRequest {
+		_, message := statusError(status)
+		http.Error(w, message, status)
 		return
 	}
+	http.Error(w, "Требуется JSON-клиент", http.StatusNotAcceptable)
 }
 
 func (s *Server) handleDesignsAPI(w http.ResponseWriter, r *http.Request) {

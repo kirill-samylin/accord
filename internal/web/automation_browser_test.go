@@ -30,7 +30,7 @@ func automationBrowserRequest(f *webFixture, ctx context.Context, method, path s
 		r.AddCookie(cookie)
 	}
 	w := httptest.NewRecorder()
-	f.s.ServeHTTP(w, r)
+	observeBrowserResponse(f.s, w, r)
 	return w
 }
 func automationBrowserSetup(t *testing.T) (*webFixture, context.Context, *http.Cookie, core.Actor) {

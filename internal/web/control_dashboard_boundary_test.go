@@ -36,7 +36,7 @@ func TestDashboardBrowserAndCachedBoardExpiry(t *testing.T) {
 					r.AddCookie(cookie)
 				}
 				w := httptest.NewRecorder()
-				f.s.ServeHTTP(w, r)
+				observeBrowserResponse(f.s, w, r)
 				if w.Code != status || method == "GET" && !strings.Contains(w.Body.String(), `"code":"`+code+`"`) || method == "HEAD" && w.Body.Len() != 0 {
 					t.Fatalf("%s %s: %d %s", boundary, method, w.Code, w.Body)
 				}
