@@ -149,3 +149,20 @@ Canonical capable apply/finalize/final-audit завершены, journal complet
 сохранены. Проверки109web tests/typecheck/format/build/HTTPS/UI — PASS;
 полный V1/native Windows/Claude execution/второй физическийПК не заявляются.
 Подробные independent approvals/границы — TASK018/WORK286–288.
+
+
+Продолжение25.10.2026 — `docs/TASK-019-single-ui.md`: по прямому поручению
+полностью удалён прежний Go HTML/no-JS интерфейс, включая internal/webui,
+templates/assets/Renderer/Static wiring и fallback ссылки Next. Единственный UI
+— `/app`; `/web` сохраняет JSON API и защищённые файлы. Known HTML page requests
+redirect в `/app`, legacy static404, nonJSON POST406 до body/мутации при прежнем
+foreignOrigin403; JSON/auth/CSRF/retry/ACL/downloads сохранены. Новый выбор файла
+токена — отдельная accessible кнопка/status/name/replace/remove/hint.
+Production Go/Next — clean `fa5f5cca9cf72edab6d81affe5d51d0bdc411848`,
+schema6/прежние floors. Capable apply/finalize/final-audit complete, новый
+format2 backup4boards/9runtimeDB/9historicalDB проверен, rows/history сохранены.
+Full Go/unit/race/vet, web109/type/format/build, infra174 и realprocess4/4
+(50MiB/+1/31s/120s cleanup), external HTTPS/native Chrome picker — PASS.
+Source/code опубликован в исходный origin/codex/native-preflight. Native GUI
+Windows/Claude execution/второй физическийПК/fullV1 не заявляются; точные границы
+и independent receipts — TASK019/WORK290–294.
