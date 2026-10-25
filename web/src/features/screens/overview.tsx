@@ -24,9 +24,11 @@ import { useDashboard } from "../hooks/use-dashboard";
 export function OverviewScreen({
   page,
   onSessionExpired,
+  onCreate,
 }: {
   page: PageData;
   onSessionExpired: () => void;
+  onCreate?: () => void;
 }) {
   const scope = useProjectScope();
   const live = useDashboard(page, onSessionExpired);
@@ -193,7 +195,7 @@ export function OverviewScreen({
         <Metric
           title="В работе"
           value={number(overview.tasks_in_progress)}
-          caption={`${overview.leased_tasks} действующих аренд`}
+          caption={`Агенты выполняют: ${overview.leased_tasks}`}
           href="/app/tasks?state=in_progress"
         />
         <Metric
@@ -205,7 +207,7 @@ export function OverviewScreen({
         <Metric
           title="Завершено"
           value={number(overview.tasks_done)}
-          caption={`${overview.active_agent_sessions} сессий агентов с доступом`}
+          caption={`Агентов на связи: ${overview.active_agent_sessions}`}
           href="/app/tasks?state=done"
         />
       </section>
@@ -283,6 +285,19 @@ export function OverviewScreen({
               <EmptyState
                 title="Задач пока нет"
                 description="Создайте первую задачу для команды."
+                action={
+                  onCreate &&
+                  page.project?.can_write !== false &&
+                  !page.can_continue ? (
+                    <button
+                      className="button button-sm"
+                      type="button"
+                      onClick={onCreate}
+                    >
+                      Новая задача
+                    </button>
+                  ) : undefined
+                }
               />
             )}
           </div>

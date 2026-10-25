@@ -71,7 +71,7 @@ export function TaskProperties({ task }: { task: Task }) {
       <Fact name="Сложность" value={task.complexity} />
       <Fact name="Области" value={task.areas?.join(", ")} />
       <Fact name="Создана" value={date(task.created_at)} />
-      <Fact name="Поколение" value={task.generation} />
+      <Fact name="Взята в работу, раз" value={task.generation} />
       {task.lease ? (
         <>
           <Fact

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { projectInitial } from "@/lib/project-initial";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronDown } from "lucide-react";
@@ -51,9 +52,7 @@ function SwitcherItems({
             );
           }}
         >
-          <span className="project-mark">
-            {project.name.slice(0, 1).toUpperCase()}
-          </span>
+          <span className="project-mark">{projectInitial(project.name)}</span>
           <span className="entity-main truncate">
             {project.name}
             {project.state === "archived" ? " · архив" : ""}
@@ -107,9 +106,7 @@ export function ProjectSwitcher({ page }: { page: PageData }) {
           disabled={scope.locked}
           aria-label="Переключить проект"
         >
-          <span className="project-mark">
-            {name.slice(0, 1).toUpperCase() || "A"}
-          </span>
+          <span className="project-mark">{projectInitial(name)}</span>
           <strong className="truncate">{name || "Accord"}</strong>
           <ChevronDown size={14} />
         </button>

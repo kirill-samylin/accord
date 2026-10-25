@@ -29,6 +29,7 @@ import { SessionControls } from "./mutations/SessionControls";
 import { ProjectSwitcher } from "./projects/project-switcher";
 import { useProjectScope } from "./projects/project-context";
 import { useAppearance } from "./hooks/use-appearance";
+import { HelpDialog } from "./help-dialog";
 export function Shell({
   page,
   children,
@@ -42,6 +43,7 @@ export function Shell({
 }) {
   const path = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const menuTrigger = useRef<HTMLButtonElement | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { dark, toggle: toggleTheme } = useAppearance();
@@ -207,6 +209,9 @@ export function Shell({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => setHelpOpen(true)}>
+                  Как начать работу
+                </DropdownMenuItem>
                 <div className="menu-session">
                   <p className="muted">{label(page.session.role)}</p>
                   <SessionControls page={page} onSuccess={onSuccess} />
@@ -214,7 +219,7 @@ export function Shell({
                 {!scope.id ? (
                   <DropdownMenuItem asChild>
                     <a href={scope.web("/web/")}>
-                      Базовый интерфейс <ExternalLink size={13} />
+                      Упрощённая версия <ExternalLink size={13} />
                     </a>
                   </DropdownMenuItem>
                 ) : null}
@@ -231,6 +236,14 @@ export function Shell({
             </DropdownMenu>
           </div>
         </header>
+        <HelpDialog
+          open={helpOpen}
+          onOpenChange={setHelpOpen}
+          onCreate={() => {
+            setHelpOpen(false);
+            onCreate();
+          }}
+        />
         <main id="main-content" className="main-scroll">
           {scope.locked ? (
             <div className="page-notice notice" role="status">

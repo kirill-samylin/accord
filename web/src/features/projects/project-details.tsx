@@ -5,12 +5,15 @@ import { RegistryForm } from "./registry-form";
 import { ProjectRepositories } from "./project-repositories";
 import { ProjectMembers, projectRole } from "./project-members";
 import { OpenProject } from "./open-project";
+import { projectInitial } from "@/lib/project-initial";
 export function ProjectDetails({
   page,
   onSuccess,
+  justCreated,
 }: {
   page: CatalogPage;
   onSuccess: (result: CatalogMutationResult) => void;
+  justCreated?: boolean;
 }) {
   const project = page.project;
   if (!project) return <p className="notice">Проект не найден</p>;
@@ -18,9 +21,7 @@ export function ProjectDetails({
     <div className="project-settings-grid">
       <section className="settings-section">
         <div className="project-detail-heading">
-          <span className="project-mark">
-            {project.name.slice(0, 1).toUpperCase()}
-          </span>
+          <span className="project-mark">{projectInitial(project.name)}</span>
           <div>
             <h2>{project.name}</h2>
             <p className="muted">
@@ -29,8 +30,17 @@ export function ProjectDetails({
             </p>
           </div>
         </div>
+        {justCreated ? (
+          <p className="notice" role="status">
+            Проект создан. Открываем его — там можно создать первую задачу.
+          </p>
+        ) : null}
         <p className="mono break">{project.id}</p>
-        <OpenProject page={page} project={project} />
+        <OpenProject
+          page={page}
+          project={project}
+          autoSubmit={justCreated && project.state !== "archived"}
+        />
         {project.can_manage ? (
           <>
             <RegistryForm
@@ -78,8 +88,8 @@ export function ProjectDetails({
                   onSuccess={onSuccess}
                 />
                 <p className="form-help">
-                  Проект с действующими арендами нельзя архивировать. Архив
-                  сохраняет историю и доступ для чтения.
+                  Проект нельзя архивировать, пока агенты выполняют в нём
+                  задачи. Архив сохраняет историю и доступ для чтения.
                 </p>
               </>
             ) : (

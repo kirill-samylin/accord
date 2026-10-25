@@ -23,6 +23,7 @@ import { BoardScreen } from "./board-screens";
 import { useRouteHeadingFocus } from "./hooks/use-route-heading-focus";
 import { LoginForm } from "./mutations/LoginForm";
 import { CreateTaskDialog } from "./mutations/CreateTaskDialog";
+import { pendingTaskReady } from "./mutations/taskDraftStore";
 import { ProjectProvider, useProjectScope } from "./projects/project-context";
 import { ProjectOpening } from "./projects/project-opening";
 const CatalogWorkspace = dynamic(() => import("./projects/catalog-workspace"), {
@@ -119,6 +120,14 @@ function ControlContent() {
       result.data?.name !== "login" &&
       path !== "/app/login",
   );
+  // An epic created from the task form returns the user to the parked task
+  // once the epic page has loaded and taken focus.
+  const settled = result.isSuccess && !result.isPlaceholderData;
+  useEffect(() => {
+    if (!settled || create || !pendingTaskReady(scope.key, path)) return;
+    const timer = window.setTimeout(() => setCreate(true), 0);
+    return () => window.clearTimeout(timer);
+  }, [settled, path, create, scope.key]);
   const createOptions = useQuery({
     queryKey: ["create-options", scope.key],
     queryFn: ({ signal }) =>
@@ -224,11 +233,14 @@ function ControlContent() {
           <div className="auth-brand">
             <span className="project-mark">A</span>Accord
           </div>
-          <h1>Добро пожаловать</h1>
-          <p className="muted">Войдите, чтобы продолжить работу с проектом.</p>
+          <h1>Войти</h1>
+          <p className="muted">
+            Нужен токен участника — его выдаёт владелец проекта, файлом или
+            строкой.
+          </p>
           <LoginForm page={page} onSuccess={success} />
           <p className="auth-footer">
-            <a href="/web/login">Базовый интерфейс входа</a>
+            <a href="/web/login">Упрощённая версия входа (без JavaScript)</a>
           </p>
         </section>
       </main>

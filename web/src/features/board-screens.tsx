@@ -110,6 +110,12 @@ export function BoardScreen({
     case "settings":
       return <SettingsScreen page={page} onSuccess={onSuccess} />;
     default:
-      return <OverviewScreen page={page} onSessionExpired={refresh} />;
+      return (
+        <OverviewScreen
+          page={page}
+          onSessionExpired={refresh}
+          onCreate={onCreate}
+        />
+      );
   }
 }

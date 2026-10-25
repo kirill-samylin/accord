@@ -88,7 +88,7 @@ export function useAction(
       onSuccess(result);
       return;
     }
-    setMessage(result.error?.message ?? "Не удалось выполнить действие");
+    setMessage(friendlyMessage(result, mode));
     setFieldErrors(result.field_errors ?? result.page?.field_errors ?? {});
   }
 
@@ -150,4 +150,28 @@ export function useAction(
     busy: phase === "sending",
     setMessage,
   };
+}
+
+const cyrillic = /[А-Яа-яЁё]/;
+// Server messages are public but may be terse or English; users get a
+// concrete next step instead of a generic failure.
+export function friendlyMessage(
+  result: MutationResult,
+  mode: "action" | "login",
+) {
+  const code = result.error?.code ?? "";
+  const raw = result.error?.message || result.page?.error || "";
+  if (mode === "login") {
+    if (code === "UNAVAILABLE" || result.retry_same_action)
+      return raw || "Сервис временно недоступен. Повторите попытку.";
+    if (code === "RATE_LIMITED" || /Слишком много/.test(raw))
+      return "Слишком много попыток входа. Подождите минуту и попробуйте снова.";
+    if (code === "FORBIDDEN" || /Обновите форму/.test(raw))
+      return "Форма входа устарела. Нажмите «Обновить форму входа» и попробуйте снова.";
+    return "Токен не подошёл. Проверьте, что вставили его целиком, без лишних символов, или попросите новый токен у владельца проекта.";
+  }
+  if (raw && cyrillic.test(raw)) return raw;
+  if (code === "VALIDATION" || code === "INVALID_INPUT" || /invalid/i.test(raw))
+    return "Проверьте заполненные поля: какое-то значение не подходит.";
+  return raw || "Не удалось выполнить действие. Попробуйте ещё раз.";
 }

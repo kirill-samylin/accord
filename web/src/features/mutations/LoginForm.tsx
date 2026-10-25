@@ -23,15 +23,27 @@ export function LoginForm({ page, onSuccess }: MutationProps) {
     body.append("csrf", action.page.csrf ?? "");
     if (source === "file") {
       const file = values.get("token_file");
-      if (!(file instanceof File) || !file.size || file.size > 4096) {
-        action.setMessage("Выберите файл токена до 4096 байт");
+      if (!(file instanceof File) || !file.size) {
+        action.setMessage("Выберите файл с токеном — файл не выбран или пуст");
+        return;
+      }
+      if (file.size > 4096) {
+        action.setMessage(
+          "Файл слишком большой для токена (больше 4096 байт). Выберите файл, который выдал владелец проекта.",
+        );
         return;
       }
       body.append("token_file", file);
     } else {
       const token = String(values.get("token") ?? "").trim();
-      if (!token || new TextEncoder().encode(token).length > 4096) {
-        action.setMessage("Введите токен до 4096 байт");
+      if (!token) {
+        action.setMessage("Вставьте токен — поле пустое");
+        return;
+      }
+      if (new TextEncoder().encode(token).length > 4096) {
+        action.setMessage(
+          "Это не похоже на токен: строка длиннее 4096 байт. Вставьте только сам токен.",
+        );
         return;
       }
       body.append("token", token);
@@ -94,7 +106,9 @@ export function LoginForm({ page, onSuccess }: MutationProps) {
           </label>
         )}
         <p id="login-help" className="form-help">
-          Используйте токен своего участника. После входа поле будет очищено.
+          Токен — ваш личный ключ доступа. Его выдаёт владелец или администратор
+          Accord (строка или файл). Токен не сохраняется в браузере; после входа
+          поле очищается.
         </p>
         <button className="button" type="submit" disabled={!action.page.csrf}>
           {action.busy ? "Входим…" : "Войти в Accord"}

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Moon, Sun, Plus, FolderKanban, ArrowLeft } from "lucide-react";
 import { ProjectLink as Link } from "@/components/project-link";
@@ -25,6 +25,8 @@ export default function CatalogWorkspace({ page }: { page: CatalogPage }) {
   const appearance = useAppearance();
   const scope = useProjectScope();
   const router = useRouter();
+  const search = useSearchParams();
+  const justCreated = search.get("created") === "1";
   const client = useQueryClient();
   const projects = page.registry.projects ?? [];
   const visible = projects.filter(
@@ -43,6 +45,19 @@ export default function CatalogWorkspace({ page }: { page: CatalogPage }) {
       router.replace(target);
     }
     void client.invalidateQueries();
+  }
+  function created(result: CatalogMutationResult) {
+    saveProjectName("");
+    if (result.redirect) {
+      const target = webToApp(result.redirect);
+      if (/^\/app\/projects\/p_[a-f0-9]{32}$/.test(target)) {
+        setCreate(false);
+        router.replace(`${target}?created=1`);
+        void client.invalidateQueries();
+        return;
+      }
+    }
+    success(result);
   }
   return (
     <div className="catalog-workspace">
@@ -104,13 +119,23 @@ export default function CatalogWorkspace({ page }: { page: CatalogPage }) {
           </p>
         ) : null}
         {page.project ? (
-          <ProjectDetails page={page} onSuccess={success} />
+          <ProjectDetails
+            page={page}
+            onSuccess={success}
+            justCreated={justCreated}
+          />
         ) : (
           <>
             <div className="catalog-identity">
-              <span className="muted">Ваш ID для приглашения в проект</span>
+              <span className="muted">Ваш ID участника</span>
               <code className="mono break">{page.registry.identity.id}</code>
-              <span className="muted">{page.registry.identity.machine}</span>
+              <span className="muted">
+                Устройство: {page.registry.identity.machine}
+              </span>
+              <span className="form-help">
+                Это не токен и не секрет. Отправьте ID владельцу чужого проекта,
+                чтобы он добавил вас участником.
+              </span>
             </div>
             <label className="catalog-filter">
               <input
@@ -189,19 +214,28 @@ export default function CatalogWorkspace({ page }: { page: CatalogPage }) {
             <DialogTitle>Создать проект</DialogTitle>
           </DialogHeader>
           <p id="project-create-description" className="muted">
-            Укажите название и репозиторий. Текущий проект и его данные
-            сохранятся.
+            Достаточно названия — репозиторий можно подключить позже.
+            {projects.length ? " Другие ваши проекты не изменятся." : ""}
           </p>
           <RegistryForm
             page={page}
             actionKey="create"
             endpoint="/web/catalog/projects"
             title="Создать проект"
-            onSuccess={success}
+            onSuccess={created}
+            validate={validateProject}
           >
             <label className="form-field">
-              Название проекта
-              <input name="name" required maxLength={200} autoComplete="off" />
+              <span>
+                Название проекта<span className="required-mark"> *</span>
+              </span>
+              <input
+                name="name"
+                maxLength={200}
+                autoComplete="off"
+                defaultValue={loadProjectName()}
+                onInput={(event) => saveProjectName(event.currentTarget.value)}
+              />
             </label>
             <label className="form-field">
               Репозиторий · необязательно
@@ -225,4 +259,33 @@ export default function CatalogWorkspace({ page }: { page: CatalogPage }) {
       </Dialog>
     </div>
   );
+}
+
+const projectNameKey = "accord:create-project-name";
+function loadProjectName() {
+  try {
+    return window.sessionStorage.getItem(projectNameKey) ?? "";
+  } catch {
+    return "";
+  }
+}
+function saveProjectName(value: string) {
+  try {
+    if (value.trim()) window.sessionStorage.setItem(projectNameKey, value);
+    else window.sessionStorage.removeItem(projectNameKey);
+  } catch {
+    // Draft persistence is optional.
+  }
+}
+function validateProject(values: URLSearchParams) {
+  const errors: Record<string, string> = {};
+  const name = (values.get("name") ?? "").trim();
+  if (!name) errors.name = "Введите название проекта";
+  else if (name.length > 200)
+    errors.name = "Название длиннее 200 символов — сократите его";
+  const url = (values.get("repository_url") ?? "").trim();
+  if (url && !/^(https:\/\/[^\s@]+\/\S+|ssh:\/\/git@[^\s/]+\/\S+)$/.test(url))
+    errors.repository_url =
+      "Адрес репозитория: https://github.com/owner/repo.git или ssh://git@host/owner/repo.git";
+  return errors;
 }

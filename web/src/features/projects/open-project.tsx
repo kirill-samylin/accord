@@ -9,11 +9,13 @@ export function OpenProject({
   project,
   target,
   title = "Открыть проект",
+  autoSubmit,
 }: {
   page: CatalogPage;
   project: Project;
   target?: string;
   title?: string;
+  autoSubmit?: boolean;
 }) {
   const router = useRouter();
   const client = useQueryClient();
@@ -24,6 +26,7 @@ export function OpenProject({
       endpoint="/web/catalog/switch"
       refreshPath="/app/projects"
       title={title}
+      autoSubmit={autoSubmit}
       fields={{
         project_id: project.id,
         ...(target ? { target: appToWeb(target) } : {}),

@@ -8,7 +8,8 @@ export function attestationOutcome(
   if (observed.check_aborted)
     return {
       label: "Проверка прервана, результат не засчитан",
-      checkSummary: "Чтобы получить результат этой проверки, запустите её заново.",
+      checkSummary:
+        "Чтобы получить результат этой проверки, запустите её заново.",
     };
   return {
     label: workflowLabels[proof.status] ?? proof.status,

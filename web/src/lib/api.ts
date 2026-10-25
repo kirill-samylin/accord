@@ -1,4 +1,5 @@
 import { withReadDeadline } from "./read-deadline.ts";
+import { clearSessionDrafts } from "./session-drafts.ts";
 import type {
   CatalogMutationResult,
   MutationResult,
@@ -20,6 +21,7 @@ function unauthorized(
   originScope?: string,
 ) {
   if (typeof window === "undefined" || signal?.aborted) return;
+  clearSessionDrafts();
   const event = new Event("accord:unauthorized");
   Object.assign(event, {
     projectScope:
@@ -74,6 +76,7 @@ export async function readPage<T extends PageData | CatalogPage = PageData>(
     if (!response.ok || !result.ok || !result.page)
       throw new APIError(response.status, result);
     signal.throwIfAborted();
+    if (result.page.name === "login") clearSessionDrafts();
     const expected = expectedProjectID(path);
     if (expected && result.page.project?.id !== expected)
       throw new APIError(409, {
@@ -195,6 +198,12 @@ export async function submitAction<
   }
   if (response.status === 401 && path !== "/web/login")
     unauthorized(path, signal, originScope);
+  if (
+    response.ok &&
+    result.ok &&
+    /^\/web\/(?:p\/p_[a-f0-9]{32}\/)?(?:login|logout)$/.test(path)
+  )
+    clearSessionDrafts();
   return result as T;
 }
 export const pageQueryKey = (path: string) =>
