@@ -250,7 +250,7 @@
     color 120ms ease;
 }
 .task-row:hover .task-title,
-.task-row:focus-within .task-title {
+.task-row:has(:focus-visible) .task-title {
   transform: translateX(3px);
 }
 .state-chip {

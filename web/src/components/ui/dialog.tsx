@@ -3,7 +3,7 @@ import * as React from "react";
 import { Dialog as Primitive } from "radix-ui";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useDialogFocusHandlers } from "./dialog-focus";
+import { useDialogFocusHandlers, type InitialFocus } from "./dialog-focus";
 export const Dialog = Primitive.Root;
 export const DialogTrigger = Primitive.Trigger;
 export const DialogClose = Primitive.Close;
@@ -11,13 +11,19 @@ export function DialogContent({
   className,
   children,
   showCloseButton = true,
+  initialFocus = "content",
   onOpenAutoFocus,
   onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof Primitive.Content> & {
   showCloseButton?: boolean;
+  initialFocus?: InitialFocus;
 }) {
-  const focus = useDialogFocusHandlers({ onOpenAutoFocus, onCloseAutoFocus });
+  const focus = useDialogFocusHandlers({
+    onOpenAutoFocus,
+    onCloseAutoFocus,
+    initialFocus,
+  });
   return (
     <Primitive.Portal>
       <Primitive.Overlay className="dialog-overlay" />

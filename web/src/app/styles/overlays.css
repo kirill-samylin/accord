@@ -33,6 +33,10 @@
   box-shadow: none;
   background: transparent;
 }
+/* The palette exists to type into; its frame already marks the field. */
+.command-input-wrap input:focus-visible {
+  outline: none;
+}
 .command-list {
   max-height: 360px;
   overflow: auto;

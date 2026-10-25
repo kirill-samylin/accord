@@ -113,11 +113,11 @@
    inner <a> alone, so a pointer over the status badge highlights the title.
    Inner links must not pick up the global a:hover blue. */
 .task-row:hover,
-.task-row:focus-within {
+.task-row:has(:focus-visible) {
   background: var(--paper);
 }
 :root[data-theme="dark"] .task-row:hover,
-:root[data-theme="dark"] .task-row:focus-within {
+:root[data-theme="dark"] .task-row:has(:focus-visible) {
   background: var(--muted);
 }
 .task-row a,
@@ -139,7 +139,7 @@
   color: var(--muted-foreground);
 }
 .task-row:hover .task-key,
-.task-row:focus-within .task-key {
+.task-row:has(:focus-visible) .task-key {
   color: var(--foreground);
 }
 .task-title {
@@ -147,7 +147,7 @@
   font-weight: 700;
 }
 .task-row:hover .task-title,
-.task-row:focus-within .task-title {
+.task-row:has(:focus-visible) .task-title {
   color: var(--link-hover);
   text-decoration: underline;
   text-underline-offset: 3px;

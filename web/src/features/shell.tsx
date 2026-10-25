@@ -12,7 +12,10 @@ import {
   SquarePen,
   Sun,
 } from "lucide-react";
-import { restoreDialogFocus } from "@/components/ui/dialog-focus";
+import {
+  focusContainer,
+  restoreDialogFocus,
+} from "@/components/ui/dialog-focus";
 import { Avatar } from "@/components/common";
 import {
   DropdownMenu,
@@ -164,6 +167,7 @@ export function Shell({
           <Primitive.Content
             className="drawer-content"
             aria-describedby={undefined}
+            onOpenAutoFocus={focusContainer}
             onCloseAutoFocus={(event) => {
               event.preventDefault();
               restoreDialogFocus(menuTrigger.current);

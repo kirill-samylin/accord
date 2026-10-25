@@ -149,6 +149,13 @@ summary:focus-visible {
   outline: 3px solid var(--ring);
   outline-offset: 3px;
 }
+/* Programmatic focus targets (dialog/popover/drawer containers, route
+   headings) carry tabindex=-1; they hold focus for screen readers and the
+   Tab order but are not controls, so they never show a ring. */
+[tabindex="-1"]:focus,
+[tabindex="-1"]:focus-visible {
+  outline: none;
+}
 svg {
   flex-shrink: 0;
 }

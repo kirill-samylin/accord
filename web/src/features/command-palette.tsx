@@ -47,7 +47,11 @@ export function CommandPalette({
   }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="command-content" showCloseButton={false}>
+      <DialogContent
+        className="command-content"
+        showCloseButton={false}
+        initialFocus="first"
+      >
         <DialogTitle className="sr-only">Поиск и навигация</DialogTitle>
         <DialogDescription className="sr-only">
           Перейдите к разделу или найдите задачу по названию.

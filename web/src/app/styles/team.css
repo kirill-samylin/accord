@@ -380,14 +380,14 @@
   transition: color 120ms ease;
 }
 .team-agent:hover .task-key,
-.team-agent:focus-within .task-key {
+.team-agent:has(:focus-visible) .task-key {
   color: var(--foreground);
 }
 a.team-agent-task span:last-child {
   transition: color 120ms ease;
 }
 .team-agent:hover a.team-agent-task span:last-child,
-.team-agent:focus-within a.team-agent-task span:last-child {
+.team-agent:has(:focus-visible) a.team-agent-task span:last-child {
   color: var(--link-hover);
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -487,11 +487,11 @@ a.team-agent-task span:last-child {
   transition: color 120ms ease;
 }
 .pair-side:hover .task-key,
-.pair-side:focus-within .task-key {
+.pair-side:has(:focus-visible) .task-key {
   color: var(--ink);
 }
 .pair-side:hover .pair-title,
-.pair-side:focus-within .pair-title {
+.pair-side:has(:focus-visible) .pair-title {
   color: var(--link-hover);
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -627,11 +627,11 @@ a.team-agent-task span:last-child {
   transition: color 120ms ease;
 }
 .similar-item:hover .task-key,
-.similar-item:focus-within .task-key {
+.similar-item:has(:focus-visible) .task-key {
   color: var(--foreground);
 }
 .similar-item:hover .similar-title a:not(.task-key),
-.similar-item:focus-within .similar-title a:not(.task-key) {
+.similar-item:has(:focus-visible) .similar-title a:not(.task-key) {
   color: var(--link-hover);
   text-decoration: underline;
   text-underline-offset: 3px;
