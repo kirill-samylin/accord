@@ -69,8 +69,8 @@ func (s *Store) ManagedStart(ctx context.Context, a core.Actor, in core.ManagedS
 		if !managedContains(h.Host.Workspaces, in.Workspace) || !managedContains(h.Host.Providers, in.Provider) {
 			return out, core.Fail("forbidden", "Workspace/provider не разрешён локальным владельцем")
 		}
-		if !bounded(in.Prompt, 16384) || !utf8.ValidString(in.Prompt) {
-			return out, core.Fail("validation", "Нужно задание до16КиБ")
+		if err := textLimit(in.Prompt, 16384, "задание"); err != nil {
+			return out, err
 		}
 		p, err := managedSnapshot(b, in)
 		if err != nil {

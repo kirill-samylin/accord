@@ -83,7 +83,11 @@ label.form-field {
   color: #fff;
 }
 .welcome h1 {
-  font-size: 64px;
+  font-size: clamp(30px, 9vw, 64px);
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: manual;
+  text-wrap: balance;
   color: var(--yellow);
   text-shadow: 6px 6px 0 var(--ink);
 }

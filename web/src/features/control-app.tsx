@@ -169,6 +169,16 @@ function ControlContent() {
     )
       unauthorized();
   }, [result.error, path]);
+  useEffect(() => {
+    // A signed-in user without a current project (no default membership) has
+    // no overview to show; the catalog is the right landing page.
+    if (
+      (path === "/app" || path === "/app/") &&
+      result.error instanceof APIError &&
+      result.error.status === 404
+    )
+      router.replace("/app/projects");
+  }, [result.error, path, router]);
   async function success(action: MutationResult) {
     if (!action.ok) return;
     setCreate(false);
@@ -239,7 +249,9 @@ function ControlContent() {
           <button className="button" onClick={() => router.replace(path)}>
             Открыть без лишних параметров
           </button>
-        ) : (
+        ) : result.error instanceof APIError &&
+          result.error.status === 404 ? null : (
+          // A missing page never appears on retry; only transient errors do.
           <button className="button" onClick={() => result.refetch()}>
             Повторить
           </button>

@@ -98,6 +98,20 @@
 .auth-card .button {
   box-shadow: 4px 4px 0 var(--ink);
 }
+/* The sign-in card is a light card on the blue page in both themes: inside
+   it the dark-theme tokens would put pale text on cream. */
+:root[data-theme="dark"] .auth-card {
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --surface: #ffffff;
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --muted: #f3e9cf;
+  --muted-foreground: #5a5450;
+  --edge: var(--ink);
+  --link-hover: var(--blue);
+  color-scheme: light;
+}
 .auth-brand {
   display: flex;
   align-items: center;

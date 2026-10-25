@@ -84,8 +84,8 @@ func (s *Store) WorkflowAnswer(ctx context.Context, a core.Actor, in core.Workfl
 		if w.Version != in.Version || q.Version != in.QuestionVersion || q.State != "open" {
 			return core.WorkflowPage{}, core.Fail("conflict", "Вопрос или workflow изменился")
 		}
-		if !bounded(in.Answer, 16384) {
-			return core.WorkflowPage{}, core.Fail("validation", "Нужен ответ до16КиБ")
+		if err := textLimit(in.Answer, 16384, "ответ"); err != nil {
+			return core.WorkflowPage{}, err
 		}
 		t := b.Tasks[q.HumanTaskKey]
 		if t == nil {

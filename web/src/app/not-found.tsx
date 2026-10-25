@@ -6,12 +6,15 @@ export default function NotFound() {
     <main className="auth-page">
       <section className="auth-card">
         <div className="auth-brand">
-          <span aria-hidden>A</span> Accord
+          <span className="project-mark" aria-hidden>
+            A
+          </span>
+          Accord
         </div>
         <h1>Страница не найдена</h1>
         <p>Такого раздела нет. Проверьте адрес или вернитесь к проекту.</p>
-        <Link className="button" href="/app">
-          К обзору
+        <Link className="button" href="/app/projects">
+          К проектам
         </Link>
       </section>
     </main>

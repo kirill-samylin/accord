@@ -137,6 +137,20 @@ func coordinator(sess *core.Session) error {
 func bounded(value string, max int) bool {
 	return len(strings.TrimSpace(value)) > 0 && len(value) <= max
 }
+
+// textLimit explains which rule a free-text field broke instead of one
+// combined message; what names the field in Russian ("требование").
+func textLimit(value string, max int, what string) error {
+	switch {
+	case strings.TrimSpace(value) == "":
+		return core.Fail("validation", "Поле «"+what+"» пустое — опишите его текстом")
+	case len(value) > max:
+		return core.Fail("validation", fmt.Sprintf("Поле «%s» длиннее %d КиБ — сократите текст", what, max/1024))
+	case !utf8.ValidString(value):
+		return core.Fail("validation", "Поле «"+what+"» содержит недопустимые символы")
+	}
+	return nil
+}
 func (s *Store) renew(t *core.Task, now time.Time) {
 	if t.Lease != nil {
 		t.Lease.ExpiresAt = now.Add(s.cfg.LeaseTTL)

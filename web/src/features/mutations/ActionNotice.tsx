@@ -13,7 +13,7 @@ export function ActionNotice({
 }) {
   if (!message) return null;
   return (
-    <div className="mutation-notice" role="alert">
+    <div className="mutation-notice" data-error="true" role="alert">
       <p>{message}</p>
       {uncertain ? (
         <button

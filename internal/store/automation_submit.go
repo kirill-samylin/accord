@@ -4,7 +4,6 @@ import (
 	"agent-board/internal/core"
 	"context"
 	"time"
-	"unicode/utf8"
 )
 
 func workflowIntakeAllowed(ctx context.Context, b *board, a core.Actor, p *core.AutomationPolicy, now time.Time) error {
@@ -116,8 +115,11 @@ func (s *Store) WorkflowSubmit(ctx context.Context, a core.Actor, in core.Workfl
 		return workflowIntakeAllowed(ctx, b, a, p, now)
 	}
 	return automationMutate(s, ctx, a, in.RequestID, "workflow_submit", in, check, func(b *board, now time.Time) (core.WorkflowPage, error) {
-		if !bounded(in.Text, 16384) || !utf8.ValidString(in.Text) || len(b.Automation.Workflows) >= 32 {
-			return core.WorkflowPage{}, core.Fail("validation", "Нужно требование до16КиБ и свободный workflow slot")
+		if err := textLimit(in.Text, 16384, "требование"); err != nil {
+			return core.WorkflowPage{}, err
+		}
+		if len(b.Automation.Workflows) >= 32 {
+			return core.WorkflowPage{}, core.Fail("capacity", "В проекте достигнут предел 32 циклов автоматизации; нужна ротация истории")
 		}
 		id, err := managedID("wf_")
 		if err != nil {

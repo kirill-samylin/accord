@@ -52,7 +52,19 @@ export async function readPage<T extends PageData | CatalogPage = PageData>(
   originScope?: string,
 ): Promise<T> {
   return withReadDeadline(signal, async (signal) => {
-    const response = await fetch(appToWeb(path), {
+    let target: string;
+    try {
+      target = appToWeb(path);
+    } catch {
+      throw new APIError(404, {
+        ok: false,
+        error: {
+          code: "NOT_FOUND",
+          message: "Такой страницы нет. Проверьте адрес.",
+        },
+      } as MutationResult);
+    }
+    const response = await fetch(target, {
       headers: { Accept: "application/json" },
       cache: "no-store",
       credentials: "same-origin",
