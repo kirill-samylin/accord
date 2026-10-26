@@ -1,7 +1,7 @@
 # WORK295 — третий managed provider: gennadiy (OpenCode fork)
 
 Исполнитель developer, ветка `codex/gennadiy-provider` от
-`codex/native-preflight` (46642af). **UNIT PASS / PR #2 merged / стенд обновлён до f5cd8ca /
+`codex/native-preflight` (46642af). **UNIT PASS / PR #2 merged / стенд обновлён до 4b7b7ad /
 real native gennadiy run NOT-RUN**.
 Поручение пользователя 26.10.2026: внедрить локальный корпоративный агент
 `gennadiy` (fork OpenCode 1.18.10 с Keycloak, корпоративным LLM gateway и
@@ -156,3 +156,17 @@ Claude (описание без адреса стенда) и слит fast-forw
 после: `go_current`/`next_current` = `releases/f5cd8ca…`, журнал `complete`,
 nginx SHA прежний. Отличие f5cd8ca от41681b8 — только документация.
 Квитанции — ignored `.local/task021/rollout-f5cd8ca/`. Тег релиза не ставился.
+
+## Третья выкатка: голова ветки (26.10.2026)
+
+По поручению пользователя стенд приведён к голове `codex/native-preflight`
+`4b7b7ad4598e87b2fcdb325d8038650069e57be1` (CI Go/Infra/Web success; отличие
+от f5cd8ca — только эта карточка и AGENTS.md). `make release` (SHA256SUMS
+56/56 OK), `rollout.py all --prune --keep 1`: upload → `staged` →
+`pending-https-smoke` → smoke `/readyz`200 `/app/login`200 → `complete` →
+prune удалил `41681b8` (сохранён `f5cd8ca`). `rollout.py status` после:
+`go_current`/`next_current` = `releases/4b7b7ad…`, журнал `complete`, nginx
+SHA прежний. Квитанции — ignored `.local/task021/rollout-4b7b7ad/`.
+По явному указанию пользователя сам gennadiy (его config, login, MCP) и
+локальный Mac worker не изменялись; запись этой выкатки — следующий
+docs-only коммит, стенд его не требует.

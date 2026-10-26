@@ -203,6 +203,7 @@ child этой попытки, discovery/verify через `debug config`. Се�
 providers до3. Проверены unit/race/vet/web и GitHub CI. PR
 kirill-samylin/accord#2 слит fast-forward в `codex/native-preflight`
 (`f5cd8ca6c6905ac18c98388a5760fbbf6a4fbe89`); стенд обновлён capable rollout
-сначала до41681b8, затем до f5cd8ca (schema6, прежние floors, журнал
-complete, smoke200); Mac worker не переконфигурирован. Реальный managed
+41681b8 → f5cd8ca → `4b7b7ad4598e87b2fcdb325d8038650069e57be1` (schema6,
+прежние floors, журнал complete, smoke200); Mac worker и сам gennadiy по
+указанию пользователя не изменялись. Реальный managed
 запуск gennadiy, resume и automation roles — NOT-RUN; тег не ставился.
