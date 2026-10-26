@@ -36,21 +36,24 @@ type bridge struct {
 	managedGeneration     int64
 	mu                    sync.Mutex
 	upstream              *mcp.ClientSession
-	server                *mcp.Server
-	session               core.SessionView
-	task                  *core.Lease
-	taskKey               string
-	sessionDeadline       time.Time
-	taskDeadline          time.Time
-	lastHeartbeat         time.Time
-	interval              time.Duration
-	rpcTimeout            time.Duration
-	override              time.Duration
-	quarantined           bool
-	successful            map[string]bool
-	readOnly              map[string]bool
-	wake                  chan struct{}
-	stderr                io.Writer
+	// dial opens a fresh upstream session; used only before the first board
+	// session, when a broken transport can be replaced without losing ownership.
+	dial            func(context.Context) (*mcp.ClientSession, error)
+	server          *mcp.Server
+	session         core.SessionView
+	task            *core.Lease
+	taskKey         string
+	sessionDeadline time.Time
+	taskDeadline    time.Time
+	lastHeartbeat   time.Time
+	interval        time.Duration
+	rpcTimeout      time.Duration
+	override        time.Duration
+	quarantined     bool
+	successful      map[string]bool
+	readOnly        map[string]bool
+	wake            chan struct{}
+	stderr          io.Writer
 }
 
 // Serve runs exactly one local MCP connection and stops renewing on EOF/cancel.
@@ -81,20 +84,28 @@ func Serve(ctx context.Context, options Options, transport mcp.Transport) error 
 	}
 	silent := slog.New(slog.NewTextHandler(io.Discard, nil))
 	upstream := mcp.NewClient(&mcp.Implementation{Name: "accord-bridge", Version: "0.2.0"}, &mcp.ClientOptions{Logger: silent})
-	connecting, cancel := context.WithTimeout(ctx, 10*time.Second)
 	endpoint := origin.String() + "/mcp"
 	if options.ProjectID != "" {
 		endpoint += "/p/" + options.ProjectID
 	}
-	remote, err := upstream.Connect(connecting, &mcp.StreamableClientTransport{Endpoint: endpoint, HTTPClient: client.HTTP(origin, token, 30*time.Second), MaxRetries: -1, DisableStandaloneSSE: true, MaxEventSize: 1 << 20}, nil)
-	cancel()
+	httpClient := client.HTTP(origin, token, 30*time.Second)
+	dial := func(ctx context.Context) (*mcp.ClientSession, error) {
+		connecting, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+		return upstream.Connect(connecting, &mcp.StreamableClientTransport{Endpoint: endpoint, HTTPClient: httpClient, MaxRetries: -1, DisableStandaloneSSE: true, MaxEventSize: 1 << 20}, nil)
+	}
+	remote, err := dial(ctx)
 	if err != nil {
 		return errors.New("cannot connect to Accord; check HTTPS origin and private token")
 	}
-	defer remote.Close()
-	b := &bridge{automation: options.Automation, executionCapabilityID: options.ExecutionCapabilityID, managedRunID: options.ManagedRunID, managedGeneration: options.ManagedGeneration, upstream: remote, override: options.HeartbeatInterval, wake: make(chan struct{}, 1), successful: make(map[string]bool), readOnly: make(map[string]bool), stderr: options.Stderr}
+	b := &bridge{automation: options.Automation, executionCapabilityID: options.ExecutionCapabilityID, managedRunID: options.ManagedRunID, managedGeneration: options.ManagedGeneration, upstream: remote, dial: dial, override: options.HeartbeatInterval, wake: make(chan struct{}, 1), successful: make(map[string]bool), readOnly: make(map[string]bool), stderr: options.Stderr}
+	defer func() {
+		b.mu.Lock()
+		_ = b.upstream.Close()
+		b.mu.Unlock()
+	}()
 	b.server = mcp.NewServer(&mcp.Implementation{Name: "accord-bridge", Version: "0.2.0"}, &mcp.ServerOptions{Logger: silent,
-		Instructions: "Use describe once with a fresh request_id per process, role, run_id and token machine. Session IDs are injected. This bridge renews ownership while alive. LEASE_UNCERTAIN or LEASE_LOST means stop local edits immediately and restart with a fresh describe; the bridge cannot stop your shell/file tools. Closing stdin stops heartbeat without releasing work. For workflow steps read accord://workflow and use workflow_run_check with fixed preset IDs. A queued check is not evidence: poll accord://workflow-check, or repeat workflow_run_check with the same request_id and preset_id, until completed before transitioning the task."})
+		Instructions: "Use describe once with a fresh request_id per process, role and run_id; omit machine (the server uses the token's machine) or pass exactly the token's machine. Session IDs are injected. This bridge renews ownership while alive. LEASE_UNCERTAIN or LEASE_LOST means stop local edits immediately and restart with a fresh describe; the bridge cannot stop your shell/file tools. Closing stdin stops heartbeat without releasing work. For workflow steps read accord://workflow and use workflow_run_check with fixed preset IDs. A queued check is not evidence: poll accord://workflow-check, or repeat workflow_run_check with the same request_id and preset_id, until completed before transitioning the task."})
 	b.addCheckTool()
 	listing, stopListing := context.WithTimeout(ctx, 10*time.Second)
 	err = b.mirror(listing)
@@ -165,6 +176,21 @@ func failure(code, message string) *mcp.CallToolResult {
 	value := map[string]string{"code": code, "message": message}
 	encoded, _ := json.Marshal(value)
 	return &mcp.CallToolResult{IsError: true, StructuredContent: value, Content: []mcp.Content{&mcp.TextContent{Text: string(encoded)}}}
+}
+
+// reconnectLocked replaces a broken upstream transport. It is only called
+// before the first board session, so no lease or generation is affected.
+func (b *bridge) reconnectLocked(ctx context.Context) {
+	if b.dial == nil {
+		return
+	}
+	fresh, err := b.dial(ctx)
+	if err != nil {
+		return
+	}
+	old := b.upstream
+	b.upstream = fresh
+	_ = old.Close()
 }
 
 func (b *bridge) uncertain() *mcp.CallToolResult {

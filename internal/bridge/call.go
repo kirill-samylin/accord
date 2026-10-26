@@ -102,15 +102,38 @@ func (b *bridge) call(ctx context.Context, name string, raw json.RawMessage) (*m
 	calling, cancel := context.WithTimeout(ctx, duration)
 	defer cancel()
 	started := time.Now()
+	// Before the first session nothing is owned, so a transport failure or an
+	// opaque rejection of describe is a plain retryable error, not uncertainty.
+	// Quarantine protects leases; locking a bridge that never held one only
+	// forces a restart of the native client.
+	preSession := b.session.SessionID == "" && name == "describe"
 	result, err := b.upstream.CallTool(calling, &mcp.CallToolParams{Name: name, Arguments: fields})
+	if err != nil && preSession {
+		if _, rejected := rejectedBeforeExecution(err); !rejected {
+			// A describe that never reached the server can be repeated once over
+			// a fresh transport: the server-side idempotency key is unchanged and
+			// no lease exists that a duplicate could disturb.
+			b.reconnectLocked(ctx)
+			retrying, cancelRetry := context.WithTimeout(ctx, duration)
+			result, err = b.upstream.CallTool(retrying, &mcp.CallToolParams{Name: name, Arguments: fields})
+			cancelRetry()
+		}
+	}
 	if err != nil {
 		if message, ok := rejectedBeforeExecution(err); ok {
 			return failure("VALIDATION", message), nil
+		}
+		if preSession {
+			return failure("UNAVAILABLE", "Accord did not answer describe; nothing is owned yet. Retry describe with a fresh request_id once the network is back."), nil
 		}
 		return b.uncertain(), nil
 	}
 	data, err := resultJSON(result)
 	if err != nil {
+		if preSession {
+			b.reconnectLocked(ctx)
+			return failure("UNAVAILABLE", "Accord returned an unreadable describe reply; nothing is owned yet. Retry describe with a fresh request_id."), nil
+		}
 		return b.uncertain(), nil
 	}
 	if result.IsError {
@@ -120,6 +143,9 @@ func (b *bridge) call(ctx context.Context, name string, raw json.RawMessage) (*m
 				return b.uncertain(), nil
 			}
 		case "UNAUTHORIZED", "NO_SESSION", "INTERNAL", "":
+			if preSession {
+				return result, nil
+			}
 			return b.uncertain(), nil
 		}
 		return result, nil

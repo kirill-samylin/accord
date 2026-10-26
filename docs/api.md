@@ -105,8 +105,9 @@ gates назначения задач и независимого review ост�
 Все `/api/v1/*` и `/mcp` требуют `Authorization: Bearer <token>`.
 После открытия board-сессии REST требует `X-Session: <session_id>`, а каждый
 MCP tool input — `session_id`. MCP transport id не заменяет board session id.
-Сервер связывает сессию с token principal; machine при открытии совпадает с
-machine токена. Без сессии доступны только describe/session и служебный health.
+Сервер связывает сессию с token principal; `machine` в describe опционален:
+пустое значение означает machine токена (WORK299), а явное значение обязано
+с ним совпадать. Без сессии доступны только describe/session и служебный health.
 
 Успех пилота: bare JSON business-результата. Общие `server_time`/`high_water`
 во все ответы не добавляются; `high_water` обязателен только для EventsPage.

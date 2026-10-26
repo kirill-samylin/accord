@@ -140,3 +140,33 @@ func TestAuthoritativeLeaseLossPermanentlyQuarantines(t *testing.T) {
 		t.Fatal("diagnostic read revived ownership")
 	}
 }
+
+func TestTransportFailureBeforeFirstSessionDoesNotQuarantine(t *testing.T) {
+	f := setup(t, 100*time.Millisecond)
+	f.fault.Store(2)
+	result := f.invoke("describe", map[string]string{"request_id": "pre-session-timeout", "role": "developer", "run_id": "first-contact"})
+	raw, err := resultJSON(result)
+	if err != nil || !result.IsError || errorCode(raw) != "UNAVAILABLE" {
+		t.Fatalf("pre-session transport failure must be a retryable error, got %v", result.Content)
+	}
+	f.fault.Store(1)
+	result = f.invoke("describe", map[string]string{"request_id": "pre-session-503", "role": "developer", "run_id": "first-contact"})
+	if raw, err = resultJSON(result); err != nil || !result.IsError || errorCode(raw) == "LEASE_UNCERTAIN" {
+		t.Fatalf("pre-session 503 quarantined the bridge: %v", result.Content)
+	}
+	f.fault.Store(0)
+	// Same process, same bridge: once the network is back the first session opens
+	// without a restart, and the machine may be omitted.
+	result = f.invoke("describe", map[string]string{"request_id": "pre-session-ok", "role": "developer", "run_id": "first-contact"})
+	raw, err = resultJSON(result)
+	if err != nil || result.IsError {
+		t.Fatalf("describe after a pre-session failure did not open a session: %s (stderr %q)", string(raw), f.stderr.String())
+	}
+	var view core.SessionView
+	if json.Unmarshal(raw, &view) != nil || view.SessionID == "" {
+		t.Fatal("describe after a pre-session failure returned no session")
+	}
+	if f.stderr.String() != "" {
+		t.Fatalf("bridge reported uncertainty before owning anything: %s", f.stderr.String())
+	}
+}

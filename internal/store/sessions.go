@@ -18,6 +18,11 @@ func (s *Store) Describe(ctx context.Context, p core.Principal, in core.OpenSess
 				}
 			}
 		}
+		// An omitted machine means the token's own machine: agents rarely know the
+		// label a token was issued with. A different explicit value is still rejected.
+		if in.Machine == "" {
+			in.Machine = p.Machine
+		}
 		if !core.ValidRole(in.Role) || strings.TrimSpace(in.RunID) == "" || utf8.RuneCountInString(in.RunID) > 128 || in.Machine != p.Machine {
 			return zero, core.Fail("invalid_input", "valid role, run_id and token machine required")
 		}
