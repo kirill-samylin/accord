@@ -218,3 +218,11 @@ enroll/consent с остановкой и повторным запуском La
 `com.accord.gui.worker`. Секреты не принимаются аргументами и не печатаются.
 Реальный прогон на Mac пользователя и gennadiy consent — NOT-RUN до его
 поручения; ветка `codex/worker-setup` локальная.
+
+Продолжение26.10.2026 — `docs/work/WORK-297-connect.md`: команда
+`agent-board connect --token-file PRIVATE` (`internal/connect`) — подключение
+участника без диалога: сервер/проект из `connection.json`, приватные копии
+токена и клиента в `~/.config/accord/`, регистрация MCP `accord` в Codex и
+Claude Code через их `mcp add` и в `~/.config/gennadiy/gennadiy.json`.
+Сценарий «двое берут задачи с доски» использует этот путь, managed worker для
+него не нужен. Реальный прогон на Mac пользователя — NOT-RUN до его запуска.

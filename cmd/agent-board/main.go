@@ -49,6 +49,8 @@ func run(args []string, in io.Reader, out io.Writer) error {
 		return runMCP(args[1:], in, out)
 	case "worker":
 		return workerCommand(args[1:], out)
+	case "connect":
+		return connectCommand(args[1:], out)
 	case "backup":
 		return backup(args[1:], out)
 	case "sessions":
@@ -90,7 +92,7 @@ func helpRequested(args []string) bool {
 	}
 	if len(args) == 2 && (args[1] == "-h" || args[1] == "--help") {
 		switch args[0] {
-		case "serve", "mcp", "worker", "call", "backup", "token", "sessions", "maintenance":
+		case "serve", "mcp", "worker", "call", "backup", "token", "sessions", "maintenance", "connect":
 			return true
 		}
 	}
@@ -100,6 +102,7 @@ func helpRequested(args []string) bool {
 const commandHelp = `Accord — authenticated coordination server and native client
 
 agent-board serve --db PATH --listen 127.0.0.1:8080 [--external-host DNS:PORT] [--task-ttl 15m --session-ttl 15m] [--duplicate-mode off|warn|strict --duplicate-threshold 0.6]
+agent-board connect --token-file PRIVATE [--server ORIGIN --project ID]
 agent-board mcp --server ORIGIN --token-file PRIVATE [--project ID] [--heartbeat-interval 1m]
 agent-board call OPERATION --server ORIGIN --token-file PRIVATE [--project ID] < request.json
 agent-board token create --db PATH --owner NAME --machine NAME --output NEW_PRIVATE [--days 30]
