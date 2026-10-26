@@ -14,11 +14,14 @@ import (
 
 func workerCommand(args []string, out io.Writer) error {
 	if len(args) == 0 {
-		return errors.New("usage: agent-board worker enroll|run|identity|consent|recover|automation-preview --config PRIVATE [--run RUN_ID [--unverified]]")
+		return errors.New("usage: agent-board worker setup|enroll|run|identity|consent|recover|automation-preview --config PRIVATE [--run RUN_ID [--unverified]]")
 	}
 	operation := args[0]
 	if operation == "automation-preview" {
 		return workerAutomationPreview(args[1:], out)
+	}
+	if operation == "setup" {
+		return workerSetup(args[1:], out)
 	}
 	if operation == "supervise" {
 		if len(args) != 1 {

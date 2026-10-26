@@ -110,6 +110,7 @@ agent-board sessions list --db PATH
 agent-board backup --db PATH --output NEW_PRIVATE
 agent-board maintenance reset --db PATH --reason REASON
 agent-board capabilities --json
+agent-board worker setup --config PRIVATE_JSON
 agent-board worker enroll --config PRIVATE_JSON
 agent-board worker run --config PRIVATE_JSON
 agent-board worker identity --config PRIVATE_JSON

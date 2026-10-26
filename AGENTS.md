@@ -207,3 +207,14 @@ kirill-samylin/accord#2 слит fast-forward в `codex/native-preflight`
 прежние floors, журнал complete, smoke200); Mac worker и сам gennadiy по
 указанию пользователя не изменялись. Реальный managed
 запуск gennadiy, resume и automation roles — NOT-RUN; тег не ставился.
+
+Продолжение26.10.2026 — `docs/work/WORK-296-worker-setup.md`: команда
+`agent-board worker setup --config PRIVATE_JSON` (`cmd/agent-board`,
+`internal/worker/setup*.go`) — пошаговое подключение компьютера: обнаружение
+CLI codex/claude/gennadiy с разрешением npm-шима до настоящего бинаря, диалог
+по папкам/провайдерам/правам/инструментам/моделям, атомарная запись `0600`
+с сохранением server/project/token_file/state_dir/controllers, затем
+enroll/consent с остановкой и повторным запуском LaunchAgent
+`com.accord.gui.worker`. Секреты не принимаются аргументами и не печатаются.
+Реальный прогон на Mac пользователя и gennadiy consent — NOT-RUN до его
+поручения; ветка `codex/worker-setup` локальная.
