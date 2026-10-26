@@ -70,23 +70,31 @@ func ReadToken(path string) (string, error) {
 	return token, nil
 }
 
-func (e *Engine) bridgeArgs(run RunState) ([]string, error) {
+// bridgeLaunch is the provider-specific binding of one attempt: extra argv
+// for Codex/Claude, or injected environment for Gennadiy (OpenCode has no
+// MCP flag). Both are composed by the worker from local config only.
+type bridgeLaunch struct {
+	Args []string
+	Env  []string
+}
+
+func (e *Engine) bridgeArgs(run RunState) (bridgeLaunch, error) {
 	if !identifier.MatchString(run.ID) || run.Generation < 1 {
-		return nil, preparationFailureAt("prepare_binding", nil)
+		return bridgeLaunch{}, preparationFailureAt("prepare_binding", nil)
 	}
 	runDir := filepath.Join(e.config.StateDir, "runs", run.ID)
 	if err := privateDirectory(runDir); err != nil {
-		return nil, preparationFailureAt("prepare_run_directory", err)
+		return bridgeLaunch{}, preparationFailureAt("prepare_run_directory", err)
 	}
 	dir := filepath.Join(runDir, "attempt-"+strconv.FormatInt(run.Generation, 10))
 	if err := privateDirectory(dir); err != nil {
-		return nil, preparationFailureAt("prepare_attempt_directory", err)
+		return bridgeLaunch{}, preparationFailureAt("prepare_attempt_directory", err)
 	}
 	path := filepath.Join(dir, "bridge.json")
 	bridgeConfig := BridgeConfig{ManagedRunID: run.ID, ManagedGeneration: run.Generation, Server: e.config.Server, Project: e.config.Project, TokenFile: e.config.TokenFile}
 	if run.Automation != nil {
 		if !run.Automation.Registered || run.Automation.IPC == nil {
-			return nil, preparationFailureAt("prepare_binding", nil)
+			return bridgeLaunch{}, preparationFailureAt("prepare_binding", nil)
 		}
 		bridgeConfig.TokenFile = run.Automation.TokenFile
 		bridgeConfig.ExecutionCapabilityID = run.Automation.CapabilityID
@@ -94,39 +102,67 @@ func (e *Engine) bridgeArgs(run RunState) ([]string, error) {
 	}
 	data, _ := json.Marshal(bridgeConfig)
 	if err := immutableBridgeFile(path, data); err != nil {
-		return nil, preparationFailureAt("prepare_bridge_file", err)
+		return bridgeLaunch{}, preparationFailureAt("prepare_bridge_file", err)
 	}
 	self, err := os.Executable()
 	if err != nil {
-		return nil, preparationFailureAt("prepare_self", err)
+		return bridgeLaunch{}, preparationFailureAt("prepare_self", err)
 	}
 	args := []string{"worker", "bridge", "--config", path}
-	if run.Provider == "codex" {
+	switch run.Provider {
+	case "codex":
 		// Codex merges maps instead of replacing them. Disable each discovered
 		// connector for this invocation so another board session cannot be used.
 		connectors, err := e.discover(e.config.Executables[run.Provider], e.config.Workspaces[run.Workspace].Path)
 		if err != nil {
-			return nil, preparationContext("prepare_discovery", err)
+			return bridgeLaunch{}, preparationContext("prepare_discovery", err)
 		}
-		for _, c := range connectors {
-			e.preparedConnectors = append(e.preparedConnectors, mcpConnector{Name: c.Name, Transport: c.Transport})
-		}
+		e.recordConnectors(connectors)
 		overrides, err := codexMCPOverrides(connectors, self, args, e.config.NativeMCPApprovedTools["codex"])
 		if err != nil {
-			return nil, err
+			return bridgeLaunch{}, err
 		}
 		if err = e.verifyMCP(e.config.Executables[run.Provider], e.config.Workspaces[run.Workspace].Path, overrides, self, args); err != nil {
-			return nil, preparationContext("prepare_verify", err)
+			return bridgeLaunch{}, preparationContext("prepare_verify", err)
 		}
-		return overrides, nil
+		return bridgeLaunch{Args: overrides}, nil
+	case "gennadiy":
+		return e.gennadiyLaunch(run, self, args)
 	}
 	mcp := map[string]any{"mcpServers": map[string]any{"accord_managed": map[string]any{"command": self, "args": args}}}
 	data, _ = json.Marshal(mcp)
 	path = filepath.Join(dir, "mcp.json")
 	if err = immutableBridgeFile(path, data); err != nil {
-		return nil, preparationFailureAt("prepare_claude_file", err)
+		return bridgeLaunch{}, preparationFailureAt("prepare_claude_file", err)
 	}
-	return append([]string{"--strict-mcp-config", "--mcp-config", path}, claudeMCPConsent(e.config.NativeMCPApprovedTools["claude"])...), nil
+	return bridgeLaunch{Args: append([]string{"--strict-mcp-config", "--mcp-config", path}, claudeMCPConsent(e.config.NativeMCPApprovedTools["claude"])...)}, nil
+}
+
+func (e *Engine) recordConnectors(connectors []mcpConnector) {
+	for _, c := range connectors {
+		e.preparedConnectors = append(e.preparedConnectors, mcpConnector{Name: c.Name, Transport: c.Transport})
+	}
+}
+
+// gennadiyLaunch composes and verifies the injected OpenCode config for one
+// attempt. Global config stays untouched; the preset lives in the environment
+// of this child only and never in argv, a file in the workspace or the server.
+func (e *Engine) gennadiyLaunch(run RunState, self string, args []string) (bridgeLaunch, error) {
+	executable, directory := e.config.Executables[run.Provider], e.config.Workspaces[run.Workspace].Path
+	connectors, err := e.discoverGennadiy(executable, directory)
+	if err != nil {
+		return bridgeLaunch{}, preparationContext("prepare_discovery", err)
+	}
+	e.recordConnectors(connectors)
+	permission := gennadiyPermissions(gennadiyMode(e.config, run), e.config.NativeMCPApprovedTools["gennadiy"])
+	content, err := gennadiyConfigContent(connectors, self, args, permission)
+	if err != nil {
+		return bridgeLaunch{}, err
+	}
+	if err = e.verifyGennadiy(executable, directory, content, self, args, permission); err != nil {
+		return bridgeLaunch{}, preparationContext("prepare_verify", err)
+	}
+	return bridgeLaunch{Env: gennadiyEnv(content)}, nil
 }
 
 // Attempt-specific immutable files keep a surviving old bridge from observing

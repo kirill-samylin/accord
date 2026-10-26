@@ -34,6 +34,9 @@ func startProcess(spec launchSpec) (process, error) {
 		cmd.Stdin = spec.stdin
 	}
 	cmd.Stdout, cmd.Stderr = writer, io.Discard
+	if spec.mergeStderr {
+		cmd.Stderr = writer
+	}
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	if err = cmd.Start(); err != nil {
 		reader.Close()

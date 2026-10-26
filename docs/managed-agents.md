@@ -11,6 +11,8 @@ generation, idempotency, profile snapshot, coordination и deduplication gates.
 проект, workspace и provider. Worker только исходяще опрашивает Accord по HTTPS;
 открытого порта, SSH, удалённой shell, серверного clone или provider credentials нет.
 Первый сценарий: macOS + native Codex CLI и Windows + native Claude Code CLI.
+Третий провайдер — корпоративный `gennadiy` (fork OpenCode): headless `run`,
+тот же worker, те же ACL/lease/bridge; см. раздел адаптеров.
 Accord управляет только процессами, которые запустил этот worker. Уже открытый
 терминал/IDE/desktop-чат нельзя выдать за подключённый управляемый процесс.
 
@@ -180,6 +182,23 @@ turn.completed/turn.failed и exit status. Claude: `claude -p --output-format
 stream-json --verbose`, stdin prompt; resume добавляет `--resume UUID`.
 `system/init.session_id` либо документированный result session_id подтверждает
 conversation; success требует terminal result без error и успешного exit.
+Gennadiy (OpenCode fork): `gennadiy run --format json --agent build`, prompt
+через stdin; resume добавляет `--session ses_…`. Каждое событие несёт `sessionID`
+формата `ses_` + base62; `step_start` подтверждает начало turn, `step_finish`
+без последующего `error` и exit0 — завершение. Flag `--mcp-config` отсутствует:
+worker передаёт только этому child переменную `OPENCODE_CONFIG_CONTENT` с
+записью `accord_managed` этой попытки, `enabled=false` для каждого обнаруженного
+через `debug config` чужого connector (URL/headers не копируются) и
+pinned permission preset. Headless `run` автоматически отклоняет любой
+native «ask», поэтому preset явный: `edit`/`bash` allow только при локальном
+`gennadiy_permission_mode=workspace-write` (automation — только developer и
+tester с artifact consent), `external_directory` deny, bridge tools по
+`native_mcp_approved_tools.gennadiy` (allow выбранные, deny остальные: native
+default для MCP — allow, а не prompt). Второе config-only чтение с инъекцией
+проверяет точное binding и policy до spawn. `--dangerously-skip-permissions`,
+`--continue`, `--fork`, `OPENCODE_CONFIG_DIR` и подмена глобального config не
+используются; ambient `OPENCODE_CONFIG*` окружения worker не наследует.
+OS sandbox у OpenCode нет: workspace-write означает обычный shell владельца.
 Нет `--last`, `--continue`, implicit model fallback или поиска чужого чата по имени.
 Префлайт проверяет установленную версию/flags; unsupported provider не получает
 фиктивную capability. Windows native executable и process tree проверяются реально.

@@ -34,6 +34,7 @@ export const providerLabels: Record<string, string> = {
   unconfigured: "Не выбран",
   openai: "OpenAI",
   anthropic: "Anthropic",
+  gennadiy: "Gennadiy (OpenCode)",
   local: "Локальный",
   custom: "Другой",
 };

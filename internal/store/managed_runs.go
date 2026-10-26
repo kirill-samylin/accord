@@ -24,7 +24,7 @@ func managedSnapshot(b *board, in core.ManagedStartInput) (*core.ProfileSnapshot
 	if p.State != "active" || p.Version != in.ProfileVersion {
 		return nil, core.Fail("conflict", "Профиль изменён или архивирован")
 	}
-	want := map[string]string{"codex": "openai", "claude": "anthropic"}[in.Provider]
+	want := core.ProfileProviderFor(in.Provider)
 	if want == "" || p.Provider != want && p.Provider != "unconfigured" {
 		return nil, core.Fail("validation", "Поставщик профиля не совпадает с локальным CLI")
 	}

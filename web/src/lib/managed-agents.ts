@@ -87,9 +87,13 @@ export const deliveryLabels: Record<string, string> = {
 };
 export function providerName(value: string) {
   return (
-    ({ codex: "Codex", claude: "Claude Code" } as Record<string, string>)[
-      value
-    ] ?? value
+    (
+      {
+        codex: "Codex",
+        claude: "Claude Code",
+        gennadiy: "Gennadiy (OpenCode)",
+      } as Record<string, string>
+    )[value] ?? value
   );
 }
 export function hostOnline(host: ManagedHost | undefined, observedAt?: string) {
@@ -187,7 +191,8 @@ export function profileSupportsProvider(
   return (
     profile.provider === "unconfigured" ||
     (profile.provider === "openai" && provider === "codex") ||
-    (profile.provider === "anthropic" && provider === "claude")
+    (profile.provider === "anthropic" && provider === "claude") ||
+    (profile.provider === "gennadiy" && provider === "gennadiy")
   );
 }
 export function startErrors(

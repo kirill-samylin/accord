@@ -51,6 +51,8 @@ type Engine struct {
 	start                   func(launchSpec) (process, error)
 	discover                func(string, string) ([]mcpConnector, error)
 	verifyMCP               func(string, string, []string, string, []string) error
+	discoverGennadiy        func(string, string) ([]mcpConnector, error)
+	verifyGennadiy          func(string, string, string, string, []string, map[string]string) error
 	workspaceLockDir        string
 	probe                   func(Config) error
 	automationTransport     func(context.Context, string, any, any) error
@@ -90,7 +92,7 @@ func Open(config Config) (*Engine, error) {
 		d.close()
 		return nil, err
 	}
-	return &Engine{config: config, disk: d, journal: j, active: map[string]*activeRun{}, plans: map[string]plan{}, start: startSupervised, discover: discoverCodexMCP, verifyMCP: verifyCodexMCP, probe: probeProviders}, nil
+	return &Engine{config: config, disk: d, journal: j, active: map[string]*activeRun{}, plans: map[string]plan{}, start: startSupervised, discover: discoverCodexMCP, verifyMCP: verifyCodexMCP, discoverGennadiy: discoverGennadiyMCP, verifyGennadiy: verifyGennadiyConfig, probe: probeProviders}, nil
 }
 
 func (e *Engine) save() error {

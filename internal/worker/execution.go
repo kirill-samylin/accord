@@ -39,7 +39,7 @@ func (e *Engine) launch(plan plan) error {
 	if err != nil {
 		return fail("resume_unavailable: exact native session is invalid")
 	}
-	bridgeArgs, err := e.prepareBridgeLocked(plan, run)
+	bridge, err := e.prepareBridgeLocked(plan, run)
 	if err != nil {
 		run.LocalDiagnostic = preparationDiagnostic(err)
 		if e.closed || e.fatal != nil || run.State != "accepted" || run.CommandID != plan.command.ID {
@@ -47,7 +47,8 @@ func (e *Engine) launch(plan plan) error {
 		}
 		return fail(preparationError)
 	}
-	args = append(bridgeArgs, args...)
+	args = append(bridge.Args, args...)
+	env := append(providerEnv(), bridge.Env...)
 	if run.Provider == "codex" && e.config.CodexSandbox != "" {
 		args = append([]string{"-c", fmt.Sprintf("sandbox_mode=%q", e.config.CodexSandbox)}, args...)
 	}
@@ -55,8 +56,8 @@ func (e *Engine) launch(plan plan) error {
 		args = append(args, "--permission-mode", e.config.ClaudePermissionMode)
 	}
 	if profile := plan.run.Profile; profile != nil {
-		expected := map[string]string{"codex": "openai", "claude": "anthropic"}[run.Provider]
-		if profile.Provider != expected && profile.Provider != "unconfigured" {
+		expected := profileProviderFor(run.Provider)
+		if expected == "" || profile.Provider != expected && profile.Provider != "unconfigured" {
 			return fail("profile provider differs from locally allowed native provider")
 		}
 		if profile.Model != "" {
@@ -93,7 +94,7 @@ func (e *Engine) launch(plan plan) error {
 		return fail("local path identity changed before native launch")
 	}
 	run.ProcessGroups, run.RecoveryNotified = nil, false
-	child, err := e.start(launchSpec{executable: executable, directory: directory, args: args, env: providerEnv(), prompt: e.prompt(plan), onGroup: e.groupRecorder(run.ID)})
+	child, err := e.start(launchSpec{executable: executable, directory: directory, args: args, env: env, prompt: e.prompt(plan), onGroup: e.groupRecorder(run.ID)})
 	if err != nil {
 		_ = checkoutLock.release(true)
 		return fail("native provider could not start; check its local installation and permissions")

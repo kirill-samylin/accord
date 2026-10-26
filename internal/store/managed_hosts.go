@@ -27,8 +27,8 @@ func managedValues(values []string, max int, providers bool) error {
 				return core.Fail("validation", "Управляющие символы запрещены")
 			}
 		}
-		if providers && v != "codex" && v != "claude" {
-			return core.Fail("validation", "Поддерживаются codex/claude")
+		if providers && !core.KnownNativeProvider(v) {
+			return core.Fail("validation", "Поддерживаются codex/claude/gennadiy")
 		}
 		seen[v] = true
 	}
@@ -52,7 +52,7 @@ func managedEnrollValid(in core.ManagedHostEnrollInput) error {
 	if err := managedValues(in.Workspaces, 32, false); err != nil {
 		return err
 	}
-	return managedValues(in.Providers, 2, true)
+	return managedValues(in.Providers, len(core.NativeProviders), true)
 }
 func (s *Store) ManagedHostEnroll(ctx context.Context, a core.Actor, in core.ManagedHostEnrollInput) (core.ManagedHost, error) {
 	if err := managedEnrollValid(in); err != nil {

@@ -23,7 +23,10 @@ type localProcess struct {
 // providerProcessNames are executable base names of native providers: the
 // fixed provider names plus every configured provider executable.
 func providerProcessNames(config Config) map[string]bool {
-	names := map[string]bool{"codex": true, "claude": true}
+	names := map[string]bool{}
+	for _, provider := range nativeProviders {
+		names[provider] = true
+	}
 	for provider, path := range config.Executables {
 		names[strings.ToLower(provider)] = true
 		if base := strings.ToLower(filepath.Base(path)); base != "" && base != "." && base != string(filepath.Separator) {

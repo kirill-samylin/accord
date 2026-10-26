@@ -17,6 +17,9 @@ import (
 var identifier = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$`)
 var sessionID = regexp.MustCompile(`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$`)
 
+// OpenCode session identifiers: a fixed prefix and a bounded base62 body.
+var gennadiySessionID = regexp.MustCompile(`^ses_[A-Za-z0-9]{16,64}$`)
+
 type Workspace struct {
 	Path      string   `json:"path"`
 	Providers []string `json:"providers"`
@@ -38,6 +41,7 @@ type Config struct {
 	Models                 map[string][]string  `json:"models,omitempty"`
 	CodexSandbox           string               `json:"codex_sandbox,omitempty"`
 	ClaudePermissionMode   string               `json:"claude_permission_mode,omitempty"`
+	GennadiyPermissionMode string               `json:"gennadiy_permission_mode,omitempty"`
 	Workspaces             map[string]Workspace `json:"workspaces"`
 }
 
@@ -73,20 +77,23 @@ func (c Config) Validate() error {
 	if c.ClaudePermissionMode != "" && c.ClaudePermissionMode != "default" && c.ClaudePermissionMode != "acceptEdits" {
 		return errors.New("claude_permission_mode must be default or acceptEdits")
 	}
+	if c.GennadiyPermissionMode != "" && c.GennadiyPermissionMode != "read-only" && c.GennadiyPermissionMode != "workspace-write" {
+		return errors.New("gennadiy_permission_mode must be read-only or workspace-write")
+	}
 	if !identifier.MatchString(c.Name) || c.Machine == "" || !filepath.IsAbs(c.StateDir) || len(c.Workspaces) == 0 || len(c.Workspaces) > 32 {
 		return errors.New("worker requires a name, absolute state_dir, and 1..32 workspaces")
 	}
 	if len(c.Controllers) > 32 {
 		return errors.New("at most 32 explicit local controller principal IDs are allowed")
 	}
-	if len(c.Executables) == 0 || len(c.Executables) > 2 {
-		return errors.New("configure codex and/or claude executables")
+	if len(c.Executables) == 0 || len(c.Executables) > len(nativeProviders) {
+		return errors.New("configure codex, claude and/or gennadiy executables")
 	}
 	for provider, path := range c.Executables {
 		if err := validateLocalPath(path); err != nil {
 			return err
 		}
-		if provider != "codex" && provider != "claude" {
+		if !knownProvider(provider) {
 			return errors.New("unsupported native provider")
 		}
 		if !filepath.IsAbs(path) {

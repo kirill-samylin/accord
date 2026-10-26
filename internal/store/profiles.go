@@ -33,7 +33,7 @@ func validateProfile(v core.ProfileSettings) error {
 		return core.Fail("validation", "Описание и инструкции могут содержать переносы строк и табуляцию, но не другие управляющие символы")
 	}
 	switch v.Provider {
-	case "unconfigured", "openai", "anthropic", "local", "custom":
+	case "unconfigured", "openai", "anthropic", "gennadiy", "local", "custom":
 	default:
 		return core.Fail("validation", "Выберите поставщика из списка")
 	}

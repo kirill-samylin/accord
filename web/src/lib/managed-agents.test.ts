@@ -12,6 +12,8 @@ import {
   hostOnline,
   messageError,
   profileOption,
+  profileSupportsProvider,
+  providerName,
   selectedProfile,
   startErrors,
   startFields,
@@ -322,5 +324,46 @@ test("profile provider compatibility rejects another vendor before queueing star
       true,
     ),
     {},
+  );
+});
+test("gennadiy is a third native provider with its own profile provider", () => {
+  assert.equal(providerName("gennadiy"), "Gennadiy (OpenCode)");
+  assert.equal(providerName("codex"), "Codex");
+  assert.equal(providerName("other"), "other");
+  const base = profile();
+  for (const [profileProvider, provider, expected] of [
+    ["gennadiy", "gennadiy", true],
+    ["unconfigured", "gennadiy", true],
+    ["openai", "gennadiy", false],
+    ["anthropic", "gennadiy", false],
+    ["gennadiy", "codex", false],
+    ["gennadiy", "claude", false],
+  ] as const) {
+    assert.equal(
+      profileSupportsProvider({ ...base, provider: profileProvider }, provider),
+      expected,
+      `${profileProvider} profile on ${provider}`,
+    );
+  }
+  const data = {
+    observed_at: observedAt,
+    hosts: [{ ...host(), providers: ["gennadiy"] }],
+    runs: [],
+  };
+  const errors = startErrors(
+    { ...draft(), provider: "gennadiy" },
+    data,
+    [{ ...base, provider: "gennadiy" }],
+    true,
+  );
+  assert.equal(errors.provider, undefined);
+  assert.equal(errors.profile, undefined);
+  assert.ok(
+    startErrors(
+      { ...draft(), provider: "gennadiy" },
+      data,
+      [{ ...base, provider: "openai" }],
+      true,
+    ).profile,
   );
 });

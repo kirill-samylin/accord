@@ -10,7 +10,9 @@ import (
 	"unicode/utf8"
 )
 
-var managedSessionID = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+// Exact native conversation IDs: Codex/Claude UUIDs or OpenCode `ses_` IDs
+// (Gennadiy). The worker reports them verbatim; nothing else is accepted.
+var managedSessionID = regexp.MustCompile(`^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|ses_[A-Za-z0-9]{16,64})$`)
 var managedBearer = regexp.MustCompile(`(?i)(bearer\s+|(?:api[_-]?key|token|secret)\s*[:=]\s*)[^\s,;]+`)
 
 func managedClean(s string) string {

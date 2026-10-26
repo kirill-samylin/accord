@@ -9,46 +9,46 @@ import (
 // prepareBridgeLocked is entered and returned with mu held. The potentially
 // blocking native configuration reads operate only on immutable local snapshots
 // outside mu, so another run's watchdog and stop can always enter the failsafe.
-func (e *Engine) prepareBridgeLocked(plan plan, run *RunState) ([]string, error) {
+func (e *Engine) prepareBridgeLocked(plan plan, run *RunState) (bridgeLaunch, error) {
 	run.State, run.CommandID, run.Generation = "accepted", plan.command.ID, plan.command.Generation
 	if err := e.save(); err != nil {
-		return nil, preparationFailureAt("prepare_journal", err)
+		return bridgeLaunch{}, preparationFailureAt("prepare_journal", err)
 	}
 	snapshot := *run
 	config := snapshotConfig(e.config)
 	epoch := e.stopEpoch
 	active := e.active[run.ID]
-	preparer := &Engine{config: config, discover: e.discover, verifyMCP: e.verifyMCP}
-	var args []string
+	preparer := &Engine{config: config, discover: e.discover, verifyMCP: e.verifyMCP, discoverGennadiy: e.discoverGennadiy, verifyGennadiy: e.verifyGennadiy}
+	var launch bridgeLaunch
 	var prepareError error
 	func() {
 		e.mu.Unlock()
 		defer e.mu.Lock()
-		args, prepareError = preparer.bridgeArgs(snapshot)
+		launch, prepareError = preparer.bridgeArgs(snapshot)
 	}()
 	if e.fatal != nil {
-		return nil, preparationFailureAt("prepare_fatal", errors.Join(e.fatal, prepareError))
+		return bridgeLaunch{}, preparationFailureAt("prepare_fatal", errors.Join(e.fatal, prepareError))
 	}
 	if e.closed {
-		return nil, preparationFailureAt("prepare_closed", prepareError)
+		return bridgeLaunch{}, preparationFailureAt("prepare_closed", prepareError)
 	}
 	current := e.journal.Runs[snapshot.ID]
 	if current != run || current.State != "accepted" || current.CommandID != snapshot.CommandID || current.Generation != snapshot.Generation || current.Provider != snapshot.Provider || current.Workspace != snapshot.Workspace || current.SessionID != snapshot.SessionID {
-		return nil, preparationFailureAt("prepare_state", prepareError)
+		return bridgeLaunch{}, preparationFailureAt("prepare_state", prepareError)
 	}
 	if !time.Now().Before(e.deadline) {
-		return nil, preparationFailureAt("prepare_deadline", prepareError)
+		return bridgeLaunch{}, preparationFailureAt("prepare_deadline", prepareError)
 	}
 	if e.stopEpoch != epoch || e.active[run.ID] != active || !e.allowedController(plan.command.CreatedBy) || !reflect.DeepEqual(e.config, config) {
-		return nil, preparationFailureAt("prepare_authorization", prepareError)
+		return bridgeLaunch{}, preparationFailureAt("prepare_authorization", prepareError)
 	}
 	if err := e.checkPins(run.Provider, run.Workspace); err != nil {
-		return nil, preparationFailureAt("prepare_pins", errors.Join(err, prepareError))
+		return bridgeLaunch{}, preparationFailureAt("prepare_pins", errors.Join(err, prepareError))
 	}
 	if active != nil && active.automation != nil {
 		active.automation.connectors = append([]mcpConnector{}, preparer.preparedConnectors...)
 	}
-	return args, prepareError
+	return launch, prepareError
 }
 
 func snapshotConfig(config Config) Config {

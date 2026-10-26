@@ -28,7 +28,12 @@ func probeProviders(config Config) error {
 			args = []string{"exec", "--help"}
 			flags = []string{"--json", "resume"}
 		}
-		help, err := readNative(executable, directory, args)
+		read := func() ([]byte, error) { return readNative(executable, directory, args) }
+		if provider == "gennadiy" {
+			flags = []string{"--format", "--session", "--agent", "json"}
+			read = func() ([]byte, error) { return readGennadiyHelp(executable, directory) }
+		}
+		help, err := read()
 		if err != nil {
 			return errors.New("native provider CLI preflight failed")
 		}

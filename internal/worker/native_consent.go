@@ -14,8 +14,8 @@ var managedMCPTools = []string{"comment", "create", "describe", "events", "get",
 
 func validateNativeMCPConsent(grants map[string][]string, executables map[string]string) error {
 	for provider, tools := range grants {
-		if (provider != "codex" && provider != "claude") || executables[provider] == "" {
-			return errors.New("native_mcp_approved_tools requires a configured codex or claude provider")
+		if !knownProvider(provider) || executables[provider] == "" {
+			return errors.New("native_mcp_approved_tools requires a configured codex, claude or gennadiy provider")
 		}
 		seen := map[string]bool{}
 		for _, tool := range tools {

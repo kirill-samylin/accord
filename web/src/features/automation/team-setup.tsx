@@ -115,6 +115,7 @@ function TeamRole({
             <option value="unconfigured">Выбрать позже</option>
             <option value="openai">Codex</option>
             <option value="anthropic">Claude Code</option>
+            <option value="gennadiy">Gennadiy (OpenCode)</option>
           </Select>
         </label>
         <label className="form-field">

@@ -24,7 +24,10 @@ type launchSpec struct {
 	env        []string
 	prompt     string
 	stdin      io.Reader // Only helper-owned finite config dialogue uses this pipe.
-	inspection *configInspection
+	// mergeStderr captures stderr into Output for bounded config-only reads of
+	// a CLI that prints help there (Gennadiy). Windows always merges both.
+	mergeStderr bool
+	inspection  *configInspection
 	// onGroup receives the native process group a Unix supervisor reports, so
 	// `worker recover` can census it later. It is called without Engine.mu.
 	onGroup func(int)

@@ -191,3 +191,14 @@ SEC-06 изменён: секрет нового credential отдаётся о�
 ответе и не сохраняется. Админ управляет участниками любого проекта, но не
 получает OS/host control. Параллельно исправлены hover/press/раскрытия в UI
 (`components/disclosure.tsx`, hover ведёт строка, press только на :active).
+
+
+Продолжение26.10.2026 — `docs/work/WORK-295-gennadiy-provider.md`: по прямому
+поручению пользователя добавлен третий managed provider `gennadiy` (корпоративный
+fork OpenCode1.18.10) в worker, сервер, веб и документацию. Адаптер: `run
+--format json --agent build`, stdin prompt, exact `--session ses_…`, binding
+моста и pinned permission preset через `OPENCODE_CONFIG_CONTENT` только для
+child этой попытки, discovery/verify через `debug config`. Серверный
+`managedSessionID` принимает `ses_` IDs; profile provider `gennadiy`; host
+providers до3. Проверены unit/race/vet/web; реальный managed запуск gennadiy,
+resume и automation roles — NOT-RUN, production не обновлён.

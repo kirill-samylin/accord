@@ -10,8 +10,9 @@ board schema5, а также новый клиент `agent-board`. Исходн
 ## Как это работает
 
 На каждом компьютере работает локальный исполнитель Accord — worker. Он
-получает команды общего проекта и запускает собственные процессы Codex или
-Claude Code. В панели видны компьютер, задание, состояние процесса и история
+получает команды общего проекта и запускает собственные процессы Codex,
+Claude Code или корпоративного Gennadiy (fork OpenCode). В панели видны
+компьютер, задание, состояние процесса и история
 доставки команд. Уже открытые чаты и процессы других приложений не подключаются.
 
 Для удалённой работы компьютер должен быть включён, иметь связь и запущенный
@@ -94,6 +95,42 @@ Unix mode bits на Windows не заменяют ACL, worker проверяет
 папки не принимаются. `acceptEdits` можно выбрать только локальным решением
 владельца вместо `default`; это не разрешение обходить остальные подтверждения.
 Пути и параметры запуска из браузера не принимаются.
+
+Для корпоративного Gennadiy (fork OpenCode) на Mac:
+
+```json
+{
+  "server": "https://ACCORD_ORIGIN",
+  "project": "p_PROJECT_ID_FROM_CONNECTION",
+  "token_file": "/ABSOLUTE/PRIVATE/gui.token",
+  "state_dir": "/ABSOLUTE/PRIVATE/worker-state",
+  "name": "mac-main",
+  "machine": "MACHINE_FROM_CONNECTION",
+  "controllers": [],
+  "executables": {"gennadiy": "/ABSOLUTE/PATH/TO/node_modules/gennadiy-darwin-arm64/bin/gennadiy"},
+  "gennadiy_permission_mode": "read-only",
+  "models": {"gennadiy": ["gennadiy/EXACT_LOCALLY_ALLOWED_MODEL"]},
+  "native_mcp_approved_tools": {"gennadiy": ["describe", "next"]},
+  "workspaces": {
+    "gui": {"path": "/ABSOLUTE/PATH/TO/gui", "providers": ["gennadiy"]}
+  }
+}
+```
+
+Укажите настоящий Mach-O бинарь из npm-пакета платформы, а не shell-шим
+`~/.gennadiy/bin/gennadiy`: shim — скрипт, и worker пинит именно исполняемый
+файл. После `gennadiy upgrade` файл меняется, и запуск ждёт `worker consent`.
+Вход в Keycloak (`gennadiy login`) и `gennadiy.json` остаются у владельца;
+worker их не читает и не меняет, Accord не получает корпоративные токены.
+Модель профиля пишется как `provider/model` (например `gennadiy/…`) и должна
+быть в локальном `models`. `gennadiy_permission_mode`: `read-only` (по
+умолчанию) запрещает правки и shell; `workspace-write` разрешает `edit` и
+`bash` обычным shell владельца — у OpenCode нет OS sandbox, это не изоляция.
+Headless `gennadiy run` отклоняет любой native «ask», поэтому без
+`native_mcp_approved_tools.gennadiy` агент не сможет вызвать `describe`/`next`
+и закончит ответом об отказе. Корпоративные MCP (Jira/Confluence/Exchange) в
+управляемом запуске выключаются вместе с остальными чужими connectors;
+трассировка сессий Langfuse самого gennadiy при этом не отключается.
 
 Некоторые native CLI требуют отдельного согласия для действий Accord даже при
 подключённом компьютере. Без него агент может закончить шаг ответом об отказе,
@@ -221,7 +258,8 @@ Mac должен быть включён и иметь сеть. Пока он �
 После обновления сервера и подключения обоих worker убедитесь, что оба
 участника видят оба компьютера и могут открыть форму запуска на каждом.
 Для Mac Codex выберите профиль с provider OpenAI, для Windows Claude — профиль
-Anthropic; конкретная модель должна быть разрешена владельцем локально.
+Anthropic, для Gennadiy — профиль «Gennadiy (OpenCode)»; конкретная модель
+должна быть разрешена владельцем локально.
 
 Сначала используйте отдельную тестовую рабочую копию с простым README, без
 продуктовых правок. Первый участник запускает чтение README на Windows,
@@ -276,8 +314,8 @@ agent-board worker run --config PRIVATE_WORKER_JSON
 
 Если у run нет записанных групп процессов (его запустил worker старой версии),
 проверять нечего, и на macOS/Linux `recover` отказывается. Убедитесь сами, что
-ни один агент этого run больше не работает (нет процессов `codex`/`claude` в
-этой рабочей папке или с этой native-сессией), и повторите с явным флагом:
+ни один агент этого run больше не работает (нет процессов `codex`/`claude`/
+`gennadiy` в этой рабочей папке или с этой native-сессией), и повторите с явным флагом:
 
 ```text
 agent-board worker recover --config PRIVATE_WORKER_JSON --run RUN_ID --unverified
@@ -330,7 +368,9 @@ symlink, submodule или конфликт — ничего не трогает�
 Полный native transcript остаётся локальным; на сервер отправляются ограниченные
 нормализованные сообщения, не raw terminal, environment или reasoning output.
 
-Native интерфейсы сверены по [Codex non-interactive](https://learn.chatgpt.com/docs/non-interactive-mode)
-и [Claude Code programmatic CLI](https://code.claude.com/docs/en/headless).
+Native интерфейсы сверены по [Codex non-interactive](https://learn.chatgpt.com/docs/non-interactive-mode),
+[Claude Code programmatic CLI](https://code.claude.com/docs/en/headless) и
+[OpenCode CLI](https://opencode.ai/docs/cli/); форк gennadiy — по локальному
+`run --help`/`debug config` версии1.18.10.
 Фактические версии и PASS/FAIL/NOT-RUN ищите в TASK013/WORK, а не выводите из
 самого наличия этой инструкции.

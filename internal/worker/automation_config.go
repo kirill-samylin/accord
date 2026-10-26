@@ -219,12 +219,12 @@ func validateAutomation(config *AutomationConfig, workspaces map[string]Workspac
 		}
 		for _, role := range []string{"analyst", "developer", "reviewer", "tester"} {
 			providers := a.Roles[role]
-			if len(providers) == 0 || len(providers) > 2 {
+			if len(providers) == 0 || len(providers) > len(nativeProviders) {
 				return consentError()
 			}
 			seen := map[string]bool{}
 			for _, provider := range providers {
-				if seen[provider] || !slices.Contains([]string{"codex", "claude"}, provider) || !slices.Contains(w.Providers, provider) || executables[provider] == "" {
+				if seen[provider] || !knownProvider(provider) || !slices.Contains(w.Providers, provider) || executables[provider] == "" {
 					return consentError()
 				}
 				seen[provider] = true

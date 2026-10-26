@@ -1,4 +1,4 @@
-# Локальные разрешения Codex и Claude для Accord
+# Локальные разрешения Codex, Claude и Gennadiy для Accord
 
 Это отдельное разрешение владельца компьютера. Project editor/controller grant
 даёт управление процессами через worker, но не отменяет native CLI permissions.
@@ -9,14 +9,16 @@
 ## Private worker config
 
 Опциональное поле `native_mcp_approved_tools` содержит map provider → точные
-имена инструментов Accord. Допустимы только configured `codex`/`claude` и
-уникальные имена из следующего фиксированного каталога:
+имена инструментов Accord. Допустимы только configured `codex`/`claude`/`gennadiy`
+и уникальные имена из следующего фиксированного каталога:
 
 ```text
 comment create describe events get heartbeat link next note release transition update
 ```
 
-Unset/null/пустой список не добавляет native permission overrides. Worker не
+Unset/null/пустой список не добавляет native permission overrides для Codex и
+Claude. Для Gennadiy см. границу ниже: native default там allow, поэтому
+невыбранные инструменты моста всегда явно deny. Worker не
 выдаёт разрешения сам, не принимает их из браузера/managed command/profile и
 не меняет глобальную конфигурацию CLI. Поле хранится только локально у владельца;
 snapshot для подготовки запуска копирует также этот map и вложенные списки.
@@ -60,6 +62,21 @@ Claude: только точные имена `mcp__accord_managed__TOOL` доб�
 `--dangerously-skip-permissions` не используется. Cross-build/unit не является
 проверкой настоящего Claude на Windows.
 
+Gennadiy (OpenCode fork): у OpenCode нет флага MCP-конфигурации, worker передаёт
+`OPENCODE_CONFIG_CONTENT` только дочернему процессу этой попытки. В нём ключи
+`accord_managed_TOOL` для всех15 известных tools: выбранные `allow`, остальные
+`deny` — и на уровне `permission`, и в `agent.build.permission`, потому что
+agent-level policy перекрывает глобальную. Headless `run` отвечает `reject` на
+каждый native `ask`, так что prompt-режим недоступен и preset должен быть явным.
+`edit`/`bash` следуют локальному `gennadiy_permission_mode` (по умолчанию
+`read-only` = deny), `external_directory` всегда deny. Чужие connectors из
+`debug config` получают `enabled=false`; URL и headers не копируются.
+`--dangerously-skip-permissions` не используется; второе чтение `debug config`
+с инъекцией обязано вернуть ровно это binding и policy. Проверено unit-тестами
+на synthetic config и config-only тестом `gennadiy_local_test.go` на
+установленном gennadiy1.18.10 (WORK295, без вызова модели); реальный managed
+запуск модели этим не заявляется.
+
 Локальный владелец меняет config только при остановленном worker, затем
 выполняет обычные `worker consent` и `worker run`. Уже работающий процесс не
 получает новые разрешения из изменения файла или команды другого участника.
@@ -67,8 +84,10 @@ Claude: только точные имена `mcp__accord_managed__TOOL` доб�
 ## Источники и приёмка
 
 Поддержанные настройки проверяются по официальным
-[Codex MCP options](https://learn.chatgpt.com/docs/extend/mcp) и
-[Claude Code CLI](https://code.claude.com/docs/en/cli-reference).
+[Codex MCP options](https://learn.chatgpt.com/docs/extend/mcp),
+[Claude Code CLI](https://code.claude.com/docs/en/cli-reference) и
+[OpenCode config/permissions](https://opencode.ai/docs/config/); форк gennadiy
+сверен локально по `gennadiy run --help` и `gennadiy debug config`.
 Installed Codex `0.163.0-alpha.11.1` config-only parser принял disabled synthetic
 server с per-tool `approve` и отклонил неправильное значение enum; `mcp get`
 вернул ровно выбранные `enabled_tools`. Модель и MCP actions этим probe не

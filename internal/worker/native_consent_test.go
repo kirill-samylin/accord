@@ -98,10 +98,11 @@ func TestBridgeAppliesOnlyLocallySelectedProviderConsent(t *testing.T) {
 	if _, err := e.bridgeArgs(RunState{ID: "run_consent_codex", Provider: "codex", Workspace: "test", Generation: 1}); err != nil || !seen {
 		t.Fatalf("Codex local consent not passed to inspected invocation: %v", err)
 	}
-	args, err := e.bridgeArgs(RunState{ID: "run_consent_claude", Provider: "claude", Workspace: "test", Generation: 1})
+	launch, err := e.bridgeArgs(RunState{ID: "run_consent_claude", Provider: "claude", Workspace: "test", Generation: 1})
 	if err != nil {
 		t.Fatal(err)
 	}
+	args := launch.Args
 	if len(args) != 7 || args[0] != "--strict-mcp-config" || args[1] != "--mcp-config" || args[3] != "--allowedTools" || args[4] != "mcp__accord_managed__get" {
 		t.Fatal("Claude consent altered strict MCP binding or selected other provider's grants")
 	}

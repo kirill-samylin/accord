@@ -30,12 +30,22 @@ func readNative(executable, directory string, args []string) ([]byte, error) {
 
 // starter is an internal fake-process seam; production always uses startProcess.
 func readNativeFor(context, executable, directory string, args []string, starter func(launchSpec) (process, error)) ([]byte, error) {
-	child, err := starter(launchSpec{executable: executable, directory: directory, args: args, env: providerEnv()})
+	return readNativeWithEnv(context, executable, directory, args, providerEnv(), 5*time.Second, starter)
+}
+
+// readNativeWithEnv runs one bounded config-only native invocation with an
+// explicit environment; the output is capped and the child is stopped on timeout.
+func readNativeWithEnv(context, executable, directory string, args, env []string, timeout time.Duration, starter func(launchSpec) (process, error)) ([]byte, error) {
+	return readNativeSpec(context, launchSpec{executable: executable, directory: directory, args: args, env: env}, timeout, starter)
+}
+
+func readNativeSpec(context string, spec launchSpec, timeout time.Duration, starter func(launchSpec) (process, error)) ([]byte, error) {
+	child, err := starter(spec)
 	if err != nil {
 		return nil, preparationFailureAt("prepare_"+context+"_start", err)
 	}
 	var timedOut atomic.Bool
-	timer := time.AfterFunc(5*time.Second, func() { timedOut.Store(true); _ = child.Stop() })
+	timer := time.AfterFunc(timeout, func() { timedOut.Store(true); _ = child.Stop() })
 	defer timer.Stop()
 	data, readErr := io.ReadAll(io.LimitReader(child.Output(), 1<<20+1))
 	child.Output().Close()

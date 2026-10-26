@@ -143,11 +143,12 @@ func (e *Engine) launchAutomationLocked(p plan) error {
 	if err != nil {
 		return fail(err)
 	}
-	bridgeArgs, err := e.prepareBridgeLocked(p, run)
+	bridge, err := e.prepareBridgeLocked(p, run)
 	if err != nil {
 		return fail(err)
 	}
-	args = append(bridgeArgs, args...)
+	args = append(bridge.Args, args...)
+	nativeEnv = append(nativeEnv, bridge.Env...)
 	permission, permissionArgs, err := e.prepareGitPermissionsLocked(p, active, epoch, config, nil, nativeEnv)
 	if err != nil {
 		return fail(err)
@@ -227,8 +228,8 @@ func (e *Engine) appendAutomationModel(p plan, args *[]string) error {
 	if profile == nil {
 		return consentError()
 	}
-	expected := map[string]string{"codex": "openai", "claude": "anthropic"}[p.run.Provider]
-	if profile.Provider != expected && profile.Provider != "unconfigured" {
+	expected := profileProviderFor(p.run.Provider)
+	if expected == "" || profile.Provider != expected && profile.Provider != "unconfigured" {
 		return consentError()
 	}
 	if profile.Model != "" {

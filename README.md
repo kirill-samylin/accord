@@ -15,7 +15,10 @@ connectivity or ownership becomes uncertain.
 
 Managed local agents are being added in [TASK-013](docs/TASK-013-managed-agents.md):
 explicitly enrolled workers run native Codex/Claude processes in locally allowed
-workspaces, with durable start/stop/resume/clarification commands. The
+workspaces, with durable start/stop/resume/clarification commands. A third
+provider, the corporate OpenCode fork `gennadiy`, is added as a worker adapter
+in [WORK-295](docs/work/WORK-295-gennadiy-provider.md) (unit-tested, real
+managed run NOT-RUN). The
 [contract](docs/managed-agents.md) separates process control from board sessions,
 task leases and provider conversations. This source branch is not a deployed
 release or a passed native Windows/two-computer acceptance test.

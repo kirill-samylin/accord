@@ -28,7 +28,7 @@ const hints: Array<[RegExp, string]> = [
   ],
   [
     /(?:local workspace or provider identity changed|local path identity changed|local executable\/workspace identity changed)/i,
-    "На компьютере изменился исполняемый файл агента или рабочая папка — например, обновились Codex или Claude. Worker не запускает изменённую программу без согласия владельца. Владелец на этом компьютере останавливает worker, выполняет «" +
+    "На компьютере изменился исполняемый файл агента или рабочая папка — например, обновились Codex, Claude или Gennadiy. Worker не запускает изменённую программу без согласия владельца. Владелец на этом компьютере останавливает worker, выполняет «" +
       consentCommand +
       "», запускает worker снова и продолжает цикл.",
   ],

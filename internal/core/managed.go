@@ -147,3 +147,22 @@ type ManagedReportInput struct {
 	Output            []string `json:"output,omitempty"`
 	Forced            bool     `json:"forced,omitempty"`
 }
+
+// NativeProviders are the managed native CLIs a worker may be enrolled with:
+// Codex, Claude Code and Gennadiy (the corporate OpenCode fork).
+var NativeProviders = []string{"codex", "claude", "gennadiy"}
+
+func KnownNativeProvider(provider string) bool {
+	for _, known := range NativeProviders {
+		if provider == known {
+			return true
+		}
+	}
+	return false
+}
+
+// ProfileProviderFor maps a native CLI to the agent profile provider it serves;
+// an unknown CLI maps to "" and is rejected by callers.
+func ProfileProviderFor(provider string) string {
+	return map[string]string{"codex": "openai", "claude": "anthropic", "gennadiy": "gennadiy"}[provider]
+}
