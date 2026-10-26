@@ -1,7 +1,8 @@
 # WORK295 — третий managed provider: gennadiy (OpenCode fork)
 
 Исполнитель developer, ветка `codex/gennadiy-provider` от
-`codex/native-preflight` (46642af). **UNIT PASS / real native NOT-RUN**.
+`codex/native-preflight` (46642af). **UNIT PASS / стенд обновлён до 41681b8 /
+real native gennadiy run NOT-RUN**.
 Поручение пользователя 26.10.2026: внедрить локальный корпоративный агент
 `gennadiy` (fork OpenCode 1.18.10 с Keycloak, корпоративным LLM gateway и
 корпоративными MCP) как третий провайдер управляемых агентов Accord наряду с
@@ -120,3 +121,23 @@ Worker (`internal/worker`):
 - NOT-RUN: реальный `agent-board worker run` с executables.gennadiy, реальный
   `run --format json` через корпоративный gateway, resume того же `ses_`,
   automation roles на gennadiy, Windows. Production VPS/Mac worker не обновлены.
+
+## Выкатка на стенд (26.10.2026)
+
+По прямому разрешению пользователя (SSH из этой сессии, после зелёного CI):
+коммит `41681b8041d44312f8ff7e2f5c35dfcdf874350e` запушен в
+`origin/codex/gennadiy-provider`; GitHub CI run 40296905801 — Go/Infra/Web
+все `success`. Локальный `make release` (Go1.27.2, Node24.19.0) собрал
+`.local/releases/41681b8…` и `…-next` (SHA256SUMS 56/56 OK, SOURCE совпадает).
+`infra/accord/rollout.py all --prune --keep 1` на `root@157.22.207.48`:
+upload (Go57 файлов, Next1345) → stage `staged` → apply `pending-https-smoke`
+(full pre-snapshot verified) → smoke `/readyz`200, `/app/login`200 →
+finalize `complete` (all-project backup verified) → prune ничего не удалил
+(предыдущий `46642af` сохранён как `--keep 1`). Независимый `rollout.py status`
+после: `go_current`/`next_current` = `releases/41681b8…`, журнал `complete`,
+nginx SHA прежний. Квитанции — ignored `.local/task021/rollout/`.
+Схема данных не менялась (schema6, прежние floors); Mac worker и его
+`worker.json` не обновлялись — provider `gennadiy` на стенде доступен в
+enroll/профилях/UI, но реальный управляемый запуск gennadiy через worker
+по-прежнему NOT-RUN. PR в origin не создан из этой сессии (нет `gh`, браузер
+не авторизован); тег релиза не ставился.

@@ -200,5 +200,8 @@ fork OpenCode1.18.10) в worker, сервер, веб и документаци�
 моста и pinned permission preset через `OPENCODE_CONFIG_CONTENT` только для
 child этой попытки, discovery/verify через `debug config`. Серверный
 `managedSessionID` принимает `ses_` IDs; profile provider `gennadiy`; host
-providers до3. Проверены unit/race/vet/web; реальный managed запуск gennadiy,
-resume и automation roles — NOT-RUN, production не обновлён.
+providers до3. Проверены unit/race/vet/web и GitHub CI. Стенд
+`157.22.207.48` обновлён capable rollout до `41681b8041d44312f8ff7e2f5c35dfcdf874350e`
+(schema6, прежние floors, журнал complete, smoke200); Mac worker не
+переконфигурирован. Реальный managed запуск gennadiy, resume и automation
+roles — NOT-RUN; PR/тег из сессии не созданы.
