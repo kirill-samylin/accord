@@ -1,8 +1,8 @@
 # WORK299 — первый контакт моста: machine токена и сбой сети до сессии
 
 Исполнитель developer, ветка `codex/bridge-first-contact` от
-`codex/native-preflight` (6558880). **UNIT PASS / стенд NOT-UPDATED до
-поручения**. Поручение пользователя 26.10.2026 во время прогона WORK298:
+`codex/native-preflight` (6558880). **UNIT PASS / CI PASS / стенд обновлён до e5d358b /
+клиенты пересобраны**. Поручение пользователя 26.10.2026 во время прогона WORK298:
 «иди изучай, что не так» — gennadiy на Mac пользователя получал
 `LEASE_UNCERTAIN` на каждый `accord_describe`, включая самый первый.
 
@@ -49,6 +49,14 @@
 
 - `make fmt-check vet test build` — см. итог в коммите; целевые тесты bridge и
   store PASS.
-- NOT-RUN: стенд не обновлён (серверная часть `machine` опциональна только
-  после выкатки); клиентские бинари для обоих Mac нужно пересобрать и заменить
-  (`~/.config/accord/agent-board`, у Ромы `~/.config/accord/agent-board`).
+- GitHub CI на e5d358b (Go/Infra/Web) — success; ветка слита fast-forward в
+  `codex/native-preflight`. `make release`, `rollout.py all --prune --keep 1`:
+  upload → staged → pending-https-smoke → smoke 200/200 → complete → prune
+  удалил f5cd8ca (сохранён 4b7b7ad). `rollout.py status`: go/next current =
+  `releases/e5d358b…`, журнал complete. REST-проверка: `describe` без
+  `machine` открывает сессию в «JS tasks».
+- Клиенты: `.local/task021/client/agent-board-darwin-{arm64,amd64}` из e5d358b;
+  на Mac пользователя `~/.config/accord/agent-board` заменён (vcs e5d358b,
+  0700). Второй Mac (Рома) получает файл отдельно и заменяет
+  `~/.config/accord/agent-board`; запись `accord` в его gennadiy менять не нужно.
+- Реальный прогон WORK298 после исправления — NOT-RUN на момент записи.
