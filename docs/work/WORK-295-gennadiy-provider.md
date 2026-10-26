@@ -1,7 +1,7 @@
 # WORK295 — третий managed provider: gennadiy (OpenCode fork)
 
 Исполнитель developer, ветка `codex/gennadiy-provider` от
-`codex/native-preflight` (46642af). **UNIT PASS / стенд обновлён до 41681b8 /
+`codex/native-preflight` (46642af). **UNIT PASS / PR #2 merged / стенд обновлён до f5cd8ca /
 real native gennadiy run NOT-RUN**.
 Поручение пользователя 26.10.2026: внедрить локальный корпоративный агент
 `gennadiy` (fork OpenCode 1.18.10 с Keycloak, корпоративным LLM gateway и
@@ -141,3 +141,18 @@ nginx SHA прежний. Квитанции — ignored `.local/task021/rollout
 enroll/профилях/UI, но реальный управляемый запуск gennadiy через worker
 по-прежнему NOT-RUN. PR в origin не создан из этой сессии (нет `gh`, браузер
 не авторизован); тег релиза не ставился.
+
+## Слияние и вторая выкатка (26.10.2026)
+
+PR [kirill-samylin/accord#2](https://github.com/kirill-samylin/accord/pull/2)
+`codex/gennadiy-provider → codex/native-preflight` создан из панели браузера
+Claude (описание без адреса стенда) и слит fast-forward push'ем
+`46642af..f5cd8ca`: GitHub пометил PR merged, SHA коммитов и их зелёный CI
+(run 40296905801 для41681b8, прогон f5cd8ca Go/Infra/Web success) сохранены.
+Локальный `make release` для `f5cd8ca6c6905ac18c98388a5760fbbf6a4fbe89`
+(SHA256SUMS 56/56 OK), затем `rollout.py all --prune --keep 1`: upload →
+`staged` → `pending-https-smoke` → smoke `/readyz`200 `/app/login`200 →
+`complete` → prune удалил `46642af` (сохранён `41681b8`). `rollout.py status`
+после: `go_current`/`next_current` = `releases/f5cd8ca…`, журнал `complete`,
+nginx SHA прежний. Отличие f5cd8ca от41681b8 — только документация.
+Квитанции — ignored `.local/task021/rollout-f5cd8ca/`. Тег релиза не ставился.
