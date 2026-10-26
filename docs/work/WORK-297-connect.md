@@ -1,7 +1,7 @@
 # WORK297 — `agent-board connect`: участник подключается одной командой
 
 Исполнитель developer, ветка `codex/worker-setup` (после WORK296).
-**UNIT PASS / make PASS / реальный прогон на Mac NOT-RUN**.
+**UNIT PASS / make PASS / connect на Mac PASS / работа по задачам NOT-RUN**.
 Поручение пользователя 26.10.2026: «нужна магия» — участник привязанного
 проекта должен подключить своего агента без длинных настроек; сценарий:
 двое в проекте, один запускает агента, создающего задачи, второй берёт задачи
@@ -59,6 +59,13 @@ CLI с абсолютными путями. Команда `connect` убира�
   `connection.json`, отказ на `http://`.
 - `make fmt-check vet test race build infra-test` — PASS (27 пакетов ok,
   202 infra-тестов); веб не менялся, `web-check` PASS из WORK296.
-- NOT-RUN: `connect` на реальных `~/.codex/config.toml` и
-  `~/.config/gennadiy/gennadiy.json` этого Mac (запускает владелец),
-  реальный `describe → next` из gennadiy через `accord`.
+- Реальный прогон на Mac пользователя 26.10.2026 по его поручению
+  (`connect --token-file ~/.config/accord-gui/gui.token`, резервные копии
+  `*.before-accord-connect` сохранены): токен и клиент установлены в
+  `~/.config/accord/` (0700/0600/0700), `codex mcp get accord` — enabled,
+  stdio, правильные args; `gennadiy.json` семантически не изменился, кроме
+  нового `mcp.accord` (проверено JSON-сравнением); `gennadiy mcp list` —
+  **accord connected**; claude CLI не установлен. Корпоративный
+  `gennadiy-jira-confluence` падает независимо от нас (SSE error).
+- NOT-RUN: реальный `describe → next` из gennadiy/Codex через `accord` и
+  совместная работа двух участников.
